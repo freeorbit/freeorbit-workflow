@@ -11,12 +11,14 @@
 //   wf ledger <ledger.py arguments>         change the review ledger
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|refresh-close> <area> ...   the project's test-data steps
+//   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { reconcile } from "../lib/ai.mjs";
+import { design } from "../lib/design/index.mjs";
 import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
@@ -151,6 +153,8 @@ const commands = {
     const root = projectRoot();
     return runTestdata(root, loadConfig(root), name, args);
   },
+
+  design,
 
   async config() {
     const config = loadConfig(projectRoot());
