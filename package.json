@@ -1,0 +1,12 @@
+{
+  "name": "freeorbit-workflow",
+  "version": "0.1.0",
+  "description": "The Freeorbit agent workflow: Claude Code and OpenCode plugins, and the scripts they run.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "bin": { "wf": "bin/wf.mjs" },
+  "files": ["bin", "lib", "plugins", ".claude-plugin", "LICENSE", "README.md", "SECURITY.md"],
+  "engines": { "node": ">=22" },
+  "scripts": { "test": "node --test \"test/*.test.mjs\"" }
+}

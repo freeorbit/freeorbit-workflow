@@ -3,15 +3,16 @@ name: doc-find
 description: >-
   Prints the doc entries that start with an ID, a date, or a heading: a
   section, a table row with its header, or a bullet with its lines. Use before
-  reading a log or a long doc, so only the entry is read.
+  reading a log or a long doc, or to look up a story, finding, chunk, or
+  decision by its ID or date, so only the entry is read.
 ---
 
 # Doc find
 
-Run from the project root:
+Run it from anywhere in the project:
 
 ```sh
-node <this skill's folder>/scripts/doc-find.mjs <ID, date, or heading> [path]
+npx wf doc:find <ID, date, or heading> [file or folder ...]
 ```
 
-The path is optional; with none it searches every tracked Markdown file. Read only what it prints. Grep for a word inside an entry.
+With no path it searches the tracked Markdown under `docs/`. Read only what it prints. When nothing starts with the query, grep for a word inside an entry instead.
