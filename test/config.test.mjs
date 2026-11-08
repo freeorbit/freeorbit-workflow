@@ -20,6 +20,7 @@ test("a project's settings lay over the defaults, objects by key and lists whole
 
 test("an unknown key is named, so a typo is not silently ignored", () => {
   assert.deepEqual(unknownKeys({ docs: { blockWord: 50 }, extra: 1, team: "solo" }), ["docs.blockWord", "extra"]);
+  assert.deepEqual(unknownKeys({ decisions: { mine: "owner" }, testdata: { commands: { route: "x" }, comand: {} } }), ["testdata.comand"]);
 });
 
 test("globs: ** crosses folders, * does not", () => {

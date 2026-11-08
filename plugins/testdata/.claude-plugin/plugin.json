@@ -1,0 +1,5 @@
+{
+  "name": "testdata",
+  "version": "0.6.0",
+  "description": "Synthetic test data: a blind designer agent writes the spec from stories and flows, and the project's seeded generator writes the data."
+}

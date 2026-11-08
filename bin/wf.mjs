@@ -10,6 +10,7 @@
 //   wf scan full | diff <since> [--light]   the review's scans into .cache/review-scan
 //   wf ledger <ledger.py arguments>         change the review ledger
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
+//   wf testdata <route|stale|covered|index|journeys|refresh-close> <area> ...   the project's test-data steps
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -18,6 +19,7 @@ import { join } from "node:path";
 import { reconcile } from "../lib/ai.mjs";
 import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
+import { runTestdata } from "../lib/testdata.mjs";
 import { loadConfig, project, projectRoot } from "../lib/config.mjs";
 import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
 import { problems } from "../lib/docs/check.mjs";
@@ -139,6 +141,15 @@ const commands = {
     const changed = syncDocs(root, loadConfig(root));
     console.log(changed.length ? changed.map((file) => `${file}: written`).join("\n") : "Workflow docs already match the kit.");
     return 0;
+  },
+
+  async testdata([name, ...args]) {
+    if (!name) {
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|refresh-close> <area> [arguments]");
+      return 2;
+    }
+    const root = projectRoot();
+    return runTestdata(root, loadConfig(root), name, args);
   },
 
   async config() {
