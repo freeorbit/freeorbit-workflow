@@ -17,6 +17,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
    claude plugin install core@freeorbit-workflow --scope project
    claude plugin install review@freeorbit-workflow --scope project   # optional modules
    claude plugin install testdata@freeorbit-workflow --scope project
+   claude plugin install design@freeorbit-workflow --scope project
    ```
 
 3. Start a committed `opencode.json` for OpenCode:
@@ -42,6 +43,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/`, keeping the project's parts between each `wf:local` pair |
 | `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, refresh-close), from `testdata.commands` |
+| `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
 
 The review module's `structure-scan.py` is the scan for a Rust and TypeScript project; another stack lists its own under `review.scans.structure`.

@@ -1,0 +1,30 @@
+{
+  "_rules": "Kinds of mark for wf design annotate. Never change or remove one, or reuse its colour: the same kind looks the same in every run and every project. A project adds its own under design.kinds in .workflow/config.json; a kind every project needs is added here, at the end, with its line in the test.",
+  "kinds": {
+    "look": {
+      "color": "#3b82f6",
+      "word": "look here",
+      "use": "Where a question asks Ken to look."
+    },
+    "bug": {
+      "color": "#ef4444",
+      "word": "bug",
+      "use": "Something broken: a fault, a crash, or wrong behaviour."
+    },
+    "drift": {
+      "color": "#f59e0b",
+      "word": "drift",
+      "use": "A difference between a frame, a story, and the app."
+    },
+    "ok": {
+      "color": "#22c55e",
+      "word": "fine",
+      "use": "Checked and right, shown for contrast."
+    },
+    "new": {
+      "color": "#a855f7",
+      "word": "new or changed",
+      "use": "What is new or changed in a picture sent for review, such as a redrawn frame."
+    }
+  }
+}
