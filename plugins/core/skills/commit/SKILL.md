@@ -25,7 +25,7 @@ Read the identity with `git config user.name` and `git config user.email`.
 
 Run `git branch --show-current`. Never commit on `main` or a `release/X.Y` line, even when asked.
 
-- Start a branch named `<area>/<slug>` from the work, as the project's branch rules say, and commit there. Say the branch name with the message.
+- Start a branch named `<scope>/<slug>` from the work, as the project's branch rules say, and commit there. Say the branch name with the message.
 - Rename a branch that breaks the naming rule, such as `claude/…`, with `git branch -m` before committing.
 
 ## Read the diff
