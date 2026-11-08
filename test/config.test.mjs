@@ -86,3 +86,11 @@ test("an extension adds its checks and status lines", async () => {
   assert.deepEqual(await problems(context, "2026-11-08"), ["ext: problem"]);
   assert.ok((await status(context)).includes("  Ext: line"));
 });
+
+test("doc:check flags a Who decides block that no longer matches the config", async () => {
+  const root = scratch({
+    ".workflow/config.json": '{"people":[{"name":"Ana"}]}',
+    "AGENTS.md": "# Rules\n\n<!-- wf:roles -->\nstale\n<!-- /wf:roles -->\n",
+  });
+  assert.deepEqual(await problems(project(root), "2026-11-08"), ["AGENTS.md: the Who decides block is out of date, run wf roles --write"]);
+});
