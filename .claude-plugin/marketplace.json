@@ -8,30 +8,30 @@
       "name": "core",
       "source": "./plugins/core",
       "description": "Commit, pull request, handoff, and doc-find skills; the wf docs, roles, and OpenCode scripts.",
-      "version": "0.8.0"
+      "version": "0.9.0"
     },
     {
       "name": "review",
       "source": "./plugins/review",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "description": "Read-only code review with scans, a reviewer and verify agent, and a findings ledger."
     },
     {
       "name": "testdata",
       "source": "./plugins/testdata",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "description": "Synthetic test data from a blind designer agent and the project's seeded generator."
     },
     {
       "name": "design",
       "source": "./plugins/design",
-      "version": "0.8.0",
-      "description": "HTML design frames rendered to review PNGs, a frame checker, storyboards, and annotated question sheets."
+      "version": "0.9.0",
+      "description": "HTML design frames rendered to review PNGs, a frame checker, storyboards, annotated question sheets, and the screen review with a screen-reader agent."
     },
     {
       "name": "stack-tauri-rust",
       "source": "./plugins/stack-tauri-rust",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "description": "Tauri app driver under a memory cap, and a disk check for Rust build leftovers."
     }
   ]

@@ -47,6 +47,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
 | `wf app <start \| run \| stop \| ...>` | Drives the project's Tauri app on Linux: systemd user units under a memory cap, WebKit's inspector, and run steps, from `app` in the config, with the project's `app.hooks` |
 | `wf disk [--dry-run] [GB]` | Free disk space, and when short, removes only the leftovers in `disk`, cheapest first |
+| `wf screens <--light \| --deep \| names \| scope \| --brief \| --accept \| --check \| --gate>` | The screen review: shoots each screen's Reach through `wf app`, beside its frame, lists what changed since the last accept, and writes briefs for the `screen-reader` agent, from `screens` in the config |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
 
 The review module's `structure-scan.py` is the scan for a Rust and TypeScript project; another stack lists its own under `review.scans.structure`.

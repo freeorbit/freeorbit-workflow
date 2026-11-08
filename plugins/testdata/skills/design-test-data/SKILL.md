@@ -82,6 +82,8 @@ Then ask the reviewer. A first draft gets its own review. A refresh is reviewed 
 
 Build the data the current chunk needs with the project's seeded generator, as its test-data doc says: scenarios, generated datasets, and fixtures. Data for a later chunk waits for that chunk.
 
+With the design plugin's screen review, a new scenario goes on the area's screen list in the same change: as the Reach of each frame whose state it holds, replacing that frame's `none, <chunk>`, or as a row under "Screens with no frame". `npx wf screens --check` fails a scenario on no row.
+
 ## Do not
 
 - Let the designer read code or architecture, or pass it rules in its prompt.

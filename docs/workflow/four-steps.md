@@ -53,6 +53,7 @@ Before anything in a chunk is built, run `npx wf doc:facts status` for where thi
 - Check the stories against the frames, below.
 - Put any story added or changed since the last chunk start into the [build order](../log/build-order.md#making-or-updating-an-areas-order): an existing chunk or a new row. Move this chunk's row to In progress.
 - If the chunk builds on an outside service, make one real call first and read that service's rules for clients. A stand-in proves only what it was told. The chunk that first uses an outside thing also builds its stand-in, so a scenario can reach the screens behind it. A test-only stub is not enough.
+- With the design plugin's screen review, run `npx wf screens --gate <this>`. It lists each frame showing this chunk's stories that no Reach opens. Each one is reached in this chunk, or, with the designer's yes in the questions below, waits on a later chunk named in its Reach.
 
 <!-- wf:local chunk-start -->
 
@@ -62,6 +63,12 @@ Before anything in a chunk is built, run `npx wf doc:facts status` for where thi
 ## Chunk end
 
 Before the commit proposal, run the project's full check once. Then run the `code-review-ledger` skill in diff mode. The reviewer picks a deep or light run, or defers it to a later run, which then reviews every deferred chunk at once. A light run is logged in the ledger, and the next deep run covers it. It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one. The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
+
+With the design plugin's screen review, a chunk that changed UI files or frames also checks its screens:
+
+- Before the code review, `npx wf screens --gate <chunk>` passes: every frame showing the chunk's stories is reached, or waits on a later chunk the designer agreed to. A frame shared by two chunks is reached by the first to end, or handed to the later one.
+- Once the code review's accepted findings are fixed, run the `screen-review` skill, never at the same time as the code review, since a fix can change a screen.
+- Fix or record each difference it finds before the commit. A difference the designer accepts goes in the frame or the decisions log, never only in the code.
 
 <!-- wf:local chunk-end -->
 

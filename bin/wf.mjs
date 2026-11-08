@@ -14,6 +14,7 @@
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
 //   wf app <start | run | stop | ...>   drive the project's Tauri app under a memory cap
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
+//   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -23,6 +24,7 @@ import { reconcile } from "../lib/ai.mjs";
 import { runApp } from "../lib/app/driver.mjs";
 import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
+import { screens } from "../lib/screens/run.mjs";
 import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
@@ -163,6 +165,11 @@ const commands = {
   async app(args) {
     const root = projectRoot();
     return runApp(root, loadConfig(root), args);
+  },
+
+  async screens(args) {
+    const root = projectRoot();
+    return screens(root, loadConfig(root), args);
   },
 
   async disk(args) {
