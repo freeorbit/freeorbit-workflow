@@ -11,10 +11,10 @@ import { problems } from "../lib/docs/check.mjs";
 import { growth, status } from "../lib/docs/facts.mjs";
 
 test("a project's settings lay over the defaults, objects by key and lists whole", () => {
-  const merged = merge(DEFAULTS, { docs: { loose: ["a.md"] }, stories: { prefixes: ["GM"] } });
+  const merged = merge(DEFAULTS, { docs: { loose: ["a.md"] }, areas: [{ id: "gmail", prefix: "GM" }] });
   assert.deepEqual(merged.docs.loose, ["a.md"]);
   assert.equal(merged.docs.blockWords, 60);
-  assert.deepEqual(merged.stories.prefixes, ["GM"]);
+  assert.deepEqual(merged.areas, [{ id: "gmail", prefix: "GM" }]);
   assert.deepEqual(merged.stories.files, DEFAULTS.stories.files);
 });
 
@@ -62,7 +62,7 @@ test("an unknown config key stops the run", () => {
 test("doc:check finds a broken link, an unindexed doc, a long block, a missing story, and a future date", async () => {
   const words = Array(61).fill("word").join(" ");
   const root = scratch({
-    ".workflow/config.json": '{"stories":{"prefixes":["XY"]}}',
+    ".workflow/config.json": '{"areas":[{"id":"xy","prefix":"XY"}],"docs":{"synced":[]}}',
     "docs/README.md": "# Index\n\n[a](workflow/a.md)\n",
     "docs/workflow/a.md": `# A\n\n[gone](nope.md) XY-07\n\n${words}\n\n| 2099-01-01 | later |\n`,
     "docs/workflow/b.md": "# B\n",
@@ -79,7 +79,7 @@ test("doc:check finds a broken link, an unindexed doc, a long block, a missing s
 
 test("an extension adds its checks and status lines", async () => {
   const root = scratch({
-    ".workflow/config.json": '{"extensions":["ext.mjs"]}',
+    ".workflow/config.json": '{"extensions":["ext.mjs"],"docs":{"synced":[]}}',
     "ext.mjs": 'export const checks = () => ["ext: problem"]; export const status = () => ["  Ext: line"];',
   });
   const context = project(root);
@@ -89,7 +89,7 @@ test("an extension adds its checks and status lines", async () => {
 
 test("doc:check flags a Who decides block that no longer matches the config", async () => {
   const root = scratch({
-    ".workflow/config.json": '{"people":[{"name":"Ana"}]}',
+    ".workflow/config.json": '{"people":[{"name":"Ana"}],"docs":{"synced":[]}}',
     "AGENTS.md": "# Rules\n\n<!-- wf:roles -->\nstale\n<!-- /wf:roles -->\n",
   });
   assert.deepEqual(await problems(project(root), "2026-11-08"), ["AGENTS.md: the Who decides block is out of date, run wf roles --write"]);

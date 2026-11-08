@@ -8,9 +8,9 @@ A topic is one reason. The change and the docs or tests that exist for that reas
 
 ## Subject
 
-`area: what changed`, in 72 characters or fewer, with no full stop.
+`scope: what changed`, in 72 characters or fewer, with no full stop.
 
-- **Area.** The part the change touches most, one of `areas` in `.workflow/config.json`.
+- **Scope.** The part the change touches most, one of `scopes` in `.workflow/config.json`.
 - **What changed.** Plain words starting with a verb, such as "add", "check", "fix", or "name". No commit type (`feat`, `fix`, `docs`), and no file names.
 
 ## Body

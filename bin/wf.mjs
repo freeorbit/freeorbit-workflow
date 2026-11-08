@@ -9,12 +9,14 @@
 //   wf ai:check        fail if any of those is out of step
 //   wf scan full | diff <since> [--light]   the review's scans into .cache/review-scan
 //   wf ledger <ledger.py arguments>         change the review ledger
+//   wf docs sync       write the kit's workflow docs into the project, with its local parts
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { reconcile } from "../lib/ai.mjs";
+import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { loadConfig, project, projectRoot } from "../lib/config.mjs";
 import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
@@ -126,6 +128,17 @@ const commands = {
   async ledger(args) {
     const root = projectRoot();
     return ledger(root, loadConfig(root), args);
+  },
+
+  async docs([sub]) {
+    if (sub !== "sync") {
+      console.log("Usage: wf docs sync");
+      return 2;
+    }
+    const root = projectRoot();
+    const changed = syncDocs(root, loadConfig(root));
+    console.log(changed.length ? changed.map((file) => `${file}: written`).join("\n") : "Workflow docs already match the kit.");
+    return 0;
   },
 
   async config() {

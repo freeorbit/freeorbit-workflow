@@ -26,7 +26,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
 
    Then run `npx wf ai:sync`, which adds each kit plugin's skills path and writes the OpenCode agents and commands.
 
-4. Write `.workflow/config.json`: at least `project` and `people`, with `"team": "solo"` for one person. Put the two markers in `AGENTS.md` and run `npx wf roles --write`. Run `npx wf config` to see every setting, its default, and why the default is what it is.
+4. Write `.workflow/config.json`: at least `project` and `people`, with `"team": "solo"` for one person. List the project's `areas` (each with its story prefix) and `scopes` (commit and branch prefixes). Put the two markers in `AGENTS.md` and run `npx wf roles --write`, then `npx wf docs sync`. Run `npx wf config` to see every setting, its default, and why the default is what it is.
 
 ## Commands
 
@@ -39,6 +39,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
 | `wf ai:sync`, `wf ai:check` | OpenCode agents and slash commands generated from the project's and the kit's, and the skill paths in `opencode.json` |
 | `wf scan full \| diff <since> [--light]` | The review's scans, from `review.scans` in the config, into `.cache/review-scan`, with the scope list and the diff |
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
+| `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/`, keeping the project's parts between each `wf:local` pair |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
 
 The review module's `structure-scan.py` is the scan for a Rust and TypeScript project; another stack lists its own under `review.scans.structure`.
