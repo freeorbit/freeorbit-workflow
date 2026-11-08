@@ -41,6 +41,8 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
 
+The review module's `structure-scan.py` is the scan for a Rust and TypeScript project; another stack lists its own under `review.scans.structure`.
+
 A project adds its own checks and status lines with `extensions` in its config: modules that export `checks(context)` and `status(context)`.
 
 ## Develop

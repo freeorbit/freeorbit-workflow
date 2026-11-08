@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for ledger.py, on small copies of the ledger's shape.
 
-    python3 -I .claude/skills/code-review-ledger/ledger_test.py
+    python3 -I plugins/review/scripts/ledger_test.py
 """
 
 import json
