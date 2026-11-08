@@ -7,12 +7,15 @@
 //   wf roles [--write] the Who decides block, or write it into AGENTS.md
 //   wf ai:sync         OpenCode agents, commands, and skill paths from the project and the kit
 //   wf ai:check        fail if any of those is out of step
+//   wf scan full | diff <since> [--light]   the review's scans into .cache/review-scan
+//   wf ledger <ledger.py arguments>         change the review ledger
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { reconcile } from "../lib/ai.mjs";
+import { ledger, scan } from "../lib/review.mjs";
 import { loadConfig, project, projectRoot } from "../lib/config.mjs";
 import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
 import { problems } from "../lib/docs/check.mjs";
@@ -103,6 +106,23 @@ const commands = {
     }
     console.log(`OpenCode is in step (${counts.agents} agents, ${counts.commands} commands).`);
     return 0;
+  },
+
+  async scan([mode, since, flag]) {
+    if (!["full", "diff"].includes(mode) || (mode === "diff" && !since)) {
+      console.log("Usage: wf scan full | wf scan diff <since> [--light]");
+      return 2;
+    }
+    const root = projectRoot();
+    const result = await scan(root, loadConfig(root), { mode, since, light: flag === "--light" || since === "--light" });
+    if (mode === "diff") console.log(`Scope: ${result.scope.length} files, in .cache/review-scan/scope.txt.${result.deps ? " A dependency file changed, so the deps scans ran." : ""}`);
+    for (const [name, code] of result.ran) console.log(`  ${name}: exit ${code}${code ? " (read its output: non-zero often means found something)" : ""}`);
+    return 0;
+  },
+
+  async ledger(args) {
+    const root = projectRoot();
+    return ledger(root, loadConfig(root), args);
   },
 
   async config() {
