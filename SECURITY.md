@@ -8,6 +8,6 @@ Open a private security advisory on this repository (Security, then "Report a vu
 
 ## What the kit promises
 
-- **No network.** The scripts use Node's standard library only and make no network calls.
+- **No network of its own.** The scripts use only the Node and Python 3 standard libraries and make no network calls. `wf scan` runs the commands a project lists in its own config, which may.
 - **Inside the project.** Scripts read only the git work tree they run in.
 - **No dependencies.** The package has none, so installing it adds no third-party code.
