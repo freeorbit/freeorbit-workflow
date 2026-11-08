@@ -4,9 +4,10 @@
 //   wf doc:facts [status | growth]
 //   wf doc:check
 //   wf config          the project's settings over the defaults, with reasons
+//   wf roles [--write] the Who decides block, or write it into AGENTS.md
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { loadConfig, project, projectRoot } from "../lib/config.mjs";
@@ -14,6 +15,7 @@ import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
 import { problems } from "../lib/docs/check.mjs";
 import { growth, status } from "../lib/docs/facts.mjs";
 import { entries } from "../lib/docs/shape.mjs";
+import { roleProblems, rolesBlock, withBlock } from "../lib/roles.mjs";
 
 const commands = {
   async "doc:find"([query, ...paths]) {
@@ -53,6 +55,33 @@ const commands = {
     for (const problem of found) console.log(problem);
     console.log(found.length === 0 ? "Docs are in step." : `${found.length} to look at.`);
     return found.length === 0 ? 0 : 1;
+  },
+
+  async roles([flag]) {
+    const root = projectRoot();
+    const config = loadConfig(root);
+    for (const problem of roleProblems(config)) console.error(`.workflow/config.json: ${problem}`);
+    const block = rolesBlock(config);
+    if (flag !== "--write") {
+      console.log(block);
+      return 0;
+    }
+    for (const path of config.growth.always) {
+      const file = join(root, path);
+      let text;
+      try {
+        text = readFileSync(file, "utf8");
+      } catch {
+        continue;
+      }
+      const fresh = withBlock(text, block);
+      if (fresh === null) console.error(`${path}: no ${"<!-- wf:roles -->"} markers, so nothing was written`);
+      else if (fresh !== text) {
+        writeFileSync(file, fresh);
+        console.log(`${path}: Who decides updated`);
+      } else console.log(`${path}: Who decides already up to date`);
+    }
+    return 0;
   },
 
   async config() {
