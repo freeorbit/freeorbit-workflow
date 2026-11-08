@@ -5,17 +5,20 @@
 //   wf doc:check
 //   wf config          the project's settings over the defaults, with reasons
 //   wf roles [--write] the Who decides block, or write it into AGENTS.md
+//   wf ai:sync         OpenCode agents, commands, and skill paths from the project and the kit
+//   wf ai:check        fail if any of those is out of step
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { reconcile } from "../lib/ai.mjs";
 import { loadConfig, project, projectRoot } from "../lib/config.mjs";
 import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
 import { problems } from "../lib/docs/check.mjs";
 import { growth, status } from "../lib/docs/facts.mjs";
 import { entries } from "../lib/docs/shape.mjs";
-import { roleProblems, rolesBlock, withBlock } from "../lib/roles.mjs";
+import { BLOCK_END, BLOCK_START, roleProblems, rolesBlock, withBlock } from "../lib/roles.mjs";
 
 const commands = {
   async "doc:find"([query, ...paths]) {
@@ -75,12 +78,30 @@ const commands = {
         continue;
       }
       const fresh = withBlock(text, block);
-      if (fresh === null) console.error(`${path}: no ${"<!-- wf:roles -->"} markers, so nothing was written`);
+      if (fresh === null) console.error(`${path}: no ${BLOCK_START} and ${BLOCK_END} markers, so nothing was written`);
       else if (fresh !== text) {
         writeFileSync(file, fresh);
         console.log(`${path}: Who decides updated`);
       } else console.log(`${path}: Who decides already up to date`);
     }
+    return 0;
+  },
+
+  async "ai:sync"() {
+    const { problems, changed, counts } = await reconcile(projectRoot(), { write: true });
+    for (const problem of problems) console.error(problem);
+    console.log(`OpenCode is in step (${counts.agents} agents, ${counts.commands} commands, ${changed} updated).`);
+    return problems.length ? 1 : 0;
+  },
+
+  async "ai:check"() {
+    const { problems, counts } = await reconcile(projectRoot());
+    for (const problem of problems) console.error(problem);
+    if (problems.length) {
+      console.error("Run wf ai:sync.");
+      return 1;
+    }
+    console.log(`OpenCode is in step (${counts.agents} agents, ${counts.commands} commands).`);
     return 0;
   },
 

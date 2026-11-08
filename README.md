@@ -7,7 +7,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
 1. Add the package, pinned to a tag:
 
    ```sh
-   pnpm add -D "freeorbit-workflow@git+https://github.com/freeorbit/freeorbit-workflow.git#v0.2.0"
+   pnpm add -D "freeorbit-workflow@git+https://github.com/freeorbit/freeorbit-workflow.git#v0.3.0"
    ```
 
 2. Add the plugin for Claude Code, at project scope so everyone gets it:
@@ -17,11 +17,13 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
    claude plugin install core@freeorbit-workflow --scope project
    ```
 
-3. Point OpenCode at the same skills in a committed `opencode.json`:
+3. Start a committed `opencode.json` for OpenCode:
 
    ```json
-   { "$schema": "https://opencode.ai/config.json", "skills": ["node_modules/freeorbit-workflow/plugins/core/skills"] }
+   { "$schema": "https://opencode.ai/config.json" }
    ```
+
+   Then run `npx wf ai:sync`, which adds each kit plugin's skills path and writes the OpenCode agents and commands.
 
 4. Write `.workflow/config.json`: at least `project` and `people`, with `"team": "solo"` for one person. Put the two markers in `AGENTS.md` and run `npx wf roles --write`. Run `npx wf config` to see every setting, its default, and why the default is what it is.
 
@@ -33,6 +35,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
 | `wf doc:facts [status \| growth]` | Where the work stands, and what the docs cost to load |
 | `wf doc:check` | Links, the index, story IDs, chunk tables, block length, dates after today, and the project's extensions |
 | `wf config` | The project's settings over the defaults, with reasons |
+| `wf ai:sync`, `wf ai:check` | OpenCode agents and slash commands generated from the project's and the kit's, and the skill paths in `opencode.json` |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
 
 A project adds its own checks and status lines with `extensions` in its config: modules that export `checks(context)` and `status(context)`.
