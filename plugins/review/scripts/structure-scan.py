@@ -5,6 +5,11 @@
 
 Writes <output folder>/structure.txt. Each line is a fact for the reviewer to
 judge, not a finding. With a list, only those paths are reported.
+
+This is the scan for a Rust and TypeScript project laid out like Freeorbit: it
+counts .rs, .ts, and .tsx files, skips bindings.ts, docs/, and
+tools/testdata/fixtures/, and reads tokens.css for inline styles. A project on
+another stack lists its own structure scan under review.scans.structure.
 """
 
 import re

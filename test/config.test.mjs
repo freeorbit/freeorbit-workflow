@@ -8,7 +8,7 @@ import { test } from "node:test";
 import { globRegex, loadConfig, matcher, merge, project, unknownKeys } from "../lib/config.mjs";
 import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
 import { problems } from "../lib/docs/check.mjs";
-import { status } from "../lib/docs/facts.mjs";
+import { growth, status } from "../lib/docs/facts.mjs";
 
 test("a project's settings lay over the defaults, objects by key and lists whole", () => {
   const merged = merge(DEFAULTS, { docs: { loose: ["a.md"] }, stories: { prefixes: ["GM"] } });
@@ -93,4 +93,9 @@ test("doc:check flags a Who decides block that no longer matches the config", as
     "AGENTS.md": "# Rules\n\n<!-- wf:roles -->\nstale\n<!-- /wf:roles -->\n",
   });
   assert.deepEqual(await problems(project(root), "2026-11-08"), ["AGENTS.md: the Who decides block is out of date, run wf roles --write"]);
+});
+
+test("a loose doc that no longer exists is named, not a crash", () => {
+  const root = scratch({ ".workflow/config.json": '{"docs":{"loose":["docs/gone.md"]}}', "AGENTS.md": "# A\n" });
+  assert.ok(growth(project(root)).includes("  Loose doc: docs/gone.md is gone, take it off loose"));
 });
