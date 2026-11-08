@@ -1,5 +1,5 @@
 {
   "name": "core",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Commit, pull request, handoff, and doc-find skills; the wf docs, roles, and OpenCode scripts."
 }

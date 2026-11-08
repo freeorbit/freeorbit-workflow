@@ -12,13 +12,17 @@
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|refresh-close> <area> ...   the project's test-data steps
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
+//   wf app <start | run | stop | ...>   drive the project's Tauri app under a memory cap
+//   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { reconcile } from "../lib/ai.mjs";
+import { runApp } from "../lib/app/driver.mjs";
 import { design } from "../lib/design/index.mjs";
+import { diskCheck } from "../lib/disk.mjs";
 import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
@@ -155,6 +159,19 @@ const commands = {
   },
 
   design,
+
+  async app(args) {
+    const root = projectRoot();
+    return runApp(root, loadConfig(root), args);
+  },
+
+  async disk(args) {
+    const root = projectRoot();
+    const dryRun = args.includes("--dry-run");
+    const number = args.find((arg) => /^\d+$/.test(arg));
+    const config = loadConfig(root);
+    return diskCheck(root, config, { dryRun, minimum: number ? Number(number) : config.disk.minimumGb });
+  },
 
   async config() {
     const config = loadConfig(projectRoot());
