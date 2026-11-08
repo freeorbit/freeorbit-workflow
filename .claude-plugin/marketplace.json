@@ -1,0 +1,11 @@
+{
+  "name": "freeorbit-workflow",
+  "owner": { "name": "ordinarylinuxuser" },
+  "plugins": [
+    {
+      "name": "core",
+      "source": "./plugins/core",
+      "description": "Asking, docs and logs, branches, commits, and pull requests. K0 spike: commit and doc-find only."
+    }
+  ]
+}
