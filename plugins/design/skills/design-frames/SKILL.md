@@ -27,6 +27,7 @@ Use the project's tokens and shared classes, as its frames doc says. Do not hard
 2. Start from the closest existing frame. Copy it and change only what the new state changes.
 3. Follow the skeleton and shell attributes in the project's frames doc.
 4. A frame that adds an optional panel or state to a screen draws a screen that already works without it.
+5. Give a new frame its row in the area's screen list in the same change, with a **Reach**: the scenario and run steps that open the app on the frame's state, or `none, <chunk>: <reason>` naming the chunk that will build that state. The `screen-review` skill says who fills it in and when, and `npx wf screens --check` fails a row without one.
 
 ## Render and check
 
