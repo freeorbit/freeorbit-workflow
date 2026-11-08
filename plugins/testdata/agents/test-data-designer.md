@@ -74,7 +74,7 @@ The rules and spec every area shares. Status: draft, awaiting the reviewer's rev
 ## Rules
 
 ### Personal data this area touches
-The kinds of real data the plugin handles in use, so the synthetic data covers each kind and never copies a real one.
+The kinds of real data the area handles in use, so the synthetic data covers each kind and never copies a real one.
 
 ### Placeholders
 The exact stand-ins to use: addresses, names, numbers, ids, secrets, and canary tokens.
