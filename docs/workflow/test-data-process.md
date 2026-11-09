@@ -1,6 +1,6 @@
 # Test data
 
-How the project is developed and tested without anyone's real data. It applies to every area.
+How the project's synthetic test data is designed, made, and kept in step with the stories. It applies to every area that uses it.
 
 <!-- wf:local intro -->
 

@@ -203,3 +203,37 @@ test("render gets the folders and window size from the config", () => {
   assert.deepEqual(args.slice(1), ["--root", "/p", "--frames", "/p/docs/design/frames", "--review", "/p/docs/design/review", "--shared", "shared", "--size", "1440x900", "d-start"]);
   assert.match(args[0], /plugins\/design\/scripts\/render\.py$/);
 });
+
+test("with design.source png, frames are the exported pictures, and render and check have nothing to do", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { merge } = await import("../lib/config.mjs");
+  const { DEFAULTS } = await import("../lib/defaults.mjs");
+  const { designPaths, frameFiles, findFrame } = await import("../lib/design/frames.mjs");
+  const root = mkdtempSync(join(tmpdir(), "wf-png-"));
+  mkdirSync(join(root, "docs/design/review/review/control-review"), { recursive: true });
+  writeFileSync(join(root, "docs/design/review/review/control-review/controls.png"), "x");
+  writeFileSync(join(root, "docs/design/review/review/control-review/notes.txt"), "x");
+  const paths = designPaths(root, merge(DEFAULTS, { design: { source: "png" } }));
+  assert.deepEqual(frameFiles(paths).map((f) => [f.area, f.section, f.name, f.html]), [["review", "control-review", "controls", null]]);
+  assert.equal(findFrame("controls", paths).png, join(root, "docs/design/review/review/control-review/controls.png"));
+  assert.deepEqual(frameFiles(designPaths(root, merge(DEFAULTS, {}))), []);
+});
+
+test("with design.source png, render and check say there is nothing to do", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const root = mkdtempSync(join(tmpdir(), "wf-png-cli-"));
+  spawnSync("git", ["init", "-q"], { cwd: root });
+  mkdirSync(join(root, ".workflow"));
+  writeFileSync(join(root, ".workflow/config.json"), JSON.stringify({ design: { source: "png" } }));
+  const wf = new URL("../bin/wf.mjs", import.meta.url).pathname;
+  for (const sub of ["render", "check"]) {
+    const result = spawnSync(process.execPath, [wf, "design", sub], { cwd: root, encoding: "utf8" });
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, new RegExp(`nothing to ${sub}`));
+  }
+});

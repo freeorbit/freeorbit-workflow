@@ -112,3 +112,8 @@ test("changed files are the branch's commits and untracked files, and null with 
   runTrack(root, merge(DEFAULTS, { design: { base: "trunk" } }), "done", ["quick"], { wf: () => ({ status: 0 }) }, (line) => out.push(line));
   assert.ok(out.some((line) => line.includes("cannot find the merge base")));
 });
+
+test("a detached HEAD is not a work branch", () => {
+  const { out } = run(merge(DEFAULTS, {}), "ready", ["quick"], io({ branch: "" }));
+  assert.match(out[0], /^FAIL on a work branch, not the base: not on a branch/);
+});

@@ -63,6 +63,8 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf tools` | What this computer has of the tables in `tools.md`, failing only for a required tool, and whether the branch hooks are on |
 | `wf check [--all]` | The project's checks from `check.steps`, one line each with test counts; a slow step runs only with `--all`, and each output is saved under `check.logs` |
 | `wf hooks <install \| pre-commit \| pre-push>` | Writes two shims to `.workflow/hooks/` and points `core.hooksPath` at them; they refuse a commit or push to a protected branch (`branches.protected`) and a push of a branch not named `<scope>/<slug>` |
+| `wf init <answers.json>` | Sets up a new project from the `workflow-init` skill's answers: the config, the logs, each area's first docs, the docs index, the package scripts, and the Claude Code settings, then the docs, agent settings, and hooks. It keeps every file that exists |
+| `wf doctor` | Whether a project's set-up is whole: the config, the kit's pin and install, the plugins, the docs, the agent settings, the tools, the hooks, and GitHub |
 | `wf signoffs` | The `- [ ] needs <role>:` lines open in the open questions log and the pull request body; none in a solo project |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
 
