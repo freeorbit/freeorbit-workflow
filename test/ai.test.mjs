@@ -153,3 +153,39 @@ test("a Claude Code only project gets the deny rules but no OpenCode files", asy
   assert.equal(existsSync(path.join(root, "opencode.json")), false);
   assert.ok(JSON.parse(await readFile(path.join(root, ".claude/settings.json"), "utf8")).permissions.deny.length > 0);
 });
+
+test("OpenCode gets only the kit plugins Claude Code turns on, and a plugin turned off is dropped", async (t) => {
+  const { root, kit } = await fixture(t, { kitSkills: { handoff: manual } });
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  await mkdir(path.join(kit, "plugins/web/skills/web-app-testing"), { recursive: true });
+  await writeFile(path.join(kit, "plugins/web/skills/web-app-testing/SKILL.md"), "---\nname: web-app-testing\ndescription: Drives a web app.\n---\n");
+  await reconcile(root, { write: true, kitRoot: kit });
+  assert.deepEqual(JSON.parse(await readFile(path.join(root, "opencode.json"), "utf8")).skills, ["../kit/plugins/core/skills", "../kit/plugins/web/skills"]);
+  const settings = JSON.parse(await readFile(path.join(root, ".claude/settings.json"), "utf8"));
+  settings.enabledPlugins = { "core@freeorbit-workflow": true, "other@elsewhere": true };
+  await writeFile(path.join(root, ".claude/settings.json"), JSON.stringify(settings));
+  assert.deepEqual((await reconcile(root, { kitRoot: kit })).problems, ["opencode.json: skills lists ../kit/plugins/web/skills, a kit plugin the project does not turn on"]);
+  await reconcile(root, { write: true, kitRoot: kit });
+  assert.deepEqual(JSON.parse(await readFile(path.join(root, "opencode.json"), "utf8")).skills, ["../kit/plugins/core/skills"]);
+});
+
+test("with no kit plugin named every plugin syncs, a bad settings file stops sync, and a project skill path and a disabled plugin's agent are handled", async (t) => {
+  const { root, kit } = await fixture(t, { kitSkills: { handoff: manual }, opencode: '{"skills": ["skills/ours", "../kit/plugins/core/skills"]}' });
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  const { existsSync } = await import("node:fs");
+  await mkdir(path.join(kit, "plugins/web/agents"), { recursive: true });
+  await writeFile(path.join(kit, "plugins/web/agents/web-agent.md"), source.replace("name: sample-agent", "name: web-agent"));
+  await mkdir(path.join(kit, "plugins/web/skills/x"), { recursive: true });
+  await writeFile(path.join(kit, "plugins/web/skills/x/SKILL.md"), "---\nname: x\ndescription: X.\n---\n");
+  await mkdir(path.join(root, ".claude"), { recursive: true });
+  await writeFile(path.join(root, ".claude/settings.json"), '{"enabledPlugins": {"other@elsewhere": true}}');
+  await reconcile(root, { write: true, kitRoot: kit });
+  assert.ok(existsSync(path.join(root, ".opencode/agents/web-agent.md")));
+  assert.deepEqual(JSON.parse(await readFile(path.join(root, "opencode.json"), "utf8")).skills, ["skills/ours", "../kit/plugins/core/skills", "../kit/plugins/web/skills"]);
+  await writeFile(path.join(root, ".claude/settings.json"), '{"enabledPlugins": {"core@freeorbit-workflow": true}}');
+  await reconcile(root, { write: true, kitRoot: kit });
+  assert.equal(existsSync(path.join(root, ".opencode/agents/web-agent.md")), false);
+  assert.deepEqual(JSON.parse(await readFile(path.join(root, "opencode.json"), "utf8")).skills, ["skills/ours", "../kit/plugins/core/skills"]);
+  await writeFile(path.join(root, ".claude/settings.json"), "{ not json");
+  await assert.rejects(reconcile(root, { kitRoot: kit }), /settings.json is not valid JSON/);
+});
