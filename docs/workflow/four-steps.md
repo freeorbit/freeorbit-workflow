@@ -46,6 +46,22 @@ When a frame, story, or architecture note changes, update the matching doc in th
 
 <!-- wf:local revisit -->
 
+## Tracks
+
+Each change takes one of three tracks, so the ceremony fits its size. `npx wf ready <track> [chunk]` runs the scripted checks before work starts, and `npx wf done <track> [chunk]` before the pull request. Each check prints OK, FAIL, or SKIP. Each ASK line is a judgement the agent answers itself, and raises with the owner when the answer is no.
+
+| Track | For | Steps |
+| --- | --- | --- |
+| Quick | A fix to docs, tools, or the workflow's own files | A branch, the change, the project's quick check (`tracks.check`), and a pull request.<br>• No chunk start or end, code review, or screen check |
+| Chunk | A few whole stories in one area past Step 3 | Chunk start, the build, and chunk end, below |
+| Area | A new area, or one going back to Step 1 | The four steps, above, then each of its chunks on the chunk track |
+
+- A quick change stays within `tracks.quickPaths`. One that reaches app code, a story, or a screen is a chunk, and `wf done quick` fails on it.
+- The chunk track's done list runs the project's full check (`tracks.fullCheck`). It checks the ledger covers HEAD, the screen gate passes, and no sign-off is open.
+- When a track is in doubt, take the larger one. A chunk that turns out small costs a review, and a quick change that was really a chunk skips one.
+
+<!-- wf:local tracks -->
+
 ## Chunk start
 
 Before anything in a chunk is built, run `npx wf doc:facts status` for where things stand, and start the chunk's branch, as in [branches.md](branches.md). Then, in order:
