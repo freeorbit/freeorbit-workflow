@@ -18,6 +18,8 @@
 //   wf signoffs        the needs lines this branch still waits on
 //   wf decision add <file> "<decision>" "<why>" | supersede <ID> <by ID>   the decisions log
 //   wf release <next | check | set | verify> ...   the project's release commands
+//   wf ready <quick | chunk | area> [chunk]   what a track needs before work starts
+//   wf done <quick | chunk | area> [chunk]    what a track needs before its pull request
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
 import { execFileSync } from "node:child_process";
@@ -33,6 +35,7 @@ import { ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
 import { runRelease, STEPS } from "../lib/release.mjs";
 import { signoffs } from "../lib/signoffs.mjs";
 import { screens } from "../lib/screens/run.mjs";
+import { runTrack } from "../lib/tracks.mjs";
 import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
@@ -243,6 +246,16 @@ const commands = {
     }
     const root = projectRoot();
     return runRelease(root, loadConfig(root), name, args);
+  },
+
+  async ready(args) {
+    const root = projectRoot();
+    return runTrack(root, loadConfig(root), "ready", args);
+  },
+
+  async done(args) {
+    const root = projectRoot();
+    return runTrack(root, loadConfig(root), "done", args);
   },
 
   async screens(args) {
