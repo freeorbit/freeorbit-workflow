@@ -9,6 +9,7 @@ description: >-
   whole ledger, and never edits a file. Use through the code-review-ledger
   skill.
 model: inherit
+omitClaudeMd: true
 tools: Read, Grep, Glob, WebFetch, WebSearch
 ---
 

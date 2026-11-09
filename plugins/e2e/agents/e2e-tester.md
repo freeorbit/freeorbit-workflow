@@ -10,6 +10,7 @@ description: >-
   findings with steps that replay them, and what it walked. Use through the
   e2e-test skill.
 model: inherit
+omitClaudeMd: true
 tools: Read, Grep, Glob, Bash
 ---
 

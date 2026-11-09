@@ -7,6 +7,7 @@ description: >-
   (clipping, wrapping, things out of view). Never reads code, frames' HTML,
   or other docs. Use through the screen-review skill.
 model: inherit
+omitClaudeMd: true
 tools: Read
 ---
 
