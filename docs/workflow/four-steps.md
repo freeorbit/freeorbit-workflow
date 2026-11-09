@@ -20,6 +20,13 @@ Screens and interaction for the stories from Step 1, drawn as frames that the de
 
 Where code lives, how the parts talk, and the tech stack. Open questions from Step 1 get answered here, or get an explicit "still open" with a reason. Step 3 ends by adding the area's chunks to [build-order.md](../log/build-order.md), following its checklist. It also lists each outside thing the stories need, such as a server, a model, a sign-in, a file picker, or another computer, and the chunk whose stand-in lets a scenario reach those screens.
 
+The first area to finish Step 3 also drafts the threat model, from the kit's `templates/threat-model.md`, into the file `review.threatModel` names.
+
+- It says what is protected, who could attack it, and each boundary where trust changes.
+- The agent drafts it from the architecture and the stories, and the owner reviews it with the rest of the step.
+- A later area adds its own assets and boundaries.
+- `npx wf doc:check` fails while an area is past Step 3 and the threat model is missing or still the template.
+
 <!-- wf:local step-3 -->
 
 ### Step 4. Implementation

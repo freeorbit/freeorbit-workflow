@@ -70,4 +70,32 @@ Nobody adds a rule here without a finding the reviewer accepted, or an owner dec
 
 ## Security
 
+The threat model, from `review.threatModel` in the config, says what is protected, from whom, and at which boundaries. These rules say what must hold at those boundaries.
+
+- **SEC-DEP.** No dependency with a known advisory (GHSA, OSV, or the ecosystem's own database) at the version in a lockfile. A yanked or unmaintained package is reported too. Every committed lockfile is scanned.
+- **SEC-PATH.** A path built from input (an archive entry, a file name, a setting) cannot leave the folder it is meant for. Archive entries are checked for `..`, absolute paths, and links.
+- **SEC-PARSE.** Parsing untrusted input (archives, file formats, headers, server replies) has a limit on size, depth, and count, and does not crash on bad input.
+- **SEC-NET.** Network calls use TLS and verify certificates, and only reach a host the product declares or the user entered. Plain http is only for this computer or, where a decision allows it, the private network. A redirect cannot move a request to another host.
+  - The one exception is a public download pinned by size and SHA-256. It may follow https redirects, since the file is checked before use and the request carries no user data.
+- **SEC-SECRET.** Credentials live only in the system's secret store, such as the OS keychain. They are not written to databases, logs, backups, exports, or error text.
+  - Personal data, such as message text, addresses, and account names, is not written to logs or error text either.
+  - No secret is committed to the repo.
+- **SEC-FAIL.** A check that cannot finish refuses. An error in a guard, a lookup, or a parse never lets the action through or reads as "nothing there" unless that is the only way it can fail.
+- **SEC-TRUST.** A file or setting from a backup or an import is untrusted, even one the product wrote. It decides nothing about where a secret goes or what runs, and it passes the same checks as new input.
+- **SEC-INJECT.** Text from outside the product cannot change the structure it is put into: protocol commands, CSV, Markdown, HTML, process arguments, SQL, or terminal output. It is escaped, refused, or passed as a parameter. Model output counts as text from outside.
+- **SEC-CLAIM.** What a screen says about where data goes matches what the code does, in every state it can reach.
+- **SEC-MIN.** A model, a cloud service, or a tool server gets only the data its task needs, and only what the control the user pressed adds.
+- **SEC-STORE.** Files that hold user data, temp and staged copies included, can be read only by the user. A partial or staged copy of a user's data is removed when its job ends. Delete leaves nothing behind that the story says is gone.
+- **SEC-SUPPLY.** Only signed or pinned bytes run. A download is checked against its hash or signature before use, and a signing key is never in the repo. A build script does no network access.
+- **SEC-DATA.** No real personal data in the repo, in tests, or in fixtures. Test data follows [test-data-process.md](test-data-process.md).
+
+### With a model
+
+These hold when the product sends text to a language model.
+
+- **SEC-PROMPT.** Text that comes from outside the product and reaches a model is sent as marked data, never as the user's words, and has a length limit. Nothing a model is sent holds a key, a password, or another secret.
+- **SEC-MODEL.** A model that reads outside text holds no file or shell tool, whether it runs in the product or in a tool of ours. What it returns is written by our code, for names our code chose.
+
+### This project's
+
 <!-- wf:local security -->
