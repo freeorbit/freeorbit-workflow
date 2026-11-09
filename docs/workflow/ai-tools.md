@@ -28,7 +28,7 @@ Canonical agents use `name`, `description`, `model: inherit`, and a comma-separa
 
 ## The workflow kit
 
-The generic workflow is moving into the `freeorbit-workflow` kit, a public MIT repo installed as a dev dependency pinned to a tag. The plan is [workflow-kit.md](../research/workflow-kit.md).
+The generic workflow is moving into the `freeorbit-workflow` kit, a public MIT repo installed as a dev dependency pinned to a tag.
 
 | Who | Gets the kit from |
 | --- | --- |

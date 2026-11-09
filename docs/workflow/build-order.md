@@ -30,7 +30,7 @@ How each area's stories are put in the order they are built, chunk by chunk. The
 - **Fewest outside dependencies first.** A part that needs only local data comes before one that needs the network, an account, or a new library.
 - **Whole stories.** A chunk ships whole stories, and leaves pieces the next chunks reuse.
 - **A new library is asked about at the start of its chunk**, as the asking rules say. The chunk lists the ones it is likely to need.
-- **Test data with the chunk.** Each chunk adds the synthetic data its stories need, and tests and the product use that output. Real personal data is never used. The process is in [test-data-process.md](test-data-process.md).
+- **Test data with the chunk.** Each chunk adds the synthetic data its stories need, and tests and the product use that output. The process is in [test-data-process.md](test-data-process.md).
 
 <!-- wf:local rules -->
 

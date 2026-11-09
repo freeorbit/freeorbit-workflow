@@ -18,7 +18,10 @@ Screens and interaction for the stories from Step 1, drawn as frames that the de
 
 ### Step 3. Architecture
 
-Where code lives, how the parts talk, and the tech stack. Open questions from Step 1 get answered here, or get an explicit "still open" with a reason. Step 3 ends by adding the area's chunks to [build-order.md](../log/build-order.md), following its checklist. It also lists each outside thing the stories need, such as a server, a model, a sign-in, a file picker, or another computer, and the chunk whose stand-in lets a scenario reach those screens.
+Where code lives, how the parts talk, and the tech stack. Open questions from Step 1 get answered here, or get an explicit "still open" with a reason.
+
+- Step 3 ends by adding the area's chunks to [build-order.md](../log/build-order.md), following its checklist.
+- It lists each outside thing the stories need, such as a server, a model, a sign-in, a file picker, or another computer, and the chunk whose stand-in lets a scenario reach those screens.
 
 The first area to finish Step 3 also drafts the threat model, from the kit's `templates/threat-model.md`, into the file `review.threatModel` names.
 
@@ -55,7 +58,10 @@ When a frame, story, or architecture note changes, update the matching doc in th
 
 ## Tracks
 
-Each change takes one of three tracks, so the ceremony fits its size. `npx wf ready <track> [chunk]` runs the scripted checks before work starts, and `npx wf done <track> [chunk]` before the pull request. Each check prints OK, FAIL, or SKIP. Each ASK line is a judgement the agent answers itself, and raises with the owner when the answer is no.
+Each change takes one of three tracks, so the ceremony fits its size.
+
+- `npx wf ready <track> [chunk]` runs the scripted checks before work starts, and `npx wf done <track> [chunk]` before the pull request. Each check prints OK, FAIL, or SKIP.
+- Each ASK line is a judgement the agent answers itself, and raises with the owner when the answer is no.
 
 | Track | For | Steps |
 | --- | --- | --- |
@@ -85,7 +91,11 @@ Before anything in a chunk is built, run `npx wf doc:facts status` for where thi
 
 ## Chunk end
 
-Before the commit proposal, run the project's full check once. Then run the `code-review-ledger` skill in diff mode. The reviewer picks a deep or light run, or defers it to a later run, which then reviews every deferred chunk at once. A light run is logged in the ledger, and the next deep run covers it. It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one. The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
+Before the commit proposal, run the project's full check once. Then run the `code-review-ledger` skill in diff mode.
+
+- The reviewer picks a deep or light run, or defers it to a later run, which then reviews every deferred chunk at once. A light run is logged in the ledger, and the next deep run covers it.
+- It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one.
+- The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
 
 With the design plugin's screen review, a chunk that changed UI files or frames also checks its screens:
 
@@ -112,7 +122,11 @@ Stories and frames drift apart as both grow. Each chunk checks them in both dire
 
 <!-- wf:local drift -->
 
-When the check finds a drift, stop the part of the chunk that depends on it. Tell the designer what drifted, with the story ID and the frame name, and ask how to close it. Suggest one fix and say why: draw a frame, change the story, or drop the element. Do not settle it by building a guess. Work that does not depend on it can go on.
+When the check finds a drift, stop the part of the chunk that depends on it.
+
+- Tell the designer what drifted, with the story ID and the frame name, and ask how to close it.
+- Suggest one fix and say why: draw a frame, change the story, or drop the element. Do not settle it by building a guess.
+- Work that does not depend on it can go on.
 
 Log the open drift in [open-questions.md](../log/open-questions.md) until it is answered. Once it is, the fix goes back through Step 1 or Step 2, then the chunk continues.
 

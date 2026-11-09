@@ -87,7 +87,6 @@ The threat model, from `review.threatModel` in the config, says what is protecte
 - **SEC-MIN.** A model, a cloud service, or a tool server gets only the data its task needs, and only what the control the user pressed adds.
 - **SEC-STORE.** Files that hold user data, temp and staged copies included, can be read only by the user. A partial or staged copy of a user's data is removed when its job ends. Delete leaves nothing behind that the story says is gone.
 - **SEC-SUPPLY.** Only signed or pinned bytes run. A download is checked against its hash or signature before use, and a signing key is never in the repo. A build script does no network access.
-- **SEC-DATA.** No real personal data in the repo, in tests, or in fixtures. Test data follows [test-data-process.md](test-data-process.md).
 
 ### With a model
 

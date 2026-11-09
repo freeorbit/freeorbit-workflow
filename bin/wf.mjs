@@ -23,13 +23,16 @@
 //   wf tools          what this computer has of tools.md, and whether the branch hooks are on
 //   wf check [--all]  the project's checks from check.steps, one line each
 //   wf hooks <install | pre-commit | pre-push>   the git hooks that hold branches.md
+//   wf init <answers.json>   set up a new project from the workflow-init skill's answers
+//   wf doctor         whether the project's set-up is whole
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { reconcile } from "../lib/ai.mjs";
+import { KIT_ROOT, reconcile } from "../lib/ai.mjs";
+import { localToday } from "../lib/docs/check.mjs";
 import { runApp } from "../lib/app/driver.mjs";
 import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
@@ -42,6 +45,8 @@ import { runTrack } from "../lib/tracks.mjs";
 import { runChecks } from "../lib/checks.mjs";
 import { install, runHook } from "../lib/hooks.mjs";
 import { runTools } from "../lib/tools.mjs";
+import { answerProblems, writeStarter } from "../lib/init.mjs";
+import { runDoctor } from "../lib/doctor.mjs";
 import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
@@ -262,6 +267,33 @@ const commands = {
   async done(args) {
     const root = projectRoot();
     return runTrack(root, loadConfig(root), "done", args);
+  },
+
+  async init([file]) {
+    if (!file) {
+      console.log("Usage: wf init <answers.json>; the workflow-init skill writes the answers.");
+      return 2;
+    }
+    const root = process.cwd();
+    const answers = JSON.parse(readFileSync(file, "utf8"));
+    const found = answerProblems(answers);
+    if (found.length) {
+      for (const problem of found) console.error(problem);
+      return 1;
+    }
+    const template = readFileSync(join(KIT_ROOT, "templates", "threat-model.md"), "utf8");
+    for (const [path, what] of writeStarter(root, answers, { today: localToday(), template })) console.log(`${path}: ${what}`);
+    const config = loadConfig(root);
+    for (const path of syncDocs(root, config)) console.log(`${path}: written`);
+    const { problems } = await reconcile(root, { write: true, tools: config.ai.tools });
+    for (const problem of problems) console.error(problem);
+    for (const line of install(root)) console.log(line);
+    console.log("Next: install the packages, then add the kit's marketplace and plugins in Claude Code, restart it, and run npx wf doctor.");
+    return problems.length ? 1 : 0;
+  },
+
+  async doctor() {
+    return runDoctor(projectRoot(), project());
   },
 
   async tools() {

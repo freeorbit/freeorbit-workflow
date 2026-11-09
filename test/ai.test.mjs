@@ -143,3 +143,13 @@ test("the skills path goes through node_modules when the project links the kit t
   await reconcile(root, { write: true, kitRoot: kit });
   assert.deepEqual(JSON.parse(await readFile(path.join(root, "opencode.json"), "utf8")).skills, ["node_modules/wf-kit/plugins/core/skills"]);
 });
+
+test("a Claude Code only project gets the deny rules but no OpenCode files", async (t) => {
+  const { root, kit } = await fixture(t, { projectAgents: { "sample-agent.md": source }, kitSkills: { handoff: manual } });
+  const result = await reconcile(root, { write: true, kitRoot: kit, tools: ["claude"] });
+  assert.deepEqual(result.problems, []);
+  const { existsSync } = await import("node:fs");
+  assert.equal(existsSync(path.join(root, ".opencode")), false);
+  assert.equal(existsSync(path.join(root, "opencode.json")), false);
+  assert.ok(JSON.parse(await readFile(path.join(root, ".claude/settings.json"), "utf8")).permissions.deny.length > 0);
+});

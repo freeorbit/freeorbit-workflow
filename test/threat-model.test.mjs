@@ -30,3 +30,10 @@ test("past Step 3, a missing, unset, or template threat model is a problem", asy
 test("an Areas table with no Architecture column is reported, not passed", async () => {
   assert.match((await threat("Done 2026-11-02", {}, null, "Design"))[0], /no Architecture column/);
 });
+
+test("a story ID inside a fenced example is not a reference", async () => {
+  const texts = { "docs/a.md": "# A\n\n```markdown\n### APP-01. Short name\n```\n\nSee APP-02.\n" };
+  const context = { root: "/nowhere", config: merge(DEFAULTS, { docs: { index: "none.md" }, areas: [{ id: "app", prefix: "APP", docs: "docs/app" }], stories: { files: ["docs/app/user-stories.md"] } }), tracked: Object.keys(texts), files: (path) => texts[path] };
+  const found = (await problems(context, "2026-11-09")).filter((line) => line.includes("no story"));
+  assert.deepEqual(found, ["docs/a.md: no story APP-02"]);
+});
