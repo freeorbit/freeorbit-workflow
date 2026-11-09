@@ -14,6 +14,7 @@
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
 //   wf app <start | run | stop | ...>   drive the project's Tauri app under a memory cap
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
+//   wf release <next | check | set | verify> ...   the project's release commands
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
 import { execFileSync } from "node:child_process";
@@ -24,6 +25,7 @@ import { reconcile } from "../lib/ai.mjs";
 import { runApp } from "../lib/app/driver.mjs";
 import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
+import { runRelease, STEPS } from "../lib/release.mjs";
 import { screens } from "../lib/screens/run.mjs";
 import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
@@ -165,6 +167,15 @@ const commands = {
   async app(args) {
     const root = projectRoot();
     return runApp(root, loadConfig(root), args);
+  },
+
+  async release([name, ...args]) {
+    if (!name) {
+      console.log(`Usage: wf release <${Object.keys(STEPS).join("|")}> [arguments]`);
+      return 2;
+    }
+    const root = projectRoot();
+    return runRelease(root, loadConfig(root), name, args);
   },
 
   async screens(args) {
