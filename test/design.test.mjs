@@ -221,7 +221,7 @@ test("with design.source png, frames are the exported pictures, and render and c
   assert.deepEqual(frameFiles(designPaths(root, merge(DEFAULTS, {}))), []);
 });
 
-test("with design.source png, render and check say there is nothing to do", async () => {
+test("with design.source png, render has nothing to do, and check holds each picture to design.size", async () => {
   const { spawnSync } = await import("node:child_process");
   const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
@@ -229,11 +229,45 @@ test("with design.source png, render and check say there is nothing to do", asyn
   const root = mkdtempSync(join(tmpdir(), "wf-png-cli-"));
   spawnSync("git", ["init", "-q"], { cwd: root });
   mkdirSync(join(root, ".workflow"));
-  writeFileSync(join(root, ".workflow/config.json"), JSON.stringify({ design: { source: "png" } }));
+  writeFileSync(join(root, ".workflow/config.json"), JSON.stringify({ design: { source: "png", size: [1440, 960] } }));
+  const png = (w, h) => {
+    const b = Buffer.alloc(24);
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(b);
+    b.write("IHDR", 12, "latin1");
+    b.writeUInt32BE(w, 16);
+    b.writeUInt32BE(h, 20);
+    return b;
+  };
+  mkdirSync(join(root, "docs/design/review/app/sign-in"), { recursive: true });
+  writeFileSync(join(root, "docs/design/review/app/sign-in/sign-in.png"), png(1440, 960));
   const wf = new URL("../bin/wf.mjs", import.meta.url).pathname;
-  for (const sub of ["render", "check"]) {
-    const result = spawnSync(process.execPath, [wf, "design", sub], { cwd: root, encoding: "utf8" });
-    assert.equal(result.status, 0);
-    assert.match(result.stdout, new RegExp(`nothing to ${sub}`));
-  }
+  const run = (sub, ...more) => spawnSync(process.execPath, [wf, "design", sub, ...more], { cwd: root, encoding: "utf8" });
+  assert.match(run("render").stdout, /nothing to render/);
+  assert.match(run("check", "nope").stdout, /No frame matches nope/);
+  assert.equal(run("check").status, 0);
+  writeFileSync(join(root, "docs/design/review/app/sign-in/invite.png"), png(2880, 1920));
+  const wrong = run("check");
+  assert.equal(wrong.status, 1);
+  assert.match(wrong.stdout, /app\/sign-in\/invite: 2880x1920, not design.size 1440x960; export it at 1x/);
+  writeFileSync(join(root, "docs/design/review/app/sign-in/invite.png"), "not a picture");
+  mkdirSync(join(root, "docs/design/review/app/sign-in/folder.png"));
+  const bad = run("check").stdout;
+  assert.match(bad, /invite: not a PNG/);
+});
+
+test("only a real PNG header gives a size", async () => {
+  const { pngSize } = await import("../lib/design/index.mjs");
+  const good = Buffer.alloc(24);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]).copy(good);
+  good.write("IHDR", 12, "latin1");
+  good.writeUInt32BE(1440, 16);
+  good.writeUInt32BE(960, 20);
+  assert.deepEqual(pngSize(good), [1440, 960]);
+  assert.equal(pngSize(Buffer.alloc(0)), null);
+  assert.equal(pngSize(good.subarray(0, 10)), null);
+  assert.equal(pngSize(Buffer.concat([Buffer.from("xPNG"), good.subarray(4)])), null);
+  assert.equal(pngSize(Buffer.from([0xff, 0xd8, 0xff, 0xe0, ...Buffer.alloc(20)])), null);
+  const noIhdr = Buffer.from(good);
+  noIhdr.write("IDAT", 12, "latin1");
+  assert.equal(pngSize(noIhdr), null);
 });

@@ -51,7 +51,7 @@ import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
 import { loadConfig, project, projectRoot } from "../lib/config.mjs";
-import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
+import { DEFAULTS } from "../lib/defaults.mjs";
 import { problems } from "../lib/docs/check.mjs";
 import { growth, status } from "../lib/docs/facts.mjs";
 import { entries } from "../lib/docs/shape.mjs";
@@ -340,11 +340,7 @@ const commands = {
   async config() {
     const config = loadConfig(projectRoot());
     console.log(JSON.stringify(config, null, 2));
-    console.log("\nWhy the defaults are what they are:");
-    for (const [key, reason] of Object.entries(REASONS)) {
-      const value = key.split(".").reduce((node, part) => node?.[part], DEFAULTS);
-      console.log(`  ${key} = ${JSON.stringify(value)}: ${reason}`);
-    }
+    console.log(`\nWhat each setting does, its default, and why: ${config.docs.workflow}/config.md, and on hover in an editor from .workflow/config.schema.json.`);
     return 0;
   },
 };
