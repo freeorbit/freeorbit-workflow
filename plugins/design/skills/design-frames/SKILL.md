@@ -3,10 +3,11 @@ name: design-frames
 description: >-
   Draw, change, render, and read design frames. A frame is one HTML file under
   <frames>/<area>/<section>/, rendered by headless Chromium to a PNG at the same
-  path under <review>/, with both folders from `design` in .workflow/config.json.
-  Use when drawing or redrawing a screen (Step 2), implementing or comparing a
-  screen that has a frame, refreshing review PNGs, adding an area's frames, or
-  sending a picture with a visual question.
+  path under <review>/, or, with design.source png, a picture exported from a
+  design tool such as Figma, filed at that path. Use when drawing or redrawing a
+  screen (Step 2), bringing in frames exported from a design tool, implementing
+  or comparing a screen that has a frame, refreshing review PNGs, adding an
+  area's frames, or sending a picture with a visual question.
 ---
 
 # Design frames
@@ -20,6 +21,19 @@ Read the project's frames doc first, `design.doc` in the config (default `docs/d
 A frame is `<frames>/<area>/<section>/<frame>.html`, in the folder of its `##` section in the screen list, as a slug: "Ask and send" is `ask-and-send`. Its PNG is the same path under `<review>/` with `.png`. A new frame goes under its section's folder, and moving a row to another section moves its files too. Tools find a frame by name, so nothing else needs its folder. The `shared` folder (`design.shared`) holds styles and the shell, not frames.
 
 Use the project's tokens and shared classes, as its frames doc says. Do not hard-code a color. A piece used by more than one frame goes in the shared styles, and a change to a shared piece is checked on every frame that uses it. A one-off may use a small `<style>` in the frame's head.
+
+## Frames from a design tool
+
+With `design.source` `png`, the designer draws in a design tool such as Figma, and the frames are the pictures it exports. Nothing is drawn or rendered here.
+
+1. **Export.** The person exports each frame as PNG at 1x, so a picture's pixels are the frame's size. Ask for every state the stories need, such as empty, loading, and an error, not only the full screen.
+2. **Size.** On the first import, read the pictures' size (`magick identify -format "%w %h"`). If it is not `design.size`, propose setting `design.size` to it: a config change, so ask first. A website opens at that size too, unless `app.web.size` says otherwise.
+3. **File.** Name each frame in lowercase words joined by hyphens, after the state it shows, and save it as `<review>/<area>/<section>/<frame>.png`. The section is its screen-list heading as a slug.
+4. **List.** Add the frame's row to the area's screen list, with its stories, its Reach, and what it shows, as for a drawn frame.
+5. **Check.** `npx wf design check` fails each picture not at `design.size`. Then `npx wf design storyboard` lists them for the designer's review.
+6. **Change.** A redrawn frame replaces its picture at the same path. A frame dropped in the design tool is deleted here, with its row.
+
+Step 2 is done when every story's screens have a frame and the designer has accepted the storyboard.
 
 ## Draw or change a frame
 
