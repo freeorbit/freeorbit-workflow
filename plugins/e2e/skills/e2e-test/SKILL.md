@@ -72,7 +72,7 @@ Run the `e2e-tester` agent with only these lines. Do not add what you expect it 
 ```text
 Area: <area>
 Journeys: <D-ids, and each uncovered line to walk from the story>
-Scenarios: <for each journey, the scenario to start from, from the journeys report>
+Scenarios: <for each journey, its Starts from state and the scenario that holds it, from the journeys report, such as "D15: due-within-seven-days -> downlink-mixed-overview">
 Fixtures: <for each journey, its typed and date fixture IDs, each picked one with its file in $E>
 Deferred: <D-ids, or none>
 Files: <$E>
