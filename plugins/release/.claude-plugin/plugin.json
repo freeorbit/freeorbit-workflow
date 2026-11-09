@@ -1,5 +1,5 @@
 {
   "name": "release",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "description": "Pre-releases and stable releases on the owner's command: version, checks, notes from commits and stories, tag, build, sign, and publish, with a yes before each step."
 }
