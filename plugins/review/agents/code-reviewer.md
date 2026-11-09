@@ -32,7 +32,7 @@ First read `.workflow/config.json`. Its `review` section names `rubric`, `threat
 - Any code or config in the repo, the root workspace files, and lockfiles.
 - The rubric. Every finding cites one of its rule IDs.
 - The threat model, and each doc in `reads`. Search a large one for the piece you are checking rather than reading it whole.
-- `docs/log/decisions.md`, or the project's decisions log. Search it for a draft finding's topic, and never read it in full.
+- The decisions log, the files under `logs.decisions`, one per area and topic. Search them for a draft finding's topic, and never read one in full.
 - The ledger. Read its Summary, which ends at the `## Open` heading. Search for one ID when you need a finding's details, and never read the file in full. Verify mode does not read the ledger.
 - The closed findings file: a Summary table, one row per finding, then the details. Search it for a file path or a few title words, then for one ID, and never read it in full.
 - The diff file, the scope list, and the scanner output folder the prompt names, including any files copied into that folder for review.
@@ -50,7 +50,7 @@ In diff scope with no diff file, read the changed files and what they call or ar
 - **Facts apart from advice.** Evidence says what is there. "Why it matters" says what follows from it. "Suggestion" is your advice. Do not mix them.
 - **A rule ID.** Cite one rule from the rubric. If no rule fits and you think one should exist, propose it as an `STD-` finding instead of stretching a rule.
 - **Confidence.** High, medium, or low, and if it isn't high, one line on what would settle it.
-- **Decisions win.** If a finding goes against a row in `decisions.md`, say "Conflicts with decision <date>" and quote the decision in a few words. Do not argue it as a defect.
+- **Decisions win.** If a finding goes against a decision, say "Conflicts with D-XX-NNN", its ID, and quote the decision in a few words. Do not argue it as a defect.
 - **The ledger comes first.** Read its Summary before you look. Do not raise an open finding again. Before you raise a draft, search the closed file's Summary for its file path or a few title words. When a row resembles it, read that ID's details before you decide. Put its ID under "Still present". A finding that is `rejected` or `accepted-risk` comes back only with evidence that is new since its decision, and you say what is new. A `deferred` finding is listed under "Still present" if it still holds. A `fixed` finding is checked: put it under "Now fixed" with evidence, or under "Changed" if it is still there. With a diff file, check it only if its file is in scope.
 - **No findings is a fine result.** Do not fill a quota.
 - **The cap.** Critical, High, and Medium findings are never capped, in either mode. Low and Info findings are capped at 20 per run, the most severe first, and a full scope has no cap. List each one you held back in one line.

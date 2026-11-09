@@ -37,7 +37,7 @@ Run independent work at once when it saves more than it costs. Before you split 
 
 - **Never two writers in one checkout.** A session can commit another's uncommitted work.
 - **Not in parallel:** chained steps such as a release, work that waits on someone's answer, and CI waits.
-- **Not before what it reads is settled.** A step that reads what another may still change waits for it. The screen review starts only once the code review's findings are fixed and the app is rebuilt, because a fix can change a screen (decided 2026-11-07).
+- **Not before what it reads is settled.** A step that reads what another may still change waits for it. The screen review starts only once the code review's findings are fixed and the app is rebuilt, because a fix can change a screen.
 - **Each role's attention.** Each session asks its own questions, so two sessions double them for whoever holds the role.
 <!-- wf:local parallel-measured -->
 

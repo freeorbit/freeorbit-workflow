@@ -42,7 +42,7 @@ The same loop applies to each area on its own. Revising one area does not reopen
 
 A story added to an area past its Step 3 gets a chunk row in the same pass, as in [the build order](../log/build-order.md#making-or-updating-an-areas-order). It does not wait for the next chunk start.
 
-When a frame, story, or architecture note changes, update the matching doc in the same pass: the area's screen list, the frames doc if the file layout changes, and [decisions.md](../log/decisions.md) only when something is actually agreed.
+When a frame, story, or architecture note changes, update the matching doc in the same pass: the area's screen list, the frames doc if the file layout changes, and the decisions log (`wf decision add`) only when something is actually agreed.
 
 <!-- wf:local revisit -->
 
@@ -95,4 +95,4 @@ Log the open drift in [open-questions.md](../log/open-questions.md) until it is 
 
 ## What to do with an idea that arrives early
 
-If a tech choice, a library, or a behavior shows up during Step 1 or Step 2, write it in [open-questions.md](../log/open-questions.md). Do not treat it as decided. Agreed decisions go in [decisions.md](../log/decisions.md).
+If a tech choice, a library, or a behavior shows up during Step 1 or Step 2, write it in [open-questions.md](../log/open-questions.md). Do not treat it as decided. Agreed decisions go in the decisions log (`wf decision add`).

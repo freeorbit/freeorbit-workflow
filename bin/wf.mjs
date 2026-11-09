@@ -16,6 +16,7 @@
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
 //   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply
 //   wf signoffs        the needs lines this branch still waits on
+//   wf decision add <file> "<decision>" "<why>" | supersede <ID> <by ID>   the decisions log
 //   wf release <next | check | set | verify> ...   the project's release commands
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
@@ -27,6 +28,7 @@ import { reconcile } from "../lib/ai.mjs";
 import { runApp } from "../lib/app/driver.mjs";
 import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
+import { addDecision, supersede } from "../lib/decisions.mjs";
 import { ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
 import { runRelease, STEPS } from "../lib/release.mjs";
 import { signoffs } from "../lib/signoffs.mjs";
@@ -194,6 +196,23 @@ const commands = {
     for (const problem of problems) console.error(problem);
     if (!problems.length) console.log(sub === "sync" ? `GitHub files are in step (${changed} updated).` : "GitHub files are in step.");
     return problems.length ? 1 : 0;
+  },
+
+  async decision([sub, ...args]) {
+    const root = projectRoot();
+    const config = loadConfig(root);
+    if (sub === "add" && args.length === 3) {
+      const today = new Date().toLocaleDateString("sv-SE");
+      console.log(addDecision(root, config, args[0], args[1], args[2], today));
+      return 0;
+    }
+    if (sub === "supersede" && args.length === 2) {
+      supersede(root, config, args[0], args[1]);
+      console.log(`${args[0]} superseded by ${args[1]}`);
+      return 0;
+    }
+    console.log('Usage: wf decision add <file> "<decision>" "<why>"   or   wf decision supersede <ID> <by ID>');
+    return 2;
   },
 
   async signoffs() {
