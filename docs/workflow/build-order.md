@@ -20,6 +20,28 @@ How each area's stories are put in the order they are built, chunk by chunk. The
 
 <!-- wf:local status -->
 
+## Lanes
+
+A chunk can be split so a front-end and a back-end developer build it at once, each in a worktree of their own. A solo or full-stack chunk stays one row, as before.
+
+| Lane | Who | Builds | Waits on |
+| --- | --- | --- | --- |
+| `<n>-contract` | developer:frontend and developer:backend together | The API contract for the chunk's stories, and its mock from the synthetic test data | Nothing in the chunk |
+| `<n>-fe` | developer:frontend | The screens, against the contract's mock | `<n>-contract` |
+| `<n>-be` | developer:backend | The service, against the contract | `<n>-contract` |
+| `<n>-integration` | either, or both | The screens wired to the service, the mock removed | `<n>-fe` and `<n>-be` |
+
+- **One row per lane.** Each lane is its own row, such as `1-fe. Sign-in screen`, with a Waits on column. Each has its own branch, worktree, review, and pull request, and moves to the done list when its pull request merges.
+- **Starting.** A lane starts only once every row it waits on is in the done list. `npx wf ready chunk 1-fe` fails until then, and `npx wf doc:check` fails a lane In progress too early, or one that does not wait on what its lane must.
+- **Worktrees.** From the main checkout: `git worktree add ../<repo>-1-fe -b app/1-fe-sign-in main`. Each lane works in its own folder, so a laptop can hold several at once. Remove it after the merge with `git worktree remove ../<repo>-1-fe`.
+- **The contract.** Its format and tools are the project's, chosen at Step 3, in `lanes.contract`: the file, and the commands that check it, serve its mock, and find a breaking change against the base.
+  - An additive change, such as a new field, is free: the lane that needs it adds it, and the check passes.
+  - A breaking change, such as a removed or renamed field, needs both specialties' agreement, recorded with `npx wf decision add`. Then `npx wf done chunk <lane> --agreed` passes.
+  - The contract file has one writer at a time.
+- **Checks.** `npx wf done chunk <lane>` runs the contract's check and breaking check in every lane. The front end's screen review runs in fe and integration; the end-to-end journeys and the stories' acceptance run at integration, the one lane with the whole path.
+
+<!-- wf:local lanes -->
+
 ## How a build order is made
 
 - **Shared before specific.** The pieces several areas use come before the areas that need them.
