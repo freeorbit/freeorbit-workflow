@@ -77,7 +77,8 @@ A question about a frame, a screen, or an image comes with its picture, sent jus
 - A frame's boxes come from its elements (`selector`, optional `text` and `nth`), found in Chromium at the render size. A screenshot's boxes are rects: x, y, width, height.
 - Kinds: `look` blue, `bug` red, `drift` amber, `ok` green, `new` purple for what is new or changed in a picture sent for review. When nothing fits, add a kind under `design.kinds` in `.workflow/config.json` with a `color`, `word`, and `use`. A kit kind is never changed and no two kinds share a colour; the command fails on either.
 - A comparison is one labelled sheet, such as the frame on the left and the app on the right. Several questions share one sheet, and each question says where to look, such as "sheet A, box 2".
-- The command also writes the sheet's `.html` page and an `index.html` beside it. Where a browser pane is open beside the chat, open that page there too.
+- The command also writes the sheet's `.html` page and an `index.html` beside it, and prints the page's address.
+- Where a browser pane is open beside the chat, start the `question-pictures` server from `.claude/launch.json` (the pane's preview start, by that name) and open the address there, before sending the question. `wf init` writes that server; a project set up before it adds the entry `wf init` writes, from `lib/design/view.mjs`.
 
 ## Compare the app with a frame
 

@@ -12,6 +12,7 @@ On this machine, decide what you can from the repo, these rules, and the chat. W
     - When nothing fits, add a kind under `design.kinds` in [.workflow/config.json](.workflow/config.json), never changing an existing one.
     - A frame's boxes come from its elements. The spec is in the kit's `design-frames` skill.
   - Each question says where to look, such as "sheet A, box 2". Option previews hold text only, so a layout choice can add a rough text sketch.
+  - Where a browser pane is open beside the chat, also open the sheet's `.html` there from the `question-pictures` server in `.claude/launch.json`, at the address `npx wf design annotate` prints, so they can read the question and the pictures together.
 <!-- wf:local asking-pictures -->
 - The full list of when to ask and when not is in [asking.md]({{docs.workflow}}/asking.md).
 - **Missing packages.** Never install a system package. Name what is missing, give the install command, and wait for the person at this computer, or ask when it would only make the job easier. The steps are in [tools.md]({{docs.workflow}}/tools.md#missing-packages).
