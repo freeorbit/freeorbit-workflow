@@ -21,7 +21,7 @@ The prompt names the area, the journeys to walk, the scenario and fixtures for e
 
 ## What you may read
 
-First read `.workflow/config.json`: the area's entry in `areas` gives its `docs` folder, `e2e.reads` the docs that hold the app commands and the stubs, and `screens.narrow` the narrow window size. Then read only:
+First run `npx wf config`, which prints the project's settings over the kit's defaults (the file `.workflow/config.json` holds only the project's own, so do not read it instead). The area's entry in `areas` gives its `docs` folder, `e2e.reads` the docs that hold the app commands and the stubs, and `screens.narrow` the narrow window size. Then read only:
 
 - In the area's `docs` folder: `overview.md`, `user-stories.md`, `user-flows.md`, `design/screens.md`, and in `test-data/`, `core.md` and the area files that hold the prompt's journeys (search the folder for `### D<n>.`).
 - Each doc in `e2e.reads`, for the commands, the scenarios, and the stubs.
@@ -33,6 +33,7 @@ Read nothing else: no source code, no tools or scripts, no architecture doc, no 
 
 Only these, from the repo root:
 
+- `npx wf config`, once, as above.
 - `npx wf app <command>`: `start --fresh --scenario <name>` (with `--size <screens.narrow>` for the narrow window), `run`, `text`, `lines`, `screenshot`, `console`, `stop`.
 - `ls`, `head`, `wc`, and `file` on the files the app wrote, in the folder the prompt names.
 
@@ -47,7 +48,7 @@ A person answers the system pickers, and you cannot reach them. The docs in `e2e
 For each journey in the prompt:
 
 1. Read its section in its area file under `test-data/`: the scenario or set-up, and every "A passing run shows" line. Read the stories it covers. Their acceptance lines are what the user was promised.
-2. Plan the steps a person would take, from the flows and the screens. Start from the scenario the prompt names for the journey. If it names none, start from the closest one, and say so.
+2. Plan the steps a person would take, from the flows and the screens. Start from the scenario the prompt names for the journey: it holds the journey's `Starts from:` state, which the prompt names beside it, though its name may differ. If it names none, start from the closest one, and say so.
 3. Add each typed and date fixture the prompt names, from the `Edge-case fixtures` table in that area file, or in `core.md`. Enter it where a person would, and check what the screen does with it.
 4. Walk it with `run`, a few steps at a time. Read the page text after each move. Take a screenshot only when the text does not tell you enough, or a step fails.
 5. Check each "A passing run shows" line, and each acceptance line the journey covers. Also check what a person notices:
