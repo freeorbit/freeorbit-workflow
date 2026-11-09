@@ -19,6 +19,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
    claude plugin install testdata@freeorbit-workflow --scope project
    claude plugin install design@freeorbit-workflow --scope project
    claude plugin install stack-tauri-rust@freeorbit-workflow --scope project   # a Tauri and Rust app
+   claude plugin install e2e@freeorbit-workflow --scope project                # needs an app driver and testdata
    ```
 
 3. Start a committed `opencode.json` for OpenCode:
@@ -43,7 +44,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
 | `wf scan full \| diff <since> [--light]` | The review's scans, from `review.scans` in the config, into `.cache/review-scan`, with the scope list and the diff |
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/`, keeping the project's parts between each `wf:local` pair |
-| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, refresh-close), from `testdata.commands` |
+| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands` |
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
 | `wf app <start \| run \| stop \| ...>` | Drives the project's Tauri app on Linux: systemd user units under a memory cap, WebKit's inspector, and run steps, from `app` in the config, with the project's `app.hooks` |
 | `wf disk [--dry-run] [GB]` | Free disk space, and when short, removes only the leftovers in `disk`, cheapest first |

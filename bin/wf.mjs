@@ -10,7 +10,7 @@
 //   wf scan full | diff <since> [--light]   the review's scans into .cache/review-scan
 //   wf ledger <ledger.py arguments>         change the review ledger
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
-//   wf testdata <route|stale|covered|index|journeys|refresh-close> <area> ...   the project's test-data steps
+//   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
 //   wf app <start | run | stop | ...>   drive the project's Tauri app under a memory cap
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
@@ -153,7 +153,7 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|refresh-close> <area> [arguments]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]");
       return 2;
     }
     const root = projectRoot();

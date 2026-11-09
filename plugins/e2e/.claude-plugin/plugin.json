@@ -1,0 +1,5 @@
+{
+  "name": "e2e",
+  "version": "0.10.0",
+  "description": "End-to-end tests as a user would run them: a blind tester agent walks the test-data journeys through the running app, and each draft is replayed before it goes in the review ledger."
+}
