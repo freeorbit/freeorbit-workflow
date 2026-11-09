@@ -117,3 +117,9 @@ test("a detached HEAD is not a work branch", () => {
   const { out } = run(merge(DEFAULTS, {}), "ready", ["quick"], io({ branch: "" }));
   assert.match(out[0], /^FAIL on a work branch, not the base: not on a branch/);
 });
+
+test("a test-data spec or a story file is not a quick change, though it is under docs", async () => {
+  const { outsideQuick } = await import("../lib/tracks.mjs");
+  const config = merge(DEFAULTS, { stories: { files: ["docs/app/user-stories.md"] } });
+  assert.deepEqual(outsideQuick(["docs/workflow/x.md", "docs/plugins/downlink/test-data/prepare.md", "docs/app/user-stories.md", "README.md"], config), ["docs/plugins/downlink/test-data/prepare.md", "docs/app/user-stories.md"]);
+});
