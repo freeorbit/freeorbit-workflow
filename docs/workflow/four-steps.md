@@ -40,7 +40,7 @@ Step 2 can be reopened after Step 3 or Step 4. A return to Step 2 is followed by
 
 The same loop applies to each area on its own. Revising one area does not reopen another area's steps.
 
-A story added to an area past its Step 3 gets a chunk row in the same pass, as in [the build order](../log/build-order.md#making-or-updating-an-areas-order). It does not wait for the next chunk start.
+A story added to an area past its Step 3 gets a chunk row in the same pass, as in [the build order](build-order.md#making-or-updating-an-areas-order). It does not wait for the next chunk start.
 
 When a frame, story, or architecture note changes, update the matching doc in the same pass: the area's screen list, the frames doc if the file layout changes, and the decisions log (`wf decision add`) only when something is actually agreed.
 
@@ -67,7 +67,7 @@ Each change takes one of three tracks, so the ceremony fits its size. `npx wf re
 Before anything in a chunk is built, run `npx wf doc:facts status` for where things stand, and start the chunk's branch, as in [branches.md](branches.md). Then, in order:
 
 - Check the stories against the frames, below.
-- Put any story added or changed since the last chunk start into the [build order](../log/build-order.md#making-or-updating-an-areas-order): an existing chunk or a new row. Move this chunk's row to In progress.
+- Put any story added or changed since the last chunk start into the [build order](build-order.md#making-or-updating-an-areas-order): an existing chunk or a new row. Move this chunk's row to In progress.
 - If the chunk builds on an outside service, make one real call first and read that service's rules for clients. A stand-in proves only what it was told. The chunk that first uses an outside thing also builds its stand-in, so a scenario can reach the screens behind it. A test-only stub is not enough.
 - With the design plugin's screen review, run `npx wf screens --gate <this>`. It lists each frame showing this chunk's stories that no Reach opens. Each one is reached in this chunk, or, with the designer's yes in the questions below, waits on a later chunk named in its Reach.
 
