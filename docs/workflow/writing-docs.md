@@ -12,7 +12,8 @@ A person reads a doc by skimming. An agent reads it by searching. Both need shor
 
 - **Lead.** The first line under a heading says what the section is for, in one sentence.
 - **Short blocks.** A paragraph is three sentences or fewer. A bullet is one idea, about 40 words.
-- **Limit.** `npx wf doc:check` fails a paragraph or bullet over 60 words. Code, tables, and headings do not count.
+- **Limit.** `npx wf doc:check` fails a paragraph or bullet over 60 words. Code and headings do not count.
+- **Table cells.** A cell over 30 words is split into a short lead and `<br>• ` bullets, each at most 15 words, since a cell holds no real list. `doc:check` fails a longer cell or bullet.
 - **Split a long bullet.** Keep the bold name and the rule on the first line. Put each detail in a sub-bullet under it.
 - **Tables** hold anything compared across the same columns, such as options, tools, or states.
 - **Steps** are a numbered list, one action per step.

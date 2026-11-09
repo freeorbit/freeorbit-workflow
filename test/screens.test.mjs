@@ -69,6 +69,8 @@ test("a brief lists each screen's reason, stories, caption, and pictures, eight 
   assert.match(out[0], /^## dr-overview\n\n- Listed: new\n- Stories: DR-01\n- Shows: The overview\.\n- Pictures:\n {2}- \/p\/0-pair\.png \(frame left, app right\)\n {2}- \/p\/0-narrow-stress\.png\n/);
   assert.match(out[0], /## s-1\n\n- Listed: new, no frame\n- Stories: none\n- Shows: \(no caption\)/);
   assert.match(out[1], /^## s-8/);
+  const split = briefs([{ name: "dr-overview", why: "new", framed: true, pictures: [] }], parseScreens(SCREENS.replace("The overview.", "Lead.<br>• One<br>• Two")));
+  assert.match(split[0], /- Shows: Lead\.\n {2}- One\n {2}- Two\n/);
 });
 
 test("a reach is a scenario, then run steps", () => {

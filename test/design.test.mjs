@@ -123,6 +123,14 @@ test("screen lists are each area's, under its docs folder, when tracked", () => 
   assert.deepEqual(screenLists(config({ screens: "screens.md" }, AREAS), ["docs/app/screens.md"]), [["app", "docs/app/screens.md"]]);
 });
 
+test("a caption split with <br>• bullets reads as a lead and nested items", async () => {
+  const { captionLines } = await import("../lib/design/storyboard.mjs");
+  assert.deepEqual(captionLines("Dialog over the catalog.<br>• Keep my data<br>• Cancel, or Uninstall"), ["Dialog over the catalog.", "Keep my data", "Cancel, or Uninstall"]);
+  const list = "## One\n\n| Frame | Stories | What it shows |\n| --- | --- | --- |\n| `d-x` | D-01 | Lead.<br>• First<br>• Second |\n";
+  const text = storyboard(config(), "demo", "docs/plugins/demo/design/screens.md", list);
+  assert.match(text, /^1\. \*\*d-x\*\* \(D-01\)\. Lead\.\n {3}- First\n {3}- Second$/m);
+});
+
 test("frames keep their order and the heading above them", () => {
   assert.deepEqual(
     frames(LIST).map((row) => [row.frame, row.section, row.caption]),
