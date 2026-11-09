@@ -19,6 +19,7 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
    claude plugin install testdata@freeorbit-workflow --scope project
    claude plugin install design@freeorbit-workflow --scope project
    claude plugin install stack-tauri-rust@freeorbit-workflow --scope project   # a Tauri and Rust app
+   claude plugin install stack-web@freeorbit-workflow --scope project          # a web app: its servers and a headless Chromium
    claude plugin install e2e@freeorbit-workflow --scope project                # needs an app driver and testdata
    claude plugin install release@freeorbit-workflow --scope project
    ```
@@ -53,7 +54,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
 | `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands` |
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
-| `wf app <start \| run \| stop \| ...>` | Drives the project's Tauri app on Linux: systemd user units under a memory cap, WebKit's inspector, and run steps, from `app` in the config, with the project's `app.hooks` |
+| `wf app <start \| run \| stop \| ...>` | Drives the project's app on Linux under a memory cap, from `app` in the config, with the project's `app.hooks`: a Tauri app through WebKit's inspector (`app.kind` tauri), or a web app's servers and a headless Chromium through its debugging protocol (web) |
 | `wf disk [--dry-run] [GB]` | Free disk space, and when short, removes only the leftovers in `disk`, cheapest first |
 | `wf screens <--light \| --deep \| names \| scope \| --brief \| --accept \| --check \| --gate>` | The screen review: shoots each screen's Reach through `wf app`, beside its frame, lists what changed since the last accept, and writes briefs for the `screen-reader` agent, from `screens` in the config |
 | `wf release <next \| check \| set \| verify> ...` | The project's release commands, from `release.commands`, for the release skill |
