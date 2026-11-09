@@ -8,6 +8,7 @@ description: >-
   delta naming the file of each edit, or says no change. Never reads code or
   architecture. Use through the design-test-data skill.
 model: inherit
+omitClaudeMd: true
 tools: Read, Grep, Glob, WebFetch, WebSearch
 ---
 

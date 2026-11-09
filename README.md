@@ -33,6 +33,16 @@ The Freeorbit agent workflow as installable Claude Code plugins, the scripts the
 
 4. Write `.workflow/config.json`: at least `project` and `people`, with `"team": "solo"` for one person. List the project's `areas` (each with its story prefix) and `scopes` (commit and branch prefixes). Put the two markers in `AGENTS.md` and run `npx wf roles --write`, then `npx wf docs sync`. Run `npx wf config` to see every setting, its default, and why the default is what it is.
 
+5. Add deny rules for secrets to the committed `.claude/settings.json`, so no session or agent reads them (audit W-11). OpenCode's agents get the same through `wf ai:sync`:
+
+   ```json
+   "permissions": { "deny": ["Read(./.env)", "Read(./.env.*)", "Read(**/*.pem)", "Read(**/*.key)", "Read(**/id_rsa*)", "Read(**/id_ed25519*)"] }
+   ```
+
+## Guards
+
+The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-data-designer`, `screen-reader`, `code-reviewer`) to what their prompts allow: what each may read and search, the tester's few commands, and the reviewer's advisory hosts (`review.webDomains`). A crash in the hook blocks the call. Each blind agent also starts without the project's CLAUDE.md. `hooks.blindness: false` turns it off. A guard needs a logged failure or an accepted audit item behind it (W-18).
+
 ## Commands
 
 | Command | What it does |
