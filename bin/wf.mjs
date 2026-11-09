@@ -20,6 +20,9 @@
 //   wf release <next | check | set | verify> ...   the project's release commands
 //   wf ready <quick | chunk | area> [chunk]   what a track needs before work starts
 //   wf done <quick | chunk | area> [chunk]    what a track needs before its pull request
+//   wf tools          what this computer has of tools.md, and whether the branch hooks are on
+//   wf check [--all]  the project's checks from check.steps, one line each
+//   wf hooks <install | pre-commit | pre-push>   the git hooks that hold branches.md
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
 import { execFileSync } from "node:child_process";
@@ -36,6 +39,9 @@ import { runRelease, STEPS } from "../lib/release.mjs";
 import { signoffs } from "../lib/signoffs.mjs";
 import { screens } from "../lib/screens/run.mjs";
 import { runTrack } from "../lib/tracks.mjs";
+import { runChecks } from "../lib/checks.mjs";
+import { install, runHook } from "../lib/hooks.mjs";
+import { runTools } from "../lib/tools.mjs";
 import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
@@ -256,6 +262,31 @@ const commands = {
   async done(args) {
     const root = projectRoot();
     return runTrack(root, loadConfig(root), "done", args);
+  },
+
+  async tools() {
+    const root = projectRoot();
+    return runTools(root, loadConfig(root));
+  },
+
+  async check(args) {
+    const root = projectRoot();
+    return runChecks(root, loadConfig(root), args);
+  },
+
+  async hooks([hook]) {
+    const root = projectRoot();
+    if (hook === "install") {
+      for (const line of install(root)) console.log(line);
+      return 0;
+    }
+    if (hook !== "pre-commit" && hook !== "pre-push") {
+      console.log("Usage: wf hooks <install | pre-commit | pre-push>");
+      return 2;
+    }
+    const { code, lines } = runHook(root, loadConfig(root), hook);
+    for (const line of lines) console.error(line);
+    return code;
   },
 
   async screens(args) {

@@ -2,6 +2,8 @@
 
 Every program the workflow and this project need outside their own lockfiles, why each is here, and what happens without it. To add a tool, add its row in the same change as the code that calls it.
 
+`npx wf tools` reads both tables under [The list](#the-list), says what is missing on this computer, and fails only for a required one.
+
 <!-- wf:local intro -->
 
 ## The list
@@ -33,7 +35,7 @@ What the workflow kit's own commands call. A plugin the project does not use nee
 What an agent does when a program is missing. The person at this computer installs system packages themself. Do not install them.
 
 - **Not allowed:** sudo, a system package manager, npm -g, pip outside a project, cargo install, or a download-and-unpack into a system folder or the home directory. A temporary install under `/tmp` is not a substitute for asking.
-- **Allowed:** checking whether a tool exists (`which`, `--version`, the project's tools check).
+- **Allowed:** checking whether a tool exists (`which`, `--version`, `npx wf tools`).
 - **Where:** what the project uses, and how to install it on each system, is in [The list](#the-list) and [Installing](#installing).
 
 - **Required.** The task cannot be done without a missing program (a CLI, a library, a browser, a font, a language runtime). Stop.
