@@ -14,6 +14,8 @@
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
 //   wf app <start | run | stop | ...>   drive the project's Tauri app under a memory cap
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
+//   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply
+//   wf signoffs        the needs lines this branch still waits on
 //   wf release <next | check | set | verify> ...   the project's release commands
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
@@ -25,7 +27,9 @@ import { reconcile } from "../lib/ai.mjs";
 import { runApp } from "../lib/app/driver.mjs";
 import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
+import { ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
 import { runRelease, STEPS } from "../lib/release.mjs";
+import { signoffs } from "../lib/signoffs.mjs";
 import { screens } from "../lib/screens/run.mjs";
 import { syncDocs } from "../lib/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
@@ -167,6 +171,50 @@ const commands = {
   async app(args) {
     const root = projectRoot();
     return runApp(root, loadConfig(root), args);
+  },
+
+  async github([sub]) {
+    const root = projectRoot();
+    const config = loadConfig(root);
+    if (sub === "ruleset") {
+      const blocked = rulesetBlocked(config);
+      if (blocked) {
+        console.log(`No ruleset: ${blocked}.`);
+        return 0;
+      }
+      console.log(JSON.stringify(ruleset(config), null, 2));
+      console.error("Apply it with: gh api repos/{owner}/{repo}/rulesets -X POST --input <file>");
+      return 0;
+    }
+    if (sub !== "sync" && sub !== "check") {
+      console.log("Usage: wf github <sync | check | ruleset>");
+      return 2;
+    }
+    const { problems, changed } = syncGithub(root, config, { write: sub === "sync" });
+    for (const problem of problems) console.error(problem);
+    if (!problems.length) console.log(sub === "sync" ? `GitHub files are in step (${changed} updated).` : "GitHub files are in step.");
+    return problems.length ? 1 : 0;
+  },
+
+  async signoffs() {
+    const root = projectRoot();
+    const config = loadConfig(root);
+    const texts = [];
+    try {
+      texts.push([config.logs.openQuestions, readFileSync(join(root, config.logs.openQuestions), "utf8")]);
+    } catch {
+      // No open questions log yet.
+    }
+    // The branch's pull request body, when there is one and gh can read it.
+    try {
+      const body = execFileSync("gh", ["pr", "view", "--json", "body", "-q", ".body"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+      texts.push(["the pull request", body]);
+    } catch {
+      // No pull request for this branch, or no gh.
+    }
+    const { lines, code } = signoffs(config, texts);
+    for (const line of lines) console.log(line);
+    return code;
   },
 
   async release([name, ...args]) {

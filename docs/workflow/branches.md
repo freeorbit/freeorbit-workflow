@@ -31,6 +31,16 @@ A branch is `<scope>/<slug>`, such as `app/chunk-21-scan` or `workflow/branch-ru
 3. **Propose the pull request** with the `pull-request` skill, once the project's full check passes. One yes covers the push and opening it.
 4. **Merge** on the owner's own yes in chat, a second one after the yes to open. The steps are in the `pull-request` skill. They run from the main checkout, because `gh` cannot delete a branch checked out in a worktree.
 
+## On GitHub
+
+What GitHub itself holds depends on the plan, set by `github` in `.workflow/config.json`.
+
+- **Free and private.** No rulesets, so the git hooks and the `pull-request` skill hold the rules above.
+- **Public, or a paid plan.** GitHub can hold them too: `npx wf github ruleset` prints the ruleset to apply.
+- **Files.** `npx wf github sync` writes the pull request and issue templates, CODEOWNERS from the people and their roles, the check workflow, and Dependabot, each when its switch is on. `npx wf github check` fails when one drifts.
+
+A question that waits on someone who holds a role is a `- [ ] needs <role>: <question>` line in the open questions log or the pull request body, ticked once answered. `npx wf signoffs` lists the open ones, and no merge is proposed while any are.
+
 A branch that needs work from another unmerged branch starts from that branch. After the first one merges, move it onto `main` with `git rebase --onto main <first branch>`, because the squash left the first branch's commits behind.
 
 <!-- wf:local enforcement -->
