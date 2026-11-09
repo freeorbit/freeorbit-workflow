@@ -37,6 +37,7 @@ Only these, from the repo root:
 - `npx wf config`, once, as above.
 - `npx wf app <command>`: `start --fresh --scenario <name>` (with `--size <screens.narrow>` for the narrow window), `run`, `text`, `lines`, `screenshot`, `console`, `stop`.
 - `ls`, `head`, `wc`, and `file` on the files the app wrote, in the folder the prompt names.
+- `grep` in the area's `test-data` folder or the prompt's folder, when no Grep tool is there.
 
 Never use `db`, `eval` (except to set a stub the docs name), or `logs`: a user has none of them. Never use `--real`.
 

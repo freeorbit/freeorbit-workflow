@@ -34,7 +34,12 @@ export const WEB_DOMAINS = [
   "pypi.org",
 ];
 
-const SECRET = /(^|\/)(\.env(\.(?!example$)[^/]*)?|[^/]*\.(pem|key|p12|pfx)|id_(rsa|ed25519|ecdsa)[^/]*)$/i;
+/**
+ * File names that may hold a secret, in every folder: the one list. The guard
+ * denies them to blind agents on every file tool, and `wf ai:sync` writes them
+ * as deny rules for Claude Code's settings and OpenCode's agents (W-11).
+ */
+export const SECRET_GLOBS = [".env", ".env.*", "*.pem", "*.key", "*.p12", "*.pfx", "id_rsa*", "id_ed25519*", "id_ecdsa*"];
 // A command that chains, pipes, redirects, or substitutes could run anything.
 const SHELL_META = /[;&|`<>\n\r]|\$\(/;
 
@@ -50,6 +55,12 @@ const glob = (pattern) => {
   }
   return new RegExp(`^${out}$`);
 };
+
+/** Whether a path's file name is one SECRET_GLOBS names. */
+export function isSecret(path) {
+  const name = String(path ?? "").split("/").pop();
+  return SECRET_GLOBS.some((pattern) => glob(pattern).test(name));
+}
 
 /** The agent's name from the hook input, without a plugin prefix such as "e2e:". */
 export function agentName(input) {
@@ -88,8 +99,15 @@ export function policies(config) {
   };
 }
 
-/** Whether a Bash command is one the e2e tester may run, or why not. */
-export function e2eCommand(command, root) {
+/** A command split into words, keeping "quoted words" together. */
+export function shellWords(text) {
+  const out = [];
+  for (const m of text.matchAll(/"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+)/g)) out.push(m[1] ?? m[2] ?? m[3]);
+  return out;
+}
+
+/** Whether a Bash command is one the e2e tester may run, or why not. `search` is the folders it may search. */
+export function e2eCommand(command, root, search = [".cache/e2e"]) {
   const text = String(command ?? "").trim();
   if (SHELL_META.test(text)) return "it chains, pipes, redirects, or substitutes; run one command at a time";
   if (/^npx wf config$/.test(text)) return null;
@@ -99,13 +117,28 @@ export function e2eCommand(command, root) {
     if (/(^|\s)--real(\s|$)/.test(text)) return "--real would open the user's real data";
     return null;
   }
+  // Some Claude Code builds have no Grep tool, so the tester searches with grep, in its own folders only.
+  if (/^grep\s/.test(text)) {
+    const words = shellWords(text).slice(1);
+    const rest = words.filter((word) => !/^-[A-Za-z]+$/.test(word));
+    const paths = rest.slice(1);
+    if (!rest[0] || paths.length === 0) return "grep needs a pattern and a path inside the folders it may search";
+    const outside = paths.find((path) => {
+      const rel = inside(root, path);
+      return rel === null || !search.some((dir) => rel === dir || rel.startsWith(`${dir}/`));
+    });
+    return outside ? `grep may search only ${search.join(", ")}` : null;
+  }
   const look = text.match(/^(ls|head|wc|file)((?:\s+-\w+)*)\s+(.+)$/);
   if (look) {
     const paths = look[3].split(/\s+/).filter((part) => !part.startsWith("-"));
-    const outside = paths.find((path) => !(inside(root, path.replace(/^['"]|['"]$/g, "")) ?? "").startsWith(".cache/e2e/"));
+    const outside = paths.find((path) => {
+      const rel = inside(root, path.replace(/^['"]|['"]$/g, "")) ?? "";
+      return !(rel === ".cache/e2e" || rel.startsWith(".cache/e2e/"));
+    });
     return outside ? `${look[1]} may look only at the files the app wrote, under .cache/e2e/` : null;
   }
-  return "the tester runs only npx wf app, npx wf config, and ls, head, wc, or file on the files the app wrote";
+  return "the tester runs only npx wf app, npx wf config, grep in its own folders, and ls, head, wc, or file on the files the app wrote";
 }
 
 /** The decision for one tool call: null to let it go on, or the reason it is denied. */
@@ -122,18 +155,19 @@ export function decide(input, root, config) {
   if (tool === "Read") {
     const path = inside(root, args.file_path);
     if (path === null) return deny(`${args.file_path} is outside the project`);
-    if (SECRET.test(path)) return deny(`${path} may hold a secret`);
+    if (isSecret(path)) return deny(`${path} may hold a secret`);
     return policy.read.some((pattern) => glob(pattern).test(path)) ? null : deny(`${path} is not among what it may read`);
   }
   if (tool === "Grep" || tool === "Glob") {
     const path = inside(root, args.path ?? root);
     if (path === null) return deny(`${args.path} is outside the project`);
+    if (isSecret(path)) return deny(`${path} may hold a secret`);
     const ok = policy.search.some((pattern) => pattern === "**" || path === pattern || path.startsWith(`${pattern}/`));
     return ok ? null : deny(`search only in ${policy.search.join(", ") || "nothing"}, with that as the path`);
   }
   if (tool === "Bash") {
     if (policy.bash !== "e2e") return deny("it runs no commands");
-    const why = e2eCommand(args.command, root);
+    const why = e2eCommand(args.command, root, policy.search);
     return why ? deny(why) : null;
   }
   if (tool === "WebFetch") {
@@ -168,4 +202,10 @@ async function main() {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  // Exit 2 blocks the call on any Claude Code build, with or without onFailure: block.
+  await main().catch((error) => {
+    process.stderr.write(`The blind agents' guard failed, so the call is blocked: ${error.message}\n`);
+    process.exit(2);
+  });
+}
