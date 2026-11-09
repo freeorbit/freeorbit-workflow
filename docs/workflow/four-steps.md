@@ -77,7 +77,7 @@ Each change takes one of three tracks, so the ceremony fits its size.
 
 ## Chunk start
 
-Before anything in a chunk is built, run `npx wf doc:facts status` for where things stand, and start the chunk's branch, as in [branches.md](branches.md). Then, in order:
+Before anything in a chunk is built, run `npx wf doc:facts status` for where things stand, and start the chunk's branch, as in [branches.md](branches.md). A chunk split into lanes runs chunk start and end once per lane, as in [build-order.md](build-order.md#lanes). Then, in order:
 
 - Check the stories against the frames, below.
 - Put any story added or changed since the last chunk start into the [build order](build-order.md#making-or-updating-an-areas-order): an existing chunk or a new row. Move this chunk's row to In progress.

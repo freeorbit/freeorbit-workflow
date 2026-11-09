@@ -32,7 +32,7 @@ test("a chunk row keeps its group and status, and other tables do not count", ()
     "| Tuta | The same |",
   ].join("\n");
   assert.deepEqual(chunkRows(text), [
-    { chunk: "7. Provider", group: "Waiting", status: "Waiting", stories: "GM-03" },
+    { chunk: "7. Provider", group: "Waiting", status: "Waiting", stories: "GM-03", waitsOn: "" },
   ]);
 });
 

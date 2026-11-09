@@ -1,5 +1,5 @@
 {
   "name": "stack-web",
-  "version": "0.24.1",
+  "version": "0.25.0",
   "description": "The web stack adapter: starts the project's servers and a headless Chromium under a memory cap, and drives the page through Chromium's debugging protocol."
 }
