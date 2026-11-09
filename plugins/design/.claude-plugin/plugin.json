@@ -1,5 +1,5 @@
 {
   "name": "design",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "description": "HTML design frames: draw, render, and check them, keep a storyboard per area, send annotated pictures with visual questions, and review the app's screens against them with a blind screen-reader agent."
 }
