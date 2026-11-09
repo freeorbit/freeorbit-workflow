@@ -50,4 +50,4 @@ The pull request lands as one squashed commit, so its title and body are what `m
   3. `git worktree remove <worktree>`, if the branch had one.
   4. `git branch -D <branch>`.
   5. `git pull --ff-only` on `main`.
-- If the branch is behind `main` or has conflicts, say so and stop. Do not merge it.
+- If the branch is behind `main`, or GitHub shows a conflict, rebase it locally: `git fetch origin && git rebase origin/main`. GitHub's merge ignores the `merge=union` the append-only logs carry, but a local rebase honours it, so rows both sides added land without a conflict. When the rebase finishes clean, run the project's checks, then `git push --force-with-lease` and merge. When it stops on a real conflict, say so and stop. Do not merge it.

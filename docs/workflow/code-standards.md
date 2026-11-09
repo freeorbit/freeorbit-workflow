@@ -49,6 +49,8 @@ Nobody adds a rule here without a finding the reviewer accepted, or a dated owne
 - **CS-BOIL.** A simple feature does not need many files, wrappers, or registrations. A pattern that makes every new command or screen touch several layers for nothing is flagged.
 - **CS-ADD.** Adding a feature or a plugin touches few files. When a finding is about this, it lists the files a new feature had to touch.
 - **CS-TEST.** A test proves an acceptance line, a bug fix, or a limit (added 2026-11-01). A test that repeats what another test already proves is flagged. Keep the one closest to the behavior. A fix, a limit, or logic in the UI with no test is a gap (changed 2026-11-02).
+- **CS-PROOF.** A hash, a snapshot, or another recorded value becomes a check only once two fresh runs agree on it (added 2026-11-04). One run can record its own accident.
+- **CS-FMT.** Format only with what the project's check runs, and read a failing check's command before fixing it (added 2026-11-05). A formatter the check does not run rewrites files no one changed.
 <!-- wf:local structure-tests -->
 
 - **CS-ERR.** A failure reaches the user as one plain sentence that says what to do, and a job ends in a state it can leave (added 2026-11-02).

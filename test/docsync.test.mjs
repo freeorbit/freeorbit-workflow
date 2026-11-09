@@ -65,6 +65,7 @@ test("a synced doc not yet written, and a synced name the kit lacks, are listed 
   const config = merge(DEFAULTS, { docs: { synced: ["steps", "nope"] } });
   assert.deepEqual(docProblems(config, fromDisk(root), kit), [
     ".workflow/config.json: docs.synced names nope, which the kit does not ship",
+    ".gitattributes: its wf:union block is missing or out of date, run wf docs sync",
     "docs/workflow/steps.md: missing, run wf docs sync",
   ]);
   assert.throws(() => syncDocs(root, config, kit), /names nope/);
