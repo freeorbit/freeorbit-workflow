@@ -154,3 +154,24 @@ test("init fails when the GitHub files cannot be written, after saying what is w
   assert.match(result.stderr, /github.check.command is empty/);
   assert.equal(result.status, 1);
 });
+
+test("init writes the question-pictures server for the design plugin, keeping the project's own", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-init-view-"));
+  execFileSync("mkdir", ["-p", join(root, ".claude")]);
+  writeFileSync(join(root, ".claude/launch.json"), JSON.stringify({ version: "0.0.1", configurations: [{ name: "api", port: 3000 }] }));
+  writeStarter(root, ANSWERS, { today: "2026-11-10", template: "T" });
+  const launch = JSON.parse(readFileSync(join(root, ".claude/launch.json"), "utf8"));
+  assert.deepEqual(launch.configurations.map((c) => c.name), ["api", "question-pictures"]);
+  const none = mkdtempSync(join(tmpdir(), "wf-init-noview-"));
+  writeStarter(none, { ...ANSWERS, plugins: ["core"] }, { today: "2026-11-10", template: "T" });
+  assert.equal(existsSync(join(none, ".claude/launch.json")), false);
+});
+
+test("a bad launch.json stops init before anything is written", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-init-badlaunch-"));
+  execFileSync("mkdir", ["-p", join(root, ".claude")]);
+  writeFileSync(join(root, ".claude/launch.json"), "{ not json");
+  assert.throws(() => writeStarter(root, ANSWERS, { today: "2026-11-10", template: "T" }), /launch.json is not valid JSON/);
+  assert.equal(existsSync(join(root, ".workflow")), false);
+  assert.equal(existsSync(join(root, "docs")), false);
+});
