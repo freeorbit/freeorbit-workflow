@@ -36,6 +36,10 @@ A branch is `<scope>/<slug>`, such as `app/chunk-21-scan` or `workflow/branch-ru
 What GitHub itself holds depends on the plan, set by `github` in `.workflow/config.json`.
 
 - **Free and private.** No rulesets, so the git hooks and the `pull-request` skill hold the rules above.
+- **Hooks.** `npx wf hooks install` writes `.workflow/hooks/pre-commit` and `pre-push`, and points this clone's `core.hooksPath` at them.
+  - The project's `prepare` script runs it after each install, and `npx wf tools` says when the hooks are off.
+  - They refuse a commit or push to a branch in `branches.protected`, and a push of a branch not named `<scope>/<slug>`, where the scope is one of `scopes` or an area's id.
+  - A new area or scope goes in the config before its first branch. Tags push as usual.
 - **Public, or a paid plan.** GitHub can hold them too: `npx wf github ruleset` prints the ruleset to apply.
 - **Files.** `npx wf github sync` writes the pull request and issue templates, CODEOWNERS from the people and their roles, the check workflow, and Dependabot, each when its switch is on. `npx wf github check` fails when one drifts.
 
