@@ -288,8 +288,11 @@ const commands = {
     const { problems } = await reconcile(root, { write: true, tools: config.ai.tools });
     for (const problem of problems) console.error(problem);
     for (const line of install(root)) console.log(line);
+    const github = syncGithub(root, config, { write: true });
+    for (const problem of github.problems) console.error(problem);
+    if (github.changed) console.log(`.github: ${github.changed} written`);
     console.log("Next: install the packages, then add the kit's marketplace and plugins in Claude Code, restart it, and run npx wf doctor.");
-    return problems.length ? 1 : 0;
+    return problems.length || github.problems.length ? 1 : 0;
   },
 
   async doctor() {

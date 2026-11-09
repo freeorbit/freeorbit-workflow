@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -114,4 +114,43 @@ test("a bad JSON file stops init before the first write, and a kept config wins"
   assert.ok(!existsSync(join(again, "docs/review/user-stories.md")));
   assert.ok(report.some(([file, what]) => file === "package.json" && what === "merged"));
   assert.equal(withIgnore("/node_modules\n.cache\n"), "/node_modules\n.cache\n");
+});
+
+test("init gives a docs check step, turns on the admin bypass for a sole reviewer, and writes the GitHub files", async () => {
+  const config = configFrom(ANSWERS);
+  assert.deepEqual(config.check.steps, [{ name: "docs", command: "npx wf doc:check" }]);
+  assert.equal(config.github.adminBypass, true);
+  const two = configFrom({ ...ANSWERS, people: [...ANSWERS.people, { name: "Rae", handle: "rae", email: "rae@example.com", roles: ["reviewer"] }] });
+  assert.equal(two.github, undefined);
+  const { ruleset } = await import("../lib/github.mjs");
+  const set = ruleset(merge(DEFAULTS, config));
+  assert.deepEqual(set.bypass_actors, [{ actor_id: 1, actor_type: "OrganizationAdmin", bypass_mode: "pull_request" }]);
+  assert.equal(configFrom({ ...ANSWERS, team: "solo" }).github, undefined);
+  assert.deepEqual(set.rules.find((rule) => rule.type === "pull_request").parameters.allowed_merge_methods, ["squash"]);
+  assert.equal(ruleset(merge(DEFAULTS, {})).bypass_actors, undefined);
+  const root = mkdtempSync(join(tmpdir(), "wf-init-gh-"));
+  execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+  writeFileSync(join(root, "answers.json"), JSON.stringify({ ...ANSWERS, config: { ...ANSWERS.config, github: { prTemplate: true } } }));
+  execFileSync(process.execPath, [new URL("../bin/wf.mjs", import.meta.url).pathname, "init", "answers.json"], { cwd: root, encoding: "utf8" });
+  assert.ok(existsSync(join(root, ".github/pull_request_template.md")));
+});
+
+test("someone with no GitHub handle is named by email in Who decides", async () => {
+  const { rolesBlock } = await import("../lib/roles.mjs");
+  const block = rolesBlock(merge(DEFAULTS, configFrom({ ...ANSWERS, people: [...ANSWERS.people, { name: "Dee", email: "dee@example.com", roles: ["designer"] }] })));
+  assert.match(block, /- \*\*Dee\.\*\* They work outside the repo; their email is `dee@example.com`\./);
+  assert.ok(!block.includes("` <"));
+  const bare = rolesBlock(merge(DEFAULTS, configFrom({ ...ANSWERS, people: [...ANSWERS.people, { name: "Hal", handle: "hal", roles: ["designer"] }, { name: "Nia", roles: ["designer"] }] })));
+  assert.match(bare, /- \*\*Hal\.\*\* Their git identity is `hal`\./);
+  assert.ok(!bare.includes("**Nia.**"));
+});
+
+test("init fails when the GitHub files cannot be written, after saying what is wrong", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-init-gh-bad-"));
+  execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+  writeFileSync(join(root, "answers.json"), JSON.stringify({ ...ANSWERS, config: { ...ANSWERS.config, github: { checkWorkflow: true } } }));
+  const wf = new URL("../bin/wf.mjs", import.meta.url).pathname;
+  const result = spawnSync(process.execPath, [wf, "init", "answers.json"], { cwd: root, encoding: "utf8" });
+  assert.match(result.stderr, /github.check.command is empty/);
+  assert.equal(result.status, 1);
 });
