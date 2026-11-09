@@ -8,7 +8,7 @@ The code is written by people and by agents. A rule here serves both: a person c
 
 ## How this file grows
 
-Nobody adds a rule here without a finding the reviewer accepted, or a dated owner decision in decisions.md.
+Nobody adds a rule here without a finding the reviewer accepted, or an owner decision in the decisions log, cited by its ID.
 
 1. The reviewer proposes a new rule or a change, as an `STD-` finding in [the ledger](../log/review-findings.md).
 2. The reviewer accepts, rejects, or defers it like any other finding.
