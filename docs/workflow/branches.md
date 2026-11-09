@@ -39,6 +39,8 @@ What GitHub itself holds depends on the plan, set by `github` in `.workflow/conf
 - **Public, or a paid plan.** GitHub can hold them too: `npx wf github ruleset` prints the ruleset to apply.
 - **Files.** `npx wf github sync` writes the pull request and issue templates, CODEOWNERS from the people and their roles, the check workflow, and Dependabot, each when its switch is on. `npx wf github check` fails when one drifts.
 
+The append-only logs carry `merge=union` in `.gitattributes`, from `docs.union`, so rows added on two branches both land. GitHub's own merge ignores it, so a pull request behind `main` shows a conflict there; the `pull-request` skill rebases it locally, which resolves the rows, before it merges.
+
 A question that waits on someone who holds a role is a `- [ ] needs <role>: <question>` line in the open questions log or the pull request body, ticked once answered. `npx wf signoffs` lists the open ones, and no merge is proposed while any are.
 
 A branch that needs work from another unmerged branch starts from that branch. After the first one merges, move it onto `main` with `git rebase --onto main <first branch>`, because the squash left the first branch's commits behind.

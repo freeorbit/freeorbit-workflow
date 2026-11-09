@@ -24,6 +24,11 @@ Use what the work already leaves behind. Do not add tracking for its own sake.
 - **Quality:** review findings per chunk, and bugs found after a chunk ended.
 - **Repeats:** log rows whose change did not hold.
 
+## Spending
+
+- **Label an estimate.** A cost or a time worked out before a run is called an estimate until the run measures it (2026-11-01).
+- **Check the limit first.** Before a run that spends a usage limit, such as a long review or a paid model pass, check how much of it is left.
+
 ## Parallel work
 
 Run independent work at once when it saves more than it costs. Before you split the work, say what runs at once, the approach, and its cost, then ask. A guideline, not a rule, and part of the hypothesis: drop what does not pay.
