@@ -35,15 +35,17 @@ test("renders a native OpenCode subagent and preserves its prompt", () => {
   assert.ok(frontmatter.indexOf("effect: deny") < frontmatter.indexOf("effect: allow"));
 });
 
-test("keeps OpenCode's .env rules after the read allow", () => {
+test("denies the secret files after each read, grep, and glob allow, from the guard's one list", () => {
   const rendered = renderAgent(parseAgent(source, "sample-agent.md"));
   const readAllow = rendered.indexOf('action: read\n    resource: "*"\n    effect: allow');
-  const envAsk = rendered.indexOf('action: read\n    resource: "*.env"\n    effect: ask');
-  const envVariantAsk = rendered.indexOf('action: read\n    resource: "*.env.*"\n    effect: ask');
-  const exampleAllow = rendered.indexOf('action: read\n    resource: "*.env.example"\n    effect: allow');
-  assert.ok(readAllow !== -1 && readAllow < envAsk && envAsk < envVariantAsk && envVariantAsk < exampleAllow);
+  const envDeny = rendered.indexOf('action: read\n    resource: "*.env"\n    effect: deny');
+  const keyDeny = rendered.indexOf('action: read\n    resource: "*.key"\n    effect: deny');
+  const sshDeny = rendered.indexOf('action: read\n    resource: "*id_ed25519*"\n    effect: deny');
+  assert.ok(readAllow !== -1 && readAllow < envDeny && envDeny < keyDeny && keyDeny < sshDeny);
+  assert.match(rendered, /action: grep\n {4}resource: "\*\.pem"\n {4}effect: deny/);
+  assert.doesNotMatch(rendered, /effect: ask|\.env\.example/);
 
-  const withoutRead = renderAgent(parseAgent(source.replace("Read, Grep, WebFetch, WebSearch", "Grep"), "sample-agent.md"));
+  const withoutRead = renderAgent(parseAgent(source.replace("Read, Grep, WebFetch, WebSearch", "WebFetch"), "sample-agent.md"));
   assert.doesNotMatch(withoutRead, /\.env/);
 });
 

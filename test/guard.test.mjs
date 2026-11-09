@@ -42,6 +42,14 @@ test("the e2e tester runs only the app driver, the config, and looks at the app'
     assert.notEqual(e2eCommand(command, ROOT), null, command);
   }
   assert.match(call("e2e-tester", "WebFetch", { url: "https://example.com" }), /fetches nothing/);
+  assert.match(call("e2e-tester", "WebSearch", { query: "freeorbit source" }), /searches nothing/);
+  assert.equal(e2eCommand("ls .cache/e2e", ROOT), null);
+  assert.equal(call("e2e-tester", "Glob", { pattern: "*.csv", path: "/p/.cache/e2e/run" }), null);
+  assert.equal(call("e2e-tester", "Bash", { command: `grep -n "### D15." docs/plugins/uplink/test-data` }), null);
+  assert.equal(call("e2e-tester", "Bash", { command: "grep -rn invoke /p/docs/plugins/uplink/test-data/core.md" }), null);
+  assert.match(call("e2e-tester", "Bash", { command: "grep -rn invoke apps" }), /grep may search only/);
+  assert.match(call("e2e-tester", "Bash", { command: "grep -rn invoke" }), /needs a pattern and a path/);
+  assert.match(call("e2e-tester", "Bash", { command: "grep -rn invoke docs/plugins/uplink/test-data ../../etc" }), /grep may search only/);
 });
 
 test("the designer, the screen reader, and the reviewer each keep to their own", () => {
@@ -54,7 +62,12 @@ test("the designer, the screen reader, and the reviewer each keep to their own",
   assert.match(call("screen-reader", "Read", { file_path: "/p/docs/design/frames/app/home/home.html" }), /not among/);
   assert.equal(call("review:code-reviewer", "Read", { file_path: "/p/crates/core/src/lib.rs" }), null);
   assert.match(call("code-reviewer", "Read", { file_path: "/p/.env.local" }), /secret/);
-  assert.equal(call("code-reviewer", "Read", { file_path: "/p/.env.example" }), null);
+  assert.match(call("code-reviewer", "Read", { file_path: "/p/.env.example" }), /secret/);
+  assert.match(call("code-reviewer", "Grep", { pattern: ".", path: "/p/.env" }), /secret/);
+  assert.match(call("code-reviewer", "Glob", { pattern: "*", path: "/p/keys/id_ed25519" }), /secret/);
+  assert.match(call("code-reviewer", "Read", { file_path: "/p/certs/server.p12" }), /secret/);
+  assert.equal(call("code-reviewer", "Grep", { pattern: "unsafe", path: "/p/crates" }), null);
+  assert.equal(call("code-reviewer", "WebSearch", { query: "RUSTSEC-2026-0387" }), null);
   assert.equal(call("code-reviewer", "WebFetch", { url: "https://osv.dev/vulnerability/RUSTSEC-2026-0387" }), null);
   assert.equal(call("code-reviewer", "WebFetch", { url: "https://api.github.com/advisories" }), null);
   assert.match(call("code-reviewer", "WebFetch", { url: "https://evil.example/x" }), /not an advisory/);
@@ -71,5 +84,7 @@ test("as a hook it denies with a reason, passes others silently, and a crash exi
   const main = run(JSON.stringify({ tool_name: "Read", tool_input: { file_path: join(root, "src/a.rs") } }));
   assert.equal(main.status, 0);
   assert.equal(main.stdout, "");
-  assert.notEqual(run("not json").status, 0);
+  const crashed = run("not json");
+  assert.equal(crashed.status, 2, "exit 2 blocks the call on any build");
+  assert.match(crashed.stderr, /guard failed, so the call is blocked/);
 });
