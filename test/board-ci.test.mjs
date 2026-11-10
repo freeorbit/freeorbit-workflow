@@ -104,7 +104,7 @@ test("sync links each story's pull request, never clears one, and shows the chan
         name: story.name,
         group: { title: story.group },
         column_values: [column("story_id", story.id), column("area", "app"), column("wf_status", story.values.status), column("chunk", story.values.chunk), column("story", story.values.story), column("pr", story.id === "APP-02" ? "#3 - https://github.com/acme/field-app/pull/3" : prText)],
-        updates: [{ id: `u${i}`, creator_id: "7", text_body: story.comment.replace(/<[^>]+>/g, " ") }],
+        updates: [{ id: `u${i}`, creator_id: "7", text_body: story.comment.replace(/<\/(p|li)>/g, "\n").replace(/<[^>]+>/g, "") }],
       })),
   });
   const fresh = plan(config(), want, board(""), "7");

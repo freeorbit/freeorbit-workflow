@@ -9,7 +9,7 @@ import { DEFAULTS } from "../lib/defaults.mjs";
 import { readStories } from "../lib/docs/stories.mjs";
 import { statusOf, storiesDone, storyRows } from "../lib/board/status.mjs";
 import { mondayClient } from "../lib/board/monday.mjs";
-import { commentHtml, difference, flat, HEADING, LONG_TEXT_LIMIT, plan, runBoard, setupProblems, wanted } from "../lib/board/index.mjs";
+import { commentHtml, difference, flat, tags, HEADING, LONG_TEXT_LIMIT, plan, runBoard, setupProblems, wanted } from "../lib/board/index.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -78,7 +78,8 @@ test("the wanted items carry the name, group, columns, and comment", () => {
     "APP-04 · See my jobs | App · Jobs | In progress | CH-02-be, CH-02-fe, CH-02-contract",
   ]);
   const html = want[0].comment;
-  assert.ok(html.startsWith(`<p><strong>${HEADING}</strong></p><p><em>Kept in the project repo`));
+  assert.ok(html.startsWith(`<blockquote><p>🤖 I'm Orbit`));
+  assert.match(html, /<\/blockquote><p><strong>Acceptance criteria<\/strong><\/p><p>As a Field User/);
   assert.match(html, /<li>Given 5 failed tries.*<ul><li>While that email is slowed down/);
   assert.match(html, /<code>plain text<\/code>/);
   assert.match(html, /&quot;|"Email or password is incorrect"/);
@@ -88,7 +89,7 @@ test("the wanted items carry the name, group, columns, and comment", () => {
 
 test("a comment compares equal to monday's plain text of it", () => {
   const story = readStories(fixture("user-stories.md"), ["APP"])[0];
-  const asMondayShows = `${HEADING}\n\nKept in the project repo and updated automatically by the workflow bot. Please don’t edit this comment: any change here is overwritten. For a question or a change, reply below.\n\n${story.as}\n\n${story.acceptance
+  const asMondayShows = `🤖 I’m Orbit, and I keep this list matched to the project’s records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.\n\n${HEADING}\n\n${story.as}\n\n${story.acceptance
     .flatMap((line) => [line.text, ...line.sub])
     .join("\n")}`;
   assert.equal(flat(asMondayShows), flat(commentHtml(story)));
@@ -203,7 +204,7 @@ test("sync creates the items, groups, and pinned comments; a second run finds no
   assert.equal(one.values.wf_status, "Done");
   assert.match(one.values.story, /^As a Field User/);
   assert.equal(one.updates.length, 1);
-  assert.ok(one.updates[0].text_body.startsWith(HEADING));
+  assert.ok(one.updates[0].text_body.startsWith("🤖 I'm Orbit") && one.updates[0].text_body.split("\n").includes(HEADING));
   assert.equal(monday.state.ops.filter((op) => op === "pin_to_top").length, 3);
   const second = await run(["sync"], monday);
   assert.deepEqual(second.out, ["0 to create, 0 to update, 0 comments, 0 to retire, 3 unchanged.", "Test board is in step."]);
@@ -325,4 +326,13 @@ test("a long field's change shows where the texts first differ", () => {
   assert.equal(difference("", "CH-01"), "(empty) → CH-01");
   const shown = difference(`${start}so that only I can reach the reviews.`, `${start}so that only I can reach the reviews I work on.`);
   assert.match(shown, /^….*reviews\. → ….*reviews I work on\.$/);
+});
+
+test("a pinned comment with the same words in another layout is edited to the kit's", () => {
+  const story = readStories(fixture("user-stories.md"), ["APP"])[0];
+  const want = commentHtml(story);
+  const bubble = want.replace("<blockquote><p>", '<p><span style="background-color:rgb(229, 244, 255)">').replace("</p></blockquote>", "</span></p>");
+  assert.equal(flat(bubble), flat(want), "the same words");
+  assert.notEqual(tags(bubble), tags(want));
+  assert.equal(tags(want.replaceAll("<li>", '<li style="color:red">')), tags(want), "monday's own attributes do not count");
 });

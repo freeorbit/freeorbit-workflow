@@ -32,10 +32,12 @@ One item per story, grouped the way the story file groups them.
 
 The acceptance lines go in the item's first comment, pinned, where a list reads better than a text column.
 
-- **Shape.** A bold "🤖 Acceptance criteria" heading, a line asking readers not to edit it, the "As a…" sentence, then one bullet per acceptance line, as written.
-- **The line to readers.** "Kept in the project repo and updated automatically by the workflow bot. Please don't edit this comment: any change here is overwritten. For a question or a change, reply below."
+- **Shape.** The bot's line to readers in a quote block starting with 🤖, a bold "Acceptance criteria" heading, the "As a…" sentence, then one bullet per acceptance line, as written.
+  - The owner chose the quote block from three styles tried on the test board on 2026-11-11.
+  - Sync compares the comment's words and its tags, without their attributes, so a new layout with the same words still reaches the board.
+- **The line to readers.** "I'm Orbit, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up." The name is `board.bot.name`.
 - **Pinned.** `pin_to_top` keeps it above every client comment.
-- **Kept current.** Sync finds it by its heading among the bot's updates and changes it with `edit_update` only when the lines differ, so a story change never posts a new comment.
+- **Kept current.** Sync finds it as the bot's top-level comment with a line that is the heading, "Acceptance criteria" or the older "🤖 Acceptance criteria", and changes it with `edit_update` only when the lines differ, so a story change never posts a new comment.
 - **Replies are feedback.** A guest's reply under it counts as a client comment, the same as one on the item.
 
 ## Trial
@@ -88,11 +90,33 @@ All in the core plugin, beside `wf question` and `wf decision`.
 | `wf board plan` | A dry run: each item it would create, change, or retire, with the fields that differ. Needs the token to read the board, never to write |
 | `wf board sync` | Finds each item by its Story ID column and writes only the fields that changed. Runs in CI on every merge to `main` |
 | `wf board setup` | Checks the board's columns and status labels against the config, and creates what is missing on a yes |
-| `wf board feedback` | Lists client comments with no bot reply under them. No state is kept in the repo: the reply marks a comment handled |
+| `wf board feedback [--json]` | Lists client comments with no bot reply after them, and apart, those edited after they were logged. No state is kept in the repo: the reply marks a comment handled |
+| `wf board reply <id> <Q-ID ...>` | Posts the bot's reply naming the open questions a comment was logged as, in its thread. Refuses a Q-ID not in the open questions log |
+| `wf board reply <id> --noted` | Posts the bot's "noted" reply to a comment that needs no question, so it stops showing as new |
+| `wf board reply <id> … -- <id> …` | Several replies in one batch, each checked before the first is posted |
 
-- **The `board-feedback` skill.** For each real question in `wf board feedback`, it runs `wf question add <chunk \| none> "…" <needs> "client (monday)" <story>`, then replies on the item.
-- **The reply says it is automated.** For example: "🤖 Logged automatically by the project workflow bot as Q-012 in the project repo. The team will answer here."
-- **Finding feedback.** A comment, or a reply under the acceptance comment, is a client's when its creator's `kind` is `guest`. It is handled when a reply under it starts with the 🤖 marker, as the trial showed.
+- **One batch, one full reply an item.** monday's reads lag its writes, so separate calls could each give an item the full first reply. A batch knows what it posted, and gives the rest on that item the short form.
+
+- **The `board-feedback` skill.** Run only as `/board-feedback`, since it posts to the client.
+  - It drafts each comment as a question to log, with its Needs role from `decisions` and chunk `none` by default, or as noted.
+  - It shows the whole batch in chat, and on a yes runs `wf question add … "client (monday)" <story>`, then one `wf board reply` with every reply.
+- **Finding feedback.** A comment, or a reply under the acceptance comment, is a client's when its creator's `kind` is `guest`, as the trial showed.
+  - monday's threads are one level deep, so a comment is handled when a bot reply sits in its thread after it. A later guest comment there is new again.
+  - A comment whose `updated_at` is after its bot reply is listed as edited, with the Q-IDs the reply named, and is never logged twice.
+
+### The bot
+
+The bot posts with the owner's token, so it signs as a helper of its own, friendly, in the background, and polite.
+
+- **Its name.** `board.bot.name`, "Orbit" by default, in every reply and the pinned comment's line.
+- **Logged.** "🤖 Hi, I'm Orbit. Thanks for raising this! I've added it to the project's list as Q-012, and someone from the team will reply here soon."
+- **Noted.** "🤖 Orbit here. Thanks, the team has seen this. Nothing to add to the list for this one, but every comment gets read."
+- **Short after the first.** The two above are its first reply on an item. Once the item holds an Orbit reply, in any thread, later ones there are short, so a busy thread is not flooded:
+  - Logged: "🤖 Orbit: thanks! Logged as Q-013, the team will reply here."
+  - Noted: "🤖 Orbit: thanks, the team has seen this."
+  - It is worked out from the board each run, with no state in the repo. The pinned comment is not a reply, so it never counts, and a second item's first reply is full again.
+- **One place.** All of its words are in the kit's `lib/board/voice.mjs`, with tests.
+- **Found by its marker, not its words.** A bot reply is one by the token's user that starts with 🤖, and the pinned comment is the bot's comment with the heading line. So the wording can change without breaking either.
 - **Testing.** Each command takes an injected `fetch`, as `wf doctor` takes an injected `gh`, so tests run on fixture Markdown and recorded responses, never the network.
 
 ## Config
@@ -103,7 +127,8 @@ An optional `board` section; a project without it has no board commands.
 | --- | --- | --- |
 | `board.provider` | `"monday"` | The only provider for now |
 | `board.boardId` | `""` | The client's shareable board's number, from its address |
-| `board.tokenEnv` | `"MONDAY_API_TOKEN"` | The environment variable holding the token. The token is never in config |
+| `board.tokenEnv` | `"MONDAY_API_TOKEN"` | The environment variable holding the token, a name such as `MONDAY_API_TOKEN`. The token is never in config |
+| `board.bot.name` | `"Orbit"` | The name the bot signs with |
 | `board.apiVersion` | `"2026-10"` | The monday API version every call sends |
 | `board.branch` | `"main"` | The branch whose pushes run the board-sync workflow |
 | `board.environment` | `"board"` | The GitHub Environment holding the token, limited to `board.branch` |
@@ -189,5 +214,5 @@ The board shows stories, not the project's internals.
 1. The trial against a test board, in this doc.
 2. The story reader, and `wf board plan` and `sync`, tested with fixtures and a fake fetch. Built in v0.32.0, with `wf board setup`, and run against the test board.
 3. The CI workflow, through `wf github`, and the PR column from git history. Built in v0.33.0; the workflow is checked by tests only until a project turns it on.
-4. `wf board feedback` and the `board-feedback` skill.
+4. `wf board feedback`, `wf board reply`, and the `board-feedback` skill. Built in v0.34.0; the guest path is checked by tests, since the token's own user posts as a member.
 5. Frames, then screenshots of the built screens.

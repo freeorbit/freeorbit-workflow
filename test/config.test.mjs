@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 import { globRegex, loadConfig, matcher, merge, project, unknownKeys } from "../lib/config.mjs";
 import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
-import { problems } from "../lib/docs/check.mjs";
+import { latestToday, problems } from "../lib/docs/check.mjs";
 import { growth, status } from "../lib/docs/facts.mjs";
 
 test("a project's settings lay over the defaults, objects by key and lists whole", () => {
@@ -74,7 +74,7 @@ test("doc:check finds a broken link, an unindexed doc, a long block, a missing s
     "docs/README.md: no row for docs/workflow/b.md",
     "docs/workflow/a.md: no story XY-07",
     "docs/workflow/a.md:5: 61 words in one block, over 60",
-    "docs/workflow/a.md:7: 2099-01-01 is after today, 2026-11-08",
+    "docs/workflow/a.md:7: 2099-01-01 is after today in every time zone, 2026-11-08 at the latest",
   ]);
 });
 
@@ -99,4 +99,20 @@ test("doc:check flags a Who decides block that no longer matches the config", as
 test("a loose doc that no longer exists is named, not a crash", () => {
   const root = scratch({ ".workflow/config.json": '{"docs":{"loose":["docs/gone.md"]}}', "AGENTS.md": "# A\n" });
   assert.ok(growth(project(root)).includes("  Loose doc: docs/gone.md is gone, take it off loose"));
+});
+
+test("a written date is checked against the latest date on Earth, not the runner's own", async () => {
+  // At noon UTC it is already the next day at UTC+11 and later, so a date written there is fine.
+  const noon = new Date("2026-11-10T12:00:00Z");
+  assert.equal(latestToday(noon), "2026-11-11");
+  assert.equal(latestToday(new Date("2026-11-10T09:59:00Z")), "2026-11-10", "before 10:00 UTC no zone has reached the next day");
+  assert.equal(latestToday(new Date("2026-12-31T23:00:00Z")), "2027-01-01");
+  const docs = (date) => scratch({ ".workflow/config.json": '{"docs":{"synced":[]}}', "docs/README.md": "# Index\n", "docs/log/a.md": `# A\n\n| ${date} | written |\n` });
+  const dated = async (date, today) => (await problems(project(docs(date)), today)).filter((line) => line.includes("after today"));
+  assert.deepEqual(await dated("2026-11-11", latestToday(noon)), [], "one day ahead of UTC passes");
+  assert.deepEqual(await dated("2026-11-12", latestToday(noon)), ["docs/log/a.md:3: 2026-11-12 is after today in every time zone, 2026-11-11 at the latest"]);
+  // With no date given, doc:check takes the latest date on Earth now, so the date some time zone is on passes wherever this runs.
+  const shift = (date, days) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
+  assert.deepEqual(await dated(latestToday(), undefined), []);
+  assert.equal((await dated(shift(latestToday(), 1), undefined)).length, 1);
 });
