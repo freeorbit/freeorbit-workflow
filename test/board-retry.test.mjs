@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { installSteps } from "../lib/github.mjs";
-import { commentHtml, runBoard, wanted } from "../lib/board/index.mjs";
+import { commentHtml, plan, planLines, runBoard, wanted } from "../lib/board/index.mjs";
 import { mondayClient, retryNotFound, STATUS_COLORS, withLabels } from "../lib/board/monday.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -196,4 +196,18 @@ test("the workflow installs with the project's own package manager, from its loc
   assert.deepEqual(installSteps(dir("yarn.lock")), ["corepack enable", "yarn install --frozen-lockfile"]);
   assert.deepEqual(installSteps(dir("package-lock.json")), ["npm ci"]);
   assert.deepEqual(installSteps(dir(null)), ["npm install"]);
+});
+
+test("a column monday does not return on items is noted, not sent on every run", async () => {
+  // As Atlas NX's portfolio-linked project_status: column_values(ids) leaves it out entirely.
+  const want = wanted(context());
+  const one = want[0];
+  const values = [["story_id", "APP-01"], ["area", "app"], ["chunk", one.values.chunk], ["story", one.values.story], ["pr", ""]].map(([id, text]) => ({ id, text }));
+  const item = { id: "9", name: one.name, group: { title: one.group }, column_values: values, updates: [{ id: "u9", body: one.comment, text_body: one.comment.replace(/<\/(p|li)>/g, "\n").replace(/<[^>]+>/g, ""), creator_id: "7" }] };
+  const board = { columns: [...COLUMNS, STATUS], views: [{ name: "Kanban" }], groups: [], items: [item] };
+  const result = plan(config(), want.slice(0, 1), board, "7");
+  assert.deepEqual(result.changes, [], "no Status: (empty) → Done each run");
+  assert.deepEqual(result.notes, ["column wf_status is not on the items monday returns, so sync sets it on create only and cannot check it"]);
+  assert.ok(planLines(result).includes("note    column wf_status is not on the items monday returns, so sync sets it on create only and cannot check it"));
+  assert.deepEqual(result.problems, []);
 });
