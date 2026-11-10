@@ -17,6 +17,12 @@ test("a lane id names its chunk and lane, and a Waits on cell lists ids", () => 
   assert.deepEqual(laneOf("1-fe"), { base: "1", lane: "fe" });
   assert.deepEqual(laneOf("35i-integration"), { base: "35i", lane: "integration" });
   assert.equal(laneOf("35i"), null);
+  assert.deepEqual(laneOf("CH-01-fe"), { base: "CH-01", lane: "fe" });
+  assert.deepEqual(laneOf("CH-01b-integration"), { base: "CH-01b", lane: "integration" });
+  assert.equal(laneOf("CH-01"), null);
+  assert.equal(chunkId("CH-01-fe"), "CH-01-fe");
+  assert.ok(CHUNK.test("CH-01") && CHUNK.test("CH-01b-fe") && !CHUNK.test("CH-01; id") && !CHUNK.test("ch-01"));
+  assert.deepEqual(expectedWaits("CH-01-integration", ["CH-01-contract", "CH-01-fe", "CH-01-be"]), ["CH-01-fe", "CH-01-be"]);
   assert.equal(chunkId("1-fe. Sign-in screen"), "1-fe");
   assert.deepEqual(waitsOn("1-fe, 1-be"), ["1-fe", "1-be"]);
   assert.deepEqual(waitsOn("1-fe and 1-be"), ["1-fe", "1-be"]);

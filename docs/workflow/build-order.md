@@ -3,6 +3,8 @@
 How each area's stories are put in the order they are built, chunk by chunk. The order itself, with its status tables, is in [the build order log](../log/build-order.md), and each area's reasons and map are in its own file beside it.
 
 - **Chunk:** one small piece of the build. A few whole stories, built, tested, reviewed, and committed together. It ends with every check passing, and leaves pieces the next chunks reuse.
+  - Its row starts with three cells: **Chunk**, its id, such as `CH-01`; **Title**, a short name, such as `Sign-in contract`; and **Who**, the role that owns it, such as `developer:frontend`, from the roles in `.workflow/config.json`.
+  - A chunk split from another takes a letter, such as `CH-01b`, and a lane adds its name, such as `CH-01-fe`.
 - **Area:** one part of the product, from `areas` in `.workflow/config.json`. Its order is made at the end of its Step 3 and refreshed at each chunk start.
 
 <!-- wf:local words -->
@@ -26,14 +28,14 @@ A chunk can be split so a front-end and a back-end developer build it at once, e
 
 | Lane | Who | Builds | Waits on |
 | --- | --- | --- | --- |
-| `<n>-contract` | developer:frontend and developer:backend together | The API contract for the chunk's stories, and its mock from the synthetic test data | Nothing in the chunk |
-| `<n>-fe` | developer:frontend | The screens, against the contract's mock | `<n>-contract` |
-| `<n>-be` | developer:backend | The service, against the contract | `<n>-contract` |
-| `<n>-integration` | either, or both | The screens wired to the service, the mock removed | `<n>-fe` and `<n>-be` |
+| `CH-<nn>-contract` | developer:frontend and developer:backend together | The API contract for the chunk's stories, and its mock from the synthetic test data | Nothing in the chunk |
+| `CH-<nn>-fe` | developer:frontend | The screens, against the contract's mock | `CH-<nn>-contract` |
+| `CH-<nn>-be` | developer:backend | The service, against the contract | `CH-<nn>-contract` |
+| `CH-<nn>-integration` | either, or both | The screens wired to the service, the mock removed | `CH-<nn>-fe` and `CH-<nn>-be` |
 
-- **One row per lane.** Each lane is its own row, such as `1-fe. Sign-in screen`, with a Waits on column. Each has its own branch, worktree, review, and pull request, and moves to the done list when its pull request merges.
-- **Starting.** A lane starts only once every row it waits on is in the done list. `npx wf ready chunk 1-fe` fails until then, and `npx wf doc:check` fails a lane In progress too early, or one that does not wait on what its lane must.
-- **Worktrees.** From the main checkout: `git worktree add ../<repo>-1-fe -b app/1-fe-sign-in main`. Each lane works in its own folder, so a laptop can hold several at once. Remove it after the merge with `git worktree remove ../<repo>-1-fe`.
+- **One row per lane.** Each lane is its own row, such as `CH-01-fe` titled `Sign-in screen`, with its lane's role in Who and a Waits on column. Each has its own branch, worktree, review, and pull request, and moves to the done list when its pull request merges.
+- **Starting.** A lane starts only once every row it waits on is in the done list. `npx wf ready chunk CH-01-fe` fails until then, and `npx wf doc:check` fails a lane In progress too early, or one that does not wait on what its lane must.
+- **Worktrees.** From the main checkout: `git worktree add ../<repo>-ch-01-fe -b app/ch-01-fe-sign-in main`. Each lane works in its own folder, so a laptop can hold several at once. Remove it after the merge with `git worktree remove ../<repo>-ch-01-fe`.
 - **The contract.** Its format and tools are the project's, chosen at Step 3, in `lanes.contract`: the file, and the commands that check it, serve its mock, and find a breaking change against the base.
   - An additive change, such as a new field, is free: the lane that needs it adds it, and the check passes.
   - A breaking change, such as a removed or renamed field, needs both specialties' agreement, recorded with `npx wf decision add`. Then `npx wf done chunk <lane> --agreed` passes.
@@ -60,7 +62,7 @@ A chunk can be split so a front-end and a back-end developer build it at once, e
 
 1. At the end of the area's Step 3, list its stories and what each needs: shared pieces, libraries, the network, and other stories. A shared piece that does not exist yet is a story of the area that owns it, and gets a chunk there.
 2. Group whole stories into chunks, and order them by the rules above.
-3. Add the rows to the log's Chunks table with the area and the next free numbers, counting those in the done list. Numbers name a chunk and are not always the build sequence. A row that goes ahead of a not-started chunk says so.
+3. Add the rows to the log's Chunks table with the next free ids, counting those in the done list, a short Title, the Who role, and the area. Ids name a chunk and are not always the build sequence. A row that goes ahead of a not-started chunk says so.
 4. In the area's file, add a short "Why this order" and a map. A chunk of another area this one needs is a node in its map.
 5. Ask the owner once about the order, along with any chunks it adds to other areas.
 6. At each [chunk start](four-steps.md#chunk-start), put a new or changed story into a chunk or a new row, and ask in the same set of questions.

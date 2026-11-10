@@ -17,7 +17,7 @@ A topic is one reason. The change and the docs or tests that exist for that reas
 
 After a blank line, one bullet per topic, wrapped at 72 characters.
 
-- Start a bullet with its ID when it has one: a story (DR-05), a finding (SEC-043), a chunk (chunk 19h), or a question.
+- Start a bullet with its ID when it has one: a story (DR-05), a finding (SEC-043), a chunk (CH-19), or a question.
 - One line on what changed and why, two at most. The full reasons stay in the docs the IDs point to.
 - Name a file only when the topic is that file, such as a research note.
 - A one-topic change with nothing to add beyond the subject may have no body. A pull request has no test plan unless someone asked for one.
@@ -25,7 +25,7 @@ After a blank line, one bullet per topic, wrapped at 72 characters.
 Good, one topic with a body:
 
 ```
-release: check build tools after bundling, close chunk 19h
+release: check build tools after bundling, close CH-19
 
 - SEC-043: rehash the tools after the build; an AppRun or AppImage
   not in build-tools.txt fails it.

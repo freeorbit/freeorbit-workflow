@@ -53,8 +53,10 @@ test("wf done quick passes and runs the project's quick check", () => {
 
 test("wf ready chunk finds the row, and says when the chunk is already done", () => {
   const config = merge(DEFAULTS, {});
-  const texts = { [config.buildOrder.file]: "| 35i. Ask the assistant | Not started |\n", [config.buildOrder.done]: "| 35h. Steps | Done |\n" };
-  assert.equal(chunkRow([texts[config.buildOrder.file]], "35i"), "| 35i. Ask the assistant | Not started |");
+  const head = "| Chunk | Title | Who | Status |\n| --- | --- | --- | --- |\n";
+  const texts = { [config.buildOrder.file]: `${head}| 35i | Ask the assistant | developer:frontend | Not started |\n`, [config.buildOrder.done]: `${head}| 35h | Steps | developer | Done |\n` };
+  assert.equal(chunkRow([texts[config.buildOrder.file]], "35i").title, "Ask the assistant");
+  assert.equal(chunkRow([texts[config.buildOrder.file]], "35i").who, "developer:frontend");
   assert.equal(run(config, "ready", ["chunk", "35i"], io({ texts })).code, 0);
   const done = run(config, "ready", ["chunk", "35h"], io({ texts }));
   assert.equal(done.code, 1);

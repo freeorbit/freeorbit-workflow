@@ -87,10 +87,13 @@ test("coverage names a row with no Reach, a Reach with no scenario, and a scenar
   ]);
 });
 
-test("a chunk's stories come from its row, and chunk 3 is not chunk 30", () => {
-  const order = "| 30. Wait | DR-01, DR-09 | Downlink |\n| 31. Follow up | DR-12 | Downlink |";
-  assert.deepEqual(chunkStories("30", ["", order]), ["DR-01", "DR-09"]);
-  assert.equal(chunkStories("3", [order]), null);
+test("a chunk's stories come from its row's Stories column, and CH-03 is not CH-30", () => {
+  const order = "| Chunk | Title | Who | Stories | Status |\n| --- | --- | --- | --- | --- |\n| CH-30 | Wait | developer | DR-01, DR-09 | Not started |\n| CH-31 | Follow up | developer | DR-12 | Not started |";
+  assert.deepEqual(chunkStories("CH-30", ["", order]), ["DR-01", "DR-09"]);
+  assert.equal(chunkStories("CH-03", [order]), null);
+  const older = "| Chunk | Stories | Status |\n| --- | --- | --- |\n| 30. Wait | DR-01, DR-09 | Not started |";
+  assert.deepEqual(chunkStories("30", [older]), ["DR-01", "DR-09"]);
+  assert.equal(chunkStories("3", [older]), null);
 });
 
 test("a screen is read again when a picture taken now or its frame changed", () => {
@@ -168,6 +171,7 @@ test("a chunk-end run waits until the code review has run or been deferred at HE
 
 test("an unreached frame names its chunk, or says it cannot be reached", () => {
   assert.deepEqual(unreached("none, 35i: needs a sign-in"), { kind: "waiting", chunk: "35i", reason: "needs a sign-in" });
+  assert.deepEqual(unreached("none, CH-35-fe: needs the screen"), { kind: "waiting", chunk: "CH-35-fe", reason: "needs the screen" });
   assert.deepEqual(unreached("cannot: a hover tip"), { kind: "cannot", reason: "a hover tip" });
   assert.deepEqual(unreached("none: old style"), { kind: "unowned" });
   assert.equal(unreached("gmail-fresh › go #/catalog"), null);
@@ -175,11 +179,11 @@ test("an unreached frame names its chunk, or says it cannot be reached", () => {
 });
 
 test("a chunk is open in the build order or done in the done list", () => {
-  const buildOrder = "| 35i. Live sign-ins | APP-13 |";
-  const done = "| 35g. Missing | APP-01 |";
-  assert.equal(chunkStatus("35i", buildOrder, done), "open");
-  assert.equal(chunkStatus("35g", buildOrder, done), "done");
-  assert.equal(chunkStatus("99", buildOrder, done), null);
+  const buildOrder = "| Chunk | Title | Who | Stories | Status |\n| --- | --- | --- | --- | --- |\n| CH-35 | Live sign-ins | developer | APP-13 | Not started |";
+  const done = "| Chunk | Title | Who | Stories | Status |\n| --- | --- | --- | --- | --- |\n| CH-34 | Missing | developer | APP-01 | Done |";
+  assert.equal(chunkStatus("CH-35", buildOrder, done), "open");
+  assert.equal(chunkStatus("CH-34", buildOrder, done), "done");
+  assert.equal(chunkStatus("CH-99", buildOrder, done), null);
 });
 
 test("the list fails a none with no chunk, or one waiting on a done chunk", () => {
@@ -188,7 +192,7 @@ test("the list fails a none with no chunk, or one waiting on a done chunk", () =
     { name: "b", framed: true, stories: [], reach: "none, 35g: done already" },
     { name: "c", framed: true, stories: [], reach: "none, 35i: later" },
   ];
-  const problems = coverage(rows, [], { buildOrder: "| 35i. x |", done: "| 35g. y |" });
+  const problems = coverage(rows, [], { buildOrder: "| Chunk | Status |\n| --- | --- |\n| 35i. x | Not started |", done: "| Chunk | Status |\n| --- | --- |\n| 35g. y | Done |" });
   assert.equal(problems.length, 2);
   assert.match(problems[0], /a is not reached and names no chunk/);
   assert.match(problems[1], /b waits on chunk 35g, which is done/);
