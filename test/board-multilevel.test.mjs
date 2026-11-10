@@ -18,7 +18,7 @@ const context = () => ({
   tracked: Object.keys(files),
   files: (path) => files[path],
 });
-const LABELS = { 0: "Drafting", 3: "Backlog", 7: "Planned", 9: "In progress", 17: "Checking", 1: "Done" };
+const LABELS = { 0: "Drafting", 3: "Backlog", 7: "Planned", 9: "In progress", 17: "Checking", 1: "Built" };
 
 /**
  * A multi-level board, as monday's project template makes. While a status
@@ -29,9 +29,10 @@ const LABELS = { 0: "Drafting", 3: "Backlog", 7: "Planned", 9: "In progress", 17
 function multiLevelMonday({ rollup = true, status = true } = {}) {
   const statusColumn = (id, title) => ({ id, title, type: "status", revision: "r1", settings_str: JSON.stringify({ labels: LABELS }), settings: { labels: [] }, capabilities: { calculated: { function: "COUNT_KEYS" } } });
   const others = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"]].map(([id, type]) => ({ id, title: id, type, settings_str: "{}", capabilities: { calculated: null } }));
+  others.push({ id: "client_review", title: "Client review", type: "status", settings_str: "{}", capabilities: { calculated: null } });
   const state = { columns: [...others], items: [], groups: [{ id: "topics", title: "Group Title" }], next: 1, ops: [], cleared: [] };
   if (status) {
-    const own = statusColumn("project_status", "Status");
+    const own = statusColumn("project_status", "Build");
     if (!rollup) own.capabilities.calculated = null;
     state.columns.push(own);
   }
@@ -51,11 +52,11 @@ function multiLevelMonday({ rollup = true, status = true } = {}) {
   };
   const fetch = async (url, init) => {
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|pin_to_top|update_status_column|create_column)\b/)[1];
+    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|pin_to_top|update_status_column|create_column|create_view_table)\b/)[1];
     state.ops.push(op);
     const ok = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
     if (op === "me") return ok({ me: { id: "7" } });
-    if (op === "boards") return ok({ boards: [{ id: "42", name: "Client board", board_kind: "share", hierarchy_type: "multi_level", columns: state.columns, groups: state.groups, views: [{ name: "Kanban" }], items_page: { cursor: null, items: state.items.map(shown) } }] });
+    if (op === "boards") return ok({ boards: [{ id: "42", name: "Client board", board_kind: "share", hierarchy_type: "multi_level", columns: state.columns, groups: state.groups, views: [{ name: "Build" }, { name: "Client review" }], items_page: { cursor: null, items: state.items.map(shown) } }] });
     if (op === "create_group") {
       state.groups.push({ id: `g${state.next}`, title: v.n });
       return ok({ create_group: { id: `g${state.next++}` } });
@@ -87,6 +88,7 @@ function multiLevelMonday({ rollup = true, status = true } = {}) {
       }
       return ok({ update_status_column: { id: v.id } });
     }
+    if (op === "create_view_table") return ok({ create_view_table: { id: "v1" } });
     if (op === "create_column") {
       state.columns.push(statusColumn(v.id, v.t));
       return ok({ create_column: { id: v.id } });
@@ -102,7 +104,7 @@ async function run(args, monday) {
   return { code, out };
 }
 
-const ROLLUP = "column project_status (Status) rolls up child items, so monday ignores writes; wf board setup --create turns the rollup off";
+const ROLLUP = "column project_status (Build) rolls up child items, so monday ignores writes; wf board setup --create turns the rollup off";
 
 test("a status column that rolls up child items is the problem setup names, and plan and sync stop on it", async () => {
   const monday = multiLevelMonday({ rollup: true });
@@ -125,7 +127,7 @@ test("setup --create turns the rollup off, and then sync writes the statuses and
   assert.deepEqual(monday.state.cleared, ["project_status"]);
   const synced = await run(["sync"], monday);
   assert.equal(synced.code, 0, synced.out.join("\n"));
-  assert.deepEqual(monday.state.items.map((item) => `${item.values.story_id} ${item.values.project_status}`), ["APP-01 Done", "APP-02 Planned", "APP-04 In progress"]);
+  assert.deepEqual(monday.state.items.map((item) => `${item.values.story_id} ${item.values.project_status}`), ["APP-01 Built", "APP-02 Planned", "APP-04 In progress"]);
   assert.deepEqual((await run(["plan"], monday)).out, ["0 to create, 0 to update, 0 comments, 0 to retire, 3 unchanged."]);
 });
 
@@ -133,7 +135,7 @@ test("a status column setup --create makes on a multi-level board has its rollup
   const monday = multiLevelMonday({ status: false });
   const made = await run(["setup", "--create"], monday);
   assert.equal(made.code, 0, made.out.join("\n"));
-  assert.ok(made.out.includes("created column project_status (Status, status)"));
+  assert.ok(made.out.includes("created column project_status (Build, status)"));
   assert.ok(made.out.includes("turned off column project_status's rollup of child items"));
   assert.equal(monday.state.columns.find((column) => column.id === "project_status").capabilities.calculated, null);
 });

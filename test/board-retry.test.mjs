@@ -16,7 +16,8 @@ const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8
 const config = (more = {}) => merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }], stories: { files: ["docs/app/user-stories.md"] }, board: { boardId: "42" }, ...more });
 const files = { "docs/app/user-stories.md": fixture("user-stories.md"), "docs/log/build-order.md": fixture("build-order.md"), "docs/log/chunks-done.md": fixture("chunks-done.md") };
 const context = (more) => ({ root: "/project", config: config(more), tracked: Object.keys(files), files: (path) => files[path] });
-const STATUS = { id: "wf_status", title: "Status", type: "status", settings_str: JSON.stringify({ labels: { 0: "Drafting", 1: "Backlog", 2: "Planned", 3: "In progress", 4: "Checking", 6: "Done" } }) };
+const STATUS = { id: "wf_status", title: "Build", type: "status", settings_str: JSON.stringify({ labels: { 0: "Drafting", 1: "Backlog", 2: "Planned", 3: "In progress", 4: "Checking", 6: "Built" } }) };
+const REVIEW = { id: "client_review", title: "Client review", type: "status", settings_str: "{}" };
 const COLUMNS = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"]].map(([id, type]) => ({ id, title: id, type, settings_str: "{}" }));
 
 /**
@@ -24,7 +25,7 @@ const COLUMNS = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["st
  * moment ago fails "not found" the first `lag` times. `dropStatus` leaves the
  * status empty on create, as Atlas NX's board did.
  */
-function laggingMonday({ lag = 2, dropStatus = false, items = [], columns = [...COLUMNS, STATUS], portfolio = [] } = {}) {
+function laggingMonday({ lag = 2, dropStatus = false, items = [], columns = [...COLUMNS, STATUS, REVIEW], portfolio = [] } = {}) {
   const state = { items: structuredClone(items), groups: [{ id: "topics", title: "Group Title" }], columns, ops: [], misses: new Map(), next: 1 };
   const fresh = (key) => {
     const seen = state.misses.get(key) ?? 0;
@@ -38,13 +39,13 @@ function laggingMonday({ lag = 2, dropStatus = false, items = [], columns = [...
   const shown = (item) => ({ id: item.id, name: item.name, group: state.groups.find((group) => group.id === item.group), column_values: state.columns.map((column) => column.id).filter((id) => !portfolio.includes(id)).map((id) => ({ id, text: item.values[id] ?? "" })), updates: item.updates });
   const fetch = async (url, init) => {
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|edit_update|pin_to_top|update_status_column)\b/)[1];
+    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|edit_update|pin_to_top|update_status_column|create_column|create_view_table|change_column_title)\b/)[1];
     state.ops.push(op);
     const ok = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
     const missing = (what) => ({ status: 200, text: async () => JSON.stringify({ errors: [{ message: `${what} not found` }] }) });
     const item = state.items.find((each) => each.id === v?.i);
     if (op === "me") return ok({ me: { id: "7" } });
-    if (op === "boards") return ok({ boards: [{ id: "42", name: "Test board", board_kind: "share", columns: state.columns, groups: state.groups, views: [{ name: "Kanban" }], items_page: { cursor: null, items: state.items.map(shown) } }] });
+    if (op === "boards") return ok({ boards: [{ id: "42", name: "Test board", board_kind: "share", columns: state.columns, groups: state.groups, views: [{ name: "Build" }, { name: "Client review" }], items_page: { cursor: null, items: state.items.map(shown) } }] });
     if (op === "create_group") {
       state.groups.push({ id: `g${state.next}`, title: v.n });
       return ok({ create_group: { id: `g${state.next++}` } });
@@ -76,6 +77,16 @@ function laggingMonday({ lag = 2, dropStatus = false, items = [], columns = [...
     if (op === "update_status_column") {
       state.statusUpdate = v;
       return ok({ update_status_column: { id: v.id } });
+    }
+    if (op === "create_column") {
+      state.columns.push({ id: v.id, title: v.t, type: v.ty, settings_str: v.d ?? "{}" });
+      return ok({ create_column: { id: v.id } });
+    }
+    if (op === "create_view_table") return ok({ create_view_table: { id: "v1" } });
+    if (op === "change_column_title") {
+      state.titled = v;
+      state.columns.find((column) => column.id === v.c).title = v.t;
+      return ok({ change_column_title: { id: v.c } });
     }
     throw new Error(`lagging monday: ${op}`);
   };
@@ -124,7 +135,7 @@ test("sync gets through monday's read lag: each pin and comment on a new item re
   const { code, out, sleeps } = await run(["sync"], monday);
   assert.equal(code, 0, out.join("\n"));
   const one = monday.state.items.find((item) => item.values.story_id === "APP-01");
-  assert.equal(one.values.wf_status, "Done");
+  assert.equal(one.values.wf_status, "Built");
   assert.deepEqual(one.updates[0].pinned_to_top, [{ item_id: one.id }]);
   assert.ok(monday.state.items.every((item) => item.updates.length === 1), "one comment an item, however many retries");
   assert.ok(sleeps.length >= 6 && sleeps.every((ms) => [500, 1000].includes(ms)), String(sleeps));
@@ -136,7 +147,7 @@ test("a value monday drops on create, such as the status, is sent again at once"
   assert.equal(code, 0, out.join("\n"));
   assert.ok(out.includes("set wf_status on APP-01 again, which create left empty"), out.join("\n"));
   assert.ok(!out.some((line) => line.startsWith("set ") && !line.startsWith("set wf_status ")), "a value sent empty, such as an unplanned story's chunk, is not sent again");
-  assert.deepEqual(monday.state.items.map((item) => `${item.values.story_id} ${item.values.wf_status}`), ["APP-01 Done", "APP-02 Planned", "APP-04 In progress"]);
+  assert.deepEqual(monday.state.items.map((item) => `${item.values.story_id} ${item.values.wf_status}`), ["APP-01 Built", "APP-02 Planned", "APP-04 In progress"]);
 });
 
 test("a run cut short is finished by the next: an unpinned acceptance comment is pinned, not posted again", async () => {
@@ -146,7 +157,7 @@ test("a run cut short is finished by the next: an unpinned acceptance comment is
   const monday = laggingMonday({ lag: 0, items: [half] });
   monday.state.groups.push({ id: "g0", title: "App · Sign in" });
   const planned = await run(["plan"], monday);
-  assert.ok(planned.out.includes("update  APP-01  Status: (empty) → Done"), planned.out.join("\n"));
+  assert.ok(planned.out.includes("update  APP-01  Build: (empty) → Built"), planned.out.join("\n"));
   assert.ok(planned.out.includes("comment APP-01  pin acceptance"), planned.out.join("\n"));
   const synced = await run(["sync"], monday);
   assert.equal(synced.code, 0, synced.out.join("\n"));
@@ -159,17 +170,24 @@ test("a run cut short is finished by the next: an unpinned acceptance comment is
   assert.ok(!again.out.some((line) => line.includes("APP-01")), again.out.join("\n"));
 });
 
-test("setup --create adds missing labels to an existing status column, keeping each label's id and colour", async () => {
-  // A board's own status column, as Atlas NX's was: monday's three labels, Done among them.
+test("setup --create brings a board's own status column to the kit's: its title, Done renamed Built in place, and the labels it lacks", async () => {
+  // A board's own status column, as Atlas NX's was: titled Status, with monday's three labels, Done marked done.
   const own = { id: "wf_status", title: "Status", type: "status", revision: "rev-1", settings_str: JSON.stringify({ labels: { 0: "Working on it", 1: "Done", 2: "Stuck" } }), settings: { labels: [{ id: 0, label: "Working on it", color: 0, index: 0 }, { id: 1, label: "Done", color: 1, index: 1, is_done: true }, { id: 2, label: "Stuck", color: 2, index: 2 }] } };
-  const monday = laggingMonday({ lag: 0, columns: [...COLUMNS, own] });
+  const monday = laggingMonday({ lag: 0, columns: [...COLUMNS, own, REVIEW] });
+  const listed = await run(["setup"], monday);
+  assert.ok(listed.out.includes('column wf_status is titled "Status"; wf board setup --create renames it "Build"'), listed.out.join("\n"));
+  assert.ok(listed.out.includes('column wf_status (Build) has label "Done" marked done; wf board setup --create renames it "Built"'));
+  assert.ok(!listed.out.includes('column wf_status (Build) has no label "Built"; wf board setup --create adds it'), "Built comes from the rename, not a new label");
   const { out } = await run(["setup", "--create"], monday);
-  assert.ok(out.includes('added "Drafting", "Backlog", "Planned", "In progress", "Checking" to column wf_status'), out.join("\n"));
+  assert.ok(out.includes('renamed column wf_status "Status" to "Build"'), out.join("\n"));
+  assert.ok(out.includes('renamed label 1 of column wf_status "Done" to "Built", keeping its id'));
+  assert.ok(out.includes('added "Drafting", "Backlog", "Planned", "In progress", "Checking" to column wf_status'));
   const sent = monday.state.statusUpdate;
   assert.equal(sent.r, "rev-1");
+  assert.deepEqual(monday.state.titled, { b: "42", c: "wf_status", t: "Build" }, "the title by its own call, apart from the labels");
   assert.deepEqual(sent.s.labels.slice(0, 3), [
     { id: 0, label: "Working on it", color: "working_orange", index: 0, is_done: false },
-    { id: 1, label: "Done", color: "done_green", index: 1, is_done: true },
+    { id: 1, label: "Built", color: "done_green", index: 1, is_done: true },
     { id: 2, label: "Stuck", color: "stuck_red", index: 2, is_done: false },
   ]);
   assert.deepEqual(sent.s.labels.slice(3).map((label) => `${label.label} ${label.color} ${label.index}`), ["Drafting dark_blue 3", "Backlog purple 4", "Planned explosive 5", "In progress grass_green 6", "Checking bright_blue 7"]);
@@ -184,6 +202,12 @@ test("new labels take colours no label has, and too many is refused", () => {
   ]);
   const full = { labels: STATUS_COLORS.map((name, i) => ({ id: i, label: name, color: i, index: i })) };
   assert.throws(() => withLabels(full, ["One more"]), /room for 0 more colours/);
+  // A label someone turned off stays off, and a rename keeps the label's id.
+  const kept = withLabels({ labels: [{ id: 1, label: "Done", color: 1, index: 1, is_done: true }, { id: 2, label: "Stuck", color: 2, index: 2, is_deactivated: true }] }, [], { 1: "Built" });
+  assert.deepEqual(kept, [
+    { id: 1, label: "Built", color: "done_green", index: 1, is_done: true },
+    { id: 2, label: "Stuck", color: "stuck_red", index: 2, is_done: false, is_deactivated: true },
+  ]);
 });
 
 test("the workflow installs with the project's own package manager, from its lockfile", () => {
@@ -204,37 +228,26 @@ test("a column monday keeps off items, as a portfolio's own status, stops setup,
   await run(["sync"], made);
   const monday = laggingMonday({ lag: 0, items: made.state.items, portfolio: ["wf_status"] });
   monday.state.groups = made.state.groups;
-  const line = "column wf_status (Status) can't be set on items (portfolio-managed?); use a column of your own, such as wf board setup --create makes with board.titles.status";
+  const line = "column wf_status (Build) can't be set on items (portfolio-managed?); use a column of your own, such as wf board setup --create makes with board.titles.status";
   const setup = await run(["setup"], monday);
   assert.equal(setup.code, 1);
   assert.ok(setup.out.includes(line), setup.out.join("\n"));
   const planned = await run(["plan"], monday);
   assert.equal(planned.code, 1);
   assert.ok(planned.out.includes(`board   ${line}`));
-  assert.ok(!planned.out.some((each) => each.includes("Status: (empty)")), "never the endless (empty) → Done");
+  assert.ok(!planned.out.some((each) => each.includes("Build: (empty)")), "never the endless (empty) → Done");
   const before = monday.state.ops.length;
   assert.equal((await run(["sync"], monday)).code, 1);
   assert.deepEqual([...new Set(monday.state.ops.slice(before))].sort(), ["boards", "me"], "sync writes nothing");
 });
 
-test("a column's title comes from board.titles, for a board that has its own Status", async () => {
+test("a column's title comes from board.titles, and names its view", async () => {
   const monday = laggingMonday({ lag: 0, columns: COLUMNS });
   const titled = { board: { boardId: "42", titles: { status: "Story status" } } };
   const listed = await run(["setup"], monday, titled);
   assert.ok(listed.out.includes("column wf_status (Story status, status) is missing"), listed.out.join("\n"));
-  monday.state.columns.push({ id: "views-ok", title: "x", type: "text", settings_str: "{}" });
-  const created = [];
-  const fetch = monday.fetch;
-  monday.fetch = async (url, init) => {
-    const { query, variables } = JSON.parse(init.body);
-    if (query.includes("create_column")) {
-      created.push(variables);
-      monday.state.columns.push({ ...STATUS, title: variables.t });
-      return { status: 200, text: async () => JSON.stringify({ data: { create_column: { id: variables.id } } }) };
-    }
-    return fetch(url, init);
-  };
+  assert.ok(listed.out.includes('view "Story status" is missing; wf board setup --create makes it, a table grouped by Story status'));
   const out = await run(["setup", "--create"], monday, titled);
-  assert.deepEqual(created.map((each) => `${each.id} ${each.t} ${each.ty}`), ["wf_status Story status status"]);
-  assert.ok(out.out.includes("created column wf_status (Story status, status)"));
+  assert.ok(out.out.includes("created column wf_status (Story status, status)"), out.out.join("\n"));
+  assert.ok(out.out.includes('created view "Story status", a table grouped by Story status'));
 });

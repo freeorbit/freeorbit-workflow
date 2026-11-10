@@ -159,7 +159,7 @@ test("the pinned comment's new wording edits each old one once, still found by i
   const columns = ["story_id", "area", "chunk", "story", "pr", "owner"].map((id) => ({ id, type: { story: "long_text", pr: "link", owner: "people" }[id] ?? "text" }));
   columns.push({ id: "wf_status", type: "status", settings_str: JSON.stringify({ labels: { 0: "Drafting", 1: "Backlog", 2: "Planned", 3: "In progress", 4: "Checking", 6: "Done" } }) });
   const values = [["story_id", "APP-01"], ["area", "app"], ["wf_status", "Done"], ["chunk", ""], ["story", story.as], ["pr", ""]].map(([id, text]) => ({ id, text }));
-  const on = (text) => ({ columns, views: [{ name: "Kanban" }], groups: [], items: [{ id: "1", name: "APP-01 · A story", group: { title: "App · Sign in" }, column_values: values, updates: [bot("p1", text, 0)] }] });
+  const on = (text) => ({ columns, views: [{ name: "Build" }, { name: "Client review" }], groups: [], items: [{ id: "1", name: "APP-01 · A story", group: { title: "App · Sign in" }, column_values: values, updates: [bot("p1", text, 0)] }] });
   const edit = plan(config(), want, on(old), ME).changes;
   assert.deepEqual(edit.map((change) => `${change.kind} ${change.updateId}`), ["comment p1"]);
   const now = commentHtml(story).replace(/<\/p>|<\/li>/g, "\n").replace(/<[^>]+>/g, "");

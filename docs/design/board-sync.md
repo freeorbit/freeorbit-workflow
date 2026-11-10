@@ -16,17 +16,26 @@ One item per story, grouped the way the story file groups them.
 
 - **Item.** Named `<ID> · <title>`, such as `APP-01 · Sign in with work email and password`.
 - **Group.** The area and the story file's `##` heading, such as `App · Sign in`. Retired items sit in "Retired".
-- **View.** A Kanban view by Status. The product is monday Work Management, so there are no native sprints; the chunk column stands in for one.
+- **Views.** Two, which `wf board setup --create` makes, each a table grouped by its column: Build and Client review. monday's API makes no Kanban, so a Kanban of each is added by hand once. The product is monday Work Management, so there are no native sprints; the chunk column stands in for one.
 
 | Column | Type | From |
 | --- | --- | --- |
 | Story ID | Text | The story heading's ID; how sync finds the item |
 | Area | Text | The area's id |
-| Status | Status | The build order, below |
+| Build | Status | The build order, below; its last step is Built, not Done |
 | Chunk | Text | The chunk rows that list the story, such as `CH-01-fe, CH-01-be` |
 | Story | Long text | The "As a…" sentence only, so it reads on the Kanban card |
 | PR | Link | The pull request of the story's lane finished last, as in [PR links](#pr-links) |
 | Owner | People | Assigned by hand on the board. `wf board setup` makes it, and sync never reads or writes it |
+| Client review | Status | The client's and the team's say, as in [Client review](#client-review). `wf board setup` makes it once, and sync never reads or writes it |
+
+### Client review
+
+Build says what the repo knows: whether a story is built. Whether the client accepts it is theirs to say, so it has a column of its own.
+
+- **Made once.** `wf board setup --create` makes it with starter labels, `board.reviewLabels`: Not ready, Ready for review, Approved (marked done), and Changes requested.
+- **Then the people's.** Setup checks only that it is there and is a status column. The team and the client add labels as they need, and setup never checks them.
+- **Never synced.** Sync never reads or writes it, not even a starting value, and a missing one never stops a sync, as with Owner.
 
 ### Acceptance comment
 
@@ -61,7 +70,7 @@ A run on 2026-11-10 against a throwaway board, as the owner's own token, at API 
 - **An unknown label fails loudly.** With `create_labels_if_missing: false`, a label the column lacks is a `ColumnValueException` listing the labels it has. Sync always sends that flag, so the board's labels stay the config's.
 - **Errors come back as HTTP 200.** A failed call has a 200 status and an `errors` list, so the client checks the body, not the status.
 - **A column update is costly.** Each `change_multiple_column_values` cost about 30,000 complexity, so a minute holds about 330. A project's stories fit, but sync sends only the items that changed.
-- **No Kanban from the API.** `create_view` offers table, form, dashboard, and app views. The Kanban view is made by hand once, and `wf board setup` only checks it is there.
+- **No Kanban from the API.** `create_view` offers table, form, dashboard, and app views (checked again 2026-11-11). `create_view_table` takes `settings.group_by.conditions`, so setup makes the Build and Client review views as tables grouped by their columns, and a Kanban is made by hand once. `wf board setup` only checks it is there.
 - **The done label.** A new status column marks label 1 as done (`done_colors`). `wf board setup` sets Done as the done label, which the trial did not try.
 
 ## Status
@@ -75,7 +84,7 @@ A story's status comes from the build order: once any of its lanes has started, 
 | Planned | Every row that lists it is Not started |
 | In progress | A row has started or finished, and another is In progress or Not started |
 | Checking | Every row is Waiting or done, and one is Waiting |
-| Done | Every row that lists it is in `chunks-done.md` |
+| Built | Every row that lists it is in `chunks-done.md`. Whether the client approves is Client review's, not this |
 
 - **Started means In progress.** A story in `CH-01-fe` (done) and `CH-01-be` (Not started) is In progress, since work on it is under way.
 - **Planned means no lane has started.** A story moves out of Planned when its first lane does.
@@ -134,7 +143,9 @@ An optional `board` section; a project without it has no board commands.
 | `board.environment` | `"board"` | The GitHub Environment holding the token, limited to `board.branch` |
 | `board.columns` | the six above | Each field's column id on the board, filled by `wf board setup` |
 | `board.titles` | the titles above | Each column's title, which `wf board setup --create` gives it. A board from monday's project template already has a Status, so its own is titled another way, such as "Story status" |
-| `board.statuses` | the six above | Each status's label text on the board |
+| `board.statuses` | the six above | Each status's label text on the board. The last, `done`, is "Built" |
+| `board.columns.clientReview`, `board.titles.clientReview` | `"client_review"`, `"Client review"` | The Client review column, never synced |
+| `board.reviewLabels`, `board.reviewDone` | the four above, `"Approved"` | Client review's labels when setup makes it, and the one marked done |
 | `board.show.deliveryNotes` | `true` | An update on each story's item when its chunk is done, from `chunks-done.md` |
 | `board.show.frames` | `true` | The frame PNG on the item, later a screenshot of the built screen |
 | `board.show.clientQuestions` | `true` | Open questions the client answers, as updates on their stories |
@@ -178,7 +189,7 @@ For a project on the kit, once its stories are ready for the client.
 2. Set `board.boardId` in `.workflow/config.json` to the board's number, from its address.
 3. With the token in `MONDAY_API_TOKEN`, run `npx wf board setup --create`.
    - A column it says can't be set on items belongs to a portfolio, such as a project template's status. Point `board.columns` at an id of the project's own, with its title in `board.titles`, and run it again.
-   - Then add the Kanban view by the status column on the board by hand.
+   - Then add a Kanban view grouped by Build, and one by Client review, on the board by hand, if cards suit better than the tables setup makes.
 4. Run `npx wf board plan`, and check what it would write.
 5. In GitHub, create the `board` environment, set its deployment branches to `main` only, and add `MONDAY_API_TOKEN` to it as a secret.
 6. Run `npx wf github sync`, and merge the workflow it writes. The merge runs the first sync.

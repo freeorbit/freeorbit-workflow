@@ -83,6 +83,17 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.35.0: Build and Client review
+
+The board's status splits in two, so the client can review a story before anything is called done.
+
+- The kit's status column is now titled Build, and its last label is Built, not Done. A new Client review column is the client's and the team's, and sync never touches it.
+- For a board set up before, run `npx wf board setup`. It reports the old title and the Done label, and plan and sync stop until they are fixed.
+- Then run `npx wf board setup --create` once. It renames the column to Build, and its Done label to Built in place, keeping the label's id, so every item set to it stays set and reads Built.
+  - It makes Client review with its starter labels, and two views, Build and Client review, each a table grouped by its column.
+  - monday's API makes no Kanban, so add one of each by hand if cards suit better.
+- A project that set `board.statuses.done` or `board.titles.status` keeps its own.
+
 ### v0.34.2: boards made from monday's project template
 
 A board made from monday's project template is multi-level, and its status columns roll up child items.
