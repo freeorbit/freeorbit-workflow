@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -36,15 +36,36 @@ test("auto picks systemd only where it works, and the time limit comes from the 
 });
 
 test("the process runner starts a group, logs it, reads its memory, and stops it", async () => {
-  const runner = processRunner(mkdtempSync(join(tmpdir(), "wf-runner-")));
-  runner.run("demo", ["sh", "-c", "echo started; sleep 30"], { cwd: tmpdir(), env: { WF_TEST: "1" }, limits: ["-p", "RuntimeMaxSec=60"] });
+  const dir = mkdtempSync(join(tmpdir(), "wf-runner-"));
+  const runner = processRunner(dir);
+  runner.run("demo", ["sh", "-c", "echo started; sleep 31"], { cwd: tmpdir(), env: { WF_TEST: "1" }, limits: ["-p", "RuntimeMaxSec=60"] });
   await new Promise((r) => setTimeout(r, 300));
   assert.equal(runner.active("demo"), true);
   assert.equal(runner.log("demo"), "started");
   assert.ok(runner.memoryMb("demo") >= 0);
+  const started = Date.now();
   runner.stop("demo");
-  await new Promise((r) => setTimeout(r, 300));
+  assert.ok(Date.now() - started < 2000, "stop returns once the group has exited, not after its full wait");
+  assert.equal(spawnSync("sh", ["-c", "pgrep -f 'sleep 3[1]'"]).status, 1, "the whole group is gone once stop returns");
   assert.equal(runner.active("demo"), false);
   assert.equal(spawnSync("sh", ["-c", "pgrep -f 'sleep 6[0]; kill -TERM'"]).status, 1, "the watchdog is stopped too");
   assert.throws(() => runner.run("ghost", ["/no/such/program"], { cwd: tmpdir() }));
+});
+
+test("the process runner signals only a group it leads, never a stale or reused pid", () => {
+  const dir = mkdtempSync(join(tmpdir(), "wf-runner-"));
+  mkdirSync(join(dir, "units"));
+  const runner = processRunner(dir);
+  // A live process that leads no group of its own stands for a reused pid.
+  const other = spawn("sleep", ["30"], { stdio: "ignore" });
+  try {
+    for (const text of [String(other.pid), "-5", "abc", "1"]) {
+      writeFileSync(join(dir, "units", "x.pid"), text);
+      assert.equal(runner.active("x"), false, text);
+      runner.stop("x");
+    }
+    process.kill(other.pid, 0);
+  } finally {
+    other.kill();
+  }
 });

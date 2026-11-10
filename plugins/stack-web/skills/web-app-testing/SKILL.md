@@ -14,7 +14,7 @@ description: >-
 
 Test changes yourself before handing back, and say what you checked. Do not ask the user to run the app for something this skill can check.
 
-Read the project's app-testing doc first, `app.doc` in `.workflow/config.json` (`npx wf config` prints it). It has the project's checks, how its servers start, its test data and how to seed it, and stubs for outside services. `app.kind` is `web`, and `app.web` names the address Chromium opens and the servers behind it. Commands run from the repo root, and use systemd user units and `/tmp`, so they run outside a sandbox.
+Read the project's app-testing doc first, `app.doc` in `.workflow/config.json` (`npx wf config` prints it). It has the project's checks, how its servers start, its test data and how to seed it, and stubs for outside services. `app.kind` is `web`, and `app.web` names the address Chromium opens and the servers behind it. Commands run from the repo root, and use systemd user units, or detached processes where there is no user systemd such as on macOS (`app.runner`), and `/tmp`, so they run outside a sandbox.
 
 ## 1. Checks
 
@@ -22,7 +22,7 @@ Run `npx wf check` while working, and `npx wf check --all` once before handing b
 
 ## 2. Run and look
 
-Chromium runs headless by default (`app.web.headless`), so the person's desktop is left alone, and with its sandbox (`app.web.sandbox`), which only a CI runner that forbids it turns off. A website has no fixed window: a run opens at `app.web.size`, or the project's frame size (`design.size`) when that is unset, and checks other widths with `size`. `<app.instanceEnv>=N` gives a second browser its own profile, unit, and debugging port (`app.web.debugPort` + N), with the servers shared, for a screen review in parallel.
+Chromium runs headless by default (`app.web.headless`), so the person's desktop is left alone, and with its sandbox (`app.web.sandbox`), which only a CI runner that forbids it turns off. The setting covers this driver, not the design tools' renders. A website has no fixed window: a run opens at `app.web.size`, or the project's frame size (`design.size`) when that is unset, and checks other widths with `size`. `<app.instanceEnv>=N` gives a second browser its own profile, unit, and debugging port (`app.web.debugPort` + N), with the servers shared, for a screen review in parallel.
 
 ```bash
 npx wf app start --fresh            # starts the servers, then Chromium, and prints the first page
