@@ -91,10 +91,13 @@ All in the core plugin, beside `wf question` and `wf decision`.
 | `wf board feedback [--json]` | Lists client comments with no bot reply after them, and apart, those edited after they were logged. No state is kept in the repo: the reply marks a comment handled |
 | `wf board reply <id> <Q-ID ...>` | Posts the bot's reply naming the open questions a comment was logged as, in its thread. Refuses a Q-ID not in the open questions log |
 | `wf board reply <id> --noted` | Posts the bot's "noted" reply to a comment that needs no question, so it stops showing as new |
+| `wf board reply <id> … -- <id> …` | Several replies in one batch, each checked before the first is posted |
+
+- **One batch, one full reply an item.** monday's reads lag its writes, so separate calls could each give an item the full first reply. A batch knows what it posted, and gives the rest on that item the short form.
 
 - **The `board-feedback` skill.** Run only as `/board-feedback`, since it posts to the client.
   - It drafts each comment as a question to log, with its Needs role from `decisions` and chunk `none` by default, or as noted.
-  - It shows the whole batch in chat, and on a yes runs `wf question add … "client (monday)" <story>`, then `wf board reply`.
+  - It shows the whole batch in chat, and on a yes runs `wf question add … "client (monday)" <story>`, then one `wf board reply` with every reply.
 - **Finding feedback.** A comment, or a reply under the acceptance comment, is a client's when its creator's `kind` is `guest`, as the trial showed.
   - monday's threads are one level deep, so a comment is handled when a bot reply sits in its thread after it. A later guest comment there is new again.
   - A comment whose `updated_at` is after its bot reply is listed as edited, with the Q-IDs the reply named, and is never logged twice.

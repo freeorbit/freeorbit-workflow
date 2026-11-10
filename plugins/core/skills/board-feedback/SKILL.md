@@ -46,13 +46,14 @@ Ask once whether to go ahead. Change any line the person corrects. Wait for the 
 
 ## 4. Log and reply
 
-On the yes, for each comment in order:
+On the yes:
 
-1. Each question: `npx wf question add <chunk | none> "<question>" <needs> "client (monday)" <story>`. It prints the new Q-ID.
-2. The reply: `npx wf board reply <comment id> <Q-ID> [<Q-ID> ...]` with the IDs from step 1.
-3. A noted comment: `npx wf board reply <comment id> --noted`.
+1. Each question, one by one: `npx wf question add <chunk | none> "<question>" <needs> "client (monday)" <story>`. It prints the new Q-ID.
+2. Every reply in one call, each comment's part split by `--`: `npx wf board reply <comment id> <Q-ID> [<Q-ID> ...] -- <comment id> --noted -- ...`, with the IDs from step 1.
+   - One call, never one per comment: it gives an item's first reply the full wording and the rest there the short one, which separate calls may not, since monday's reads lag its writes.
+   - It checks every reply before it posts the first, so a wrong Q-ID posts none.
 
-When a command fails, stop and report it; a reply already posted stays. Never post a reply for a question that was not added.
+When a command fails, stop and report it. Never post a reply for a question that was not added.
 
 ## 5. Report
 

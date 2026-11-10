@@ -7,7 +7,7 @@ import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { syncGithub } from "../lib/github.mjs";
 import { boardProblems, commentHtml, flat, HEADING, plan, runBoard } from "../lib/board/index.mjs";
-import { feedback, feedbackLines, replyFor } from "../lib/board/feedback.mjs";
+import { feedback, feedbackLines, replyBatch, replyFor, replyGroups } from "../lib/board/feedback.mjs";
 import { ids, isBot, loggedReply, notedReply, pinnedNote } from "../lib/board/voice.mjs";
 
 const ME = "7";
@@ -179,4 +179,49 @@ test("the board's names are checked before they reach a workflow or a shell", ()
   const synced = syncGithub(root, bad, { write: true });
   assert.equal(synced.changed, 0);
   assert.match(synced.problems[0], /^\.workflow\/config\.json: board\.tokenEnv/);
+});
+
+test("one reply batch gives an item with no Orbit reply one full reply, then short ones, and checks all before posting", async () => {
+  // APP-02's item has two client comments and no Orbit reply; APP-03's has one.
+  const fresh = {
+    name: "Client board",
+    columns: [],
+    groups: [],
+    views: [],
+    items: [item("1", "APP-02", [guest("a1", "Can sign out be on every page?", 1), guest("a2", "Thanks for this.", 2)]), item("2", "APP-03", [guest("b1", "Nice.", 3)])],
+  };
+  assert.deepEqual(replyGroups(["a1", "Q-012", "Q-013", "--", "a2", "--noted", "--", "b1", "--noted"]), [
+    { id: "a1", answer: ["Q-012", "Q-013"] },
+    { id: "a2", answer: "--noted" },
+    { id: "b1", answer: "--noted" },
+  ]);
+  assert.throws(() => replyGroups(["a1", "--", "a2", "--noted"]), /a1: name the Q-IDs/);
+  const open = new Set(["Q-012", "Q-013"]);
+  const found = feedback(config(), fresh, ME);
+  const bodies = replyBatch(config(), found, replyGroups(["a1", "Q-012", "Q-013", "--", "a2", "--noted", "--", "b1", "--noted"]), open).map((reply) => reply.body);
+  assert.deepEqual(bodies, [loggedReply("Orbit", ["Q-012", "Q-013"]), notedReply("Orbit", { short: true }), notedReply("Orbit")]);
+  assert.throws(() => replyBatch(config(), found, replyGroups(["a1", "Q-012", "--", "a1", "--noted"]), open), /a1 is named twice/);
+
+  const posted = [];
+  const fetch = async (url, init) => {
+    const { query, variables } = JSON.parse(init.body);
+    const data = query.includes("me {")
+      ? { me: { id: ME, name: "Owner" } }
+      : query.includes("create_update")
+        ? (posted.push(variables), { create_update: { id: `n${posted.length}` } })
+        : // Reads never show what this run posted, as monday's lag can.
+          { boards: [{ ...fresh, id: "42", board_kind: "share", items_page: { cursor: null, items: fresh.items } }] };
+    return { status: 200, text: async () => JSON.stringify({ data }) };
+  };
+  const questions = "## Not tied to a chunk yet\n\n| ID | Question | Needs | From | Story | Raised |\n| --- | --- | --- | --- | --- | --- |\n| Q-012 | Can sign out be on every page? | designer | client (monday) | APP-02 | 2026-11-11 |\n";
+  const files = { "docs/log/open-questions.md": questions };
+  const context = { root: "/project", config: config(), tracked: Object.keys(files), files: (path) => files[path] };
+  const io = { env: { MONDAY_API_TOKEN: "t" }, fetch, log: () => {}, git: () => "" };
+  await assert.rejects(runBoard(context, ["reply", "a1", "Q-012", "--", "a2", "Q-099"], io), /Q-099 is not in the open questions log/);
+  assert.equal(posted.length, 0, "a bad reply anywhere in the batch posts none");
+  assert.equal(await runBoard(context, ["reply", "a1", "Q-012", "--", "a2", "--noted"], io), 0);
+  assert.deepEqual(posted.map((each) => [each.i, each.p, each.b]), [
+    ["1", "a1", loggedReply("Orbit", ["Q-012"])],
+    ["1", "a2", notedReply("Orbit", { short: true })],
+  ]);
 });
