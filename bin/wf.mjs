@@ -16,7 +16,7 @@
 //   wf try [scenario] [--keep] [--dry-run] [--files]   open the app yourself at a test scenario
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
 //   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply
-//   wf signoffs        the needs lines this branch still waits on
+//   wf signoffs [--bypass "<reason>"]   the questions this branch still waits on, or an admin's bypass of them
 //   wf decision add <file> "<decision>" "<why>" | supersede <ID> <by ID>   the decisions log
 //   wf question add <chunk | none> "<question>" <needs> "<from>" [story] | resolve <Q-ID> "<decision>"   the open questions log
 //   wf release <next | check | set | verify> ...   the project's release commands
@@ -29,7 +29,7 @@
 //   wf doctor         whether the project's set-up is whole
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -43,7 +43,7 @@ import { addDecision, supersede } from "../lib/decisions.mjs";
 import { addQuestion, resolveQuestion } from "../lib/questions.mjs";
 import { ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
 import { runRelease, STEPS } from "../lib/release.mjs";
-import { signoffs } from "../lib/signoffs.mjs";
+import { bypassLine, PR_BODY, runGh, signoffs } from "../lib/signoffs.mjs";
 import { screens } from "../lib/screens/run.mjs";
 import { runTrack } from "../lib/tracks.mjs";
 import { runChecks } from "../lib/checks.mjs";
@@ -257,7 +257,7 @@ const commands = {
     return 2;
   },
 
-  async signoffs() {
+  async signoffs(args) {
     const root = projectRoot();
     const config = loadConfig(root);
     const texts = [];
@@ -267,13 +267,28 @@ const commands = {
       // No open questions log yet.
     }
     // The branch's pull request body, when there is one and gh can read it.
+    let body = null;
     try {
-      const body = execFileSync("gh", ["pr", "view", "--json", "body", "-q", ".body"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-      texts.push(["the pull request", body]);
+      body = execFileSync("gh", ["pr", "view", "--json", "body", "-q", ".body"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+      texts.push([PR_BODY, body]);
     } catch {
       // No pull request for this branch, or no gh.
     }
-    const { lines, code } = signoffs(config, texts);
+    const gh = runGh(root);
+    if (args[0] === "--bypass") {
+      if (args.length !== 2) {
+        console.log('Usage: wf signoffs --bypass "<reason>"   (a repository admin only)');
+        return 2;
+      }
+      if (body === null) throw new Error("no pull request for this branch, or no gh; open the pull request first");
+      const line = bypassLine(config, texts, args[1], localToday(), gh);
+      const fresh = `${body.replace(/\s+$/, "")}\n\n${line}\n`;
+      const edit = spawnSync("gh", ["pr", "edit", "--body-file", "-"], { cwd: root, input: fresh, encoding: "utf8" });
+      if (edit.status !== 0) throw new Error(`gh pr edit failed: ${(edit.stderr || "").trim()}`);
+      console.log(`Added to the pull request's body: ${line}`);
+      texts.splice(texts.findIndex(([source]) => source === PR_BODY), 1, [PR_BODY, fresh]);
+    }
+    const { lines, code } = signoffs(config, texts, { gh });
     for (const line of lines) console.log(line);
     return code;
   },

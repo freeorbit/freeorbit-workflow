@@ -70,7 +70,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf init <answers.json>` | Sets up a new project from the `workflow-init` skill's answers: the config, the logs, each area's first docs, the docs index, the package scripts, and the Claude Code settings, then the docs, agent settings, and hooks. It keeps every file that exists |
 | `wf doctor` | Whether a project's set-up is whole: the config, the kit's pin and install, the plugins, the docs, the agent settings, the tools, the hooks, and GitHub |
 | `wf question add <chunk \| none> "<question>" <needs> "<from>" [story]`, `wf question resolve <Q-ID> "<decision>"` | The open questions log, one table per chunk: the next Q-ID across both logs, and moving an answered row to the resolved log with the date and the decisions it led to. doc:check holds the shape, the IDs, the roles, and that nothing ticked stays open |
-| `wf signoffs` | The open questions under a chunk's heading, each waiting on its Needs role, and the `- [ ] needs <role>:` lines open in the pull request body; none in a solo project |
+| `wf signoffs [--bypass "<reason>"]` | The open questions under a chunk's heading, each waiting on its Needs role, and the `- [ ] needs <role>:` lines open in the pull request body; none in a solo project. `--bypass` lets a repository admin, one of `people`, merge past the open chunk questions with a line in the body, which counts only while gh confirms that admin |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
 
 The review module's `structure-scan.py` is the scan for a Rust and TypeScript project; another stack lists its own under `review.scans.structure`.
