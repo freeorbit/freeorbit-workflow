@@ -107,6 +107,8 @@ With the design plugin's screen review, a chunk that changed UI files or frames 
 
 Then move the chunk's row in [build-order.md](../log/build-order.md#chunks): to Waiting if something about the chunk is left to check, or to [chunks-done.md](../log/chunks-done.md) if not.
 
+- A row moved to the done list gets its "For the client" sentence: what the client can now do, in plain words, with no ids, such as "You can sign in with your work email and password." The client's board posts it when the chunk's stories are built.
+
 After the commit, propose the chunk's pull request with the `pull-request` skill. It is squash-merged on the owner's yes, as in [branches.md](branches.md).
 
 If the chunk wasted real effort, add a row to [efficiency-log.md](../log/efficiency-log.md). No waste, no row.

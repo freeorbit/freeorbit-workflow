@@ -99,7 +99,7 @@ Where each note goes is the table in [AGENTS.md](../../AGENTS.md).
 ```
 
 - **ID.** `Q-NNN`, one counter across the open and resolved logs, never reused.
-- **Needs.** The role that answers it, from `roles`. A row under a chunk's heading is an open sign-off for `npx wf signoffs` until it moves out.
+- **Needs.** The role that answers it, from `roles`, or `client`, which the client's board asks on its story's item. A row under a chunk's heading is an open sign-off for `npx wf signoffs` until it moves out, except a `client` one, which never holds a merge.
 - **From.** Who raised it: a role, or `client (<channel>)`.
 - **Story.** The story IDs it touches, or `none`. **Raised** is the date.
 - **Detail.** The Question cell is one short sentence. More goes in one bullet per ID under the table, `- **Q-012.** ...`, with sub-bullets if needed.
