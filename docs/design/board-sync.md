@@ -26,6 +26,7 @@ One item per story, grouped the way the story file groups them.
 | Chunk | Text | The chunk rows that list the story, such as `CH-01-fe, CH-01-be` |
 | Story | Long text | The "As a…" sentence only, so it reads on the Kanban card |
 | PR | Link | The pull request of the chunk that finished the story |
+| Owner | People | Assigned by hand on the board. `wf board setup` makes it, and sync never reads or writes it |
 
 ### Acceptance comment
 

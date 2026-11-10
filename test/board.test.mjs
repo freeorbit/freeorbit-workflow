@@ -105,6 +105,7 @@ const COLUMNS = [
   { id: "chunk", title: "Chunk", type: "text", settings_str: "{}" },
   { id: "story", title: "Story", type: "long_text", settings_str: "{}" },
   { id: "pr", title: "PR", type: "link", settings_str: "{}" },
+  { id: "owner", title: "Owner", type: "people", settings_str: "{}" },
 ];
 
 /** An in-memory board that answers the queries the client sends, and a log of each operation. */
@@ -260,7 +261,8 @@ test("setup lists what is missing, and --create makes the columns with the statu
   assert.ok(listed.out.includes("column wf_status (Status, status) is missing"));
   assert.ok(listed.out.some((line) => line.startsWith("no Kanban view")));
   const created = await run(["setup", "--create"], monday);
-  assert.equal(monday.state.ops.filter((op) => op === "create_column").length, 6);
+  assert.equal(monday.state.ops.filter((op) => op === "create_column").length, 7);
+  assert.equal(monday.state.columns.find((column) => column.id === "owner").type, "people");
   assert.deepEqual(Object.values(JSON.parse(monday.state.columns.find((column) => column.id === "wf_status").settings_str).labels), ["Drafting", "Backlog", "Planned", "In progress", "Checking", "Done"]);
   assert.equal(created.code, 0, "only the Kanban view is left, which is done by hand");
   assert.match(created.out.at(-1), /1 left to do on the board by hand/);
@@ -286,4 +288,19 @@ test("the client treats an errors list in a 200 reply as a failure", async () =>
   await assert.rejects(down.call("query { me { id } }"), /answered 500 with no JSON/);
   assert.throws(() => mondayClient({ token: "", apiVersion: "x" }), /no monday token/);
   assert.equal(plan(config(), [], { columns: COLUMNS, views: [], items: [], groups: [] }, "7").changes.length, 0);
+});
+
+test("the Owner column is the team's: a missing one never stops sync, and sync never writes it", async () => {
+  const monday = fakeMonday({ columns: COLUMNS.filter((column) => column.id !== "owner") });
+  const listed = await run(["setup"], monday);
+  assert.ok(listed.out.includes("column owner (Owner, people) is missing"));
+  const synced = await run(["sync"], monday);
+  assert.equal(synced.code, 0, synced.out.join("\n"));
+  const assigned = fakeMonday();
+  await run(["sync"], assigned);
+  for (const item of assigned.state.items) item.values.owner = "Gim Yong";
+  const again = await run(["sync"], assigned, { "docs/app/user-stories.md": fixture("user-stories.md").replace("### APP-02. Sign out", "### APP-02. Sign out now") });
+  assert.equal(again.code, 0, again.out.join("\n"));
+  assert.ok(assigned.state.items.every((item) => item.values.owner === "Gim Yong"), "an assigned owner stays");
+  assert.ok(!JSON.stringify(assigned.state).includes('"owner":""'));
 });
