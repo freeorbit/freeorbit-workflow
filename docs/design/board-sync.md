@@ -204,6 +204,10 @@ The board shows stories, not the project's internals.
   - Only the "As a…" sentence goes there now, far under the limit; `wf board plan` and `sync` still fail one over it by name.
   - The acceptance comment's own limit is unknown. If a story's list ever exceeds it, the fallback is a Doc column.
 - **A client edits the acceptance comment.** The next sync overwrites it, as the comment itself warns. `wf board plan` lists the edit first, so it is seen.
+- **Multi-level boards.** A board from monday's project template has `hierarchy_type` `multi_level` (developer.monday.com/api-reference/docs/status).
+  - Its status columns roll up child items (`calculated.function` `COUNT_KEYS`). monday then leaves the column out of every item's `column_values`, and accepts a write to it and drops it.
+  - `wf board setup` reports the rollup, and `--create` clears it with `calculated: null`, the template's own Status and any status column it makes alike. Then the column reads and writes as a plain status.
+  - Atlas NX's board showed it on 2026-11-11: with the rollup off, its `project_status` took and read back "Done".
 - **monday's reads lag its writes.** Atlas NX's first sync failed "Update not found" pinning a comment it had just posted (2026-11-11).
   - Each call on a group, item, or comment made a moment ago retries after 0.5, 1, 2, and 4 seconds, then fails naming the wait.
   - A value monday leaves empty on create is sent again at once, and a comment left unpinned is pinned on the next run, which `wf board plan` shows as `pin acceptance`.

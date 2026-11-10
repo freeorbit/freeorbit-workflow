@@ -83,6 +83,14 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.34.2: boards made from monday's project template
+
+A board made from monday's project template is multi-level, and its status columns roll up child items.
+
+- monday leaves a rolled-up status out of every item, and accepts a write to it and drops it. That is what v0.34.1 took for a portfolio's column.
+- `npx wf board setup` now names the rollup, and `npx wf board setup --create` turns it off, as it does for a status column it makes on such a board.
+- So the template's own Status can be the kit's: set `board.columns.status` to `"project_status"`, with no title of its own, and run `npx wf board setup --create`.
+
 ### v0.34.1: the board sync finishes what a cut-short run left
 
 For a project with `board.boardId` set:
