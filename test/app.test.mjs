@@ -67,9 +67,11 @@ test("the web kind needs a name and an address, and gives each server and instan
 });
 
 test("Chromium starts headless on a throwaway profile at the window size, and go takes a hash or a path", () => {
-  const s = appSettings("/p", merge(DEFAULTS, { app: { kind: "web", name: "atlas", web: { url: "http://127.0.0.1:5173/" } } }), {});
+  const s = appSettings("/p", merge(DEFAULTS, { design: { browser: "chromium" }, app: { kind: "web", name: "atlas", web: { url: "http://127.0.0.1:5173/" } } }), {});
   const args = chromiumArgs(s, [1280, 800]);
   assert.equal(args[0], "chromium");
+  assert.ok(!args.includes("--no-sandbox"));
+  assert.ok(chromiumArgs({ ...s, app: { ...s.app, web: { ...s.app.web, sandbox: false } } }, [1280, 800]).includes("--no-sandbox"));
   assert.ok(args.includes("--headless"));
   assert.ok(args.includes("--user-data-dir=/tmp/atlas-agent/chromium"));
   assert.ok(args.includes("--remote-debugging-port=9444"));

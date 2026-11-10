@@ -20,9 +20,9 @@ What the workflow kit's own commands call. A plugin the project does not use nee
 | `git` | The repo. `wf doc:check` reads its file list, and the hooks and reviews read its history. | required | all | The docs check stops. |
 | `python3` | The review ledger and its tests, and the design plugin's frame renderer. | required | all | `wf ledger` and `wf design render` stop. |
 | `gh` | Pull requests, squash merges, `wf github`, and `wf signoffs` reading a pull request. | optional | all | Open and merge pull requests on the website. |
-| `chromium` | The design plugin: draws frames to PNG, and checks them for overflow. | required | all | No frame renders. |
+| `chromium` | The design plugin and the web driver: draws frames to PNG, checks them, and runs the web app. Chrome counts too, and on macOS the one in Applications is found. | required | all | No frame renders; set `design.browser` to a browser's program. |
 | `magick` | ImageMagick: the design plugin's question sheets, and the screen review's contact sheets and crops. | optional | all | No sheet is made; read the pictures one at a time. |
-| `systemd-run` | The Tauri adapter's `wf app`: starts the app for agent testing, under a memory cap. | optional | linux | `wf app` cannot start the app. See [Linux only](#linux-only). |
+| `systemd-run` | `wf app`: starts the servers and the app as user units, under a memory cap. | optional | linux | `wf app` runs them as process groups instead, with the time limit and no memory cap, as on macOS. |
 | `kwin_wayland` | The screen review's parallel apps, each on a virtual display (`screens.display`). | optional | linux | One app at a time, on the user's screen. |
 | `opencode` | The second agent tool, in [ai-tools.md](ai-tools.md). | optional | all | Use Claude Code. |
 
@@ -55,9 +55,9 @@ What an agent does when a program is missing. The person at this computer instal
 
 ## Linux only
 
-The kit's commands below work on Linux and have not been tried elsewhere.
+The kit's commands below need Linux, or work with less elsewhere. CI runs the tests and `scripts/smoke.mjs` on Linux and macOS.
 
-- **Agent app testing.** `npx wf app` uses `systemd-run` for its memory cap, and `/tmp`. Without systemd, an agent can run every check but cannot drive the app.
+- **Agent app testing.** `npx wf app` uses `systemd-run` for its memory cap where it can. On macOS, or without a user systemd, it runs each server and the browser as a process group, with the time limit and no memory cap.
 - **The screen review.** `npx wf screens` drives the app through `wf app`, so it needs the same, plus `magick` and Chromium to render frames.
 - **`chromium` by name.** `npx wf design render` and `npx wf design check` call `chromium`, so it has to be on the path under that name.
 - **The disk check.** `npx wf disk` uses `pgrep` and `systemctl` to see a running build and test app.

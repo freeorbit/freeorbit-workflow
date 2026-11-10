@@ -199,8 +199,8 @@ test("frames are found by name in their area's section folders, from the config'
 });
 
 test("render gets the folders and window size from the config", () => {
-  const args = renderArgs(designPaths("/p", config({ size: [1440, 900] })), ["d-start"]);
-  assert.deepEqual(args.slice(1), ["--root", "/p", "--frames", "/p/docs/design/frames", "--review", "/p/docs/design/review", "--shared", "shared", "--size", "1440x900", "d-start"]);
+  const args = renderArgs(designPaths("/p", config({ size: [1440, 900], browser: "chromium" })), ["d-start"]);
+  assert.deepEqual(args.slice(1), ["--root", "/p", "--frames", "/p/docs/design/frames", "--review", "/p/docs/design/review", "--shared", "shared", "--size", "1440x900", "--browser", "chromium", "d-start"]);
   assert.match(args[0], /plugins\/design\/scripts\/render\.py$/);
 });
 
