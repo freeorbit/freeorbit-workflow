@@ -25,7 +25,7 @@ One item per story, grouped the way the story file groups them.
 | Status | Status | The build order, below |
 | Chunk | Text | The chunk rows that list the story, such as `CH-01-fe, CH-01-be` |
 | Story | Long text | The "As a…" sentence only, so it reads on the Kanban card |
-| PR | Link | The pull request of the chunk that finished the story |
+| PR | Link | The pull request of the story's lane finished last, as in [PR links](#pr-links) |
 | Owner | People | Assigned by hand on the board. `wf board setup` makes it, and sync never reads or writes it |
 
 ### Acceptance comment
@@ -105,6 +105,8 @@ An optional `board` section; a project without it has no board commands.
 | `board.boardId` | `""` | The client's shareable board's number, from its address |
 | `board.tokenEnv` | `"MONDAY_API_TOKEN"` | The environment variable holding the token. The token is never in config |
 | `board.apiVersion` | `"2026-10"` | The monday API version every call sends |
+| `board.branch` | `"main"` | The branch whose pushes run the board-sync workflow |
+| `board.environment` | `"board"` | The GitHub Environment holding the token, limited to `board.branch` |
 | `board.columns` | the six above | Each field's column id on the board, filled by `wf board setup` |
 | `board.statuses` | the six above | Each status's label text on the board |
 | `board.show.deliveryNotes` | `true` | An update on each story's item when its chunk is done, from `chunks-done.md` |
@@ -122,9 +124,44 @@ An optional `board` section; a project without it has no board commands.
 
 ## Token and where sync runs
 
-- **The token.** The owner's personal monday API token, kept as a GitHub Actions secret and a local environment variable, named by `board.tokenEnv`.
-- **CI.** `wf github` writes a workflow that runs `wf board sync` on every merge to `main`. `wf board plan` runs locally.
+- **The token.** The owner's personal monday API token, named by `board.tokenEnv`: a local environment variable, and in CI a secret of the `board.environment` GitHub Environment, never a repository-wide secret.
+- **Why an environment.** A repository secret is readable by a workflow on any branch a team member pushes. An environment whose deployment branches are only `board.branch` is not.
+- **CI.** `wf github sync` writes `.github/workflows/board-sync.yml` while `board.boardId` is set, and removes it when it is emptied.
+  - It runs `wf board sync` on each push to `board.branch`, and by hand.
+  - It reads with `contents: read` only, and queues runs in one `concurrency` group, so two merges never sync at once.
+  - The secret reaches only the sync step. With none, the step fails naming the environment to add it to.
+- **No pull-request runs.** `wf board plan` runs locally, never in a pull request's checks, where a branch could change the workflow and print the token.
 - **Never logged.** The token goes only into the Authorization header. No command prints it, and errors leave it out.
+
+### PR links
+
+The PR column links the pull request of the story's lane finished last, from git history.
+
+- **From the done list's history.** A chunk's pull request is the squash commit that added its row to `chunks-done.md`, whose subject ends `(#N)`; a merge commit's `Merge pull request #N` counts too.
+  - So `wf board plan` shows the same links locally, every past chunk has one, and CI needs no GitHub permission for them.
+  - CI checks out the whole history (`fetch-depth: 0`) for it.
+- **Which one.** Once any lane of a story is done, the link is that of its lane finished last, such as `#12` for Atlas's CH-01.
+- **Never cleared.** A chunk merged by rebase has no number, and a run with no repository address finds none. Sync then leaves the cell as it is.
+- **The address.** GitHub Actions' `GITHUB_SERVER_URL` and `GITHUB_REPOSITORY` in CI, else the `origin` remote.
+
+### Turn it on
+
+For a project on the kit, once its stories are ready for the client.
+
+1. Ask the monday account's admin for a shareable board, and invite the client there as a guest.
+2. Set `board.boardId` in `.workflow/config.json` to the board's number, from its address.
+3. With the token in `MONDAY_API_TOKEN`, run `npx wf board setup --create`, then add the Kanban view by Status on the board by hand.
+4. Run `npx wf board plan`, and check what it would write.
+5. In GitHub, create the `board` environment, set its deployment branches to `main` only, and add `MONDAY_API_TOKEN` to it as a secret.
+6. Run `npx wf github sync`, and merge the workflow it writes. The merge runs the first sync.
+
+`wf github` writes files only, so step 5 is by hand, or with `gh`:
+
+```bash
+gh api -X PUT repos/{owner}/{repo}/environments/board -F "deployment_branch_policy[protected_branches]=false" -F "deployment_branch_policy[custom_branch_policies]=true"
+gh api -X POST repos/{owner}/{repo}/environments/board/deployment-branch-policies -f name=main -f type=branch
+gh secret set MONDAY_API_TOKEN --env board
+```
 
 ## What never goes on the board
 
@@ -151,6 +188,6 @@ The board shows stories, not the project's internals.
 
 1. The trial against a test board, in this doc.
 2. The story reader, and `wf board plan` and `sync`, tested with fixtures and a fake fetch. Built in v0.32.0, with `wf board setup`, and run against the test board.
-3. The CI workflow, through `wf github`.
+3. The CI workflow, through `wf github`, and the PR column from git history. Built in v0.33.0; the workflow is checked by tests only until a project turns it on.
 4. `wf board feedback` and the `board-feedback` skill.
 5. Frames, then screenshots of the built screens.
