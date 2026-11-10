@@ -8,7 +8,8 @@ import { join } from "node:path";
 import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, storyRange, unreached } from "../lib/screens/list.mjs";
-import { briefs, jobsOf, lookStep, migrate, reviewCovers, sessionSteps, shotsFor, splitScreens, why } from "../lib/screens/run.mjs";
+import { briefs, jobsOf, lookStep, migrate, needsDisplay, reviewCovers, sessionSteps, shotsFor, splitScreens, stepWord, why } from "../lib/screens/run.mjs";
+import { words } from "../lib/app/page.mjs";
 import { afterDefer, afterRun, readState } from "../lib/screens/state.mjs";
 
 const STRESS = { appearance: "light", corners: "round", density: "compact", textSize: "large" };
@@ -214,4 +215,17 @@ test("the counts and the gate see frames only, and a later chunk passes the gate
 test("a story range in a chunk row is each story in it", () => {
   assert.deepEqual(storyRange("GM-19 to GM-21"), ["GM-19", "GM-20", "GM-21"]);
   assert.deepEqual(storyRange("APP-05"), ["APP-05"]);
+});
+
+test("a picture path with a space or a quote stays one word of the step", () => {
+  const out = '/home/a/Atlas NX/atlas-nx/.cache/screens/sign "in".png';
+  const [step] = sessionSteps({ steps: [] }, [null], "shot", [out]);
+  assert.deepEqual(words(step), ["shot", out]);
+  assert.equal(stepWord("/tmp/plain.png"), "/tmp/plain.png");
+});
+
+test("only a Tauri window or a web browser with a window needs a display of its own", () => {
+  assert.equal(needsDisplay({ kind: "tauri", web: { headless: true } }), true);
+  assert.equal(needsDisplay({ kind: "web", web: { headless: true } }), false);
+  assert.equal(needsDisplay({ kind: "web", web: { headless: false } }), true);
 });
