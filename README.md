@@ -70,6 +70,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf init <answers.json>` | Sets up a new project from the `workflow-init` skill's answers: the config, the logs, each area's first docs, the docs index, the package scripts, and the Claude Code settings, then the docs, agent settings, and hooks. It keeps every file that exists |
 | `wf doctor` | Whether a project's set-up is whole: the config, the kit's pin and install, the plugins, the docs, the agent settings, the tools, the hooks, and GitHub |
 | `wf question add <chunk \| none> "<question>" <needs> "<from>" [story]`, `wf question resolve <Q-ID> "<decision>"` | The open questions log, one table per chunk: the next Q-ID across both logs, and moving an answered row to the resolved log with the date and the decisions it led to. doc:check holds the shape, the IDs, the roles, and that nothing ticked stays open |
+| `wf board feedback [--json]`, `wf board reply <id> <Q-ID ...> \| --noted` | The client's comments on the board with no bot reply yet, read only, and the bot's reply to one: the open questions it was logged as, or noted. The `board-feedback` skill turns them into open questions after a yes in chat. The bot signs as `board.bot.name`, Orbit by default |
 | `wf board <setup [--create] \| plan \| sync>` | The stories on the client's monday.com board, one way, from `board` in the config and the token in `board.tokenEnv`: setup checks the columns, labels, and Kanban view, including an Owner column assigned by hand that sync never touches; plan lists each change; sync writes only what differs, with each story's acceptance lines in a pinned comment and its pull request from git history, and never deletes. CI runs sync on each merge, with the token in a GitHub Environment limited to `board.branch`. The design, and the steps to turn it on, are in `docs/design/board-sync.md` |
 | `wf signoffs [--bypass "<reason>"]` | The open questions under a chunk's heading, each waiting on its Needs role, and the `- [ ] needs <role>:` lines open in the pull request body; none in a solo project. `--bypass` lets a repository admin, one of `people`, merge past the open chunk questions with a line in the body, which counts only while gh confirms that admin |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
@@ -81,6 +82,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.34.0: the board's bot signs as Orbit
+
+For a project with `board.boardId` set:
+
+- The pinned acceptance comment's line to readers is the bot's own now, so the first `npx wf board sync` after the upgrade edits every pinned comment once. `npx wf board plan` lists each as `edit acceptance`. The comments are still found by their heading, so none is posted twice.
+- `wf board`, `wf github sync`, and doc:check now fail a `board.tokenEnv` that is not an environment variable name, such as `MONDAY_API_TOKEN`.
 
 ### v0.31.0: open questions in tables
 
