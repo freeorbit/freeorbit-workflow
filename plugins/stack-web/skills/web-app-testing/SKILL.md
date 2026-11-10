@@ -72,6 +72,19 @@ Follow the `design-frames` skill: shoot the same state of the app at the frame's
 
 Search the project's troubleshooting log when a symptom looks familiar, and add an entry when a new issue takes real debugging.
 
+## 5. For a person: `wf try`
+
+When the person wants to try the app themselves, at a point in a journey, point them at `npx wf try` (or the project's own script for it). It runs in their terminal, not yours: it asks with a live picker. They can pick a scenario, answer the project's questions, and the app opens on a throwaway folder under `app.try.home`, never their real data. It prints the command that opens the same run again with no questions, and `--keep` reopens the folder as they left it. `--dry-run` shows what it would run, and you can run that yourself to check a set-up.
+
+It starts `app.web.servers` with the scenario's settings, their output in the folder's `logs/`, then opens `app.web.url` in a visible browser window on a profile of its own. The scenario's cookies and sign-ins never meet the person's own browser. Quitting that browser, or Ctrl-C, stops it all.
+
+It needs two hooks in `app.hooks` beside `prepare` and `stop`. `wf try` passes ctx with `purpose: "try"`, the `scenario`, its `answers`, `keep`, and `state`. `state` is an object for `prepare` to fill as it starts things, so `stop` can undo them even when `prepare` fails part way:
+
+- `scenarios(ctx)` gives `[{ id, about, set?, setName?, group?, note? }]`. A set is a first choice, such as a plugin. A group is a heading in the picker.
+- `prepare(ctx)` builds the scenario into `ctx.dataHome`, as for `wf app start --scenario`, and may return a `message` to print, such as what to type where.
+- Optional: `asks(scenario, answers, ctx)` gives the next question (`{ flag, question, choices?, yesNo?, default?, other?, skip? }`) or null. Each answer becomes a `--<flag>` on the repeat command, and a no or a skip becomes `--no-<flag>`.
+- Optional: `plan(...)` gives the steps to run by hand, and `files(ctx)` the test files `--files` lists.
+
 ## Do not
 
 - Do not run a server or the browser without the memory cap: no plain dev server started by the agent.
