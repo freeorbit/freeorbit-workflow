@@ -69,12 +69,26 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf hooks <install \| pre-commit \| pre-push>` | Writes two shims to `.workflow/hooks/` and points `core.hooksPath` at them; they refuse a commit or push to a protected branch (`branches.protected`) and a push of a branch not named `<scope>/<slug>` |
 | `wf init <answers.json>` | Sets up a new project from the `workflow-init` skill's answers: the config, the logs, each area's first docs, the docs index, the package scripts, and the Claude Code settings, then the docs, agent settings, and hooks. It keeps every file that exists |
 | `wf doctor` | Whether a project's set-up is whole: the config, the kit's pin and install, the plugins, the docs, the agent settings, the tools, the hooks, and GitHub |
-| `wf signoffs` | The `- [ ] needs <role>:` lines open in the open questions log and the pull request body; none in a solo project |
+| `wf question add <chunk \| none> "<question>" <needs> "<from>" [story]`, `wf question resolve <Q-ID> "<decision>"` | The open questions log, one table per chunk: the next Q-ID across both logs, and moving an answered row to the resolved log with the date and the decisions it led to. doc:check holds the shape, the IDs, the roles, and that nothing ticked stays open |
+| `wf signoffs` | The open questions under a chunk's heading, each waiting on its Needs role, and the `- [ ] needs <role>:` lines open in the pull request body; none in a solo project |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
 
 The review module's `structure-scan.py` is the scan for a Rust and TypeScript project; another stack lists its own under `review.scans.structure`.
 
 A project adds its own checks and status lines with `extensions` in its config: modules that export `checks(context)` and `status(context)`.
+
+## Upgrading
+
+Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.31.0: open questions in tables
+
+`npx wf doc:check` now fails a bullet question in `docs/log/open-questions.md` and an entry outside the table in `questions-resolved.md`. Move them by hand once, on the upgrade's branch:
+
+1. Under each chunk heading and "Not tied to a chunk yet", put one table, `| ID | Question | Needs | From | Story | Raised |`, with the IDs `Q-001` upwards. A bullet's detail goes in a `- **Q-001.**` bullet under the table.
+2. A ticked `- [x] needs ...` item is answered: put its answer in the decisions log, and its row in the resolved table.
+3. `questions-resolved.md` takes one table, `| ID | Question | Needs | From | Story | Raised | Resolved | Decision |`, oldest first. Decision cites the D-IDs, or says `none: <why>`.
+4. To upgrade first and move later, list the two files in `logs.looseQuestions`; only a ticked item fails until they come off it.
 
 ## Develop
 
