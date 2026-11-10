@@ -22,10 +22,10 @@ The prompt names the area, the journeys to walk, the scenario and fixtures for e
 
 ## What you may read
 
-First run `npx wf config`, which prints the project's settings over the kit's defaults (the file `.workflow/config.json` holds only the project's own, so do not read it instead). The area's entry in `areas` gives its `docs` folder, `e2e.reads` the docs that hold the app commands and the stubs, and `screens.narrow` the narrow window size. Then read only:
+First run `npx wf config`, which prints the project's settings over the kit's defaults (the file `.workflow/config.json` holds only the project's own, so do not read it instead). The area's entry in `areas` gives its `docs` folder, `e2e.reads` the docs that hold the app commands, the stubs, and the project's own app steps, and `screens.narrow` the narrow window size. Then read only:
 
 - In the area's `docs` folder: `overview.md`, `user-stories.md`, `user-flows.md`, `design/screens.md`, and in `test-data/`, `core.md` and the area files that hold the prompt's journeys (search the folder for `### D<n>.`).
-- Each doc in `e2e.reads`, for the commands, the scenarios, and the stubs.
+- Each doc in `e2e.reads`, for the commands, the scenarios, the stubs, and the app steps.
 - The files the app writes during your run, under the folder the prompt names.
 
 Read nothing else: no source code, no tools or scripts, no architecture doc, no decisions log, no review ledger. Your value is that you do not know the code. If you want to read code to explain a result, write the finding instead, and say what you saw.
@@ -35,15 +35,24 @@ Read nothing else: no source code, no tools or scripts, no architecture doc, no 
 Only these, from the repo root:
 
 - `npx wf config`, once, as above.
-- `npx wf app <command>`: `start --fresh --scenario <name>` (with `--size <screens.narrow>` for the narrow window), `run`, `text`, `lines`, `screenshot`, `console`, `stop`.
+- `npx wf app <command>`: `start --fresh --scenario <name>` (with `--size <screens.narrow>` for the narrow window), `run`, `back`, `text`, `lines`, `screenshot`, `console`, `stop`.
 - `ls`, `head`, `wc`, and `file` on the files the app wrote, in the folder the prompt names.
 - `grep` in the area's `test-data` folder or the prompt's folder, when no Grep tool is there.
 
-Never use `db`, `eval` (except to set a stub the docs name), or `logs`: a user has none of them. Never use `--real`.
+Never use `db`, `eval` (except for a stub or an app step the docs in `e2e.reads` name, exactly as they give it), or `logs`: a user has none of them. Never use `--real`.
 
 ## The stubs
 
 A person answers the system pickers, and you cannot reach them. The docs in `e2e.reads` name the stubs that stand in for them, such as a picker's answer or a list that catches links. Set each before the step that needs it, as those docs say, with absolute paths in the prompt's folder. Nothing you do may reach a real service or a real person.
+
+## The app steps
+
+Some of what a person does is not a click on the page, such as pressing the browser's Back, or waiting until tomorrow.
+
+- **Back.** `back` goes one page back, as the browser's Back does, and waits for the page: a `run` step, or `npx wf app back`. It fails on the window's first page.
+- **The project's own steps.** The docs in `e2e.reads` may name steps the project offers its tester, such as a dev-only route that moves the app's fake clock forward. Run each exactly as those docs give it, in place of a person's wait, and say in the replay note which you ran. Run no route or script they do not name.
+
+A journey that needs time to pass, or another step a person takes outside the page, and has no such step in the docs, is not walked past that point. Put it under "Not checked", and say which step was missing.
 
 ## How to walk a journey
 

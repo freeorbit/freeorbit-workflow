@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { appPage, appSettings, chromiumArgs, databasePath, goScript, psqlCall, startShared, viewport, withLock } from "../lib/app/driver.mjs";
+import { appPage, appSettings, BACK_SCRIPT, chromiumArgs, databasePath, goBack, goScript, headlessFor, psqlCall, startShared, viewport, withLock } from "../lib/app/driver.mjs";
 import { clickTarget, groupName } from "../lib/app/clickTarget.mjs";
 import { words } from "../lib/app/page.mjs";
 import { merge } from "../lib/config.mjs";
@@ -84,6 +84,45 @@ test("Chromium starts headless on a throwaway profile at the window size, and go
   assert.equal(goScript("#/reviews"), 'location.hash = "#/reviews"');
   assert.equal(goScript("/reviews/1"), 'location.assign("/reviews/1")');
   assert.throws(() => goScript("reviews"), /go takes/);
+});
+
+test("one start can run headed or headless over app.web.headless", () => {
+  const app = (headless) => merge(DEFAULTS, { app: { kind: "web", web: { headless } } }).app;
+  assert.equal(headlessFor(app(true)), true);
+  assert.equal(headlessFor(app(false), ["--fresh"]), false);
+  assert.equal(headlessFor(app(true), ["--headed"]), false);
+  assert.equal(headlessFor(app(false), ["--headless"]), true);
+  assert.throws(() => headlessFor(app(true), ["--headed", "--headless"]), /not both/);
+  const s = appSettings("/p", merge(DEFAULTS, { design: { browser: "chromium" }, app: { kind: "web", name: "atlas", web: { url: "http://127.0.0.1:5173/" } } }), {});
+  assert.ok(!chromiumArgs(s, [800, 560], false).includes("--headless"), "a headed start over a headless default");
+});
+
+test("back goes one page back in the window's history and waits for the page", async () => {
+  const fakePage = (urls, { throws = null } = {}) => {
+    const ran = [];
+    let at = 0;
+    return {
+      ran,
+      evaluate: async (js) => {
+        ran.push(js);
+        if (js === "location.href") return urls[0];
+        if (js === BACK_SCRIPT) {
+          at = 1;
+          if (throws) throw new Error(throws);
+        }
+      },
+      settled: () => ({ url: urls[at], text: `page ${at}` }),
+    };
+  };
+  const settle = async (p) => p.settled();
+  const pause = async () => {};
+  const page = fakePage(["http://a/#/flights/7", "http://a/#/flights"]);
+  assert.deepEqual(await goBack(page, settle, pause), { url: "http://a/#/flights", text: "page 1" });
+  assert.deepEqual(page.ran, ["location.href", "history.back()"]);
+  // A back to another document drops the evaluation's reply; it still goes back.
+  assert.equal((await goBack(fakePage(["http://a/b", "http://a/"], { throws: "Runtime.evaluate timed out" }), settle, pause)).url, "http://a/");
+  await assert.rejects(goBack(fakePage(["http://a/", "http://a/"]), settle, pause), /nothing earlier/);
+  await assert.rejects(goBack(fakePage(["http://a/", "http://b/"], { throws: "page threw: x" }), settle, pause), /page threw/);
 });
 
 test("a website opens at the frame size unless set, and a viewport is a name or WxH", () => {

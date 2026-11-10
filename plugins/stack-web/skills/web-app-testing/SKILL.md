@@ -22,7 +22,7 @@ Run `npx wf check` while working, and `npx wf check --all` once before handing b
 
 ## 2. Run and look
 
-Chromium runs headless by default (`app.web.headless`), so the person's desktop is left alone, and with its sandbox (`app.web.sandbox`), which only a CI runner that forbids it turns off. The setting covers this driver, not the design tools' renders. A website has no fixed window: a run opens at `app.web.size`, or the project's frame size (`design.size`) when that is unset, and checks other widths with `size`. `<app.instanceEnv>=N` gives a second browser its own profile, unit, and debugging port (`app.web.debugPort` + N), with the servers shared, for a screen review in parallel.
+Chromium runs headless by default (`app.web.headless`), so the person's desktop is left alone; `start --headed` or `--headless` overrides it for one start, and a screen run sets its own with `screens.headless`, and with its sandbox (`app.web.sandbox`), which only a CI runner that forbids it turns off. The setting covers this driver, not the design tools' renders. A website has no fixed window: a run opens at `app.web.size`, or the project's frame size (`design.size`) when that is unset, and checks other widths with `size`. `<app.instanceEnv>=N` gives a second browser its own profile, unit, and debugging port (`app.web.debugPort` + N), with the servers shared, for a screen review in parallel.
 
 ```bash
 npx wf app start --fresh            # starts the servers, then Chromium, and prints the first page
@@ -35,6 +35,7 @@ Check a flow with one `run`, not one command per action. Plan the steps up front
 | `run` step | What it does |
 | --- | --- |
 | `go </path>` or `go <#hash>` | Loads a path, or changes the hash, then waits for the page to settle. |
+| `back` | Goes one page back, as the browser's Back does, then waits for the page. Fails on the window's first page. |
 | `size <name or WxH>` | Sets the viewport, such as `size mobile` or `size 1024x768`, from `app.web.sizes` (desktop, tablet, and mobile by default); a width under 768 renders as a phone. |
 | `click <label> [in <group>]` | Clicks the button, link, list option, or field with that text, aria-label, or placeholder. `in <group>` picks the one beside that group's label. |
 | `type <label> <value>` | Fills a field so React sees it, found by its aria-label, `<label>`, or placeholder. |
@@ -48,7 +49,8 @@ Check a flow with one `run`, not one command per action. Plan the steps up front
 
 | Command | What it does |
 | --- | --- |
-| `start [--fresh] [--size <name or WxH>]` | Starts each server in `app.web.servers` not already answering, waits for its `url`, then Chromium at `app.web.url`. `--fresh` gives Chromium a new profile and tells the project's `prepare` hook to reset its data. |
+| `start [--fresh] [--size <name or WxH>] [--headed or --headless]` | Starts each server in `app.web.servers` not already answering, waits for its `url`, then Chromium at `app.web.url`. `--fresh` gives Chromium a new profile and tells the project's `prepare` hook to reset its data. `--headed` opens it on the person's screen for this start, `--headless` without a window. |
+| `go`, `back`, `click`, `type`, `text`, `eval` | One step as its own command; `go`, `back`, `click`, and `type` then print the page. |
 | `console` | What the page logs while it watches, for half a second; reload or repeat a step around it to catch a message. |
 | `screenshot`, `mem`, `status` | The window, the browser's memory against `app.memoryMax`, and which units run. |
 | `logs [n]` | Each server's output, such as a stack trace from the API. |

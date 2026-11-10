@@ -18,6 +18,8 @@ This looks at screens against their frames. It does not test flows; for that, us
 
 A run shoots on one app a core, up to `screens.jobsMax`, each on its own virtual display, off the designer's screen. `--jobs 1` shoots on the user's screen instead, to watch, and so does a machine without a virtual display (`screens.display`).
 
+A web app's browser follows `app.web.headless` unless `screens.headless` says otherwise: `review` for a chunk-end `--light` or `--deep` run, `build` for named screens, `--chunk`, or `--all`. A project that watches each build-time check but not the chunk-end review sets `{ "review": true, "build": false }`; a headed run on more than one app shoots on virtual displays, so `--jobs 1` keeps it on the person's screen.
+
 - Each screen takes one app session a viewport: the Reach is walked once, the default picture taken, then the stress look put on the same page and taken again.
 - Each app builds a scenario once for the run, and copies it for every start.
 
