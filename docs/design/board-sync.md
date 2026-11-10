@@ -32,7 +32,9 @@ One item per story, grouped the way the story file groups them.
 
 The acceptance lines go in the item's first comment, pinned, where a list reads better than a text column.
 
-- **Shape.** A bold "🤖 Acceptance criteria" heading, the bot's line to readers, the "As a…" sentence, then one bullet per acceptance line, as written.
+- **Shape.** A bold "🤖 Acceptance criteria" heading, the bot's line to readers in a quote block starting with 🤖, the "As a…" sentence, then one bullet per acceptance line, as written.
+  - The owner chose the quote block from three styles tried on the test board on 2026-11-11.
+  - Sync compares the comment's words and its tags, without their attributes, so a new layout with the same words still reaches the board.
 - **The line to readers.** "I'm Orbit, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up." The name is `board.bot.name`.
 - **Pinned.** `pin_to_top` keeps it above every client comment.
 - **Kept current.** Sync finds it by its heading among the bot's updates and changes it with `edit_update` only when the lines differ, so a story change never posts a new comment.
