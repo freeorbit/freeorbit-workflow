@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { appPage, appSettings, chromiumArgs, databasePath, goScript, psqlCall, viewport } from "../lib/app/driver.mjs";
+import { appPage, appSettings, chromiumArgs, databasePath, goScript, psqlCall, startShared, viewport } from "../lib/app/driver.mjs";
 import { clickTarget, groupName } from "../lib/app/clickTarget.mjs";
 import { words } from "../lib/app/page.mjs";
 import { merge } from "../lib/config.mjs";
@@ -119,4 +119,29 @@ test("db runs SQL read-only, refuses psql's backslash commands, and keeps the ad
 test("Chromium's debugging port listens on loopback only", () => {
   const s = appSettings("/p", merge(DEFAULTS, { app: { kind: "web", name: "atlas", web: { url: "http://127.0.0.1:5173/" } } }), {});
   assert.ok(chromiumArgs(s, [1280, 800]).includes("--remote-debugging-address=127.0.0.1"));
+});
+
+test("startShared: a server another instance started a moment before counts as started", () => {
+  const active = new Set();
+  const runner = { active: (unit) => active.has(unit) };
+  const started = [];
+  const start = (unit) => () => {
+    if (active.has(unit)) throw new Error(`could not start ${unit}: Unit ${unit}.service was already loaded`);
+    active.add(unit);
+    started.push(unit);
+  };
+  startShared(runner, "atlas-agent-mock", start("atlas-agent-mock"));
+  // A second instance that checked before the first started, then lost the race.
+  const late = { active: () => false };
+  let checks = 0;
+  const racing = { active: (unit) => (checks++ === 0 ? late.active(unit) : runner.active(unit)) };
+  startShared(racing, "atlas-agent-mock", start("atlas-agent-mock"));
+  // One already active is not started again.
+  startShared(runner, "atlas-agent-mock", start("atlas-agent-mock"));
+  assert.deepEqual(started, ["atlas-agent-mock"]);
+});
+
+test("startShared: a start that fails with nothing running still fails", () => {
+  const runner = { active: () => false };
+  assert.throws(() => startShared(runner, "atlas-agent-web", () => { throw new Error("no pnpm"); }), /no pnpm/);
 });
