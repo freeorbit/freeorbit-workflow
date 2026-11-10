@@ -201,6 +201,9 @@ The board shows stories, not the project's internals.
   - Only the "As a…" sentence goes there now, far under the limit; `wf board plan` and `sync` still fail one over it by name.
   - The acceptance comment's own limit is unknown. If a story's list ever exceeds it, the fallback is a Doc column.
 - **A client edits the acceptance comment.** The next sync overwrites it, as the comment itself warns. `wf board plan` lists the edit first, so it is seen.
+- **monday's reads lag its writes.** Atlas NX's first sync failed "Update not found" pinning a comment it had just posted (2026-11-11).
+  - Each call on a group, item, or comment made a moment ago retries after 0.5, 1, 2, and 4 seconds, then fails naming the wait.
+  - A value monday leaves empty on create is sent again at once, and a comment left unpinned is pinned on the next run, which `wf board plan` shows as `pin acceptance`.
 - **Edits may notify.** An `edit_update` may notify the item's followers. Stories change only in the repo, so edits are rare, but what monday sends is not checked.
 - **Whole-board permissions.** A guest sees every item and column of a shareable board, and every update on it.
   - The client board holds stories only, as in "What never goes on the board", and the team talks about internals elsewhere.

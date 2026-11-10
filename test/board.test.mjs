@@ -269,7 +269,7 @@ test("setup lists what is missing, and --create makes the columns with the statu
   assert.equal(created.code, 0, "only the Kanban view is left, which is done by hand");
   assert.match(created.out.at(-1), /1 left to do on the board by hand/);
   const labels = setupProblems(config(), { columns: [{ ...COLUMNS[3], settings_str: JSON.stringify({ labels: { 0: "Done" } }) }], views: [] });
-  assert.ok(labels.lines.includes('column wf_status has no label "Planned"; add it on the board'));
+  assert.ok(labels.lines.includes('column wf_status has no label "Planned"; wf board setup --create adds it'));
 });
 
 test("the commands refuse with no board, no token, or a bad use; monday's errors keep the token out", async () => {

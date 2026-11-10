@@ -83,6 +83,14 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.34.1: the board sync finishes what a cut-short run left
+
+For a project with `board.boardId` set:
+
+- Run `npx wf github sync` once. The board-sync workflow now installs with the project's lockfile, pnpm, yarn, or npm, instead of always `npm ci`.
+- The next `npx wf board sync` finishes an item a failed run left half made. `npx wf board plan` shows it, as `Status: (empty) → …` and `pin acceptance`.
+- A board whose own status column lacks the kit's labels gets them from `npx wf board setup --create`, with its own labels kept.
+
 ### v0.34.0: the board's bot signs as Orbit
 
 For a project with `board.boardId` set:
