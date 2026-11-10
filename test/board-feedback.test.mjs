@@ -58,6 +58,30 @@ test("the bot's words come from one place, with its name", () => {
     "I'm Orbit, the team's automated helper, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.",
   );
   assert.match(loggedReply("Pip", ["Q-001"]), /^🤖 Hi, I'm Pip,/);
+  assert.equal(loggedReply("Orbit", ["Q-013"], { short: true }), "🤖 Orbit: thanks! Logged as Q-013, the team will reply here.");
+  assert.equal(loggedReply("Orbit", ["Q-013", "Q-014"], { short: true }), "🤖 Orbit: thanks! Logged as Q-013 and Q-014, the team will reply here.");
+  assert.equal(notedReply("Orbit", { short: true }), "🤖 Orbit: thanks, the team has seen this.");
+  assert.equal(notedReply("Pip", { short: true }), "🤖 Pip: thanks, the team has seen this.");
+});
+
+test("the first Orbit reply on an item is full, later ones there are short, and the pinned comment never counts", () => {
+  const open = new Set(["Q-013", "Q-014"]);
+  const pinned = { ...bot("p1", `${HEADING}\n\n${pinnedNote("Orbit")}`, 0), replies: [guest("g1", "Is line 2 right?", 1)] };
+  const first = { columns: [], groups: [], views: [], items: [item("1", "APP-01", [guest("g2", "When is this due?", 2), pinned])] };
+  const body = (board, id, answer) => replyFor(config(), feedback(config(), board, ME), id, answer, open).body;
+  assert.equal(body(first, "g1", ["Q-013"]), loggedReply("Orbit", ["Q-013"]), "only the pinned comment so far: still the full form");
+  assert.equal(body(first, "g2", "--noted"), notedReply("Orbit"));
+  // Once Orbit has replied anywhere on the item, every later reply there is short.
+  pinned.replies.push(bot("b1", loggedReply("Orbit", ["Q-013"]), 3));
+  const later = { ...first, items: [item("1", "APP-01", [{ ...guest("g2", "When is this due?", 2) }, pinned])] };
+  assert.equal(body(later, "g2", ["Q-014"]), "🤖 Orbit: thanks! Logged as Q-014, the team will reply here.");
+  assert.equal(body(later, "g2", "--noted"), "🤖 Orbit: thanks, the team has seen this.");
+  // A second item's first reply is full again.
+  const two = { ...later, items: [...later.items, item("2", "APP-02", [guest("g3", "Looks good.", 4)])] };
+  assert.equal(body(two, "g3", "--noted"), notedReply("Orbit"));
+  // A reply by the owner without the marker is theirs, not Orbit's, and does not count.
+  const owner = { ...first, items: [item("1", "APP-01", [{ ...guest("g2", "When is this due?", 2), replies: [{ ...bot("o1", "I'll check, Dana.", 3) }] }])] };
+  assert.equal(body(owner, "g2", "--noted"), notedReply("Orbit"));
 });
 
 test("a bot reply is found by the marker and the token's user, never by its wording", () => {
@@ -90,8 +114,8 @@ test("a reply names open Q-IDs, or notes the comment, and refuses anything else"
   const open = new Set(["Q-012", "Q-013"]);
   const logged = replyFor(config(), found, "u1", ["Q-012", "Q-013"], open);
   assert.deepEqual([logged.itemId, logged.threadId], ["1", "u1"]);
-  assert.equal(logged.body, loggedReply("Orbit", ["Q-012", "Q-013"]));
-  assert.equal(replyFor(config({ bot: { name: "Pip" } }), found, "r3", "--noted", open).body, notedReply("Pip"));
+  assert.equal(logged.body, "🤖 Orbit: thanks! Logged as Q-012 and Q-013, the team will reply here.", "the item has Orbit replies, so this one is short");
+  assert.equal(replyFor(config({ bot: { name: "Pip" } }), found, "r3", "--noted", open).body, "🤖 Pip: thanks, the team has seen this.");
   assert.equal(replyFor(config(), found, "r3", "--noted", open).threadId, "u2");
   assert.throws(() => replyFor(config(), found, "u1", ["Q-099"], open), /Q-099 is not in the open questions log/);
   assert.throws(() => replyFor(config(), found, "u1", ["12"], open), /not a Q-ID/);
@@ -119,10 +143,12 @@ test("wf board feedback and reply read the board and post in the comment's threa
   assert.equal(await runBoard(context, ["feedback", "--json"], io), 0);
   assert.equal(JSON.parse(out.pop()).pending.length, 3);
   assert.equal(await runBoard(context, ["reply", "u1", "Q-012"], io), 0);
-  assert.deepEqual(posted, [{ i: "1", p: "u1", b: loggedReply("Orbit", ["Q-012"]) }]);
-  assert.match(out.pop(), /^replied on APP-01 to Dana Client: 🤖 Hi, I'm Orbit/);
+  assert.deepEqual(posted, [{ i: "1", p: "u1", b: loggedReply("Orbit", ["Q-012"], { short: true }) }]);
+  assert.match(out.pop(), /^replied on APP-01 to Dana Client: 🤖 Orbit: thanks! Logged as Q-012/);
+  assert.equal(await runBoard(context, ["reply", "u5", "Q-012"], io), 0);
+  assert.equal(posted[1].b, loggedReply("Orbit", ["Q-012"]), "APP-07's item has no Orbit reply yet, so its first is full");
   await assert.rejects(runBoard(context, ["reply", "u1", "Q-013"], io), /Q-013 is not in the open questions log/);
-  assert.equal(posted.length, 1, "nothing posted for a question that was not logged");
+  assert.equal(posted.length, 2, "nothing posted for a question that was not logged");
   assert.equal(await runBoard(context, ["reply", "u1"], io), 2);
 });
 

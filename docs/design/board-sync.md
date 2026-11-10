@@ -106,6 +106,10 @@ The bot posts with the owner's token, so it signs as a helper of its own, friend
 - **Its name.** `board.bot.name`, "Orbit" by default, in every reply and the pinned comment's line.
 - **Logged.** "🤖 Hi, I'm Orbit, the team's automated helper. Thanks for raising this! I've added it to the project's list as Q-012, and someone from the team will reply here soon."
 - **Noted.** "🤖 Orbit here, the team's automated helper. Thanks, the team has seen this. Nothing to add to the list for this one, but every comment gets read."
+- **Short after the first.** The two above are its first reply on an item. Once the item holds an Orbit reply, in any thread, later ones there are short, so a busy thread is not flooded:
+  - Logged: "🤖 Orbit: thanks! Logged as Q-013, the team will reply here."
+  - Noted: "🤖 Orbit: thanks, the team has seen this."
+  - It is worked out from the board each run, with no state in the repo. The pinned comment is not a reply, so it never counts, and a second item's first reply is full again.
 - **One place.** All of its words are in the kit's `lib/board/voice.mjs`, with tests.
 - **Found by its marker, not its words.** A bot reply is one by the token's user that starts with 🤖, and the pinned comment is found by its heading. So the wording can change without breaking either.
 - **Testing.** Each command takes an injected `fetch`, as `wf doctor` takes an injected `gh`, so tests run on fixture Markdown and recorded responses, never the network.
