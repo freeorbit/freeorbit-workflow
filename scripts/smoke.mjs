@@ -109,7 +109,9 @@ await step("the web driver against a small page", async () => {
   mkdirSync(site, { recursive: true });
   writeFileSync(join(site, "index.html"), '<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><h1>Sign in</h1><button onclick="this.textContent=\'Signed in\'">Sign in now</button></body></html>');
   const config = JSON.parse(readFileSync(join(root, ".workflow/config.json"), "utf8"));
-  config.app = { kind: "web", name: "wfsmoke", runner: process.env.WF_SMOKE_RUNNER || "auto", web: { url: "http://127.0.0.1:8799/", servers: [{ name: "site", cwd: "site", command: ["python3", "-m", "http.server", "8799", "--bind", "127.0.0.1"], url: "http://127.0.0.1:8799/" }] } };
+  // GitHub's Ubuntu runners forbid Chromium's sandbox; a person's machine keeps it.
+  const sandbox = !(process.env.CI && process.platform === "linux");
+  config.app = { kind: "web", name: "wfsmoke", runner: process.env.WF_SMOKE_RUNNER || "auto", web: { sandbox, url: "http://127.0.0.1:8799/", servers: [{ name: "site", cwd: "site", command: ["python3", "-m", "http.server", "8799", "--bind", "127.0.0.1"], url: "http://127.0.0.1:8799/" }] } };
   writeFileSync(join(root, ".workflow/config.json"), `${JSON.stringify(config, null, 2)}\n`);
   try {
     expect(wf("app", "start", "--fresh"), "wf app start");
