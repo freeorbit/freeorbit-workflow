@@ -133,6 +133,7 @@ An optional `board` section; a project without it has no board commands.
 | `board.branch` | `"main"` | The branch whose pushes run the board-sync workflow |
 | `board.environment` | `"board"` | The GitHub Environment holding the token, limited to `board.branch` |
 | `board.columns` | the six above | Each field's column id on the board, filled by `wf board setup` |
+| `board.titles` | the titles above | Each column's title, which `wf board setup --create` gives it. A board from monday's project template already has a Status, so its own is titled another way, such as "Story status" |
 | `board.statuses` | the six above | Each status's label text on the board |
 | `board.show.deliveryNotes` | `true` | An update on each story's item when its chunk is done, from `chunks-done.md` |
 | `board.show.frames` | `true` | The frame PNG on the item, later a screenshot of the built screen |
@@ -175,7 +176,9 @@ For a project on the kit, once its stories are ready for the client.
 
 1. Ask the monday account's admin for a shareable board, and invite the client there as a guest.
 2. Set `board.boardId` in `.workflow/config.json` to the board's number, from its address.
-3. With the token in `MONDAY_API_TOKEN`, run `npx wf board setup --create`, then add the Kanban view by Status on the board by hand.
+3. With the token in `MONDAY_API_TOKEN`, run `npx wf board setup --create`.
+   - A column it says can't be set on items belongs to a portfolio, such as a project template's status. Point `board.columns` at an id of the project's own, with its title in `board.titles`, and run it again.
+   - Then add the Kanban view by the status column on the board by hand.
 4. Run `npx wf board plan`, and check what it would write.
 5. In GitHub, create the `board` environment, set its deployment branches to `main` only, and add `MONDAY_API_TOKEN` to it as a secret.
 6. Run `npx wf github sync`, and merge the workflow it writes. The merge runs the first sync.
@@ -201,6 +204,9 @@ The board shows stories, not the project's internals.
   - Only the "As a…" sentence goes there now, far under the limit; `wf board plan` and `sync` still fail one over it by name.
   - The acceptance comment's own limit is unknown. If a story's list ever exceeds it, the fallback is a Doc column.
 - **A client edits the acceptance comment.** The next sync overwrites it, as the comment itself warns. `wf board plan` lists the edit first, so it is seen.
+- **monday's reads lag its writes.** Atlas NX's first sync failed "Update not found" pinning a comment it had just posted (2026-11-11).
+  - Each call on a group, item, or comment made a moment ago retries after 0.5, 1, 2, and 4 seconds, then fails naming the wait.
+  - A value monday leaves empty on create is sent again at once, and a comment left unpinned is pinned on the next run, which `wf board plan` shows as `pin acceptance`.
 - **Edits may notify.** An `edit_update` may notify the item's followers. Stories change only in the repo, so edits are rare, but what monday sends is not checked.
 - **Whole-board permissions.** A guest sees every item and column of a shareable board, and every update on it.
   - The client board holds stories only, as in "What never goes on the board", and the team talks about internals elsewhere.
