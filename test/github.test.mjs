@@ -7,7 +7,7 @@ import { test } from "node:test";
 import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { ecosystems, holders, ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
-import { openNeeds, signoffs } from "../lib/signoffs.mjs";
+import { bypassLine, bypassLines, openNeeds, PR_BODY, signoffs } from "../lib/signoffs.mjs";
 
 const PEOPLE = [
   { name: "Ana", handle: "ana", roles: ["owner", "reviewer"] },
@@ -88,4 +88,62 @@ test("signoffs count each question row under a chunk's heading, and none under N
   const { lines, code } = signoffs(config(), [["q.md", text]]);
   assert.equal(code, 1);
   assert.match(lines[0], /needs designer \(Bo\): Q-001/);
+});
+
+const QHEAD = "| ID | Question | Needs | From | Story | Raised |\n| --- | --- | --- | --- | --- | --- |";
+const QLOG = `## CH-01: Sign-in\n\n${QHEAD}\n| Q-001 | Is the empty state a frame? | designer | developer | none | 2026-11-10 |\n| Q-002 | Which store? | owner | developer | none | 2026-11-10 |\n`;
+const BYPASS = "- [x] bypassed by @bo on 2026-11-10: the client signed off by phone (Q-001, Q-002)";
+
+/** A fake gh: who is signed in, and who is an admin; `null` is no gh at all. */
+function fakeGh({ login = "bo", admins = ["bo"] } = {}, calls = []) {
+  return (args) => {
+    calls.push(args.join(" "));
+    if (login === null) return { error: new Error("spawn gh ENOENT"), status: null, stdout: "" };
+    if (args[1] === "user") return { status: 0, stdout: `${login}\n` };
+    const handle = args[1].match(/collaborators\/([^/]+)\/permission/)?.[1];
+    return { status: 0, stdout: admins.includes(handle) ? "admin\n" : "write\n" };
+  };
+}
+
+test("a bypass line covers the chunk questions it names while gh confirms its admin", () => {
+  assert.deepEqual(bypassLines(`text\n${BYPASS}`).map((line) => `${line.handle} ${line.ids.join(",")}`), ["bo Q-001,Q-002"]);
+  const calls = [];
+  const { lines, code } = signoffs(config(), [["q.md", QLOG], [PR_BODY, BYPASS]], { gh: fakeGh({}, calls) });
+  assert.equal(code, 0, lines.join("\n"));
+  assert.equal(lines.filter((line) => line.startsWith("BYPASSED by @bo")).length, 2);
+  assert.ok(calls.some((call) => call.includes("collaborators/bo/permission")), "the admin is checked on each read");
+});
+
+test("a bypass line does not count with no gh, for a non-admin, or for someone not in people", () => {
+  for (const [gh, why] of [
+    [fakeGh({ login: null }), /no gh, no sign-in, or not an admin/],
+    [fakeGh({ admins: [] }), /not an admin/],
+  ]) {
+    const { lines, code } = signoffs(config(), [["q.md", QLOG], [PR_BODY, BYPASS]], { gh });
+    assert.equal(code, 1);
+    assert.ok(lines.some((line) => why.test(line)), lines.join("\n"));
+  }
+  const stranger = BYPASS.replace("@bo", "@mallory");
+  const { lines, code } = signoffs(config(), [["q.md", QLOG], [PR_BODY, stranger]], { gh: fakeGh({ admins: ["mallory"] }) });
+  assert.equal(code, 1);
+  assert.ok(lines.some((line) => /@mallory is not one of the project's people/.test(line)));
+});
+
+test("a stale bypass leaves a question it does not name open, and one in the log itself never counts", () => {
+  const stale = "- [x] bypassed by @bo on 2026-11-09: earlier sign-off (Q-001, Q-007)";
+  const { lines, code } = signoffs(config(), [["q.md", QLOG], [PR_BODY, stale]], { gh: fakeGh() });
+  assert.equal(code, 1);
+  assert.ok(lines.some((line) => /needs owner .*Q-002 Which store\?/.test(line)), "Q-002 still blocks");
+  assert.ok(lines.some((line) => /names Q-007, which no chunk waits on/.test(line)));
+  assert.equal(signoffs(config(), [["q.md", `${QLOG}\n${BYPASS}\n`]], { gh: fakeGh() }).code, 1, "only the pull request's body holds a bypass");
+});
+
+test("--bypass writes a line for the signed-in admin, and refuses anyone else", () => {
+  const texts = [["q.md", QLOG], [PR_BODY, "Track: chunk"]];
+  assert.equal(bypassLine(config(), texts, "the client signed off by phone", "2026-11-10", fakeGh()), BYPASS);
+  assert.throws(() => bypassLine(config(), texts, "why", "2026-11-10", fakeGh({ login: null })), /not installed or not signed in/);
+  assert.throws(() => bypassLine(config(), texts, "why", "2026-11-10", fakeGh({ admins: [] })), /not an admin/);
+  assert.throws(() => bypassLine(config(), texts, "why", "2026-11-10", fakeGh({ login: "mallory", admins: ["mallory"] })), /@mallory is not one of/);
+  assert.throws(() => bypassLine(config(), texts, " ", "2026-11-10", fakeGh()), /needs a reason/);
+  assert.throws(() => bypassLine(config(), [[PR_BODY, "- [ ] needs owner: ship?"]], "why", "2026-11-10", fakeGh()), /no open chunk question/);
 });

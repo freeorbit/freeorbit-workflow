@@ -52,6 +52,11 @@ A question that waits on someone who holds a role is one of these:
 
 `npx wf signoffs` lists the open ones, and no merge is proposed while any are.
 
+A repository admin may merge past open chunk questions, with the owner's yes and a reason: `npx wf signoffs --bypass "<reason>"` adds `- [x] bypassed by @handle on <date>: <reason> (Q-012)` to the pull request's body, which the squash keeps on `main`.
+
+- The line covers only the Q-IDs it names, so a question raised after it blocks again.
+- It counts only while its handle is one of `people` and `gh` confirms that person is an admin now. A line naming anyone else, or a run with no `gh` or sign-in, does not count.
+
 A branch that needs work from another unmerged branch starts from that branch. After the first one merges, move it onto `main` with `git rebase --onto main <first branch>`, because the squash left the first branch's commits behind.
 
 <!-- wf:local enforcement -->

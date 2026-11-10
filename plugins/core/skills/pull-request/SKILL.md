@@ -43,6 +43,7 @@ Then ask once, and wait.
 The pull request lands as one squashed commit, so its title and body are what `main` keeps.
 
 - Before asking to merge, run `npx wf signoffs`. While it lists an open question, a chunk's open-questions row or a `needs <role>:` line in the body, do not propose the merge: name each question and who holds its role. In a solo project it never lists one.
+- A repository admin may merge past open chunk questions. Only when the owner asks, or when you ask and they say yes, name each question it skips and ask for the reason in chat, then run `npx wf signoffs --bypass "<reason>"`. Never bypass on your own, and never type the bypass line into the body by hand.
 - After opening it, ask once whether to merge. A yes to open is not a yes to merge.
 - On the owner's yes, from the main checkout, since `gh` cannot delete a branch checked out in a worktree:
   1. `gh pr merge <number> --squash`.
