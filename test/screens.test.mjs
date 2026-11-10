@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, storyRange, unreached } from "../lib/screens/list.mjs";
-import { briefs, jobsOf, lookStep, migrate, needsDisplay, reviewCovers, sessionSteps, shotsFor, splitScreens, stepWord, why } from "../lib/screens/run.mjs";
+import { briefs, jobsOf, lookStep, migrate, needsDisplay, reviewCovers, screensHeadless, sessionSteps, shotsFor, splitScreens, stepWord, why } from "../lib/screens/run.mjs";
 import { words } from "../lib/app/page.mjs";
 import { afterDefer, afterRun, readState } from "../lib/screens/state.mjs";
 
@@ -228,4 +228,18 @@ test("only a Tauri window or a web browser with a window needs a display of its 
   assert.equal(needsDisplay({ kind: "tauri", web: { headless: true } }), true);
   assert.equal(needsDisplay({ kind: "web", web: { headless: true } }), false);
   assert.equal(needsDisplay({ kind: "web", web: { headless: false } }), true);
+  assert.equal(needsDisplay({ kind: "web", web: { headless: true } }, false), true, "a headed run over a headless default");
+  assert.equal(needsDisplay({ kind: "web", web: { headless: false } }, true), false);
+});
+
+test("a chunk-end review and a build-time check each take their own headless setting, or app.web.headless", () => {
+  const config = (headless, screens) => merge(DEFAULTS, { app: { kind: "web", web: { headless } }, screens: { headless: screens } });
+  assert.equal(screensHeadless(config(true, {}), "light"), true, "unset follows app.web.headless");
+  assert.equal(screensHeadless(config(false, {}), null), false);
+  const atlas = config(false, { review: true, build: false });
+  assert.equal(screensHeadless(atlas, "light"), true);
+  assert.equal(screensHeadless(atlas, "deep"), true);
+  assert.equal(screensHeadless(atlas, null), false, "named screens, a chunk, or all");
+  assert.equal(screensHeadless(config(true, { build: false }), "deep"), true);
+  assert.equal(screensHeadless(config(true, { build: false }), null), false);
 });

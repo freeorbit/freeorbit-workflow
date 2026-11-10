@@ -35,6 +35,7 @@ Check a flow with one `run`, not one command per action. Plan the steps up front
 | `run` step | What it does |
 | --- | --- |
 | `go <#hash>` | Navigates, then waits for the page to settle. |
+| `back` | Goes one page back, as a browser's Back does, then waits for the page. Fails on the window's first page. |
 | `click <label> [in <group>]` | Clicks the button, link, list option, or field with that text, aria-label, or placeholder. `in <group>` picks the one beside that group's label, such as `click Sage in Scheme`, when two share a name. |
 | `type <label> <value>` | Fills a field so React sees it. A field is found by its aria-label, its `<label>`, or its placeholder, not by what is typed in it. |
 | `expect <text>` / `absent <text>` | Fails unless the text is, or is not, on the page. |
@@ -53,7 +54,7 @@ Put a label or script with spaces in quotes: `'click "I added it"'`. A step wait
 | --- | --- |
 | `start [--fresh] [--size WxH] [--real]` | Starts Vite and the app as user units. `--fresh` wipes the throwaway data first. `--size` sets the window size through `app.sizeEnv`. `--real` uses the user's real data folder: only when asked. The project's hooks may take more options. |
 | `run <step> ...` | Several steps in one call. |
-| `go`, `click`, `type`, `text`, `eval` | One step as its own command; `go`, `click`, and `type` then print the page. |
+| `go`, `back`, `click`, `type`, `text`, `eval` | One step as its own command; `go`, `back`, `click`, and `type` then print the page. |
 | `console` | Console messages so far, with level and source line. |
 | `screenshot [file.png]` | The window. |
 | `mem` | Memory used by the page process. |
