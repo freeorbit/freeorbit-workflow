@@ -108,7 +108,8 @@ function board({ multiLevel = false, review = true, views = ["Build", "Client re
       return ok({ update_status_column: { id: v.id } });
     }
     if (op === "create_column") {
-      const labels = Object.entries(JSON.parse(v.d).labels).map(([id, label]) => ({ id: Number(id), label, color: Number(id), index: Number(id), is_done: id === "1" }));
+      // As monday does with a column's own labels: none marked done.
+      const labels = Object.entries(JSON.parse(v.d).labels).map(([id, label]) => ({ id: Number(id), label, color: Number(id), index: Number(id), is_done: false }));
       state.columns.push({ id: v.id, title: v.t, type: v.ty, revision: "new", labels, capabilities: { calculated: multiLevel ? { function: "COUNT_KEYS" } : null } });
       return ok({ create_column: { id: v.id } });
     }
@@ -186,7 +187,7 @@ test("setup --create makes Client review once with its starter labels and the tw
   const review = monday.state.columns.find((column) => column.id === "client_review");
   assert.equal(review.title, "Client review");
   assert.deepEqual(review.labels.map((label) => `${label.label}${label.is_done ? " (done)" : ""}`), ["Not ready", "Approved (done)", "Ready for review", "Changes requested"]);
-  assert.equal(review.capabilities.calculated, null);
+  assert.equal(review.capabilities.calculated, null, "the done label and the rollup in one change");
   assert.ok(made.out.includes("turned off column client_review's rollup of child items"));
   assert.deepEqual(monday.state.views.map((view) => `${view.name} by ${view.groupBy}`), ["Build by project_status", "Client review by client_review"]);
   assert.ok(made.out.includes("  for cards, add a Kanban view grouped by Client review on the board by hand; monday's API cannot make one"));

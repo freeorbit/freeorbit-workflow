@@ -127,7 +127,7 @@ function fakeMonday({ columns = COLUMNS, views = [{ name: "Build" }, { name: "Cl
   const fetch = async (url, init) => {
     state.auth.push(init.headers.Authorization);
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/(me|boards|next_items_page|create_group|create_item|change_multiple_column_values|move_item_to_group|create_update|edit_update|pin_to_top|create_column|create_view_table)\b/)[1];
+    const op = query.match(/(me|boards|next_items_page|create_group|create_item|change_multiple_column_values|move_item_to_group|create_update|edit_update|pin_to_top|create_column|create_view_table|update_status_column)\b/)[1];
     state.ops.push(op);
     const reply = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
     if (op === errorOn) return { status: 200, text: async () => JSON.stringify({ errors: [{ message: `refused, token ${TOKEN}` }] }) };
@@ -170,8 +170,13 @@ function fakeMonday({ columns = COLUMNS, views = [{ name: "Build" }, { name: "Cl
     }
     if (op === "pin_to_top") return reply({ pin_to_top: { id: v.u } });
     if (op === "create_column") {
-      state.columns.push({ id: v.id, title: v.t, type: v.ty, settings_str: v.d ? JSON.stringify(JSON.parse(v.d)) : "{}" });
+      const labels = v.d ? Object.entries(JSON.parse(v.d).labels ?? {}) : [];
+      state.columns.push({ id: v.id, title: v.t, type: v.ty, revision: "new", settings_str: v.d ? JSON.stringify(JSON.parse(v.d)) : "{}", settings: { labels: labels.map(([id, label]) => ({ id: Number(id), label, color: Number(id), index: Number(id), is_done: false })) } });
       return reply({ create_column: { id: v.id } });
+    }
+    if (op === "update_status_column") {
+      state.statusUpdates = [...(state.statusUpdates ?? []), v];
+      return reply({ update_status_column: { id: v.id } });
     }
     if (op === "create_view_table") {
       state.views.push({ name: v.n, groupBy: v.s.group_by.conditions[0].columnId });
@@ -277,6 +282,9 @@ test("setup lists what is missing, and --create makes the columns, with Built ma
   assert.deepEqual(JSON.parse(monday.state.columns.find((column) => column.id === "wf_status").settings_str).labels, { 0: "Drafting", 1: "Built", 2: "Backlog", 3: "Planned", 4: "In progress", 5: "Checking" });
   assert.deepEqual(JSON.parse(monday.state.columns.find((column) => column.id === "client_review").settings_str).labels, { 0: "Not ready", 1: "Approved", 2: "Ready for review", 3: "Changes requested" });
   assert.deepEqual(monday.state.views.map((view) => `${view.name} by ${view.groupBy}`), ["Build by wf_status", "Client review by client_review"]);
+  // monday marks none of a new column's own labels done, so setup marks Built and Approved.
+  assert.deepEqual(monday.state.statusUpdates.map((each) => `${each.id}: ${each.s.labels.filter((label) => label.is_done).map((label) => label.label)}`), ["wf_status: Built", "client_review: Approved"]);
+  assert.ok(created.out.includes('marked "Built" done on column wf_status'));
   assert.ok(created.out.includes("  for cards, add a Kanban view grouped by Build on the board by hand; monday's API cannot make one"));
   assert.equal(created.code, 0, created.out.join("\n"));
   assert.equal(created.out.at(-1), "The board is set up.");
