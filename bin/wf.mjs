@@ -16,6 +16,7 @@
 //   wf try [scenario] [--keep] [--dry-run] [--files]   open the app yourself at a test scenario
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
 //   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply
+//   wf board <setup [--create] | plan | sync>   the stories on the client's monday.com board, one way
 //   wf signoffs [--bypass "<reason>"]   the questions this branch still waits on, or an admin's bypass of them
 //   wf decision add <file> "<decision>" "<why>" | supersede <ID> <by ID>   the decisions log
 //   wf question add <chunk | none> "<question>" <needs> "<from>" [story] | resolve <Q-ID> "<decision>"   the open questions log
@@ -41,6 +42,7 @@ import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
 import { addDecision, supersede } from "../lib/decisions.mjs";
 import { addQuestion, resolveQuestion } from "../lib/questions.mjs";
+import { runBoard } from "../lib/board/index.mjs";
 import { ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
 import { runRelease, STEPS } from "../lib/release.mjs";
 import { bypassLine, PR_BODY, runGh, signoffs } from "../lib/signoffs.mjs";
@@ -255,6 +257,10 @@ const commands = {
     }
     console.log('Usage: wf question add <chunk | none> "<question>" <needs role> "<from: role or client (<channel>)>" [story IDs]   or   wf question resolve <Q-ID> "<D-IDs or none: why>"');
     return 2;
+  },
+
+  async board(args) {
+    return runBoard(project(), args);
   },
 
   async signoffs(args) {

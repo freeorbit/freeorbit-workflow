@@ -26,6 +26,7 @@ One item per story, grouped the way the story file groups them.
 | Chunk | Text | The chunk rows that list the story, such as `CH-01-fe, CH-01-be` |
 | Story | Long text | The "As a…" sentence only, so it reads on the Kanban card |
 | PR | Link | The pull request of the chunk that finished the story |
+| Owner | People | Assigned by hand on the board. `wf board setup` makes it, and sync never reads or writes it |
 
 ### Acceptance comment
 
@@ -149,7 +150,7 @@ The board shows stories, not the project's internals.
 ## Build order
 
 1. The trial against a test board, in this doc.
-2. The story reader, and `wf board plan` and `sync`, tested with fixtures and a fake fetch.
+2. The story reader, and `wf board plan` and `sync`, tested with fixtures and a fake fetch. Built in v0.32.0, with `wf board setup`, and run against the test board.
 3. The CI workflow, through `wf github`.
 4. `wf board feedback` and the `board-feedback` skill.
 5. Frames, then screenshots of the built screens.
