@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, utimesSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
-import { appPage, appSettings, chromiumArgs, databasePath, goScript, psqlCall, startShared, viewport } from "../lib/app/driver.mjs";
+import { appPage, appSettings, chromiumArgs, databasePath, goScript, psqlCall, startShared, viewport, withLock } from "../lib/app/driver.mjs";
 import { clickTarget, groupName } from "../lib/app/clickTarget.mjs";
 import { words } from "../lib/app/page.mjs";
 import { merge } from "../lib/config.mjs";
@@ -144,4 +147,33 @@ test("startShared: a server another instance started a moment before counts as s
 test("startShared: a start that fails with nothing running still fails", () => {
   const runner = { active: () => false };
   assert.throws(() => startShared(runner, "atlas-agent-web", () => { throw new Error("no pnpm"); }), /no pnpm/);
+});
+
+test("withLock: starts that run at once take turns, so a shared server is started once", async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), "wf-lock-")), "locks", "atlas-agent-mock");
+  let running = false;
+  let up = false;
+  const starts = [];
+  const startOnce = (who) => withLock(dir, async () => {
+    assert.equal(running, false, "two holders at once");
+    running = true;
+    if (!up) {
+      starts.push(who);
+      await new Promise((r) => setTimeout(r, 30));
+      up = true;
+    }
+    running = false;
+  }, { pause: (ms) => new Promise((r) => setTimeout(r, ms / 10)) });
+  await Promise.all([1, 2, 3, 4, 5].map(startOnce));
+  assert.equal(starts.length, 1);
+});
+
+test("withLock: a lock left by a killed run is taken over once stale, and one held too long fails", async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), "wf-lock-")), "atlas-agent-web");
+  mkdirSync(dir);
+  const old = new Date(Date.now() - 10_000);
+  utimesSync(dir, old, old);
+  assert.equal(await withLock(dir, async () => "ran", { staleMs: 5_000 }), "ran");
+  mkdirSync(dir);
+  await assert.rejects(withLock(dir, async () => "ran", { waitMs: 0, pause: async () => {} }), /held by another start/);
 });
