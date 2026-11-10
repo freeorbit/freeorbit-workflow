@@ -32,7 +32,14 @@ test("a chunk row keeps its group and status, and other tables do not count", ()
     "| Tuta | The same |",
   ].join("\n");
   assert.deepEqual(chunkRows(text), [
-    { chunk: "7. Provider", group: "Waiting", status: "Waiting", stories: "GM-03", waitsOn: "" },
+    { chunk: "7. Provider", group: "Waiting", status: "Waiting", stories: "GM-03", waitsOn: "", title: "", who: "" },
+  ]);
+});
+
+test("a chunk row reads its id, Title, and Who cells", () => {
+  const text = "### Not started\n\n| Chunk | Title | Who | Stories | Status | Waits on |\n| --- | --- | --- | --- | --- | --- |\n| CH-01-fe | Sign-in screen | developer:frontend | APP-01 | Not started | CH-01-contract |\n";
+  assert.deepEqual(chunkRows(text), [
+    { chunk: "CH-01-fe", group: "Not started", status: "Not started", stories: "APP-01", waitsOn: "CH-01-contract", title: "Sign-in screen", who: "developer:frontend" },
   ]);
 });
 

@@ -8,48 +8,48 @@
       "name": "core",
       "source": "./plugins/core",
       "description": "Commit, pull request, handoff, and doc-find skills; the wf docs, roles, and OpenCode scripts; and the guard that keeps blind agents blind.",
-      "version": "0.27.0"
+      "version": "0.28.0"
     },
     {
       "name": "review",
       "source": "./plugins/review",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "description": "Read-only code review with scans, a reviewer and verify agent, and a findings ledger."
     },
     {
       "name": "testdata",
       "source": "./plugins/testdata",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "description": "Synthetic test data from a blind designer agent and the project's seeded generator."
     },
     {
       "name": "design",
       "source": "./plugins/design",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "description": "HTML design frames rendered to review PNGs, a frame checker, storyboards, annotated question sheets, and the screen review with a screen-reader agent."
     },
     {
       "name": "stack-tauri-rust",
       "source": "./plugins/stack-tauri-rust",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "description": "Tauri app driver under a memory cap, and a disk check for Rust build leftovers."
     },
     {
       "name": "stack-web",
       "source": "./plugins/stack-web",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "description": "Web app driver: the project's servers and a headless Chromium under a memory cap."
     },
     {
       "name": "e2e",
       "source": "./plugins/e2e",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "description": "A blind tester agent walks the test-data journeys through the app; replayed drafts go in the review ledger."
     },
     {
       "name": "release",
       "source": "./plugins/release",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "description": "Releases on the owner's command, through the project's release commands and workflows, a yes before each step."
     }
   ]
