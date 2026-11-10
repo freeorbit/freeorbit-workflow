@@ -42,7 +42,7 @@ Check a flow with one `run`, not one command per action. Plan the steps up front
 | `until <text>` | Waits up to 10 s for the text, such as a slow reply, then for the page to settle. |
 | `show <text>` | Scrolls the element that reads exactly that, such as a group's heading, to the top. |
 | `lines <text>` | Prints the page lines that contain the text. Cheaper than `text`. |
-| `text` / `url` / `eval <js>` | Prints the whole page text, the URL, or a value. |
+| `text` / `url` / `eval <js>` | Prints the whole page text, the URL, or a value. `eval` runs the rest of the step as written, quotes and all. |
 | `wait <ms>` | Waits, for a job that takes a while. |
 | `shot [file]` | Saves a screenshot. Read it with the Read tool. |
 | `page <file>` | Saves the whole page, a window of its scrolling box at a time, joined. Needs `magick`. |

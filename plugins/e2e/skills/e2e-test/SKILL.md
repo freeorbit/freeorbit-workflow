@@ -60,11 +60,12 @@ Do not walk a journey that waits on an answer.
 The tester runs only `wf app` and reads only its area's docs and the docs in `e2e.reads`. Besides clicking and typing, it has `back`, the browser's Back. Anything else a journey needs a person to do outside the page, such as waiting a day, comes from the project:
 
 - A project that offers such a step, such as a dev-only route that moves its fake clock, writes it in a doc in `e2e.reads`, often the app-testing doc: an "App steps" section with each step's name, when a journey uses it, and the exact line to run.
-- The line is a `wf app` step, so the tester never needs a shell or the code. For a clock route on the app's own origin:
+- The line is a `wf app` command, so the tester never needs a shell or the code. For a clock route on the app's own origin, whose reply shows the new time:
 
   ```bash
-  npx wf app run 'eval fetch("/api/dev/clock", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ seconds: 86400 }) }).then((r) => r.status)'
+  npx wf app eval 'fetch("/api/dev/clock", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ seconds: 86400 }) }).then((r) => r.json())'
   ```
+- Wrap the script in single quotes, so the double quotes inside it reach the page. The same script also runs as a `run` step, `'eval <script>'`.
 - Only steps that exist in the test build, never one that reaches a real service. Before the walk, list each journey whose "A passing run shows" lines need a step no doc offers, and ask the owner whether to add the step to the doc first, or leave those lines unchecked.
 
 ### Build and files

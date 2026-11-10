@@ -42,7 +42,7 @@ Check a flow with one `run`, not one command per action. Plan the steps up front
 | `expect <text>` / `absent <text>` | Fails unless the text is, or is not, on the page. |
 | `until <text>` | Waits up to 10 s for the text, such as a slow reply. |
 | `show <text>` / `lines <text>` | Scrolls the element that reads exactly that to the top, or prints the lines that contain the text. |
-| `text` / `url` / `eval <js>` | Prints the page text, the URL, or a value. |
+| `text` / `url` / `eval <js>` | Prints the page text, the URL, or a value. `eval` runs the rest of the step as written, quotes and all. |
 | `wait <ms>` | Waits, for a job that takes a while. |
 | `shot [file]` / `page <file>` | Saves the viewport, or the whole page down to its foot, drawn at once. Read them with the Read tool. |
 | `fits` | Fails if anything is wider than the window. Use it with `start --size <w>x<h>`. |

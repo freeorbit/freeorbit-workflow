@@ -6,7 +6,7 @@ import { test } from "node:test";
 
 import { appPage, appSettings, BACK_SCRIPT, chromiumArgs, databasePath, goBack, goScript, headlessFor, psqlCall, startShared, viewport, withLock } from "../lib/app/driver.mjs";
 import { clickTarget, groupName } from "../lib/app/clickTarget.mjs";
-import { words } from "../lib/app/page.mjs";
+import { evalSource, words } from "../lib/app/page.mjs";
 import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 
@@ -22,6 +22,15 @@ test("a click can name the group its element sits in", () => {
 test("a step splits into words, keeping quoted words together", () => {
   assert.deepEqual(words(`click "I added it" in Forward`), ["click", "I added it", "in", "Forward"]);
   assert.deepEqual(words(`type 'App password' "say \\"hi\\""`), ["type", "App password", 'say "hi"']);
+});
+
+test("an eval step keeps its script as written, quotes and all", () => {
+  const clock = `fetch("/api/dev/clock", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ seconds: 900 }) }).then((r) => r.json())`;
+  assert.equal(evalSource(`eval ${clock}`), clock);
+  assert.equal(evalSource(`eval document.querySelector('h1').textContent`), "document.querySelector('h1').textContent");
+  assert.equal(evalSource(`eval "document.title"`), "document.title", "one wholly quoted script is unwrapped, as before");
+  assert.equal(evalSource(`eval 'a' + "b"`), `'a' + "b"`);
+  assert.equal(evalSource("eval   1 + 1"), "1 + 1");
 });
 
 test("the first instance and a second get their own state, unit, and port, and share the seen data path", () => {
