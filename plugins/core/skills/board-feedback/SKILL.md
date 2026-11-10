@@ -32,6 +32,9 @@ For each pending comment, choose one:
   - **Story.** The comment's story ID.
   - One comment can hold two questions; log each as its own row.
 - **Note it.** Thanks, small talk, or something already answered on the board. It gets the bot's short "noted" reply, so it stops showing as new.
+- **An answer.** A comment whose `answers` names a Q-ID replies to one of the team's questions.
+  - Suggest recording the answer in the decisions log and `npx wf question resolve <Q-ID> "<D-IDs or none: why>"`, or a follow-up question if it is not a full answer.
+  - It gets the bot's thanks, `--answered <Q-ID>`, never a new row for the same question.
 
 For each edited comment, show what changed and suggest updating its question row by hand. It is never logged twice, and gets no second reply.
 
@@ -49,7 +52,7 @@ Ask once whether to go ahead. Change any line the person corrects. Wait for the 
 On the yes:
 
 1. Each question, one by one: `npx wf question add <chunk | none> "<question>" <needs> "client (monday)" <story>`. It prints the new Q-ID.
-2. Every reply in one call, each comment's part split by `--`: `npx wf board reply <comment id> <Q-ID> [<Q-ID> ...] -- <comment id> --noted -- ...`, with the IDs from step 1.
+2. Every reply in one call, each comment's part split by `--`: `npx wf board reply <comment id> <Q-ID> [<Q-ID> ...] -- <comment id> --noted -- <comment id> --answered <Q-ID> -- ...`, with the IDs from step 1.
    - One call, never one per comment: it gives an item's first reply the full wording and the rest there the short one, which separate calls may not, since monday's reads lag its writes.
    - It checks every reply before it posts the first, so a wrong Q-ID posts none.
 

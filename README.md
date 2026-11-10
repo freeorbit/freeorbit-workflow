@@ -83,6 +83,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.36.0: delivery notes and client questions
+
+- `chunks-done.md` takes a "For the client" column after Detail, and `npx wf doc:check` fails a done table without it. Add the column; leave old rows empty, or fill one for each done chunk the client should hear about.
+- Each filled cell is posted once, on its stories' items, when they are built. The first sync after the upgrade posts those for chunks already done.
+- `client` is now a Needs value for an open question the client answers. Sync asks it on its story's item, and it never holds a merge.
+
 ### v0.35.0: Build and Client review
 
 The board's status splits in two, so the client can review a story before anything is called done.

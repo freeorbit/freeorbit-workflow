@@ -102,6 +102,7 @@ All in the core plugin, beside `wf question` and `wf decision`.
 | `wf board feedback [--json]` | Lists client comments with no bot reply after them, and apart, those edited after they were logged. No state is kept in the repo: the reply marks a comment handled |
 | `wf board reply <id> <Q-ID ...>` | Posts the bot's reply naming the open questions a comment was logged as, in its thread. Refuses a Q-ID not in the open questions log |
 | `wf board reply <id> --noted` | Posts the bot's "noted" reply to a comment that needs no question, so it stops showing as new |
+| `wf board reply <id> --answered <Q-ID>` | Posts the bot's thanks to a client's answer to one of the team's questions |
 | `wf board reply <id> … -- <id> …` | Several replies in one batch, each checked before the first is posted |
 
 - **One batch, one full reply an item.** monday's reads lag its writes, so separate calls could each give an item the full first reply. A batch knows what it posted, and gives the rest on that item the short form.
@@ -113,6 +114,18 @@ All in the core plugin, beside `wf question` and `wf decision`.
   - monday's threads are one level deep, so a comment is handled when a bot reply sits in its thread after it. A later guest comment there is new again.
   - A comment whose `updated_at` is after its bot reply is listed as edited, with the Q-IDs the reply named, and is never logged twice.
 
+### Delivery notes and client questions
+
+Sync speaks for the team on two more things, each on its `board.show` switch.
+
+- **Delivery notes.** When a story's Build first reaches Built, sync posts a note on its item with the For the client sentences of its done chunks, deduped, in order.
+  - Each chunk's sentence is the done list's "For the client" cell, written at chunk end. An empty cell, as on chunks done before v0.36.0, announces nothing.
+  - The note ends with its chunks, such as "(CH-01)", so each is announced once, and a story a later chunk builds again gets a note for that chunk alone.
+- **Client questions.** An open question whose Needs is `client` is asked once on each story its Story cell names, found again by its Q-ID. One with Story `none` is not posted; plan says so.
+  - A guest's reply in that thread is listed by `wf board feedback` as the answer to its Q-ID, and the skill suggests resolving the question, not a new row.
+  - A client question never holds a merge: `wf signoffs` skips it.
+- **In plan.** `note    APP-01 delivered (CH-01)` and `ask     APP-02 Q-012`, then sync posts them after each item's own changes.
+
 ### The bot
 
 The bot posts with the owner's token, so it signs as a helper of its own, friendly, in the background, and polite.
@@ -120,10 +133,15 @@ The bot posts with the owner's token, so it signs as a helper of its own, friend
 - **Its name.** `board.bot.name`, "Orbit" by default, in every reply and the pinned comment's line.
 - **Logged.** "🤖 Hi, I'm Orbit. Thanks for raising this! I've added it to the project's list as Q-012, and someone from the team will reply here soon."
 - **Noted.** "🤖 Orbit here. Thanks, the team has seen this. Nothing to add to the list for this one, but every comment gets read."
-- **Short after the first.** The two above are its first reply on an item. Once the item holds an Orbit reply, in any thread, later ones there are short, so a busy thread is not flooded:
+- **Built.** "🤖 Hi, I'm Orbit. Good news: this story is built." Then the story's For the client sentences, "Have a look, and set Client review when you're ready.", and its chunks, such as "(CH-01)".
+- **Asking.** "🤖 Hi, I'm Orbit. The team has a question for you (Q-012): <question> Just reply here."
+- **Thanks for an answer.** "🤖 Orbit: thanks! Your answer to Q-012 is with the team."
+- **Short after the first.** Those are its first word on an item. Once the item holds anything from Orbit but the pinned comment, a reply, a note, or a question, later ones there are short, so a busy item is not flooded:
   - Logged: "🤖 Orbit: thanks! Logged as Q-013, the team will reply here."
   - Noted: "🤖 Orbit: thanks, the team has seen this."
-  - It is worked out from the board each run, with no state in the repo. The pinned comment is not a reply, so it never counts, and a second item's first reply is full again.
+  - Built: "🤖 Orbit: built!" Then the sentences, "Set Client review when you're ready.", and the chunks.
+  - Asking: "🤖 Orbit: a question from the team (Q-012): <question> Just reply here."
+  - It is worked out from the board each run, with no state in the repo, and a second item's first word is full again.
 - **One place.** All of its words are in the kit's `lib/board/voice.mjs`, with tests.
 - **Found by its marker, not its words.** A bot reply is one by the token's user that starts with 🤖, and the pinned comment is the bot's comment with the heading line. So the wording can change without breaking either.
 - **Testing.** Each command takes an injected `fetch`, as `wf doctor` takes an injected `gh`, so tests run on fixture Markdown and recorded responses, never the network.
@@ -146,7 +164,7 @@ An optional `board` section; a project without it has no board commands.
 | `board.statuses` | the six above | Each status's label text on the board. The last, `done`, is "Built" |
 | `board.columns.clientReview`, `board.titles.clientReview` | `"client_review"`, `"Client review"` | The Client review column, never synced |
 | `board.reviewLabels`, `board.reviewDone` | the four above, `"Approved"` | Client review's labels when setup makes it, and the one marked done |
-| `board.show.deliveryNotes` | `true` | An update on each story's item when its chunk is done, from `chunks-done.md` |
+| `board.show.deliveryNotes` | `true` | A note on each story's item when its Build first reaches Built, from the done list's For the client cells |
 | `board.show.frames` | `true` | The frame PNG on the item, later a screenshot of the built screen |
 | `board.show.clientQuestions` | `true` | Open questions the client answers, as updates on their stories |
 | `board.show.analysisSamples` | `false` | Synthetic analysis output, for a product that makes it |
