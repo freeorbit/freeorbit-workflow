@@ -9,7 +9,7 @@ import { DEFAULTS } from "../lib/defaults.mjs";
 import { readStories } from "../lib/docs/stories.mjs";
 import { statusOf, storiesDone, storyRows } from "../lib/board/status.mjs";
 import { mondayClient } from "../lib/board/monday.mjs";
-import { commentHtml, flat, HEADING, LONG_TEXT_LIMIT, plan, runBoard, setupProblems, wanted } from "../lib/board/index.mjs";
+import { commentHtml, difference, flat, HEADING, LONG_TEXT_LIMIT, plan, runBoard, setupProblems, wanted } from "../lib/board/index.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -110,7 +110,7 @@ const COLUMNS = [
 
 /** An in-memory board that answers the queries the client sends, and a log of each operation. */
 function fakeMonday({ columns = COLUMNS, views = [{ name: "Kanban", type: null }], items = [], errorOn = null } = {}) {
-  const state = { columns: structuredClone(columns), groups: [{ id: "topics", title: "Group Title" }], views, items: structuredClone(items), next: 100, ops: [], auth: [] };
+  const state = { columns: structuredClone(columns), groups: [{ id: "topics", title: "Group Title" }], views, items: structuredClone(items), next: 100, ops: [], auth: [], sent: [] };
   const id = () => String((state.next += 1));
   const shown = (item) => ({
     id: item.id,
@@ -144,6 +144,7 @@ function fakeMonday({ columns = COLUMNS, views = [{ name: "Kanban", type: null }
     }
     const item = state.items.find((each) => each.id === v.i);
     if (op === "change_multiple_column_values") {
+      state.sent.push(...Object.keys(JSON.parse(v.v)));
       for (const [key, value] of Object.entries(JSON.parse(v.v))) {
         if (key === "name") item.name = value;
         else item.values[key] = textOf(value);
@@ -303,4 +304,25 @@ test("the Owner column is the team's: a missing one never stops sync, and sync n
   assert.equal(again.code, 0, again.out.join("\n"));
   assert.ok(assigned.state.items.every((item) => item.values.owner === "Gim Yong"), "an assigned owner stays");
   assert.ok(!JSON.stringify(assigned.state).includes('"owner":""'));
+});
+
+test("sync writes only the configured columns, so the team's own columns on the board stay as they are", async () => {
+  const monday = fakeMonday();
+  await run(["sync"], monday);
+  for (const item of monday.state.items) Object.assign(item.values, { file_mm8zg4zv: "test-differences.png", notes: "Ask the client on Friday" });
+  const stories = fixture("user-stories.md").replace("### APP-01. Sign in with work email and password", "### APP-01. Sign in with a work email").replace("so that only I can reach the jobs I work on.", "so that only I can reach my jobs.");
+  const order = fixture("build-order.md").replace("| CH-03 | Sign out | developer | APP-02 | app | | Not started |", "| CH-03b | Sign out | developer | APP-02 | app | | Not started |");
+  monday.state.sent.length = 0;
+  const { code, out } = await run(["sync"], monday, { "docs/app/user-stories.md": stories, "docs/log/build-order.md": order });
+  assert.equal(code, 0, out.join("\n"));
+  assert.deepEqual([...new Set(monday.state.sent)].sort(), ["chunk", "name", "story"]);
+  assert.ok(monday.state.items.every((item) => item.values.file_mm8zg4zv === "test-differences.png" && item.values.notes === "Ask the client on Friday"));
+});
+
+test("a long field's change shows where the texts first differ", () => {
+  const start = "As a Governance User, I want to sign in with my work email and password, ";
+  assert.equal(difference("short", "shorter"), "short → shorter");
+  assert.equal(difference("", "CH-01"), "(empty) → CH-01");
+  const shown = difference(`${start}so that only I can reach the reviews.`, `${start}so that only I can reach the reviews I work on.`);
+  assert.match(shown, /^….*reviews\. → ….*reviews I work on\.$/);
 });
