@@ -90,6 +90,9 @@ For a project with `board.boardId` set:
 - Run `npx wf github sync` once. The board-sync workflow now installs with the project's lockfile, pnpm, yarn, or npm, instead of always `npm ci`.
 - The next `npx wf board sync` finishes an item a failed run left half made. `npx wf board plan` shows it, as `Status: (empty) → …` and `pin acceptance`.
 - A board whose own status column lacks the kit's labels gets them from `npx wf board setup --create`, with its own labels kept.
+- A board made from monday's project template has a status that a linked portfolio keeps, not its items, so sync can neither set nor read it. `wf board setup` now says so, and plan and sync refuse to run on it.
+  - Point `board.columns.status` at a column of the project's own, such as `"wf_status"`, and set `board.titles.status` to a title the board has not got, such as `"Story status"`.
+  - Then run `npx wf board setup --create`, which makes it with the kit's labels.
 
 ### v0.34.0: the board's bot signs as Orbit
 

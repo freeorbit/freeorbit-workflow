@@ -133,6 +133,7 @@ An optional `board` section; a project without it has no board commands.
 | `board.branch` | `"main"` | The branch whose pushes run the board-sync workflow |
 | `board.environment` | `"board"` | The GitHub Environment holding the token, limited to `board.branch` |
 | `board.columns` | the six above | Each field's column id on the board, filled by `wf board setup` |
+| `board.titles` | the titles above | Each column's title, which `wf board setup --create` gives it. A board from monday's project template already has a Status, so its own is titled another way, such as "Story status" |
 | `board.statuses` | the six above | Each status's label text on the board |
 | `board.show.deliveryNotes` | `true` | An update on each story's item when its chunk is done, from `chunks-done.md` |
 | `board.show.frames` | `true` | The frame PNG on the item, later a screenshot of the built screen |
@@ -175,7 +176,9 @@ For a project on the kit, once its stories are ready for the client.
 
 1. Ask the monday account's admin for a shareable board, and invite the client there as a guest.
 2. Set `board.boardId` in `.workflow/config.json` to the board's number, from its address.
-3. With the token in `MONDAY_API_TOKEN`, run `npx wf board setup --create`, then add the Kanban view by Status on the board by hand.
+3. With the token in `MONDAY_API_TOKEN`, run `npx wf board setup --create`.
+   - A column it says can't be set on items belongs to a portfolio, such as a project template's status. Point `board.columns` at an id of the project's own, with its title in `board.titles`, and run it again.
+   - Then add the Kanban view by the status column on the board by hand.
 4. Run `npx wf board plan`, and check what it would write.
 5. In GitHub, create the `board` environment, set its deployment branches to `main` only, and add `MONDAY_API_TOKEN` to it as a secret.
 6. Run `npx wf github sync`, and merge the workflow it writes. The merge runs the first sync.

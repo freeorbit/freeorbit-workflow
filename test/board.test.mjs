@@ -117,7 +117,8 @@ function fakeMonday({ columns = COLUMNS, views = [{ name: "Kanban", type: null }
     id: item.id,
     name: item.name,
     group: state.groups.find((group) => group.id === item.group),
-    column_values: Object.entries(item.values).map(([key, text]) => ({ id: key, text })),
+    // monday returns every column an item has, empty or not.
+    column_values: [...new Set([...state.columns.map((column) => column.id).filter((id) => id !== "name"), ...Object.keys(item.values)])].map((key) => ({ id: key, text: item.values[key] ?? "" })),
     updates: [...item.updates].reverse(),
   });
   const textOf = (value) => (value && typeof value === "object" ? (value.label ?? value.text ?? value.url ?? "") : String(value ?? ""));
@@ -269,7 +270,7 @@ test("setup lists what is missing, and --create makes the columns with the statu
   assert.equal(created.code, 0, "only the Kanban view is left, which is done by hand");
   assert.match(created.out.at(-1), /1 left to do on the board by hand/);
   const labels = setupProblems(config(), { columns: [{ ...COLUMNS[3], settings_str: JSON.stringify({ labels: { 0: "Done" } }) }], views: [] });
-  assert.ok(labels.lines.includes('column wf_status has no label "Planned"; wf board setup --create adds it'));
+  assert.ok(labels.lines.includes('column wf_status (Status) has no label "Planned"; wf board setup --create adds it'));
 });
 
 test("the commands refuse with no board, no token, or a bad use; monday's errors keep the token out", async () => {

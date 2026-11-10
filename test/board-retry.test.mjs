@@ -24,7 +24,7 @@ const COLUMNS = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["st
  * moment ago fails "not found" the first `lag` times. `dropStatus` leaves the
  * status empty on create, as Atlas NX's board did.
  */
-function laggingMonday({ lag = 2, dropStatus = false, items = [], columns = [...COLUMNS, STATUS] } = {}) {
+function laggingMonday({ lag = 2, dropStatus = false, items = [], columns = [...COLUMNS, STATUS], portfolio = [] } = {}) {
   const state = { items: structuredClone(items), groups: [{ id: "topics", title: "Group Title" }], columns, ops: [], misses: new Map(), next: 1 };
   const fresh = (key) => {
     const seen = state.misses.get(key) ?? 0;
@@ -35,7 +35,7 @@ function laggingMonday({ lag = 2, dropStatus = false, items = [], columns = [...
     return false;
   };
   const plain = (html) => html.replace(/<\/(p|li)>/g, "\n").replace(/<[^>]+>/g, "").replace(/\n+$/, "");
-  const shown = (item) => ({ id: item.id, name: item.name, group: state.groups.find((group) => group.id === item.group), column_values: Object.entries(item.values).map(([id, text]) => ({ id, text })), updates: item.updates });
+  const shown = (item) => ({ id: item.id, name: item.name, group: state.groups.find((group) => group.id === item.group), column_values: state.columns.map((column) => column.id).filter((id) => !portfolio.includes(id)).map((id) => ({ id, text: item.values[id] ?? "" })), updates: item.updates });
   const fetch = async (url, init) => {
     const { query, variables: v } = JSON.parse(init.body);
     const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|edit_update|pin_to_top|update_status_column)\b/)[1];
@@ -198,16 +198,43 @@ test("the workflow installs with the project's own package manager, from its loc
   assert.deepEqual(installSteps(dir(null)), ["npm install"]);
 });
 
-test("a column monday does not return on items is noted, not sent on every run", async () => {
-  // As Atlas NX's portfolio-linked project_status: column_values(ids) leaves it out entirely.
-  const want = wanted(context());
-  const one = want[0];
-  const values = [["story_id", "APP-01"], ["area", "app"], ["chunk", one.values.chunk], ["story", one.values.story], ["pr", ""]].map(([id, text]) => ({ id, text }));
-  const item = { id: "9", name: one.name, group: { title: one.group }, column_values: values, updates: [{ id: "u9", body: one.comment, text_body: one.comment.replace(/<\/(p|li)>/g, "\n").replace(/<[^>]+>/g, ""), creator_id: "7" }] };
-  const board = { columns: [...COLUMNS, STATUS], views: [{ name: "Kanban" }], groups: [], items: [item] };
-  const result = plan(config(), want.slice(0, 1), board, "7");
-  assert.deepEqual(result.changes, [], "no Status: (empty) → Done each run");
-  assert.deepEqual(result.notes, ["column wf_status is not on the items monday returns, so sync sets it on create only and cannot check it"]);
-  assert.ok(planLines(result).includes("note    column wf_status is not on the items monday returns, so sync sets it on create only and cannot check it"));
-  assert.deepEqual(result.problems, []);
+test("a column monday keeps off items, as a portfolio's own status, stops setup, plan, and sync", async () => {
+  // As Atlas NX's project_status: the board lists it, but no item carries it.
+  const made = laggingMonday({ lag: 0 });
+  await run(["sync"], made);
+  const monday = laggingMonday({ lag: 0, items: made.state.items, portfolio: ["wf_status"] });
+  monday.state.groups = made.state.groups;
+  const line = "column wf_status (Status) can't be set on items (portfolio-managed?); use a column of your own, such as wf board setup --create makes with board.titles.status";
+  const setup = await run(["setup"], monday);
+  assert.equal(setup.code, 1);
+  assert.ok(setup.out.includes(line), setup.out.join("\n"));
+  const planned = await run(["plan"], monday);
+  assert.equal(planned.code, 1);
+  assert.ok(planned.out.includes(`board   ${line}`));
+  assert.ok(!planned.out.some((each) => each.includes("Status: (empty)")), "never the endless (empty) → Done");
+  const before = monday.state.ops.length;
+  assert.equal((await run(["sync"], monday)).code, 1);
+  assert.deepEqual([...new Set(monday.state.ops.slice(before))].sort(), ["boards", "me"], "sync writes nothing");
+});
+
+test("a column's title comes from board.titles, for a board that has its own Status", async () => {
+  const monday = laggingMonday({ lag: 0, columns: COLUMNS });
+  const titled = { board: { boardId: "42", titles: { status: "Story status" } } };
+  const listed = await run(["setup"], monday, titled);
+  assert.ok(listed.out.includes("column wf_status (Story status, status) is missing"), listed.out.join("\n"));
+  monday.state.columns.push({ id: "views-ok", title: "x", type: "text", settings_str: "{}" });
+  const created = [];
+  const fetch = monday.fetch;
+  monday.fetch = async (url, init) => {
+    const { query, variables } = JSON.parse(init.body);
+    if (query.includes("create_column")) {
+      created.push(variables);
+      monday.state.columns.push({ ...STATUS, title: variables.t });
+      return { status: 200, text: async () => JSON.stringify({ data: { create_column: { id: variables.id } } }) };
+    }
+    return fetch(url, init);
+  };
+  const out = await run(["setup", "--create"], monday, titled);
+  assert.deepEqual(created.map((each) => `${each.id} ${each.t} ${each.ty}`), ["wf_status Story status status"]);
+  assert.ok(out.out.includes("created column wf_status (Story status, status)"));
 });
