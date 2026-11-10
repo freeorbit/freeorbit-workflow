@@ -95,7 +95,7 @@ test("sync links each story's pull request, never clears one, and shows the chan
   const column = (id, text) => ({ id, text });
   const board = (prText) => ({
     columns: Object.entries({ story_id: "text", area: "text", wf_status: "status", chunk: "text", story: "long_text", pr: "link", owner: "people" }).map(([id, type]) => ({ id, type, settings_str: type === "status" ? JSON.stringify({ labels: { 0: "Drafting", 1: "Backlog", 2: "Planned", 3: "In progress", 4: "Checking", 6: "Done" } }) : "{}" })),
-    views: [{ name: "Kanban" }],
+    views: [{ name: "Build" }, { name: "Client review" }],
     groups: [],
     items: want
       .filter((story) => !story.removed)

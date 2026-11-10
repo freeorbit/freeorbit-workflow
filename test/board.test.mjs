@@ -72,7 +72,7 @@ test("status follows the build order: started means In progress until every lane
 test("the wanted items carry the name, group, columns, and comment", () => {
   const want = wanted(context());
   assert.deepEqual(want.map((story) => `${story.name} | ${story.group} | ${story.values.status} | ${story.values.chunk}`), [
-    "APP-01 · Sign in with work email and password | App · Sign in | Done | CH-01-fe, CH-01-be",
+    "APP-01 · Sign in with work email and password | App · Sign in | Built | CH-01-fe, CH-01-be",
     "APP-02 · Sign out | App · Sign in | Planned | CH-03",
     "APP-03 · Remember me | App · Sign in | Backlog | ",
     "APP-04 · See my jobs | App · Jobs | In progress | CH-02-be, CH-02-fe, CH-02-contract",
@@ -102,7 +102,8 @@ const COLUMNS = [
   { id: "name", title: "Name", type: "name", settings_str: "{}" },
   { id: "story_id", title: "Story ID", type: "text", settings_str: "{}" },
   { id: "area", title: "Area", type: "text", settings_str: "{}" },
-  { id: "wf_status", title: "Status", type: "status", settings_str: JSON.stringify({ labels: { 0: "Drafting", 1: "Backlog", 2: "Planned", 3: "In progress", 4: "Checking", 6: "Done" } }) },
+  { id: "wf_status", title: "Build", type: "status", settings_str: JSON.stringify({ labels: { 0: "Drafting", 1: "Backlog", 2: "Planned", 3: "In progress", 4: "Checking", 6: "Built" } }) },
+  { id: "client_review", title: "Client review", type: "status", settings_str: JSON.stringify({ labels: { 0: "Not ready", 1: "Approved" } }) },
   { id: "chunk", title: "Chunk", type: "text", settings_str: "{}" },
   { id: "story", title: "Story", type: "long_text", settings_str: "{}" },
   { id: "pr", title: "PR", type: "link", settings_str: "{}" },
@@ -110,7 +111,7 @@ const COLUMNS = [
 ];
 
 /** An in-memory board that answers the queries the client sends, and a log of each operation. */
-function fakeMonday({ columns = COLUMNS, views = [{ name: "Kanban", type: null }], items = [], errorOn = null } = {}) {
+function fakeMonday({ columns = COLUMNS, views = [{ name: "Build" }, { name: "Client review" }], items = [], errorOn = null } = {}) {
   const state = { columns: structuredClone(columns), groups: [{ id: "topics", title: "Group Title" }], views, items: structuredClone(items), next: 100, ops: [], auth: [], sent: [] };
   const id = () => String((state.next += 1));
   const shown = (item) => ({
@@ -126,7 +127,7 @@ function fakeMonday({ columns = COLUMNS, views = [{ name: "Kanban", type: null }
   const fetch = async (url, init) => {
     state.auth.push(init.headers.Authorization);
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/(me|boards|next_items_page|create_group|create_item|change_multiple_column_values|move_item_to_group|create_update|edit_update|pin_to_top|create_column)\b/)[1];
+    const op = query.match(/(me|boards|next_items_page|create_group|create_item|change_multiple_column_values|move_item_to_group|create_update|edit_update|pin_to_top|create_column|create_view_table|update_status_column)\b/)[1];
     state.ops.push(op);
     const reply = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
     if (op === errorOn) return { status: 200, text: async () => JSON.stringify({ errors: [{ message: `refused, token ${TOKEN}` }] }) };
@@ -169,8 +170,17 @@ function fakeMonday({ columns = COLUMNS, views = [{ name: "Kanban", type: null }
     }
     if (op === "pin_to_top") return reply({ pin_to_top: { id: v.u } });
     if (op === "create_column") {
-      state.columns.push({ id: v.id, title: v.t, type: v.ty, settings_str: v.d ? JSON.stringify(JSON.parse(v.d)) : "{}" });
+      const labels = v.d ? Object.entries(JSON.parse(v.d).labels ?? {}) : [];
+      state.columns.push({ id: v.id, title: v.t, type: v.ty, revision: "new", settings_str: v.d ? JSON.stringify(JSON.parse(v.d)) : "{}", settings: { labels: labels.map(([id, label]) => ({ id: Number(id), label, color: Number(id), index: Number(id), is_done: false })) } });
       return reply({ create_column: { id: v.id } });
+    }
+    if (op === "update_status_column") {
+      state.statusUpdates = [...(state.statusUpdates ?? []), v];
+      return reply({ update_status_column: { id: v.id } });
+    }
+    if (op === "create_view_table") {
+      state.views.push({ name: v.n, groupBy: v.s.group_by.conditions[0].columnId });
+      return reply({ create_view_table: { id: `v${state.views.length}` } });
     }
     throw new Error(`fake monday: ${op}`);
   };
@@ -202,7 +212,7 @@ test("sync creates the items, groups, and pinned comments; a second run finds no
   assert.equal(first.code, 0, first.out.join("\n"));
   assert.deepEqual(monday.state.groups.map((group) => group.title), ["Group Title", "App · Sign in", "App · Jobs"]);
   const one = monday.state.items.find((item) => item.values.story_id === "APP-01");
-  assert.equal(one.values.wf_status, "Done");
+  assert.equal(one.values.wf_status, "Built");
   assert.match(one.values.story, /^As a Field User/);
   assert.equal(one.updates.length, 1);
   assert.ok(one.updates[0].text_body.startsWith("🤖 I'm Orbit") && one.updates[0].text_body.split("\n").includes(HEADING));
@@ -224,7 +234,7 @@ test("sync sends only what changed, edits the comment in place, and retires a re
   const texts = { "docs/log/build-order.md": order, "docs/app/user-stories.md": stories };
   const before = monday.state.ops.length;
   const planned = await run(["plan"], monday, texts);
-  assert.deepEqual(planned.out.slice(0, 3), ["update  APP-02  Status: Planned → Checking", "comment APP-02  edit acceptance", "retire  APP-03  → Retired"]);
+  assert.deepEqual(planned.out.slice(0, 3), ["update  APP-02  Build: Planned → Checking", "comment APP-02  edit acceptance", "retire  APP-03  → Retired"]);
   const synced = await run(["sync"], monday, texts);
   assert.equal(synced.code, 0, synced.out.join("\n"));
   const ops = monday.state.ops.slice(before).filter((op) => !["boards", "next_items_page", "me"].includes(op));
@@ -257,20 +267,29 @@ test("two items with one Story ID is a problem, not a guess", async () => {
   assert.ok(out.some((line) => line.includes("two items hold Story ID APP-02: 1 and 2")));
 });
 
-test("setup lists what is missing, and --create makes the columns with the status labels", async () => {
+test("setup lists what is missing, and --create makes the columns, with Built marked done, and the two views", async () => {
   const monday = fakeMonday({ columns: [COLUMNS[0]], views: [] });
   const listed = await run(["setup"], monday);
   assert.equal(listed.code, 1);
-  assert.ok(listed.out.includes("column wf_status (Status, status) is missing"));
-  assert.ok(listed.out.some((line) => line.startsWith("no Kanban view")));
+  assert.ok(listed.out.includes("column wf_status (Build, status) is missing"));
+  assert.ok(listed.out.includes("column client_review (Client review, status) is missing"));
+  assert.ok(listed.out.includes('view "Build" is missing; wf board setup --create makes it, a table grouped by Build'));
+  assert.ok(listed.out.includes('view "Client review" is missing; wf board setup --create makes it, a table grouped by Client review'));
   const created = await run(["setup", "--create"], monday);
-  assert.equal(monday.state.ops.filter((op) => op === "create_column").length, 7);
+  assert.equal(monday.state.ops.filter((op) => op === "create_column").length, 8);
   assert.equal(monday.state.columns.find((column) => column.id === "owner").type, "people");
-  assert.deepEqual(Object.values(JSON.parse(monday.state.columns.find((column) => column.id === "wf_status").settings_str).labels), ["Drafting", "Backlog", "Planned", "In progress", "Checking", "Done"]);
-  assert.equal(created.code, 0, "only the Kanban view is left, which is done by hand");
-  assert.match(created.out.at(-1), /1 left to do on the board by hand/);
-  const labels = setupProblems(config(), { columns: [{ ...COLUMNS[3], settings_str: JSON.stringify({ labels: { 0: "Done" } }) }], views: [] });
-  assert.ok(labels.lines.includes('column wf_status (Status) has no label "Planned"; wf board setup --create adds it'));
+  // monday marks label 1 done in a new column, so the done label takes id 1.
+  assert.deepEqual(JSON.parse(monday.state.columns.find((column) => column.id === "wf_status").settings_str).labels, { 0: "Drafting", 1: "Built", 2: "Backlog", 3: "Planned", 4: "In progress", 5: "Checking" });
+  assert.deepEqual(JSON.parse(monday.state.columns.find((column) => column.id === "client_review").settings_str).labels, { 0: "Not ready", 1: "Approved", 2: "Ready for review", 3: "Changes requested" });
+  assert.deepEqual(monday.state.views.map((view) => `${view.name} by ${view.groupBy}`), ["Build by wf_status", "Client review by client_review"]);
+  // monday marks none of a new column's own labels done, so setup marks Built and Approved.
+  assert.deepEqual(monday.state.statusUpdates.map((each) => `${each.id}: ${each.s.labels.filter((label) => label.is_done).map((label) => label.label)}`), ["wf_status: Built", "client_review: Approved"]);
+  assert.ok(created.out.includes('marked "Built" done on column wf_status'));
+  assert.ok(created.out.includes("  for cards, add a Kanban view grouped by Build on the board by hand; monday's API cannot make one"));
+  assert.equal(created.code, 0, created.out.join("\n"));
+  assert.equal(created.out.at(-1), "The board is set up.");
+  const labels = setupProblems(config(), { columns: [{ ...COLUMNS[3], settings_str: JSON.stringify({ labels: { 0: "Built" } }) }], views: [] });
+  assert.ok(labels.lines.includes('column wf_status (Build) has no label "Planned"; wf board setup --create adds it'));
 });
 
 test("the commands refuse with no board, no token, or a bad use; monday's errors keep the token out", async () => {
