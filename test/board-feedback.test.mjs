@@ -48,16 +48,16 @@ function board() {
 test("the bot's words come from one place, with its name", () => {
   assert.equal(
     loggedReply("Orbit", ["Q-012"]),
-    "🤖 Hi, I'm Orbit, the team's automated helper. Thanks for raising this! I've added it to the project's list as Q-012, and someone from the team will reply here soon.",
+    "🤖 Hi, I'm Orbit. Thanks for raising this! I've added it to the project's list as Q-012, and someone from the team will reply here soon.",
   );
   assert.match(loggedReply("Orbit", ["Q-012", "Q-013"]), /as Q-012 and Q-013, and/);
   assert.equal(ids(["Q-1", "Q-2", "Q-3"]), "Q-1, Q-2 and Q-3");
-  assert.equal(notedReply("Orbit"), "🤖 Orbit here, the team's automated helper. Thanks, the team has seen this. Nothing to add to the list for this one, but every comment gets read.");
+  assert.equal(notedReply("Orbit"), "🤖 Orbit here. Thanks, the team has seen this. Nothing to add to the list for this one, but every comment gets read.");
   assert.equal(
     pinnedNote("Orbit"),
-    "I'm Orbit, the team's automated helper, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.",
+    "I'm Orbit, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.",
   );
-  assert.match(loggedReply("Pip", ["Q-001"]), /^🤖 Hi, I'm Pip,/);
+  assert.match(loggedReply("Pip", ["Q-001"]), /^🤖 Hi, I'm Pip\./);
   assert.equal(loggedReply("Orbit", ["Q-013"], { short: true }), "🤖 Orbit: thanks! Logged as Q-013, the team will reply here.");
   assert.equal(loggedReply("Orbit", ["Q-013", "Q-014"], { short: true }), "🤖 Orbit: thanks! Logged as Q-013 and Q-014, the team will reply here.");
   assert.equal(notedReply("Orbit", { short: true }), "🤖 Orbit: thanks, the team has seen this.");

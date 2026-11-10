@@ -33,7 +33,7 @@ One item per story, grouped the way the story file groups them.
 The acceptance lines go in the item's first comment, pinned, where a list reads better than a text column.
 
 - **Shape.** A bold "🤖 Acceptance criteria" heading, the bot's line to readers, the "As a…" sentence, then one bullet per acceptance line, as written.
-- **The line to readers.** "I'm Orbit, the team's automated helper, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up." The name is `board.bot.name`.
+- **The line to readers.** "I'm Orbit, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up." The name is `board.bot.name`.
 - **Pinned.** `pin_to_top` keeps it above every client comment.
 - **Kept current.** Sync finds it by its heading among the bot's updates and changes it with `edit_update` only when the lines differ, so a story change never posts a new comment.
 - **Replies are feedback.** A guest's reply under it counts as a client comment, the same as one on the item.
@@ -107,8 +107,8 @@ All in the core plugin, beside `wf question` and `wf decision`.
 The bot posts with the owner's token, so it signs as a helper of its own, friendly, in the background, and polite.
 
 - **Its name.** `board.bot.name`, "Orbit" by default, in every reply and the pinned comment's line.
-- **Logged.** "🤖 Hi, I'm Orbit, the team's automated helper. Thanks for raising this! I've added it to the project's list as Q-012, and someone from the team will reply here soon."
-- **Noted.** "🤖 Orbit here, the team's automated helper. Thanks, the team has seen this. Nothing to add to the list for this one, but every comment gets read."
+- **Logged.** "🤖 Hi, I'm Orbit. Thanks for raising this! I've added it to the project's list as Q-012, and someone from the team will reply here soon."
+- **Noted.** "🤖 Orbit here. Thanks, the team has seen this. Nothing to add to the list for this one, but every comment gets read."
 - **Short after the first.** The two above are its first reply on an item. Once the item holds an Orbit reply, in any thread, later ones there are short, so a busy thread is not flooded:
   - Logged: "🤖 Orbit: thanks! Logged as Q-013, the team will reply here."
   - Noted: "🤖 Orbit: thanks, the team has seen this."

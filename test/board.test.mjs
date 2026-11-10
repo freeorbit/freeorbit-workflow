@@ -78,7 +78,7 @@ test("the wanted items carry the name, group, columns, and comment", () => {
     "APP-04 · See my jobs | App · Jobs | In progress | CH-02-be, CH-02-fe, CH-02-contract",
   ]);
   const html = want[0].comment;
-  assert.ok(html.startsWith(`<p><strong>${HEADING}</strong></p><p><em>I'm Orbit, the team's automated helper`));
+  assert.ok(html.startsWith(`<p><strong>${HEADING}</strong></p><p><em>I'm Orbit`));
   assert.match(html, /<li>Given 5 failed tries.*<ul><li>While that email is slowed down/);
   assert.match(html, /<code>plain text<\/code>/);
   assert.match(html, /&quot;|"Email or password is incorrect"/);
@@ -88,7 +88,7 @@ test("the wanted items carry the name, group, columns, and comment", () => {
 
 test("a comment compares equal to monday's plain text of it", () => {
   const story = readStories(fixture("user-stories.md"), ["APP"])[0];
-  const asMondayShows = `${HEADING}\n\nI’m Orbit, the team’s automated helper, and I keep this list matched to the project’s records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.\n\n${story.as}\n\n${story.acceptance
+  const asMondayShows = `${HEADING}\n\nI’m Orbit, and I keep this list matched to the project’s records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.\n\n${story.as}\n\n${story.acceptance
     .flatMap((line) => [line.text, ...line.sub])
     .join("\n")}`;
   assert.equal(flat(asMondayShows), flat(commentHtml(story)));
