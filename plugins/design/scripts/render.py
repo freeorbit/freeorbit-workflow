@@ -49,7 +49,7 @@ def render(opts, frame):
     profile = opts.root / ".cache" / "chromium-design" / frame.stem
     result = subprocess.run(
         [
-            "chromium",
+            opts.browser,
             "--headless",
             "--disable-gpu",
             "--no-sandbox",
@@ -77,6 +77,7 @@ def main():
     parser.add_argument("--review", type=Path, required=True)
     parser.add_argument("--shared", default="shared")
     parser.add_argument("--size", default="1280x800")
+    parser.add_argument("--browser", default="chromium")
     parser.add_argument("names", nargs="*")
     opts = parser.parse_args()
     opts.width, opts.height = (int(n) for n in opts.size.split("x"))
