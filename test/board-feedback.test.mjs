@@ -11,6 +11,8 @@ import { feedback, feedbackLines, replyBatch, replyFor, replyGroups } from "../l
 import { ids, isBot, isPinned, loggedReply, notedReply, pinnedNote } from "../lib/board/voice.mjs";
 
 const ME = "7";
+/** An Orbit reply as the kit sends it: in a quote block, which monday shows grey and italic. */
+const Q = (text) => `<blockquote><p>${text}</p></blockquote>`;
 const config = (board = {}) => merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }], stories: { files: ["docs/app/user-stories.md"] }, board: { boardId: "42", ...board } });
 const at = (minute) => `2026-11-11T10:${String(minute).padStart(2, "0")}:00Z`;
 const guest = (id, text, minute, { edited } = {}) => ({ id, text_body: text, creator_id: "50", creator: { name: "Dana Client", kind: "guest" }, created_at: at(minute), updated_at: at(edited ?? minute) });
@@ -48,20 +50,20 @@ function board() {
 test("the bot's words come from one place, with its name", () => {
   assert.equal(
     loggedReply("Orbit", ["Q-012"]),
-    "🤖 Hi, I'm Orbit. Thanks for raising this! I've added it to the project's list as Q-012, and someone from the team will reply here soon.",
+    Q("🤖 Hi, I'm Orbit. Thanks for raising this! I've added it to the project's list as Q-012, and someone from the team will reply here soon."),
   );
   assert.match(loggedReply("Orbit", ["Q-012", "Q-013"]), /as Q-012 and Q-013, and/);
   assert.equal(ids(["Q-1", "Q-2", "Q-3"]), "Q-1, Q-2 and Q-3");
-  assert.equal(notedReply("Orbit"), "🤖 Orbit here. Thanks, the team has seen this. Nothing to add to the list for this one, but every comment gets read.");
+  assert.equal(notedReply("Orbit"), Q("🤖 Orbit here. Thanks, the team has seen this. Nothing to add to the list for this one, but every comment gets read."));
   assert.equal(
     pinnedNote("Orbit"),
     "I'm Orbit, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.",
   );
-  assert.match(loggedReply("Pip", ["Q-001"]), /^🤖 Hi, I'm Pip\./);
-  assert.equal(loggedReply("Orbit", ["Q-013"], { short: true }), "🤖 Orbit: thanks! Logged as Q-013, the team will reply here.");
-  assert.equal(loggedReply("Orbit", ["Q-013", "Q-014"], { short: true }), "🤖 Orbit: thanks! Logged as Q-013 and Q-014, the team will reply here.");
-  assert.equal(notedReply("Orbit", { short: true }), "🤖 Orbit: thanks, the team has seen this.");
-  assert.equal(notedReply("Pip", { short: true }), "🤖 Pip: thanks, the team has seen this.");
+  assert.match(loggedReply("Pip", ["Q-001"]), /^<blockquote><p>🤖 Hi, I'm Pip\./);
+  assert.equal(loggedReply("Orbit", ["Q-013"], { short: true }), Q("🤖 Orbit: thanks! Logged as Q-013, the team will reply here."));
+  assert.equal(loggedReply("Orbit", ["Q-013", "Q-014"], { short: true }), Q("🤖 Orbit: thanks! Logged as Q-013 and Q-014, the team will reply here."));
+  assert.equal(notedReply("Orbit", { short: true }), Q("🤖 Orbit: thanks, the team has seen this."));
+  assert.equal(notedReply("Pip", { short: true }), Q("🤖 Pip: thanks, the team has seen this."));
 });
 
 test("the first Orbit reply on an item is full, later ones there are short, and the pinned comment never counts", () => {
@@ -74,8 +76,8 @@ test("the first Orbit reply on an item is full, later ones there are short, and 
   // Once Orbit has replied anywhere on the item, every later reply there is short.
   pinned.replies.push(bot("b1", loggedReply("Orbit", ["Q-013"]), 3));
   const later = { ...first, items: [item("1", "APP-01", [{ ...guest("g2", "When is this due?", 2) }, pinned])] };
-  assert.equal(body(later, "g2", ["Q-014"]), "🤖 Orbit: thanks! Logged as Q-014, the team will reply here.");
-  assert.equal(body(later, "g2", "--noted"), "🤖 Orbit: thanks, the team has seen this.");
+  assert.equal(body(later, "g2", ["Q-014"]), Q("🤖 Orbit: thanks! Logged as Q-014, the team will reply here."));
+  assert.equal(body(later, "g2", "--noted"), Q("🤖 Orbit: thanks, the team has seen this."));
   // A second item's first reply is full again.
   const two = { ...later, items: [...later.items, item("2", "APP-02", [guest("g3", "Looks good.", 4)])] };
   assert.equal(body(two, "g3", "--noted"), notedReply("Orbit"));
@@ -114,8 +116,8 @@ test("a reply names open Q-IDs, or notes the comment, and refuses anything else"
   const open = new Set(["Q-012", "Q-013"]);
   const logged = replyFor(config(), found, "u1", ["Q-012", "Q-013"], open);
   assert.deepEqual([logged.itemId, logged.threadId], ["1", "u1"]);
-  assert.equal(logged.body, "🤖 Orbit: thanks! Logged as Q-012 and Q-013, the team will reply here.", "the item has Orbit replies, so this one is short");
-  assert.equal(replyFor(config({ bot: { name: "Pip" } }), found, "r3", "--noted", open).body, "🤖 Pip: thanks, the team has seen this.");
+  assert.equal(logged.body, Q("🤖 Orbit: thanks! Logged as Q-012 and Q-013, the team will reply here."), "the item has Orbit replies, so this one is short");
+  assert.equal(replyFor(config({ bot: { name: "Pip" } }), found, "r3", "--noted", open).body, Q("🤖 Pip: thanks, the team has seen this."));
   assert.equal(replyFor(config(), found, "r3", "--noted", open).threadId, "u2");
   assert.throws(() => replyFor(config(), found, "u1", ["Q-099"], open), /Q-099 is not in the open questions log/);
   assert.throws(() => replyFor(config(), found, "u1", ["12"], open), /not a Q-ID/);

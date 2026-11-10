@@ -8,7 +8,8 @@ import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { runBoard } from "../lib/board/index.mjs";
 import { feedback, replyBatch, replyGroups } from "../lib/board/feedback.mjs";
-import { answeredReply, deliveredNote, questionNote } from "../lib/board/voice.mjs";
+import { answeredReply, deliveredNote, isBot, loggedReply, notedReply, questionNote } from "../lib/board/voice.mjs";
+import { hasBotReply } from "../lib/board/feedback.mjs";
 import { questionProblems } from "../lib/questions.mjs";
 import { signoffs } from "../lib/signoffs.mjs";
 
@@ -45,7 +46,7 @@ function monday() {
   const plain = (html) => html.replace(/<\/(p|li)>/g, "\n").replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/\n+$/, "");
   const fetch = async (url, init) => {
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|pin_to_top)\b/)[1];
+    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|edit_update|pin_to_top)\b/)[1];
     // Each post a minute after the last, from noon on, after the client's replies the tests add.
     const now = () => new Date(Date.UTC(2026, 10, 11, 12, state.next)).toISOString();
     const ok = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
@@ -75,6 +76,13 @@ function monday() {
       else item.updates.unshift(update);
       state.posts.push({ item: item.values.story_id, body: v.b, reply: Boolean(v.p) });
       return ok({ create_update: { id: update.id } });
+    }
+    if (op === "edit_update") {
+      const update = state.items.flatMap((each) => each.updates).find((each) => each.id === v.u);
+      update.body = v.b;
+      update.text_body = plain(v.b);
+      state.edits = [...(state.edits ?? []), v.u];
+      return ok({ edit_update: { id: v.u } });
     }
     if (op === "pin_to_top") {
       item.updates.find((update) => update.id === v.u).pinned_to_top = [{ item_id: v.i }];
@@ -155,4 +163,37 @@ test("client is a Needs value: the questions check takes it, and a client row ne
   assert.deepEqual(questionProblems({ config: config(), tracked: Object.keys(files), files: (path) => files[path] }), []);
   const { lines, code } = signoffs(config(), [["docs/log/open-questions.md", QUESTIONS]]);
   assert.deepEqual({ lines, code }, { lines: ["No open sign-offs."], code: 0 });
+});
+
+test("Orbit speaks quietly: notes and replies sit in a quote block, and only a question to the client stays plain", () => {
+  for (const body of [deliveredNote("Orbit", ["You can sign in."], ["CH-01"]), deliveredNote("Orbit", ["x"], ["CH-01"], { short: true }), loggedReply("Orbit", ["Q-012"]), loggedReply("Orbit", ["Q-012"], { short: true }), notedReply("Orbit"), notedReply("Orbit", { short: true }), answeredReply("Orbit", "Q-012")]) {
+    assert.match(body, /^<blockquote>.*<\/blockquote>$/, body);
+  }
+  assert.match(deliveredNote("Orbit", ["You can sign in."], ["CH-01"]), /<p>\(CH-01\)<\/p><\/blockquote>$/, "the marker inside the quote");
+  assert.doesNotMatch(questionNote("Orbit", "Q-012", "Which logo?"), /blockquote/);
+  // Found by the marker and the token's user, in the quote or in the plain form already on boards.
+  assert.ok(isBot({ creator_id: "7", text_body: "🤖 Orbit: thanks, the team has seen this." }, "7"));
+  assert.ok(isBot({ creator_id: "7", text_body: notedReply("Orbit") }, "7"), "even if monday sent the text with its markup");
+  const plainReply = { updates: [{ creator_id: "50", text_body: "Hi", replies: [{ creator_id: "7", text_body: "🤖 Orbit: thanks, the team has seen this." }] }] };
+  assert.ok(hasBotReply(plainReply, "7"), "an old plain reply still makes the next one short");
+});
+
+test("a delivery note posted plain is restyled in place, its words kept, and never posted again", async () => {
+  const board = monday();
+  await run(["sync"], board);
+  // As the v0.36.0 notes on Atlas NX: the same words, with no quote block.
+  const item = board.state.items.find((each) => each.values.story_id === "APP-01");
+  const note = item.updates.find((update) => update.text_body.includes("(CH-01)"));
+  note.body = note.body.replace(/^<blockquote>/, "").replace(/<\/blockquote>$/, "");
+  const words = note.body;
+  const planned = await run(["plan"], board);
+  assert.deepEqual(planned.out.filter((line) => line.startsWith("note ")), ["note    APP-01 restyle delivered (CH-01)"]);
+  assert.match(planned.out.at(-1), /1 to restyle/);
+  const posts = board.state.posts.length;
+  const synced = await run(["sync"], board);
+  assert.equal(synced.code, 0, synced.out.join("\n"));
+  assert.ok(synced.out.includes("restyled APP-01 delivered (CH-01)"));
+  assert.equal(board.state.posts.length, posts, "edited, not posted again");
+  assert.equal(note.body, `<blockquote>${words}</blockquote>`, "its words as they were");
+  assert.ok(!(await run(["plan"], board)).out.some((line) => line.startsWith("note ")));
 });
