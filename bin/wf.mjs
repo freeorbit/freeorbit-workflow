@@ -13,6 +13,7 @@
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
 //   wf app <start | run | stop | ...>   drive the project's Tauri app under a memory cap
+//   wf try [scenario] [--keep] [--dry-run] [--files]   open the app yourself at a test scenario
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
 //   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply
 //   wf signoffs        the needs lines this branch still waits on
@@ -34,6 +35,7 @@ import { join } from "node:path";
 import { KIT_ROOT, reconcile } from "../lib/ai.mjs";
 import { localToday } from "../lib/docs/check.mjs";
 import { runApp } from "../lib/app/driver.mjs";
+import { runTry } from "../lib/try/index.mjs";
 import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
 import { addDecision, supersede } from "../lib/decisions.mjs";
@@ -187,6 +189,11 @@ const commands = {
   async app(args) {
     const root = projectRoot();
     return runApp(root, loadConfig(root), args);
+  },
+
+  async try(args) {
+    const root = projectRoot();
+    return runTry(root, loadConfig(root), args);
   },
 
   async github([sub]) {

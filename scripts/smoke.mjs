@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // A new project's first hour on this computer, end to end, with the kit from
 // this checkout: init, the docs check and the doctor, the branch hooks, the
-// tracks, a question sheet, and the web driver against a small page. CI runs
+// tracks, a question sheet, the web driver against a small page, and wf try. CI runs
 // it on Linux and macOS, so a green run means a team member's machine works.
 //
 //   node scripts/smoke.mjs             every step, each reported; fails if any breaks
@@ -121,6 +121,25 @@ await step("the web driver against a small page", async () => {
   } finally {
     wf("app", "stop");
   }
+});
+
+await step("wf try lists the project's scenarios and plans one", () => {
+  writeFileSync(
+    join(root, "hooks.mjs"),
+    [
+      'export const scenarios = () => [{ id: "signed-out", about: "the sign-in page", group: "Sign in" }];',
+      "export const prepare = () => ({});",
+      'export const plan = (scenario) => [`seed ${scenario.id}`];',
+    ].join("\n"),
+  );
+  const config = JSON.parse(readFileSync(join(root, ".workflow/config.json"), "utf8"));
+  config.app.hooks = "hooks.mjs";
+  config.app.try = { home: join(root, "try") };
+  writeFileSync(join(root, ".workflow/config.json"), `${JSON.stringify(config, null, 2)}\n`);
+  const list = expect(wf("try"), "wf try").stdout;
+  if (!/Sign in[\s\S]*signed-out\s+the sign-in page/.test(list)) throw new Error(`no scenario listed:\n${list}`);
+  const dry = expect(wf("try", "signed-out", "--dry-run"), "wf try --dry-run").stdout;
+  if (!/seed signed-out/.test(dry) || !/user-data-dir=.*signed-out/.test(dry)) throw new Error(`no plan:\n${dry}`);
 });
 
 if (!failed) rmSync(root, { recursive: true, force: true });
