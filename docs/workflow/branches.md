@@ -45,7 +45,12 @@ What GitHub itself holds depends on the plan, set by `github` in `.workflow/conf
 
 The append-only logs carry `merge=union` in `.gitattributes`, from `docs.union`, so rows added on two branches both land. GitHub's own merge ignores it, so a pull request behind `main` shows a conflict there; the `pull-request` skill rebases it locally, which resolves the rows, before it merges.
 
-A question that waits on someone who holds a role is a `- [ ] needs <role>: <question>` line in the open questions log or the pull request body, ticked once answered. `npx wf signoffs` lists the open ones, and no merge is proposed while any are.
+A question that waits on someone who holds a role is one of these:
+
+- a row under its chunk's heading in the open questions log, with the role in Needs, until it is resolved and moved out;
+- a `- [ ] needs <role>: <question>` line in the pull request body, ticked once answered.
+
+`npx wf signoffs` lists the open ones, and no merge is proposed while any are.
 
 A branch that needs work from another unmerged branch starts from that branch. After the first one merges, move it onto `main` with `git rebase --onto main <first branch>`, because the squash left the first branch's commits behind.
 

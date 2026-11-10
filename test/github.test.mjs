@@ -80,3 +80,12 @@ test("signoffs list the open needs lines with who holds each role, and solo has 
   assert.equal(signoffs(config({}, { team: "solo" }), [["q.md", text]]).code, 0);
   assert.deepEqual(signoffs(config(), [["q.md", "- [x] needs owner: done"]]), { lines: ["No open sign-offs."], code: 0 });
 });
+
+test("signoffs count each question row under a chunk's heading, and none under Not tied to a chunk yet", () => {
+  const head = "| ID | Question | Needs | From | Story | Raised |\n| --- | --- | --- | --- | --- | --- |";
+  const text = `## CH-01: Sign-in\n\n${head}\n| Q-001 | Is the empty state a frame? | designer | developer | none | 2026-11-10 |\n\n## Not tied to a chunk yet\n\n${head}\n| Q-002 | Invite users? | owner | client (monday) | none | 2026-11-10 |\n`;
+  assert.deepEqual(openNeeds(text, "q.md").map((need) => `${need.role} ${need.question}`), ["designer Q-001 Is the empty state a frame? (CH-01: Sign-in)"]);
+  const { lines, code } = signoffs(config(), [["q.md", text]]);
+  assert.equal(code, 1);
+  assert.match(lines[0], /needs designer \(Bo\): Q-001/);
+});

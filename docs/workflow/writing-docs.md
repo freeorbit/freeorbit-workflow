@@ -86,7 +86,24 @@ The append-only records live in `docs/log/`. They grow every chunk, so nobody re
 Where each note goes is the table in [AGENTS.md](../../AGENTS.md).
 
 - A decision is a dated row with the reason, under its topic.
-- An open question is a bullet under the chunk it blocks, or under "Not tied to a chunk yet".
+- An open question is a row in the table under the chunk it blocks, or under "Not tied to a chunk yet". `npx wf question add` gives it the next ID.
+
+```markdown
+## CH-03: Risk register
+
+| ID | Question | Needs | From | Story | Raised |
+| --- | --- | --- | --- | --- | --- |
+| Q-012 | Should risk names match the client's register exactly? | owner | client (monday) | REV-03 | 2026-11-02 |
+
+- **Q-012.** The register spells some names two ways.
+```
+
+- **ID.** `Q-NNN`, one counter across the open and resolved logs, never reused.
+- **Needs.** The role that answers it, from `roles`. A row under a chunk's heading is an open sign-off for `npx wf signoffs` until it moves out.
+- **From.** Who raised it: a role, or `client (<channel>)`.
+- **Story.** The story IDs it touches, or `none`. **Raised** is the date.
+- **Detail.** The Question cell is one short sentence. More goes in one bullet per ID under the table, `- **Q-012.** ...`, with sub-bullets if needed.
+- **Answered.** In the same pass, the answer goes in the decisions log, and `npx wf question resolve <ID> "<D-IDs or none: why>"` moves the row to the resolved log with the date. Nothing ticked stays in the open log, and `npx wf doc:check` fails one.
 - Do not record a tech stack, a library, or an architecture boundary as a decision before Step 3 of that area.
 
 ## Architecture

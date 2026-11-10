@@ -18,6 +18,7 @@
 //   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply
 //   wf signoffs        the needs lines this branch still waits on
 //   wf decision add <file> "<decision>" "<why>" | supersede <ID> <by ID>   the decisions log
+//   wf question add <chunk | none> "<question>" <needs> "<from>" [story] | resolve <Q-ID> "<decision>"   the open questions log
 //   wf release <next | check | set | verify> ...   the project's release commands
 //   wf ready <quick | chunk | area> [chunk]   what a track needs before work starts
 //   wf done <quick | chunk | area> [chunk]    what a track needs before its pull request
@@ -29,7 +30,7 @@
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { KIT_ROOT, reconcile } from "../lib/ai.mjs";
@@ -39,6 +40,7 @@ import { runTry } from "../lib/try/index.mjs";
 import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
 import { addDecision, supersede } from "../lib/decisions.mjs";
+import { addQuestion, resolveQuestion } from "../lib/questions.mjs";
 import { ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
 import { runRelease, STEPS } from "../lib/release.mjs";
 import { signoffs } from "../lib/signoffs.mjs";
@@ -56,7 +58,7 @@ import { loadConfig, project, projectRoot } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { problems } from "../lib/docs/check.mjs";
 import { growth, status } from "../lib/docs/facts.mjs";
-import { entries } from "../lib/docs/shape.mjs";
+import { entries, findChunk } from "../lib/docs/shape.mjs";
 import { BLOCK_END, BLOCK_START, roleProblems, rolesBlock, withBlock } from "../lib/roles.mjs";
 
 const commands = {
@@ -233,6 +235,25 @@ const commands = {
       return 0;
     }
     console.log('Usage: wf decision add <file> "<decision>" "<why>"   or   wf decision supersede <ID> <by ID>');
+    return 2;
+  },
+
+  async question([sub, ...args]) {
+    const root = projectRoot();
+    const config = loadConfig(root);
+    const today = localToday();
+    if (sub === "add" && (args.length === 4 || args.length === 5)) {
+      const [chunk, question, needs, from, story = "none"] = args;
+      const row = chunk === "none" ? null : findChunk([config.buildOrder.file, config.buildOrder.done].map((path) => (existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "")), chunk);
+      console.log(addQuestion(root, config, { chunk, question, needs, from, story, date: today, title: row?.title ?? "" }));
+      return 0;
+    }
+    if (sub === "resolve" && args.length === 2) {
+      const row = resolveQuestion(root, config, args[0], args[1], today);
+      console.log(`${row.id} moved to ${config.logs.questionsResolved}`);
+      return 0;
+    }
+    console.log('Usage: wf question add <chunk | none> "<question>" <needs role> "<from: role or client (<channel>)>" [story IDs]   or   wf question resolve <Q-ID> "<D-IDs or none: why>"');
     return 2;
   },
 

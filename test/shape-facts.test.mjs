@@ -1,18 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { efficiencyDue, findingRows, frontmatter, openQuestions, repeatedHeadings, section, tokens, wholeReads } from "../lib/docs/shape.mjs";
+import { efficiencyDue, findingRows, frontmatter, repeatedHeadings, section, tokens, wholeReads } from "../lib/docs/shape.mjs";
 
 test("a section ends at the next heading at its level or above", () => {
   const text = "## A\none\n### B\ntwo\n## C\nthree\n";
   assert.equal(section(text, "## A"), "one\n### B\ntwo");
   assert.equal(section(text, "### B"), "two");
   assert.equal(section(text, "## Missing"), "");
-});
-
-test("open questions are counted per heading, and an empty heading is left out", () => {
-  const text = "# Open questions\n\nIntro.\n\n## Chunk 7\n\n- **One.** a\n  - nested\n- **Two.** b\n\n## Chunk 8\n\nNone.\n";
-  assert.deepEqual(openQuestions(text), [{ heading: "Chunk 7", count: 2 }]);
 });
 
 test("finding rows are the linked rows of a table", () => {
