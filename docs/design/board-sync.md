@@ -32,12 +32,12 @@ One item per story, grouped the way the story file groups them.
 
 The acceptance lines go in the item's first comment, pinned, where a list reads better than a text column.
 
-- **Shape.** A bold "🤖 Acceptance criteria" heading, the bot's line to readers in a quote block starting with 🤖, the "As a…" sentence, then one bullet per acceptance line, as written.
+- **Shape.** The bot's line to readers in a quote block starting with 🤖, a bold "Acceptance criteria" heading, the "As a…" sentence, then one bullet per acceptance line, as written.
   - The owner chose the quote block from three styles tried on the test board on 2026-11-11.
   - Sync compares the comment's words and its tags, without their attributes, so a new layout with the same words still reaches the board.
 - **The line to readers.** "I'm Orbit, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up." The name is `board.bot.name`.
 - **Pinned.** `pin_to_top` keeps it above every client comment.
-- **Kept current.** Sync finds it by its heading among the bot's updates and changes it with `edit_update` only when the lines differ, so a story change never posts a new comment.
+- **Kept current.** Sync finds it as the bot's top-level comment with a line that is the heading, "Acceptance criteria" or the older "🤖 Acceptance criteria", and changes it with `edit_update` only when the lines differ, so a story change never posts a new comment.
 - **Replies are feedback.** A guest's reply under it counts as a client comment, the same as one on the item.
 
 ## Trial
@@ -116,7 +116,7 @@ The bot posts with the owner's token, so it signs as a helper of its own, friend
   - Noted: "🤖 Orbit: thanks, the team has seen this."
   - It is worked out from the board each run, with no state in the repo. The pinned comment is not a reply, so it never counts, and a second item's first reply is full again.
 - **One place.** All of its words are in the kit's `lib/board/voice.mjs`, with tests.
-- **Found by its marker, not its words.** A bot reply is one by the token's user that starts with 🤖, and the pinned comment is found by its heading. So the wording can change without breaking either.
+- **Found by its marker, not its words.** A bot reply is one by the token's user that starts with 🤖, and the pinned comment is the bot's comment with the heading line. So the wording can change without breaking either.
 - **Testing.** Each command takes an injected `fetch`, as `wf doctor` takes an injected `gh`, so tests run on fixture Markdown and recorded responses, never the network.
 
 ## Config

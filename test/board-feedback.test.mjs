@@ -8,7 +8,7 @@ import { DEFAULTS } from "../lib/defaults.mjs";
 import { syncGithub } from "../lib/github.mjs";
 import { boardProblems, commentHtml, flat, HEADING, plan, runBoard } from "../lib/board/index.mjs";
 import { feedback, feedbackLines, replyBatch, replyFor, replyGroups } from "../lib/board/feedback.mjs";
-import { ids, isBot, loggedReply, notedReply, pinnedNote } from "../lib/board/voice.mjs";
+import { ids, isBot, isPinned, loggedReply, notedReply, pinnedNote } from "../lib/board/voice.mjs";
 
 const ME = "7";
 const config = (board = {}) => merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }], stories: { files: ["docs/app/user-stories.md"] }, board: { boardId: "42", ...board } });
@@ -31,7 +31,7 @@ function board() {
         guest("u1", "Should the lockout message say how long is left?", 1),
         // The pinned acceptance comment, with guest replies before and after the bot's.
         {
-          ...bot("u2", `${HEADING}\n\n${pinnedNote("Orbit")}`, 0),
+          ...bot("u2", `🤖 ${pinnedNote("Orbit")}\n\n${HEADING}`, 0),
           replies: [guest("r1", "Line 3 reads oddly.", 2, { edited: 9 }), bot("r2", loggedReply("Orbit", ["Q-004"]), 3), guest("r3", "And the last line too.", 4)],
         },
         // A guest's thanks, noted by the bot, and a team member's own comment.
@@ -66,7 +66,7 @@ test("the bot's words come from one place, with its name", () => {
 
 test("the first Orbit reply on an item is full, later ones there are short, and the pinned comment never counts", () => {
   const open = new Set(["Q-013", "Q-014"]);
-  const pinned = { ...bot("p1", `${HEADING}\n\n${pinnedNote("Orbit")}`, 0), replies: [guest("g1", "Is line 2 right?", 1)] };
+  const pinned = { ...bot("p1", `🤖 ${pinnedNote("Orbit")}\n\n${HEADING}`, 0), replies: [guest("g1", "Is line 2 right?", 1)] };
   const first = { columns: [], groups: [], views: [], items: [item("1", "APP-01", [guest("g2", "When is this due?", 2), pinned])] };
   const body = (board, id, answer) => replyFor(config(), feedback(config(), board, ME), id, answer, open).body;
   assert.equal(body(first, "g1", ["Q-013"]), loggedReply("Orbit", ["Q-013"]), "only the pinned comment so far: still the full form");
@@ -154,7 +154,7 @@ test("wf board feedback and reply read the board and post in the comment's threa
 
 test("the pinned comment's new wording edits each old one once, still found by its heading", () => {
   const story = { as: "As a user, I want it.", acceptance: [{ text: "It works.", sub: [] }] };
-  const old = `${HEADING}\n\nKept in the project repo and updated automatically by the workflow bot. Please don't edit this comment.\n\n${story.as}\n\nIt works.`;
+  const old = `🤖 ${HEADING}\n\nKept in the project repo and updated automatically by the workflow bot. Please don't edit this comment.\n\n${story.as}\n\nIt works.`;
   const want = [{ id: "APP-01", name: "APP-01 · A story", group: "App · Sign in", values: { storyId: "APP-01", area: "app", status: "Done", chunk: "", story: story.as }, comment: commentHtml(story), pr: null }];
   const columns = ["story_id", "area", "chunk", "story", "pr", "owner"].map((id) => ({ id, type: { story: "long_text", pr: "link", owner: "people" }[id] ?? "text" }));
   columns.push({ id: "wf_status", type: "status", settings_str: JSON.stringify({ labels: { 0: "Drafting", 1: "Backlog", 2: "Planned", 3: "In progress", 4: "Checking", 6: "Done" } }) });
@@ -224,4 +224,15 @@ test("one reply batch gives an item with no Orbit reply one full reply, then sho
     ["1", "a1", loggedReply("Orbit", ["Q-012"])],
     ["1", "a2", notedReply("Orbit", { short: true })],
   ]);
+});
+
+test("the pinned comment is found in its old shape and its new one, and nothing else is", () => {
+  const old = { creator_id: ME, text_body: "🤖 Acceptance criteria\n\nI'm Orbit, and I keep this list…\n\nAs a user, I want it." };
+  const now = { creator_id: ME, text_body: "🤖 I'm Orbit, and I keep this list…\n\nAcceptance criteria\n\nAs a user, I want it." };
+  assert.ok(isPinned(old, ME));
+  assert.ok(isPinned(now, ME));
+  assert.ok(!isPinned({ creator_id: ME, text_body: "🤖 Orbit: thanks, the team has seen this." }, ME), "a reply is not the pinned comment");
+  assert.ok(!isPinned({ creator_id: ME, text_body: "Acceptance criteria\n\nThe owner, writing by hand" }, ME), "the owner without the marker");
+  assert.ok(!isPinned({ creator_id: "50", text_body: "🤖 I'm not Orbit\n\nAcceptance criteria" }, ME), "a guest pasting both");
+  assert.ok(!isPinned({ creator_id: ME, text_body: "🤖 Note: the acceptance criteria changed" }, ME), "the words inside a line do not count");
 });

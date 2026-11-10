@@ -78,7 +78,8 @@ test("the wanted items carry the name, group, columns, and comment", () => {
     "APP-04 · See my jobs | App · Jobs | In progress | CH-02-be, CH-02-fe, CH-02-contract",
   ]);
   const html = want[0].comment;
-  assert.ok(html.startsWith(`<p><strong>${HEADING}</strong></p><blockquote><p>🤖 I'm Orbit`));
+  assert.ok(html.startsWith(`<blockquote><p>🤖 I'm Orbit`));
+  assert.match(html, /<\/blockquote><p><strong>Acceptance criteria<\/strong><\/p><p>As a Field User/);
   assert.match(html, /<li>Given 5 failed tries.*<ul><li>While that email is slowed down/);
   assert.match(html, /<code>plain text<\/code>/);
   assert.match(html, /&quot;|"Email or password is incorrect"/);
@@ -88,7 +89,7 @@ test("the wanted items carry the name, group, columns, and comment", () => {
 
 test("a comment compares equal to monday's plain text of it", () => {
   const story = readStories(fixture("user-stories.md"), ["APP"])[0];
-  const asMondayShows = `${HEADING}\n\n🤖 I’m Orbit, and I keep this list matched to the project’s records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.\n\n${story.as}\n\n${story.acceptance
+  const asMondayShows = `🤖 I’m Orbit, and I keep this list matched to the project’s records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.\n\n${HEADING}\n\n${story.as}\n\n${story.acceptance
     .flatMap((line) => [line.text, ...line.sub])
     .join("\n")}`;
   assert.equal(flat(asMondayShows), flat(commentHtml(story)));
@@ -203,7 +204,7 @@ test("sync creates the items, groups, and pinned comments; a second run finds no
   assert.equal(one.values.wf_status, "Done");
   assert.match(one.values.story, /^As a Field User/);
   assert.equal(one.updates.length, 1);
-  assert.ok(one.updates[0].text_body.startsWith(HEADING));
+  assert.ok(one.updates[0].text_body.startsWith("🤖 I'm Orbit") && one.updates[0].text_body.split("\n").includes(HEADING));
   assert.equal(monday.state.ops.filter((op) => op === "pin_to_top").length, 3);
   const second = await run(["sync"], monday);
   assert.deepEqual(second.out, ["0 to create, 0 to update, 0 comments, 0 to retire, 3 unchanged.", "Test board is in step."]);

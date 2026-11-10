@@ -87,7 +87,8 @@ Each kit version that changes a project's own files says what to do here. After 
 
 For a project with `board.boardId` set:
 
-- The pinned acceptance comment's line to readers is the bot's own now, so the first `npx wf board sync` after the upgrade edits every pinned comment once. `npx wf board plan` lists each as `edit acceptance`. The comments are still found by their heading, so none is posted twice.
+- The pinned acceptance comment now opens with the bot's 🤖 line in a quote block, then a plain bold "Acceptance criteria". The first `npx wf board sync` after the upgrade edits every pinned comment once, and `npx wf board plan` lists each as `edit acceptance`.
+  - Sync still finds a comment with the old "🤖 Acceptance criteria" heading, so it edits that one in place and posts no second one.
 - `wf board`, `wf github sync`, and doc:check now fail a `board.tokenEnv` that is not an environment variable name, such as `MONDAY_API_TOKEN`.
 
 ### v0.31.0: open questions in tables
