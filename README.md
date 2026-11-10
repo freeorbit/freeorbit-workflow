@@ -83,6 +83,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.36.1: Orbit speaks quietly
+
+- Orbit's replies and delivery notes now sit in a quote block, which monday shows grey and italic. Its questions to the client stay plain.
+- The first `npx wf board sync` after the upgrade edits each delivery note posted plain into the quote, in place, with its words kept. `npx wf board plan` lists each as `restyle delivered`.
+- Replies posted plain before stay as they are, and are still told apart as Orbit's.
+
 ### v0.36.0: delivery notes and client questions
 
 - `chunks-done.md` takes a "For the client" column after Detail, and `npx wf doc:check` fails a done table without it. Add the column; leave old rows empty, or fill one for each done chunk the client should hear about.

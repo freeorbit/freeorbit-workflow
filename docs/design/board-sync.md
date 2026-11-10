@@ -142,6 +142,8 @@ The bot posts with the owner's token, so it signs as a helper of its own, friend
   - Built: "🤖 Orbit: built!" Then the sentences, "Set Client review when you're ready.", and the chunks.
   - Asking: "🤖 Orbit: a question from the team (Q-012): <question> Just reply here."
   - It is worked out from the board each run, with no state in the repo, and a second item's first word is full again.
+- **Quiet.** Its replies and delivery notes sit in a quote block, which monday shows grey and italic, like the pinned comment's line. Only a question to the client is plain, so it stands out and gets answered.
+  - A delivery note posted plain, before v0.36.1, is edited into the quote in place, its words kept, found by its chunks; plan shows `note    APP-01 restyle delivered (CH-01)`.
 - **One place.** All of its words are in the kit's `lib/board/voice.mjs`, with tests.
 - **Found by its marker, not its words.** A bot reply is one by the token's user that starts with 🤖, and the pinned comment is the bot's comment with the heading line. So the wording can change without breaking either.
 - **Testing.** Each command takes an injected `fetch`, as `wf doctor` takes an injected `gh`, so tests run on fixture Markdown and recorded responses, never the network.
