@@ -63,19 +63,19 @@ A run on 2026-11-10 against a throwaway board, as the owner's own token, at API 
 
 ## Status
 
-A story's status comes from the build order, and the least-finished lane wins.
+A story's status comes from the build order: once any of its lanes has started, it is In progress until every lane is done.
 
 | Status | When |
 | --- | --- |
 | Drafting | The area's Stories step in the Areas table is not Done |
 | Backlog | No chunk row, open or done, lists the story |
 | Planned | Every row that lists it is Not started |
-| In progress | Any row that lists it is In progress |
-| Checking | No row is In progress, and one is Waiting |
+| In progress | A row has started or finished, and another is In progress or Not started |
+| Checking | Every row is Waiting or done, and one is Waiting |
 | Done | Every row that lists it is in `chunks-done.md` |
 
-- **Least finished wins.** A story in `CH-01-fe` (done) and `CH-01-be` (In progress) is In progress.
-- **Mixed done and not started.** A story with one lane done and one Not started is Planned, since work on it is not under way.
+- **Started means In progress.** A story in `CH-01-fe` (done) and `CH-01-be` (Not started) is In progress, since work on it is under way.
+- **Planned means no lane has started.** A story moves out of Planned when its first lane does.
 - **The reader.** `chunkRows()` and `areaRows()` in `lib/docs/shape.mjs` already read these tables. A new story reader adds each story's title, `##` group, text, and Removed note, which nothing reads today.
 
 ## Commands
@@ -101,7 +101,7 @@ An optional `board` section; a project without it has no board commands.
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `board.provider` | `"monday"` | The only provider for now |
-| `board.boardId` | `""` | The board's number, from its address |
+| `board.boardId` | `""` | The client's shareable board's number, from its address |
 | `board.tokenEnv` | `"MONDAY_API_TOKEN"` | The environment variable holding the token. The token is never in config |
 | `board.apiVersion` | `"2026-10"` | The monday API version every call sends |
 | `board.columns` | the six above | Each field's column id on the board, filled by `wf board setup` |
@@ -111,8 +111,13 @@ An optional `board` section; a project without it has no board commands.
 | `board.show.clientQuestions` | `true` | Open questions the client answers, as updates on their stories |
 | `board.show.analysisSamples` | `false` | Synthetic analysis output, for a product that makes it |
 
+- **The client board.** Guests reach only a shareable board (`board_kind` `share`), and making one may need the account's admin.
+  - For Atlas NX, the owner asks the restivegroup.monday.com admin for one and invites the client there as a guest; `boardId` points at it.
+  - The throwaway test board stays for developing the commands.
 - **Each extra can be switched off.** The `show` keys are separate so a client sees only what the owner chose.
-- **To confirm: `client` as a Needs value.** Open questions would allow `client` in Needs, meaning the client answers on the board. Today Needs is a role from `roles`, and `wf signoffs` treats every chunk row as waiting on one.
+- **`client` as a Needs value.** Open questions allow `client` in Needs, meaning the client answers on the board.
+  - A client question never blocks a merge: `wf signoffs` skips rows whose Needs is `client`.
+  - When one truly blocks a chunk, the team adds its own row, with the owner in Needs, to chase the answer.
 
 ## Token and where sync runs
 
@@ -136,7 +141,7 @@ The board shows stories, not the project's internals.
 - **Edits may notify.** An `edit_update` may notify the item's followers. Stories change only in the repo, so edits are rare, but what monday sends is not checked.
 - **Whole-board permissions.** A guest sees every item and column of a shareable board, and every update on it.
   - The client board holds stories only, as in "What never goes on the board", and the team talks about internals elsewhere.
-  - Making a shareable board may need an admin; the owner is not one. Not tried.
+  - Making a shareable board may need an admin; the owner is asking theirs, as in "The client board" under Config.
 - **One person's token.** The bot acts as the owner, so every reply and change shows their name, and it stops when they leave. A service account would fix both, at the cost of a seat.
 - **API versions.** monday retires a version about a year after it is current. `board.apiVersion` pins one, and `wf doctor` warns when monday lists it as deprecated.
 - **A guest edits the board.** One way means sync overwrites a guest's change to a synced column on the next run. `wf board plan` lists each such change first, so it is seen, not lost silently.
