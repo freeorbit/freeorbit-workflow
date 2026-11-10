@@ -18,7 +18,7 @@ const files = { "docs/app/user-stories.md": fixture("user-stories.md"), "docs/lo
 const context = (more) => ({ root: "/project", config: config(more), tracked: Object.keys(files), files: (path) => files[path] });
 const STATUS = { id: "wf_status", title: "Build", type: "status", settings_str: JSON.stringify({ labels: { 0: "Drafting", 1: "Backlog", 2: "Planned", 3: "In progress", 4: "Checking", 6: "Built" } }) };
 const REVIEW = { id: "client_review", title: "Client review", type: "status", settings_str: "{}" };
-const COLUMNS = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"]].map(([id, type]) => ({ id, title: id, type, settings_str: "{}" }));
+const COLUMNS = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"], ["frames", "file"]].map(([id, type]) => ({ id, title: id, type, settings_str: "{}" }));
 
 /**
  * A monday whose reads lag its writes: a call on an item or update made a

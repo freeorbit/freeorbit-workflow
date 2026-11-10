@@ -108,6 +108,7 @@ const COLUMNS = [
   { id: "story", title: "Story", type: "long_text", settings_str: "{}" },
   { id: "pr", title: "PR", type: "link", settings_str: "{}" },
   { id: "owner", title: "Owner", type: "people", settings_str: "{}" },
+  { id: "frames", title: "Frames", type: "file", settings_str: "{}" },
 ];
 
 /** An in-memory board that answers the queries the client sends, and a log of each operation. */
@@ -276,7 +277,7 @@ test("setup lists what is missing, and --create makes the columns, with Built ma
   assert.ok(listed.out.includes('view "Build" is missing; wf board setup --create makes it, a table grouped by Build'));
   assert.ok(listed.out.includes('view "Client review" is missing; wf board setup --create makes it, a table grouped by Client review'));
   const created = await run(["setup", "--create"], monday);
-  assert.equal(monday.state.ops.filter((op) => op === "create_column").length, 8);
+  assert.equal(monday.state.ops.filter((op) => op === "create_column").length, 9);
   assert.equal(monday.state.columns.find((column) => column.id === "owner").type, "people");
   // monday marks label 1 done in a new column, so the done label takes id 1.
   assert.deepEqual(JSON.parse(monday.state.columns.find((column) => column.id === "wf_status").settings_str).labels, { 0: "Drafting", 1: "Built", 2: "Backlog", 3: "Planned", 4: "In progress", 5: "Checking" });

@@ -83,6 +83,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.37.0: frames on story items
+
+- Each story's item shows the frame pictures whose screen-list row names it, in a Frames file column that sync owns, while `board.show.frames` is on, as it is by default.
+- With it on, `npx wf board setup` reports the Frames column missing, and sync stops until `npx wf board setup --create` makes it. The first sync then uploads each story's frames.
+- A board the client should not see frames on yet sets `board.show.frames` to `false`: no column, no check, and no uploads.
+
 ### v0.36.1: Orbit speaks quietly
 
 - Orbit's replies and delivery notes now sit in a quote block, which monday shows grey and italic. Its questions to the client stay plain.
