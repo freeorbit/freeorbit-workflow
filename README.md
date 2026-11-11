@@ -2,6 +2,8 @@
 
 The Freeorbit agent workflow as installable Claude Code plugins, the scripts they run, and the same skills for OpenCode. The plan and the audit behind it are `docs/research/workflow-kit.md` and `docs/research/workflow-audit.md` in Freeorbit.
 
+For how the plugins, the `wf` command, the docs, GitHub, the app, and the client board fit together, start with [docs/workflow/overview.md](docs/workflow/overview.md).
+
 ## Install in a project
 
 1. Add the package, pinned to a tag:
@@ -82,6 +84,11 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.41.0: an overview of how the pieces fit
+
+- `docs/workflow/overview.md` shows, in four diagrams, how the plugins, the `wf` command, the docs, GitHub, the app, and the client board fit together, an area's four steps, a chunk from start to the client board, and the board's feedback loop.
+- After upgrading, run `npx wf docs sync`, which writes it and lists it in the docs index.
 
 ### v0.40.0: the monday token from a gitignored .env
 
