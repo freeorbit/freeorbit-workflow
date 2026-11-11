@@ -85,6 +85,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.43.0: the kit's code grouped by job, and failures that say so
+
+- Internal files moved. `lib/` keeps nine files at the top and groups the rest in `config/`, `logs/`, `setup/`, and `docs/`; `wf app` is split into `lib/app/appsettings.mjs`, `inspector.mjs`, `start.mjs`, `steps.mjs`, and `stitch.mjs`; one DevTools client and the browser helpers are in `lib/browser/`. `lib/screens/list.mjs` and `lib/design/frames.mjs` stay where they were. A project that imports any other kit file by path points it at the new place.
+- `wf design check` and `annotate` time out on a hung frame instead of hanging, and a frame script that throws fails the check, naming its frame.
+- The review's `ledger.py` writes nothing when a change would put the ledger out of step, and `direct-outdated.py` lists a failed `cargo search` apart instead of calling every dep behind.
+- `wf try`'s repeat command quotes a `~` in a flag's value. Nothing to do after upgrading beyond the usual `npx wf docs sync`.
+
 ### v0.42.0: a tighter blind-agent guard, pinned workflows, fenced client comments
 
 - The e2e tester's Bash guard reads a command as the shell does, refuses anything the shell would expand (`$`, `~`, `*`, `?`, braces), allows only flags that read no other file, and checks every path, through links, against its folders and the secret names. Quoting no longer hides `--real`, `db`, `logs`, or `reset`. Read, Grep, and Glob check where a path leads, and a Glob pattern or Grep glob may not leave its folder or pick out secret files.
