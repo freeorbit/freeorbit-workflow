@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { docProblems, fill, fromDisk, kitDocs, parts, placeOf, planDocs, render, slots, syncDocs, withoutRoles } from "../lib/docsync.mjs";
-import { indexProblems, logRows, SUMMARIES, table, withIndex } from "../lib/index.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { docProblems, fill, fromDisk, kitDocs, parts, placeOf, planDocs, render, slots, syncDocs, withoutRoles } from "../lib/docs/docsync.mjs";
+import { indexProblems, logRows, SUMMARIES, table, withIndex } from "../lib/docs/docsindex.mjs";
 
 const KIT = "# Steps\n\nGeneric.\n\n<!-- wf:local extra -->\n\n## End\n\n<!-- wf:local empty -->\n\nDone.\n";
 
@@ -124,7 +124,7 @@ test("the index's kit tables are written from the synced docs and the logs that 
 });
 
 test("every kit doc has a summary for the index", () => {
-  for (const name of kitDocs()) assert.ok(name in SUMMARIES, `${name} has no summary in lib/index.mjs`);
+  for (const name of kitDocs()) assert.ok(name in SUMMARIES, `${name} has no summary in lib/docs/docsindex.mjs`);
 });
 
 test("a config value must be a set, one-line string under a plain key", () => {

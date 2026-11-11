@@ -6,9 +6,9 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { githubFiles, syncGithub } from "../lib/github.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { githubFiles, syncGithub } from "../lib/setup/github.mjs";
 import { plan, wanted } from "../lib/board/index.mjs";
 import { chunkPrs, prNumber, repoUrl, runGit, storyPr } from "../lib/board/prs.mjs";
 

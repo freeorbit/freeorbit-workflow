@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { addDecision, decisionFiles, decisionProblems, emptyFile, rows, supersede } from "../lib/decisions.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { matcher } from "../lib/config.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { addDecision, decisionFiles, decisionProblems, emptyFile, rows, supersede } from "../lib/logs/decisions.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { matcher } from "../lib/config/config.mjs";
 
 const config = (more = {}) => merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], ...more });
 

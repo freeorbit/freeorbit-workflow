@@ -7,10 +7,10 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { chosen, line, logName, passed, runChecks } from "../lib/checks.mjs";
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { hooksLine, HOOKS_PATH, install, isProtected, nameProblem, pushProblems, runHook, scopesOf, shim } from "../lib/hooks.mjs";
-import { report, runTools, toolRows } from "../lib/tools.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { hooksLine, HOOKS_PATH, install, isProtected, nameProblem, pushProblems, runHook, scopesOf, shim } from "../lib/setup/hooks.mjs";
+import { report, runTools, toolRows } from "../lib/setup/tools.mjs";
 
 const config = merge(DEFAULTS, { scopes: ["app", "release", "workflow"], areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }] });
 

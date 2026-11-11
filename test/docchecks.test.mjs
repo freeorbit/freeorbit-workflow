@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { frameProblems, screensStatus } from "../lib/design/docchecks.mjs";
 import { storyboard } from "../lib/design/storyboard.mjs";
 

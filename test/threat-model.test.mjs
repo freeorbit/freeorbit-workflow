@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { problems } from "../lib/docs/check.mjs";
 
 const ORDER = (architecture, head = "Architecture") => `| Area | Stories | Frames | ${head} | Build |\n| --- | --- | --- | --- | --- |\n| App | Done 2026-11-01 | Done 2026-11-01 | ${architecture} | Not started |\n`;

@@ -8,8 +8,8 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { appSettings } from "../lib/app/appsettings.mjs";
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { againCommand, parseArgs, runTry, tryHome } from "../lib/try/index.mjs";
 import { browserArgs, openApp, openSteps, stopGroups } from "../lib/try/open.mjs";
 import { filterGroups, flatten, groupBy, view } from "../lib/try/picker.mjs";

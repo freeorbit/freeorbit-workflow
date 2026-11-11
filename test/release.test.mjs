@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { merge, unknownKeys } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge, unknownKeys } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { releaseCommand, runRelease } from "../lib/release.mjs";
 
 test("a release step is the project's prefix with the version, quoted when it needs it", () => {

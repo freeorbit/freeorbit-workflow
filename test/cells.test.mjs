@@ -24,8 +24,8 @@ test("a long table cell must be split into a lead and short bullets", () => {
 
 test("doc:check reports long and long-bulleted cells, and docs.looseCells silences a doc", async () => {
   const { problems } = await import("../lib/docs/check.mjs");
-  const { merge } = await import("../lib/config.mjs");
-  const { DEFAULTS } = await import("../lib/defaults.mjs");
+  const { merge } = await import("../lib/config/config.mjs");
+  const { DEFAULTS } = await import("../lib/config/defaults.mjs");
   const texts = {
     "docs/a.md": `# A\n\n| A | B |\n| --- | --- |\n| x | ${"word ".repeat(31).trim()} |\n| y | Lead.<br>• ${"w ".repeat(16).trim()} |\n`,
   };

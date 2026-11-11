@@ -3,9 +3,9 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { syncGithub } from "../lib/github.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { syncGithub } from "../lib/setup/github.mjs";
 import { commentHtml, flat, plan, runBoard } from "../lib/board/index.mjs";
 import { boardProblems } from "../lib/board/settings.mjs";
 import { HEADING } from "../lib/board/voice.mjs";

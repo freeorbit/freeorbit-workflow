@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { changedFiles, chunkRow, outsideQuick, runTrack } from "../lib/tracks.mjs";
 
 const LEDGER = "Last reviewed: abc1234 on 2026-11-09\n";

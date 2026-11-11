@@ -9,8 +9,8 @@ import { BACK_SCRIPT, goBack, goScript } from "../lib/app/inspector.mjs";
 import { acquireLock, starter, startShared, withLock } from "../lib/app/start.mjs";
 import { clickTarget, groupName } from "../lib/app/clickTarget.mjs";
 import { evalSource, words } from "../lib/app/page.mjs";
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 
 const config = (app = {}) => merge(DEFAULTS, { app: { name: "demo", binary: "target/debug/demo", bundleId: "org.demo.app", ...app } });
 

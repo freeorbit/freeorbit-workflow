@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { chunkRows } from "../lib/docs/shape.mjs";
 import { chunkId, expectedWaits, laneOf, laneProblems, waitsOn } from "../lib/lanes.mjs";
 import { CHUNK, runTrack } from "../lib/tracks.mjs";

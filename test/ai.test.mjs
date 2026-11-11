@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { symlink } from "node:fs/promises";
 
-import { parseAgent, parseSkill, reconcile, renderAgent } from "../lib/ai.mjs";
+import { parseAgent, parseSkill, reconcile, renderAgent } from "../lib/setup/ai.mjs";
 
 const source = `---
 name: sample-agent

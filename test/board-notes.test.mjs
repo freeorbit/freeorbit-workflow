@@ -4,14 +4,14 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { runBoard } from "../lib/board/index.mjs";
 import { feedback, replyBatch, replyGroups } from "../lib/board/feedback.mjs";
 import { answeredReply, deliveredNote, isBot, loggedReply, notedReply, questionNote } from "../lib/board/voice.mjs";
 import { hasBotReply } from "../lib/board/feedback.mjs";
-import { questionProblems } from "../lib/questions.mjs";
-import { signoffs } from "../lib/signoffs.mjs";
+import { questionProblems } from "../lib/logs/questions.mjs";
+import { signoffs } from "../lib/logs/signoffs.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");

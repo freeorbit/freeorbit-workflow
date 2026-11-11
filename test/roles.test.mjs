@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { BLOCK_END, BLOCK_START, holders, roleProblems, rolesBlock, withBlock } from "../lib/roles.mjs";
 
 const solo = merge(DEFAULTS, { people: [{ name: "Ana", handle: "ana", email: "ana@example.test" }] });
