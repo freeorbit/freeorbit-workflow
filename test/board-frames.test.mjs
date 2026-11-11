@@ -10,6 +10,8 @@ import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { runBoard } from "../lib/board/index.mjs";
 import { fileNames, readPicture, wantedFrames } from "../lib/board/frames.mjs";
+import { boardProblems } from "../lib/board/settings.mjs";
+import { keepBuilt, keepsBuilt } from "../lib/screens/built.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -39,21 +41,21 @@ const PICTURES = { "docs/design/review/app/sign-in/sign-in.png": "png-a", "docs/
 const config = (board = {}) => merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }], stories: { files: ["docs/app/user-stories.md"] }, board: { boardId: "42", ...board } });
 
 /** A project whose screen list names its frames, with pictures as plain bytes. */
-function context(more = {}, { screens = SCREENS, pictures = PICTURES } = {}) {
-  const all = { "docs/app/user-stories.md": fixture("user-stories.md"), "docs/log/build-order.md": fixture("build-order.md"), "docs/log/chunks-done.md": fixture("chunks-done.md"), "docs/app/design/screens.md": screens };
+function context(more = {}, { screens = SCREENS, pictures = PICTURES, files = {} } = {}) {
+  const all = { "docs/app/user-stories.md": fixture("user-stories.md"), "docs/log/build-order.md": fixture("build-order.md"), "docs/log/chunks-done.md": fixture("chunks-done.md"), "docs/app/design/screens.md": screens, ...files };
   return { root: "/project", config: config(more), tracked: [...Object.keys(all), ...Object.keys(pictures)], files: (path) => all[path], pictures };
 }
 
-/** A board whose file column takes multipart uploads, appending, and clears on clear_all. */
+/** A board whose file columns take multipart uploads, appending, and clear on clear_all. */
 function monday() {
-  const columns = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"], ["frames", "file"]].map(([id, type]) => ({ id, title: id, type, settings_str: "{}" }));
+  const columns = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"], ["frames", "file"], ["built_screens", "file"]].map(([id, type]) => ({ id, title: id, type, settings_str: "{}" }));
   columns.push({ id: "wf_status", title: "Build", type: "status", settings_str: JSON.stringify({ labels: { 0: "Drafting", 1: "Built", 2: "Backlog", 3: "Planned", 4: "In progress", 6: "Checking" } }) }, { id: "client_review", title: "Client review", type: "status", settings_str: "{}" });
   const state = { columns, items: [], groups: [], next: 1, uploads: [], clears: [] };
   const shown = (item) => ({
     id: item.id,
     name: item.name,
     group: state.groups.find((group) => group.id === item.group),
-    column_values: columns.map((column) => (column.id === "frames" ? { id: "frames", text: "", value: JSON.stringify({ files: item.files.map((name) => ({ name })) }) } : { id: column.id, text: item.values[column.id] ?? "" })),
+    column_values: columns.map((column) => (column.type === "file" ? { id: column.id, text: "", value: JSON.stringify({ files: (item.files[column.id] ?? []).map((name) => ({ name })) }) } : { id: column.id, text: item.values[column.id] ?? "" })),
     updates: item.updates,
   });
   const fetch = async (url, init) => {
@@ -63,9 +65,10 @@ function monday() {
       const query = init.body.get("query");
       const file = init.body.get("variables[file]");
       const itemId = query.match(/item_id: (\d+)/)[1];
+      const column = query.match(/column_id: "([^"]+)"/)[1];
       const item = state.items.find((each) => each.id === itemId);
-      item.files.push(file.name);
-      state.uploads.push({ item: item.values.story_id, name: file.name, bytes: Buffer.from(await file.arrayBuffer()).toString() });
+      (item.files[column] ??= []).push(file.name);
+      state.uploads.push({ item: item.values.story_id, column, name: file.name, bytes: Buffer.from(await file.arrayBuffer()).toString() });
       return ok({ add_file_to_column: { id: `f${state.next++}`, name: file.name } });
     }
     const { query, variables: v } = JSON.parse(init.body);
@@ -78,7 +81,7 @@ function monday() {
     }
     if (op === "create_item") {
       const values = Object.fromEntries(Object.entries(JSON.parse(v.v)).map(([key, value]) => [key, typeof value === "object" ? (value.label ?? value.text ?? "") : value]));
-      const item = { id: String(state.next++), name: v.n, group: v.g, values, files: [], updates: [] };
+      const item = { id: String(state.next++), name: v.n, group: v.g, values, files: {}, updates: [] };
       state.items.push(item);
       return ok({ create_item: { id: item.id, column_values: v.c.map((id) => ({ id, text: values[id] ?? "" })) } });
     }
@@ -94,8 +97,8 @@ function monday() {
     }
     if (op === "change_column_value") {
       assert.match(query, /clear_all/);
-      item.files = [];
-      state.clears.push(item.values.story_id);
+      item.files[v.c] = [];
+      state.clears.push(v.c === "frames" ? item.values.story_id : `${item.values.story_id} ${v.c}`);
       return ok({ change_column_value: { id: v.i } });
     }
     throw new Error(`frames monday: ${op}`);
@@ -116,10 +119,10 @@ test("each story shows every frame its screen-list row names, in order, a frame 
   assert.ok(planned.out.includes("frames  APP-01 3 to upload (sign-in, sign-in-wait, home)"), planned.out.join("\n"));
   assert.ok(planned.out.includes("frames  APP-02 1 to upload (home)"));
   assert.ok(planned.out.includes("skip    frame sign-in-gone has no PNG under docs/design/review/app/, so APP-01 shows the rest"));
-  assert.ok(!planned.out.some((line) => line.includes("deep-link")), "a Screen row has no picture");
+  assert.ok(!planned.out.some((line) => /^frames .*deep-link|frame deep-link/.test(line)), "a Screen row has no frame picture");
   const synced = await run(["sync"], board);
   assert.equal(synced.code, 0, synced.out.join("\n"));
-  assert.deepEqual(board.state.uploads.filter((each) => each.item === "APP-01").map((each) => each.name.replace(/\.[0-9a-f]{8}\.png$/, "")), ["sign-in", "sign-in-wait", "home"]);
+  assert.deepEqual(board.state.uploads.filter((each) => each.item === "APP-01" && each.column === "frames").map((each) => each.name.replace(/\.[0-9a-f]{8}\.png$/, "")), ["sign-in", "sign-in-wait", "home"]);
   assert.match(board.state.uploads[0].name, /^sign-in\.[0-9a-f]{8}\.png$/);
   assert.deepEqual(board.state.clears, [], "a new item's column has nothing to clear");
   const again = await run(["plan"], board);
@@ -140,13 +143,13 @@ test("a changed picture sends the whole set again, and a story no frame names an
   const cleared = await run(["plan"], board, {}, { screens: unnamed, pictures: changed });
   assert.ok(cleared.out.includes("frames  APP-02 clear"), cleared.out.join("\n"));
   await run(["sync"], board, {}, { screens: unnamed, pictures: changed });
-  assert.deepEqual(board.state.items.find((item) => item.values.story_id === "APP-02").files, []);
+  assert.deepEqual(board.state.items.find((item) => item.values.story_id === "APP-02").files.frames, []);
 });
 
 test("with board.show.frames off there is no column check, no plan line, and no upload", async () => {
   const board = monday();
-  board.state.columns.splice(board.state.columns.findIndex((column) => column.id === "frames"), 1);
-  const off = { show: { frames: false } };
+  for (const id of ["frames", "built_screens"]) board.state.columns.splice(board.state.columns.findIndex((column) => column.id === id), 1);
+  const off = { show: { frames: false, screenshots: false } };
   assert.deepEqual((await run(["setup"], board, off)).out, ["The board is set up."]);
   const planned = await run(["plan"], board, off);
   assert.ok(!planned.out.some((line) => /^frames |frame /.test(line)), planned.out.join("\n"));
@@ -155,6 +158,7 @@ test("with board.show.frames off there is no column check, no plan line, and no 
   assert.equal(DEFAULTS.board.show.frames, true, "on by default");
   const on = await run(["setup"], board);
   assert.ok(on.out.includes("column frames (Frames, file) is missing"));
+  assert.ok(on.out.includes("column built_screens (Built screens, file) is missing"));
 });
 
 test("a picture over board.frameMaxBytes is skipped with a note", () => {
@@ -177,4 +181,74 @@ test("only a real .png inside the review folder is ever read", () => {
   assert.throws(() => readPicture(root, "docs/design/review", "docs/design/review/app/link.png"), /is a link/);
   assert.throws(() => readPicture(root, "docs/design/review", "docs/design/review/../../../secret.png"), /outside docs\/design\/review/);
   assert.throws(() => readPicture(root, "docs/design/review", "docs/design/review/app/note.txt"), /is not a \.png/);
+});
+
+// APP-01's chunks are in the done list, so it is Built; APP-02's chunk has not started.
+const BUILT = { "docs/design/built/app/sign-in.png": "app-a", "docs/design/built/app/home.png": "app-c", "docs/design/built/app/deep-link.png": "app-d" };
+const screenshots = (out) => out.filter((line) => line.startsWith("screenshots "));
+
+test("a Built story shows the built screen of every row naming it, Frame and Screen rows, in order; one still being built shows none", async () => {
+  const board = monday();
+  const project = { pictures: { ...PICTURES, ...BUILT } };
+  const planned = await run(["plan"], board, {}, project);
+  assert.deepEqual(screenshots(planned.out), ["screenshots APP-01 3 to upload (sign-in, home, deep-link)"], planned.out.join("\n"));
+  assert.ok(planned.out.includes("skip    screen sign-in-wait has no PNG under docs/design/built/app/, so APP-01 shows the rest"));
+  assert.ok(!planned.out.some((line) => /screen .*APP-02/.test(line)), "APP-02 is not Built, so no note names it");
+  assert.match(planned.out.at(-1), /1 screenshot set, /);
+  await run(["sync"], board, {}, project);
+  const shots = board.state.uploads.filter((each) => each.column === "built_screens");
+  assert.deepEqual(shots.map((each) => `${each.item} ${each.bytes}`), ["APP-01 app-a", "APP-01 app-c", "APP-01 app-d"]);
+  assert.match(shots[0].name, /^sign-in\.[0-9a-f]{8}\.png$/);
+  assert.deepEqual(screenshots((await run(["plan"], board, {}, project)).out), []);
+  const framed = await run(["plan"], board, { screenshots: { rows: "framed" } }, project);
+  assert.deepEqual(screenshots(framed.out), ["screenshots APP-01 2 to upload (sign-in, home)"], "framed drops the Screen row");
+});
+
+test("a story not Built that holds built screens has them cleared", async () => {
+  const board = monday();
+  const project = { pictures: { ...PICTURES, ...BUILT } };
+  await run(["sync"], board, {}, project);
+  // Such as a story whose chunk was reopened after its screens went up.
+  board.state.items.find((item) => item.values.story_id === "APP-02").files.built_screens = ["home.0123abcd.png"];
+  const planned = await run(["plan"], board, {}, project);
+  assert.deepEqual(screenshots(planned.out), ["screenshots APP-02 clear"], planned.out.join("\n"));
+  await run(["sync"], board, {}, project);
+  assert.deepEqual(board.state.clears, ["APP-02 built_screens"]);
+  assert.deepEqual(board.state.items.find((item) => item.values.story_id === "APP-02").files.built_screens, []);
+});
+
+test("with board.show.screenshots off there is no column check and no upload; rows is all or framed", async () => {
+  const board = monday();
+  board.state.columns.splice(board.state.columns.findIndex((column) => column.id === "built_screens"), 1);
+  const off = { show: { screenshots: false } };
+  assert.deepEqual((await run(["setup"], board, off)).out, ["The board is set up."]);
+  const planned = await run(["plan"], board, off, { pictures: { ...PICTURES, ...BUILT } });
+  assert.ok(!planned.out.some((line) => /^screenshots |screen /.test(line)), planned.out.join("\n"));
+  assert.equal(DEFAULTS.board.show.screenshots, true, "on by default");
+  assert.equal(DEFAULTS.board.screenshots.rows, "all");
+  assert.deepEqual(boardProblems(config({ screenshots: { rows: "some" } })), ['board.screenshots.rows "some" is "all" or "framed"']);
+  assert.deepEqual(boardProblems(config({ screenshots: { rows: "framed" } })), []);
+});
+
+test("--accept copies each screen shot this run to design.built, and removes a screen no longer listed", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-built-"));
+  const latest = join(root, ".cache/screens/latest");
+  mkdirSync(latest, { recursive: true });
+  mkdirSync(join(root, "docs/app/design"), { recursive: true });
+  mkdirSync(join(root, "docs/design/built/app"), { recursive: true });
+  writeFileSync(join(root, "docs/app/design/screens.md"), SCREENS);
+  for (const name of ["sign-in", "home", "deep-link"]) writeFileSync(join(latest, `${name}-wide-default.png`), `now-${name}`);
+  writeFileSync(join(root, "docs/design/built/app/home.png"), "old-home");
+  writeFileSync(join(root, "docs/design/built/app/gone.png"), "old-gone");
+  const cfg = config();
+  assert.equal(keepsBuilt(cfg), true);
+  assert.equal(keepsBuilt(config({ boardId: "" })), false, "no board, nothing kept");
+  // home was not shot this run, and deep-link only narrow, so neither is copied.
+  const kept = keepBuilt(root, cfg, { "sign-in": { "wide-default": "h1" }, "deep-link": { "narrow-stress": "h2" } }, latest);
+  assert.deepEqual(kept, { copied: ["docs/design/built/app/sign-in.png"], removed: ["docs/design/built/app/gone.png"] });
+  assert.equal(readFileSync(join(root, "docs/design/built/app/sign-in.png"), "utf8"), "now-sign-in");
+  assert.equal(readFileSync(join(root, "docs/design/built/app/home.png"), "utf8"), "old-home");
+  writeFileSync(join(root, "docs/design/built/app/deep-link.png"), "old-deep");
+  const framed = keepBuilt(root, config({ screenshots: { rows: "framed" } }), {}, latest);
+  assert.deepEqual(framed.removed, ["docs/design/built/app/deep-link.png"], "framed keeps no Screen row's picture");
 });

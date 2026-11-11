@@ -34,7 +34,7 @@ const STATUS = { 0: "Drafting", 1: "Built", 2: "Backlog", 3: "Planned", 4: "In p
 /** A board that keeps items, comments, and replies, enough for notes, questions, and their answers. */
 function monday() {
   const state = {
-    columns: [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"], ["frames", "file"]]
+    columns: [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"], ["frames", "file"], ["built_screens", "file"]]
       .map(([id, type]) => ({ id, title: id, type, settings_str: "{}" }))
       .concat([{ id: "wf_status", title: "Build", type: "status", settings_str: JSON.stringify({ labels: STATUS }) }, { id: "client_review", title: "Client review", type: "status", settings_str: "{}" }]),
     items: [],

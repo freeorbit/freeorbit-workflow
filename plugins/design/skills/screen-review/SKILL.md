@@ -117,6 +117,7 @@ After the code review and the fixes for its findings, when UI files or frames ch
    - It accepts only the last run's screens, and only the pictures taken in it.
    - A light run moves the last run and adds its range. A deep run moves both and clears the light runs and any deferral. A run with a screen that did not shoot moves neither.
    - Accepted hashes stay on this computer, so on a new one every screen is new.
+   - While the board shows built screens, it also copies each screen's Default picture to `design.built`. Commit those with the chunk, so the board shows them once the story is Built.
 
 The designer can also ask for a review at any time. Ask the same two questions, without defer. `npx wf screens --sheets` puts the listed pictures six to a sheet, for a quick look by hand.
 
