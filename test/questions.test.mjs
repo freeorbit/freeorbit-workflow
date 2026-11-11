@@ -5,10 +5,10 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { emptyOpen, emptyResolved } from "../lib/questions.mjs";
-import { addQuestion, blockingRows, insertRow, looseBullets, nextId, questionCounts, questionProblems, questionRows, resolveQuestion, revisitTriggers, untiedRows } from "../lib/questions.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { emptyOpen, emptyResolved } from "../lib/logs/questions.mjs";
+import { addQuestion, blockingRows, insertRow, looseBullets, nextId, questionCounts, questionProblems, questionRows, resolveQuestion, revisitTriggers, untiedRows } from "../lib/logs/questions.mjs";
 import { status } from "../lib/docs/facts.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));

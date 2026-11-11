@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { globRegex, loadConfig, matcher, merge, project, unknownKeys } from "../lib/config.mjs";
-import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
+import { globRegex, loadConfig, matcher, merge, project, unknownKeys } from "../lib/config/config.mjs";
+import { DEFAULTS, REASONS } from "../lib/config/defaults.mjs";
 import { latestToday, problems } from "../lib/docs/check.mjs";
 import { growth, status } from "../lib/docs/facts.mjs";
 

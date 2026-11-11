@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { ecosystems, holders, installSteps, ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
-import { bypassLine, bypassLines, openNeeds, PR_BODY, signoffs } from "../lib/signoffs.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { ecosystems, holders, installSteps, ruleset, rulesetBlocked, syncGithub } from "../lib/setup/github.mjs";
+import { bypassLine, bypassLines, openNeeds, PR_BODY, signoffs } from "../lib/logs/signoffs.mjs";
 
 const PEOPLE = [
   { name: "Ana", handle: "ana", roles: ["owner", "reviewer"] },

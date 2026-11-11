@@ -1,14 +1,16 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, realpathSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { appPage, appSettings, shotPath, BACK_SCRIPT, chromiumArgs, databasePath, goBack, goScript, headlessFor, psqlCall, startShared, viewport, withLock } from "../lib/app/driver.mjs";
+import { appPage, appSettings, chromiumArgs, databasePath, headlessFor, psqlCall, shotPath, viewport } from "../lib/app/appsettings.mjs";
+import { BACK_SCRIPT, goBack, goScript } from "../lib/app/inspector.mjs";
+import { acquireLock, starter, startShared, withLock } from "../lib/app/start.mjs";
 import { clickTarget, groupName } from "../lib/app/clickTarget.mjs";
 import { evalSource, words } from "../lib/app/page.mjs";
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 
 const config = (app = {}) => merge(DEFAULTS, { app: { name: "demo", binary: "target/debug/demo", bundleId: "org.demo.app", ...app } });
 
@@ -224,6 +226,28 @@ test("withLock: a lock left by a killed run is taken over once stale, and one he
   assert.equal(await withLock(dir, async () => "ran", { staleMs: 5_000 }), "ran");
   mkdirSync(dir);
   await assert.rejects(withLock(dir, async () => "ran", { waitMs: 0, pause: async () => {} }), /held by another start/);
+});
+
+test("lockSeenData takes the shared data path's lock through acquireLock, making its folder first (MOD-159)", async () => {
+  const base = join(mkdtempSync(join(tmpdir(), "wf-seen-")), "not-yet", "data");
+  const { lockSeenData } = starter({ s: { seenData: base } });
+  const release = await lockSeenData();
+  assert.ok(existsSync(`${base}.lock`), "the lock is held");
+  release();
+  assert.ok(!existsSync(`${base}.lock`), "the release frees it");
+});
+
+test("acquireLock: an error other than a held lock, such as no permission, fails at once (MOD-159)", { skip: process.getuid?.() === 0 && "root may write anywhere" }, async () => {
+  const parent = join(mkdtempSync(join(tmpdir(), "wf-lock-")), "shut");
+  mkdirSync(parent);
+  chmodSync(parent, 0o500);
+  try {
+    const began = Date.now();
+    await assert.rejects(acquireLock(join(parent, "lock"), { waitMs: 60_000 }), { code: "EACCES" });
+    assert.ok(Date.now() - began < 1000, "no waiting out a lock that can never be taken");
+  } finally {
+    chmodSync(parent, 0o700);
+  }
 });
 
 test("a shot, a page, or a screenshot is a .png in the run's state folder or a .cache picture folder, never through a link (SEC-079)", () => {

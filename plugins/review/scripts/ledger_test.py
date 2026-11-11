@@ -164,6 +164,20 @@ class Ledger(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.ledger.read_text(), LEDGER)
 
+    def test_a_change_that_breaks_the_ledger_is_not_written(self):
+        # A Where cell with a line break in it would write a second row.
+        result = self.run_tool("set", "MOD-001", "--where", "`a.rs:1` |\n| [MOD-001](#mod-001) | Low | proposed | One | `b.rs:2`")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Nothing written", result.stderr)
+        self.assertEqual(self.ledger.read_text(), LEDGER)
+
+    def test_a_finding_with_no_summary_row_says_so(self):
+        self.ledger.write_text(LEDGER.replace("| [MOD-001](#mod-001) | Low | proposed | One | `a.rs:1` |\n", ""))
+        result = self.run_tool("set", "MOD-001", "--status", "accepted")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("MOD-001 has details but no row", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
     def test_a_deep_run_clears_the_light_runs(self):
         self.run_tool("state", "--last", "def on 2026-02-02, diff.", "--deep", "def on 2026-02-02.")
         text = self.ledger.read_text()

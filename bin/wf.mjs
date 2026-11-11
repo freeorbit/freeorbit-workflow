@@ -12,7 +12,7 @@
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
-//   wf app <start | run | stop | ...>   drive the project's Tauri app under a memory cap
+//   wf app <start | run | stop | ...>   drive the project's app, Tauri or web, under a memory cap
 //   wf try [scenario] [--keep] [--dry-run] [--files]   open the app yourself at a test scenario
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
 //   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply
@@ -30,38 +30,36 @@
 //   wf doctor         whether the project's set-up is whole
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
-import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { KIT_ROOT, reconcile } from "../lib/ai.mjs";
+import { KIT_ROOT, reconcile } from "../lib/setup/ai.mjs";
 import { localToday } from "../lib/docs/check.mjs";
 import { runApp } from "../lib/app/driver.mjs";
 import { runTry } from "../lib/try/index.mjs";
 import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
-import { addDecision, supersede } from "../lib/decisions.mjs";
-import { addQuestion, resolveQuestion } from "../lib/questions.mjs";
+import { addDecision, supersede } from "../lib/logs/decisions.mjs";
+import { runQuestion } from "../lib/logs/questions.mjs";
 import { runBoard } from "../lib/board/index.mjs";
-import { ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
+import { ruleset, rulesetBlocked, syncGithub } from "../lib/setup/github.mjs";
 import { runRelease, STEPS } from "../lib/release.mjs";
-import { bypassLine, PR_BODY, runGh, signoffs } from "../lib/signoffs.mjs";
+import { runSignoffs } from "../lib/logs/signoffs.mjs";
 import { screens } from "../lib/screens/run.mjs";
 import { runTrack } from "../lib/tracks.mjs";
 import { runChecks } from "../lib/checks.mjs";
-import { install, runHook } from "../lib/hooks.mjs";
-import { runTools } from "../lib/tools.mjs";
-import { answerProblems, writeStarter } from "../lib/init.mjs";
-import { runDoctor } from "../lib/doctor.mjs";
-import { syncDocs } from "../lib/docsync.mjs";
+import { install, runHook } from "../lib/setup/hooks.mjs";
+import { runTools } from "../lib/setup/tools.mjs";
+import { answerProblems, writeStarter } from "../lib/setup/init.mjs";
+import { runDoctor } from "../lib/setup/doctor.mjs";
+import { syncDocs } from "../lib/docs/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
-import { loadConfig, project, projectRoot } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { loadConfig, project, projectRoot } from "../lib/config/config.mjs";
 import { problems } from "../lib/docs/check.mjs";
 import { growth, status } from "../lib/docs/facts.mjs";
-import { entries, findChunk } from "../lib/docs/shape.mjs";
-import { BLOCK_END, BLOCK_START, roleProblems, rolesBlock, withBlock } from "../lib/roles.mjs";
+import { findEntries } from "../lib/docs/shape.mjs";
+import { roleProblems, rolesBlock, writeRoles } from "../lib/roles.mjs";
 
 const commands = {
   async "doc:find"([query, ...paths]) {
@@ -69,21 +67,9 @@ const commands = {
       console.log("Usage: wf doc:find <ID, date, or heading> [file or folder ...]   (default: docs)");
       return 2;
     }
-    const root = projectRoot();
-    const files = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", ...(paths.length ? paths : ["docs"])], {
-      cwd: root,
-      encoding: "utf8",
-    })
-      .split("\n")
-      .filter((path) => path.endsWith(".md"));
-    let count = 0;
-    for (const path of files) {
-      for (const entry of entries(readFileSync(join(root, path), "utf8"), query)) {
-        console.log(`${path}:${entry.line}\n${entry.text}\n`);
-        count += 1;
-      }
-    }
-    console.log(count ? `${count} found.` : `Nothing starts with "${query}". Try grep for a word inside an entry.`);
+    const found = findEntries(projectRoot(), query, paths);
+    for (const entry of found) console.log(`${entry.path}:${entry.line}\n${entry.text}\n`);
+    console.log(found.length ? `${found.length} found.` : `Nothing starts with "${query}". Try grep for a word inside an entry.`);
     return 0;
   },
 
@@ -107,26 +93,11 @@ const commands = {
     const root = projectRoot();
     const config = loadConfig(root);
     for (const problem of roleProblems(config)) console.error(`.workflow/config.json: ${problem}`);
-    const block = rolesBlock(config);
     if (flag !== "--write") {
-      console.log(block);
+      console.log(rolesBlock(config));
       return 0;
     }
-    for (const path of config.growth.always) {
-      const file = join(root, path);
-      let text;
-      try {
-        text = readFileSync(file, "utf8");
-      } catch {
-        continue;
-      }
-      const fresh = withBlock(text, block);
-      if (fresh === null) console.error(`${path}: no ${BLOCK_START} and ${BLOCK_END} markers, so nothing was written`);
-      else if (fresh !== text) {
-        writeFileSync(file, fresh);
-        console.log(`${path}: Who decides updated`);
-      } else console.log(`${path}: Who decides already up to date`);
-    }
+    for (const line of writeRoles(root, config)) (line.error ? console.error : console.log)(line.text);
     return 0;
   },
 
@@ -227,8 +198,7 @@ const commands = {
     const root = projectRoot();
     const config = loadConfig(root);
     if (sub === "add" && args.length === 3) {
-      const today = new Date().toLocaleDateString("sv-SE");
-      console.log(addDecision(root, config, args[0], args[1], args[2], today));
+      console.log(addDecision(root, config, args[0], args[1], args[2], localToday()));
       return 0;
     }
     if (sub === "supersede" && args.length === 2) {
@@ -240,26 +210,9 @@ const commands = {
     return 2;
   },
 
-  async question([sub, ...rest]) {
+  async question(args) {
     const root = projectRoot();
-    const config = loadConfig(root);
-    const today = localToday();
-    const flag = rest.indexOf("--revisit");
-    const revisit = flag === -1 ? "" : rest[flag + 1] ?? "";
-    const args = flag === -1 ? rest : rest.filter((_, i) => i !== flag && i !== flag + 1);
-    if (sub === "add" && (args.length === 4 || args.length === 5) && (flag === -1 || revisit)) {
-      const [chunk, question, needs, from, story = "none"] = args;
-      const row = chunk === "none" ? null : findChunk([config.buildOrder.file, config.buildOrder.done].map((path) => (existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "")), chunk);
-      console.log(addQuestion(root, config, { chunk, question, needs, from, story, date: today, title: row?.title ?? "", revisit }));
-      return 0;
-    }
-    if (sub === "resolve" && args.length === 2) {
-      const row = resolveQuestion(root, config, args[0], args[1], today);
-      console.log(`${row.id} moved to ${config.logs.questionsResolved}`);
-      return 0;
-    }
-    console.log('Usage: wf question add <chunk | none> "<question>" <needs role> "<from: role or client (<channel>)>" [story IDs] [--revisit "<when to ask again>"]   or   wf question resolve <Q-ID> "<D-IDs or none: why>"');
-    return 2;
+    return runQuestion(root, loadConfig(root), args, localToday());
   },
 
   async board(args) {
@@ -268,38 +221,7 @@ const commands = {
 
   async signoffs(args) {
     const root = projectRoot();
-    const config = loadConfig(root);
-    const texts = [];
-    try {
-      texts.push([config.logs.openQuestions, readFileSync(join(root, config.logs.openQuestions), "utf8")]);
-    } catch {
-      // No open questions log yet.
-    }
-    // The branch's pull request body, when there is one and gh can read it.
-    let body = null;
-    try {
-      body = execFileSync("gh", ["pr", "view", "--json", "body", "-q", ".body"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-      texts.push([PR_BODY, body]);
-    } catch {
-      // No pull request for this branch, or no gh.
-    }
-    const gh = runGh(root);
-    if (args[0] === "--bypass") {
-      if (args.length !== 2) {
-        console.log('Usage: wf signoffs --bypass "<reason>"   (a repository admin only)');
-        return 2;
-      }
-      if (body === null) throw new Error("no pull request for this branch, or no gh; open the pull request first");
-      const line = bypassLine(config, texts, args[1], localToday(), gh);
-      const fresh = `${body.replace(/\s+$/, "")}\n\n${line}\n`;
-      const edit = spawnSync("gh", ["pr", "edit", "--body-file", "-"], { cwd: root, input: fresh, encoding: "utf8" });
-      if (edit.status !== 0) throw new Error(`gh pr edit failed: ${(edit.stderr || "").trim()}`);
-      console.log(`Added to the pull request's body: ${line}`);
-      texts.splice(texts.findIndex(([source]) => source === PR_BODY), 1, [PR_BODY, fresh]);
-    }
-    const { lines, code } = signoffs(config, texts, { gh });
-    for (const line of lines) console.log(line);
-    return code;
+    return runSignoffs(root, loadConfig(root), args, localToday());
   },
 
   async release([name, ...args]) {

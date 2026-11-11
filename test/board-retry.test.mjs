@@ -5,9 +5,9 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { installSteps } from "../lib/github.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { installSteps } from "../lib/setup/github.mjs";
 import { commentHtml, plan, planLines, runBoard, wanted } from "../lib/board/index.mjs";
 import { mondayClient, retryNotFound, STATUS_COLORS, withLabels } from "../lib/board/monday.mjs";
 

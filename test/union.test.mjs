@@ -5,9 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { unionBlock, withUnion } from "../lib/union.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { unionBlock, withUnion } from "../lib/logs/union.mjs";
 
 const config = (union) => merge(DEFAULTS, { docs: { union } });
 

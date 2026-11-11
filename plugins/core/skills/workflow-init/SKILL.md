@@ -28,7 +28,7 @@ Do not ask what the repo already answers, such as the project's name from its RE
 
 ## 3. Write the answers and run init
 
-Write `.cache/workflow-init.json` in the shape `lib/init.mjs` documents: `project`, `team`, `people`, `scopes`, `areas`, `plugins`, `kit.tag`, and `config` for any other setting. Then run the kit once from its tag, before it is installed:
+Write `.cache/workflow-init.json` in the shape `lib/setup/init.mjs` documents: `project`, `team`, `people`, `scopes`, `areas`, `plugins`, `kit.tag`, and `config` for any other setting. Then run the kit once from its tag, before it is installed:
 
 ```bash
 npx --yes --package "git+https://github.com/freeorbit/freeorbit-workflow.git#<tag>" wf init .cache/workflow-init.json

@@ -4,12 +4,13 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { readStories } from "../lib/docs/stories.mjs";
 import { statusOf, storiesDone, storyRows } from "../lib/board/status.mjs";
 import { mondayClient } from "../lib/board/monday.mjs";
-import { commentHtml, difference, flat, tags, HEADING, LONG_TEXT_LIMIT, plan, runBoard, setupProblems, wanted } from "../lib/board/index.mjs";
+import { commentHtml, difference, flat, tags, LONG_TEXT_LIMIT, plan, runBoard, setupProblems, wanted } from "../lib/board/index.mjs";
+import { HEADING } from "../lib/board/voice.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");

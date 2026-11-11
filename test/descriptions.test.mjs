@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { OPEN } from "../lib/config.mjs";
-import { configDoc, configSchema, hover } from "../lib/configdoc.mjs";
-import { DEFAULTS, REASONS } from "../lib/defaults.mjs";
-import { DESCRIPTIONS, settingPaths } from "../lib/settings.mjs";
+import { OPEN } from "../lib/config/config.mjs";
+import { configDoc, configSchema, hover } from "../lib/config/configdoc.mjs";
+import { DEFAULTS, REASONS } from "../lib/config/defaults.mjs";
+import { DESCRIPTIONS, settingPaths } from "../lib/config/descriptions.mjs";
 
 test("every setting has a description, and every description names a setting", () => {
   const paths = settingPaths(DEFAULTS, OPEN);
   const missing = paths.filter((path) => !DESCRIPTIONS[path]);
-  assert.deepEqual(missing, [], `add a line to lib/settings.mjs for: ${missing.join(", ")}`);
+  assert.deepEqual(missing, [], `add a line to lib/config/descriptions.mjs for: ${missing.join(", ")}`);
   const stray = Object.keys(DESCRIPTIONS).filter((path) => !paths.includes(path));
-  assert.deepEqual(stray, [], `lib/settings.mjs describes settings the defaults do not have: ${stray.join(", ")}`);
+  assert.deepEqual(stray, [], `lib/config/descriptions.mjs describes settings the defaults do not have: ${stray.join(", ")}`);
   const loose = Object.keys(REASONS).filter((path) => !paths.includes(path));
   assert.deepEqual(loose, [], `REASONS names settings the defaults do not have: ${loose.join(", ")}`);
 });
@@ -53,7 +53,7 @@ function invalid(schema, value, path = "") {
 test("the kit's defaults and real configs pass the schema, and an empty default is always an open map", async () => {
   const schema = configSchema();
   assert.deepEqual(invalid(schema, DEFAULTS), []);
-  const { configFrom } = await import("../lib/init.mjs");
+  const { configFrom } = await import("../lib/setup/init.mjs");
   const atlas = configFrom({
     project: "Atlas NX", team: "team",
     people: [{ name: "Ana", handle: "ana", email: "ana@example.com", roles: ["owner", "designer", "developer", "reviewer"] }],
@@ -63,7 +63,7 @@ test("the kit's defaults and real configs pass the schema, and an empty default 
   });
   assert.deepEqual(invalid(schema, atlas), []);
   assert.deepEqual(invalid(schema, { design: { sise: [1, 2] } }), ["design.sise: not allowed"]);
-  const { unknownKeys } = await import("../lib/config.mjs");
+  const { unknownKeys } = await import("../lib/config/config.mjs");
   assert.deepEqual(unknownKeys({ $schema: "./config.schema.json", design: { $schema: "x" } }), ["design.$schema"]);
   const empty = [];
   const walk = (node, prefix) => {
@@ -76,5 +76,5 @@ test("the kit's defaults and real configs pass the schema, and an empty default 
     }
   };
   walk(DEFAULTS, "");
-  assert.deepEqual(empty, [], "an empty {} default would reject every key; add it to OPEN in lib/config.mjs");
+  assert.deepEqual(empty, [], "an empty {} default would reject every key; add it to OPEN in lib/config/config.mjs");
 });

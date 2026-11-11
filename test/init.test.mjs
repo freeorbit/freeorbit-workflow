@@ -5,10 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { pinnedTag, runDoctor } from "../lib/doctor.mjs";
-import { answerProblems, configFrom, starterFiles, withIgnore, withPackage, withSettings, writeStarter } from "../lib/init.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { pinnedTag, runDoctor } from "../lib/setup/doctor.mjs";
+import { answerProblems, configFrom, starterFiles, withIgnore, withPackage, withSettings, writeStarter } from "../lib/setup/init.mjs";
 
 const ANSWERS = {
   project: "Demo",
@@ -91,7 +91,7 @@ test("the doctor reports each check", async () => {
 });
 
 test("answers and config paths outside the project are refused before anything is written", async () => {
-  const { inside } = await import("../lib/init.mjs");
+  const { inside } = await import("../lib/setup/init.mjs");
   assert.equal(inside("docs/app"), true);
   assert.equal(inside("docs/../../x"), false);
   assert.equal(inside("/etc/x"), false);
@@ -122,7 +122,7 @@ test("init gives a docs check step, turns on the admin bypass for a sole reviewe
   assert.equal(config.github.adminBypass, true);
   const two = configFrom({ ...ANSWERS, people: [...ANSWERS.people, { name: "Rae", handle: "rae", email: "rae@example.com", roles: ["reviewer"] }] });
   assert.equal(two.github, undefined);
-  const { ruleset } = await import("../lib/github.mjs");
+  const { ruleset } = await import("../lib/setup/github.mjs");
   const set = ruleset(merge(DEFAULTS, config));
   assert.deepEqual(set.bypass_actors, [{ actor_id: 1, actor_type: "OrganizationAdmin", bypass_mode: "pull_request" }]);
   assert.equal(configFrom({ ...ANSWERS, team: "solo" }).github, undefined);

@@ -24,7 +24,7 @@ npx wf ai:check
 
 Generated agents deny every action they do not list, and OpenCode applies the last matching rule. So the adapter repeats OpenCode's `.env` read rules after the read allow, and an agent cannot read outside the repo. A workflow that hands an agent files writes them inside the repo, such as `.cache/review-scan/` for the review scanners.
 
-Canonical agents use `name`, `description`, `model: inherit`, and a comma-separated `tools` list. The generator requires the filename and `name` to match. It rejects unknown frontmatter fields, fixed models, and unmapped tools rather than silently dropping behavior. A new field or tool needs an explicit mapping in the kit's `lib/ai.mjs`.
+Canonical agents use `name`, `description`, `model: inherit`, and a comma-separated `tools` list. The generator requires the filename and `name` to match. It rejects unknown frontmatter fields, fixed models, and unmapped tools rather than silently dropping behavior. A new field or tool needs an explicit mapping in the kit's `lib/setup/ai.mjs`.
 
 ## The workflow kit
 

@@ -5,10 +5,11 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, storyRange, unreached } from "../lib/screens/list.mjs";
-import { briefs, jobsOf, lookStep, migrate, needsDisplay, reviewCovers, screensHeadless, sessionSteps, shotsFor, splitScreens, stepWord, why } from "../lib/screens/run.mjs";
+import { briefs, migrate, reviewCovers, why } from "../lib/screens/run.mjs";
+import { jobsOf, lookStep, needsDisplay, screensHeadless, sessionSteps, shotsFor, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
 import { afterDefer, afterRun, readState } from "../lib/screens/state.mjs";
 

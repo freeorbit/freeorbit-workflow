@@ -6,9 +6,9 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { processRunner, runnerKind, timeLimit } from "../lib/app/runner.mjs";
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
-import { browserFor, fontArgs, fontFor } from "../lib/platform.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { browserFor, fontArgs, fontFor } from "../lib/config/platform.mjs";
 
 const config = (extra = {}) => merge(DEFAULTS, extra);
 

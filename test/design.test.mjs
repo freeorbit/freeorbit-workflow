@@ -5,8 +5,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { merge } from "../lib/config.mjs";
-import { DEFAULTS } from "../lib/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
+import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { boxArgs, checkSpec, magickText, fit, indexHtml, KIT_KINDS as KINDS, kindsFor, legend, viewerHtml } from "../lib/design/annotate.mjs";
 import { designPaths, findFrame, frameFiles, pickFrames, sectionFolder } from "../lib/design/frames.mjs";
 import { renderArgs } from "../lib/design/index.mjs";
@@ -213,8 +213,8 @@ test("with design.source png, frames are the exported pictures, and render and c
   const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
-  const { merge } = await import("../lib/config.mjs");
-  const { DEFAULTS } = await import("../lib/defaults.mjs");
+  const { merge } = await import("../lib/config/config.mjs");
+  const { DEFAULTS } = await import("../lib/config/defaults.mjs");
   const { designPaths, frameFiles, findFrame } = await import("../lib/design/frames.mjs");
   const root = mkdtempSync(join(tmpdir(), "wf-png-"));
   mkdirSync(join(root, "docs/design/review/review/control-review"), { recursive: true });
