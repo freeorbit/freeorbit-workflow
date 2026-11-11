@@ -83,6 +83,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.40.0: the monday token from a gitignored .env
+
+- `npx wf board` reads `board.tokenEnv` (`MONDAY_API_TOKEN`) from the environment, else from a `.env` at the repo root, so local board commands need no prefix.
+- It reads the `.env` only when git ignores it and does not track it; otherwise it stops and says why. Nothing is written to the environment, and CI still uses the `board` environment's secret.
+- After upgrading, add `.env` to `.gitignore`, then put `MONDAY_API_TOKEN=...` in `.env`, readable only by you.
+
 ### v0.39.0: revisit triggers for untied questions
 
 - A question under "Not tied to a chunk yet" can say when to ask it again: a `Revisit when: ...` line in its `- **Q-NNN.**` detail, or `npx wf question add none ... --revisit "<when>"`. No table changes, so existing logs still pass.

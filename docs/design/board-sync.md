@@ -181,7 +181,7 @@ An optional `board` section; a project without it has no board commands.
 | --- | --- | --- |
 | `board.provider` | `"monday"` | The only provider for now |
 | `board.boardId` | `""` | The client's shareable board's number, from its address |
-| `board.tokenEnv` | `"MONDAY_API_TOKEN"` | The environment variable holding the token, a name such as `MONDAY_API_TOKEN`. The token is never in config |
+| `board.tokenEnv` | `"MONDAY_API_TOKEN"` | The environment variable holding the token, a name such as `MONDAY_API_TOKEN`, also read from a gitignored `.env` at the repo root. The token is never in config |
 | `board.bot.name` | `"Orbit"` | The name the bot signs with |
 | `board.apiVersion` | `"2026-10"` | The monday API version every call sends |
 | `board.branch` | `"main"` | The branch whose pushes run the board-sync workflow |
@@ -212,6 +212,7 @@ An optional `board` section; a project without it has no board commands.
 ## Token and where sync runs
 
 - **The token.** The owner's personal monday API token, named by `board.tokenEnv`: a local environment variable, and in CI a secret of the `board.environment` GitHub Environment, never a repository-wide secret.
+  - Locally, `wf board` reads it from the environment, else from a `.env` at the repo root. It reads the `.env` only when git ignores it and does not track it, and writes nothing to the environment.
 - **Why an environment.** A repository secret is readable by a workflow on any branch a team member pushes. An environment whose deployment branches are only `board.branch` is not.
 - **CI.** `wf github sync` writes `.github/workflows/board-sync.yml` while `board.boardId` is set, and removes it when it is emptied.
   - It runs `wf board sync` on each push to `board.branch`, and by hand.
