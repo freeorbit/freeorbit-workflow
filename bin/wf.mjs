@@ -227,8 +227,7 @@ const commands = {
     const root = projectRoot();
     const config = loadConfig(root);
     if (sub === "add" && args.length === 3) {
-      const today = new Date().toLocaleDateString("sv-SE");
-      console.log(addDecision(root, config, args[0], args[1], args[2], today));
+      console.log(addDecision(root, config, args[0], args[1], args[2], localToday()));
       return 0;
     }
     if (sub === "supersede" && args.length === 2) {
