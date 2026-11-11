@@ -83,6 +83,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.38.0: built screens on story items
+
+- Once a story's Build is Built, its item shows the built app's picture of each screen-list row naming it, in a Built screens file column that sync owns, while `board.show.screenshots` is on, as it is by default.
+- `npx wf board setup --create` makes the column; until then, sync stops with it reported missing.
+- `npx wf screens --accept` now copies each screen's Default picture to `docs/design/built/<area>/<screen>.png` (`design.built`). Commit them, so CI's sync can upload them.
+- `board.screenshots.rows` `"framed"` drops the Screen rows. `board.show.screenshots` `false` turns it all off.
+
 ### v0.37.0: frames on story items
 
 - Each story's item shows the frame pictures whose screen-list row names it, in a Frames file column that sync owns, while `board.show.frames` is on, as it is by default.

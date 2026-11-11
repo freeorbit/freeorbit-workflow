@@ -29,6 +29,7 @@ One item per story, grouped the way the story file groups them.
 | Owner | People | Assigned by hand on the board. `wf board setup` makes it, and sync never reads or writes it |
 | Client review | Status | The client's and the team's say, as in [Client review](#client-review). `wf board setup` makes it once, and sync never reads or writes it |
 | Frames | File | Every frame picture whose screen-list row names the story, in order, as in [Frames](#frames). Sync owns it, while `board.show.frames` is on |
+| Built screens | File | The built app's picture of each screen-list row naming the story, once its Build is Built, as in [Built screens](#built-screens). Sync owns it, while `board.show.screenshots` is on |
 
 ### Client review
 
@@ -125,6 +126,19 @@ Each story's item holds the design frames that show it, so the client sees the s
 - **In plan.** `frames  APP-01 3 to upload (sign-in, sign-in-wait, home)`, `frames  APP-02 clear` when no frame names it any more, and a `skip` note for a frame with no picture.
 - **Cost.** An upload took 2 to 3 seconds and about 100,000 complexity on 2026-11-11, so about 100 a minute; a clear, 30,000. monday removes cleared files from the item.
 
+### Built screens
+
+Once a story is Built, its item also holds the built app's screens that show it, so the client sees what was made beside what was drawn.
+
+- **Which.** Every screen-list row whose Stories name the story, Frame and Screen rows, in screen-list order. `board.screenshots.rows` `"framed"` keeps Frame rows only, if a story's count grows too long.
+- **When.** Only while the story's Build is Built. A story not Built shows none, and one that held some, such as a reopened chunk's, is cleared.
+- **The picture.** `<design.built>/<area>/<screen>.png`, committed, so CI's board sync can upload it. Only a .png inside `design.built` is read, never through a link, and `board.frameMaxBytes` applies.
+- **Where it comes from.** `wf screens --accept` copies each screen's Default picture from that run, `<screen>-wide-default.png`, while the board shows screenshots.
+  - Only screens shot in that run are copied, so the others keep their last accepted picture.
+  - A screen no longer on the screen list, or no longer picked by `rows`, has its picture removed.
+  - The pictures show synthetic test data only, as every screen run does.
+- **Kept in step.** As with frames: `<screen>.<sha8>.png` names, and clear-and-upload on any difference. Plan says `screenshots APP-01 3 to upload (sign-in, home, deep-link)`, `screenshots APP-02 clear`, and a `skip` note for a row with no picture.
+
 ### Delivery notes and client questions
 
 Sync speaks for the team on two more things, each on its `board.show` switch.
@@ -178,8 +192,12 @@ An optional `board` section; a project without it has no board commands.
 | `board.columns.clientReview`, `board.titles.clientReview` | `"client_review"`, `"Client review"` | The Client review column, never synced |
 | `board.reviewLabels`, `board.reviewDone` | the four above, `"Approved"` | Client review's labels when setup makes it, and the one marked done |
 | `board.show.deliveryNotes` | `true` | A note on each story's item when its Build first reaches Built, from the done list's For the client cells |
-| `board.show.frames` | `true` | The Frames column and its pictures; off, sync neither checks the column nor uploads. Later, a screenshot of the built screen |
-| `board.columns.frames`, `board.titles.frames`, `board.frameMaxBytes` | `"frames"`, `"Frames"`, 5,000,000 | The Frames column, and the largest picture uploaded |
+| `board.show.frames` | `true` | The Frames column and its pictures; off, sync neither checks the column nor uploads |
+| `board.columns.frames`, `board.titles.frames`, `board.frameMaxBytes` | `"frames"`, `"Frames"`, 5,000,000 | The Frames column, and the largest frame or screen picture uploaded |
+| `board.show.screenshots` | `true` | The Built screens column and its pictures; off, sync neither checks the column nor uploads, and `wf screens --accept` copies nothing |
+| `board.columns.screenshots`, `board.titles.screenshots` | `"built_screens"`, `"Built screens"` | The Built screens column |
+| `board.screenshots.rows` | `"all"` | The rows a Built story's screens come from: `"all"`, or `"framed"` for Frame rows only |
+| `design.built` | `"docs/design/built"` | Where `wf screens --accept` keeps each screen's built picture, as `<area>/<screen>.png` |
 | `board.show.clientQuestions` | `true` | Open questions the client answers, as updates on their stories |
 | `board.show.analysisSamples` | `false` | Synthetic analysis output, for a product that makes it |
 
@@ -268,4 +286,4 @@ The board shows stories, not the project's internals.
 2. The story reader, and `wf board plan` and `sync`, tested with fixtures and a fake fetch. Built in v0.32.0, with `wf board setup`, and run against the test board.
 3. The CI workflow, through `wf github`, and the PR column from git history. Built in v0.33.0; the workflow is checked by tests only until a project turns it on.
 4. `wf board feedback`, `wf board reply`, and the `board-feedback` skill. Built in v0.34.0; the guest path is checked by tests, since the token's own user posts as a member.
-5. Frames, then screenshots of the built screens.
+5. Frames, then screenshots of the built screens. Frames built in v0.37.0, and built screens in v0.38.0.
