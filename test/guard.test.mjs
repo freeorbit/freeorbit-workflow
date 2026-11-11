@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -50,6 +50,88 @@ test("the e2e tester runs only the app driver, the config, and looks at the app'
   assert.match(call("e2e-tester", "Bash", { command: "grep -rn invoke apps" }), /grep may search only/);
   assert.match(call("e2e-tester", "Bash", { command: "grep -rn invoke" }), /needs a pattern and a path/);
   assert.match(call("e2e-tester", "Bash", { command: "grep -rn invoke docs/plugins/uplink/test-data ../../etc" }), /grep may search only/);
+});
+
+test("the tester's commands cannot reach past their folders through expansion, flags, or quoting (SEC-077, SEC-078)", () => {
+  const refused = [
+    // SEC-077: the shell expands what the guard read as plain text.
+    "head .cache/e2e/..$Z/..$Z/..$Z/..$Z/etc/passwd",
+    "head .cache/e2e/${Z}x",
+    "ls ~",
+    "head .cache/e2e/*",
+    "head .cache/e2e/{a,../../../etc/passwd}",
+    "head .cache/e2e/?",
+    // SEC-077: flags that take a file.
+    "grep -f ~/.ssh/id_rsa .cache/e2e/x",
+    "grep -f /etc/passwd .cache/e2e/x",
+    "grep -rf /etc/passwd .cache/e2e/x",
+    "grep --file=/etc/passwd x .cache/e2e/x",
+    "grep --exclude-from=/etc/passwd x .cache/e2e",
+    "wc --files0-from=/etc/passwd .cache/e2e/x",
+    "file -f /etc/passwd",
+    "file -m /etc/passwd .cache/e2e/x",
+    "grep -R x .cache/e2e",
+    // SEC-077: a secret's name inside the tester's own folders.
+    "head .cache/e2e/.env",
+    "grep x .cache/e2e/id_rsa",
+    // SEC-078: quoting hides --real and the commands a user has not got.
+    `npx wf app start "--real"`,
+    `npx wf app start --re""al`,
+    `npx wf app start --re\\al`,
+    "npx wf app start '--real'",
+    "npx wf app start --real=1",
+    `npx wf app "db" x`,
+    `npx wf app d''b x`,
+    `npx wf app "logs"`,
+    `npx wf app r\\eset`,
+    `n"px" wf app db x`,
+    // An unbalanced quote is not a command we can read.
+    `npx wf app run 'click "Save"`,
+    "head \\",
+  ];
+  for (const command of refused) assert.notEqual(e2eCommand(command, ROOT), null, command);
+  const allowed = [
+    `npx wf app run 'click "I added it"' 'expect Done'`,
+    `npx wf app run "type \\"New address\\" me@example.com"`,
+    "npx wf app start --fresh --scenario gmail-fresh",
+    `grep -rn "### D15." docs/plugins/uplink/test-data`,
+    `grep -n 'a.*b' .cache/e2e/run/out.csv`,
+    "grep -inE 'x.y' .cache/e2e",
+    "head -20 .cache/e2e/run/requests.csv",
+    "wc -l .cache/e2e/run/requests.csv",
+    "file -b .cache/e2e/run/a.png",
+    "ls -la .cache/e2e/run",
+    "ls '.cache/e2e/run one'",
+  ];
+  for (const command of allowed) assert.equal(e2eCommand(command, ROOT, [".cache/e2e", "docs/plugins/uplink/test-data"]), null, command);
+});
+
+test("the tester's paths are checked where they lead, and the designer's agents cannot search outside (SEC-082)", () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-guard-links-")));
+  mkdirSync(join(root, ".cache/e2e/run"), { recursive: true });
+  mkdirSync(join(root, "src"));
+  writeFileSync(join(root, "src/a.rs"), "fn main() {}\n");
+  writeFileSync(join(root, ".cache/e2e/run/out.csv"), "a\n");
+  symlinkSync(join(root, "src/a.rs"), join(root, ".cache/e2e/run/link.csv"));
+  symlinkSync("/etc", join(root, ".cache/e2e/etc"));
+  const at = (agent, tool, input) => decide({ agent_type: agent, tool_name: tool, tool_input: input }, root, CONFIG);
+  assert.equal(at("e2e-tester", "Read", { file_path: join(root, ".cache/e2e/run/out.csv") }), null);
+  assert.match(at("e2e-tester", "Read", { file_path: join(root, ".cache/e2e/run/link.csv") }), /blind/);
+  assert.match(at("e2e-tester", "Read", { file_path: join(root, ".cache/e2e/etc/passwd") }), /blind/);
+  assert.equal(e2eCommand("head .cache/e2e/run/out.csv", root), null);
+  assert.notEqual(e2eCommand("head .cache/e2e/run/link.csv", root), null);
+  assert.notEqual(e2eCommand("head .cache/e2e/etc/passwd", root), null);
+  assert.notEqual(e2eCommand("grep x .cache/e2e/etc", root), null);
+
+  for (const pattern of ["../../../home/*/.ssh/*", "/etc/*", "a/../../x", "**/.env", ".env*", "*.pem", "{a,.env}"]) {
+    assert.match(call("e2e-tester", "Glob", { pattern, path: "/p/.cache/e2e" }), /blind/, pattern);
+  }
+  assert.equal(call("e2e-tester", "Glob", { pattern: "**/*.csv", path: "/p/.cache/e2e" }), null);
+  for (const glob of [".env*", "*.key", "**/id_rsa*", "*.{rs,pem}", "../x/*.csv", "/etc/*"]) {
+    assert.match(call("code-reviewer", "Grep", { pattern: "BEGIN", glob, path: "/p" }), /blind/, glob);
+  }
+  for (const glob of ["*.rs", "*.{rs,toml}", "**/*.mjs"]) assert.equal(call("code-reviewer", "Grep", { pattern: "unsafe", glob, path: "/p/crates" }), null, glob);
+  assert.match(at("e2e-tester", "Grep", { pattern: "x", path: join(root, ".cache/e2e/etc") }), /blind/);
 });
 
 test("the designer, the screen reader, and the reviewer each keep to their own", () => {

@@ -38,6 +38,8 @@ Only these, from the repo root:
 - `npx wf app <command>`: `start --fresh --scenario <name>` (with `--size <screens.narrow>` for the narrow window), `run`, `back`, `text`, `lines`, `screenshot`, `console`, `stop`.
 - `ls`, `head`, `wc`, and `file` on the files the app wrote, in the folder the prompt names.
 - `grep` in the area's `test-data` folder or the prompt's folder, when no Grep tool is there.
+- Name each path in full, and put any text with spaces or symbols in single quotes. The guard refuses `$`, `~`, `*`, `?`, braces, and other text the shell would expand, and any flag but these: `grep -rnilcwvxHhsEFoLq`, `ls -laRh1tSrd`, `head -<lines>`, `wc -lwcm`, `file -bi`.
+- Save a `shot`, `page`, or `screenshot` as a `.png` under `.cache/e2e/` or the app's state folder; the driver refuses any other place.
 
 Never use `db`, `eval` (except for a stub or an app step the docs in `e2e.reads` name, exactly as they give it), or `logs`: a user has none of them. Never use `--real`.
 

@@ -6,7 +6,7 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
-import { ecosystems, holders, ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
+import { ecosystems, holders, installSteps, ruleset, rulesetBlocked, syncGithub } from "../lib/github.mjs";
 import { bypassLine, bypassLines, openNeeds, PR_BODY, signoffs } from "../lib/signoffs.mjs";
 
 const PEOPLE = [
@@ -146,4 +146,31 @@ test("--bypass writes a line for the signed-in admin, and refuses anyone else", 
   assert.throws(() => bypassLine(config(), texts, "why", "2026-11-10", fakeGh({ login: "mallory", admins: ["mallory"] })), /@mallory is not one of/);
   assert.throws(() => bypassLine(config(), texts, " ", "2026-11-10", fakeGh()), /needs a reason/);
   assert.throws(() => bypassLine(config(), [[PR_BODY, "- [ ] needs owner: ship?"]], "why", "2026-11-10", fakeGh()), /no open chunk question/);
+});
+
+test("generated workflows pin every action by commit, and check flags a workflow that does not (SEC-080)", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-github-pins-"));
+  writeFileSync(join(root, "package.json"), "{}");
+  const on = config({ checkWorkflow: true, check: { command: "npm test", setup: ["npm ci"] } }, { board: { boardId: "42" } });
+  syncGithub(root, on, { write: true });
+  for (const file of ["check.yml", "board-sync.yml"]) {
+    const uses = readFileSync(join(root, ".github/workflows", file), "utf8").match(/uses: .*/g);
+    assert.ok(uses.length > 0, file);
+    for (const line of uses) assert.match(line, /^uses: [\w.-]+\/[\w.-]+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/, `${file}: ${line}`);
+  }
+  assert.deepEqual(syncGithub(root, on).problems, []);
+  writeFileSync(join(root, ".github/workflows/mine.yml"), "jobs:\n  a:\n    steps:\n      - uses: actions/checkout@v4\n      - uses: ./local\n      - uses: docker://alpine@sha256:" + "a".repeat(64) + "\n      - uses: \"actions/cache@" + "b".repeat(40) + "\"\n");
+  assert.deepEqual(syncGithub(root, on).problems, [".github/workflows/mine.yml:4: actions/checkout@v4 is not pinned to a commit; use its full SHA with the version as a comment"]);
+});
+
+test("a pnpm project's workflow installs the pnpm its packageManager names, and none is a problem (SEC-080)", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-github-pnpm-"));
+  writeFileSync(join(root, "pnpm-lock.yaml"), "");
+  writeFileSync(join(root, "package.json"), JSON.stringify({ packageManager: "pnpm@12.15.0+sha512.abc" }));
+  assert.deepEqual(installSteps(root), ["npm install --global pnpm@12.15.0", "pnpm install --frozen-lockfile"]);
+  const board = config({}, { board: { boardId: "42" } });
+  syncGithub(root, board, { write: true });
+  assert.match(readFileSync(join(root, ".github/workflows/board-sync.yml"), "utf8"), /- run: npm install --global pnpm@12\.15\.0\n/);
+  writeFileSync(join(root, "package.json"), "{}");
+  assert.deepEqual(syncGithub(root, board, { write: true }).problems, ["package.json: a pnpm project needs packageManager, such as \"pnpm@10.0.0\", so the board-sync workflow installs that pnpm and no other"]);
 });

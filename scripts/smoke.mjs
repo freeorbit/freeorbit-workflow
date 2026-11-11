@@ -10,7 +10,7 @@
 // It uses only synthetic names and example.com addresses, in a throwaway folder.
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -115,8 +115,11 @@ await step("the web driver against a small page", async () => {
   writeFileSync(join(root, ".workflow/config.json"), `${JSON.stringify(config, null, 2)}\n`);
   try {
     expect(wf("app", "start", "--fresh"), "wf app start");
-    const steps = expect(wf("app", "run", 'click "Sign in now"', 'expect "Signed in"', `shot ${join(root, "shot.png")}`, "size mobile", "eval innerWidth"), "wf app run").stdout;
+    // A shot is a .png in .cache/e2e or the state folder (SEC-079); the root's path holds a space, so it is relative.
+    mkdirSync(join(root, ".cache", "e2e"), { recursive: true });
+    const steps = expect(wf("app", "run", 'click "Sign in now"', 'expect "Signed in"', "shot .cache/e2e/shot.png", "size mobile", "eval innerWidth"), "wf app run").stdout;
     if (!/innerWidth: 390/.test(steps)) throw new Error(`the mobile size did not hold:\n${steps}`);
+    if (!existsSync(join(root, ".cache", "e2e", "shot.png"))) throw new Error(`the shot was not saved:\n${steps}`);
     return wf("app", "status").stdout.split("\n").find((line) => line.includes("memory"));
   } finally {
     wf("app", "stop");

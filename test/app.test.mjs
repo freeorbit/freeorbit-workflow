@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, utimesSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { appPage, appSettings, BACK_SCRIPT, chromiumArgs, databasePath, goBack, goScript, headlessFor, psqlCall, startShared, viewport, withLock } from "../lib/app/driver.mjs";
+import { appPage, appSettings, shotPath, BACK_SCRIPT, chromiumArgs, databasePath, goBack, goScript, headlessFor, psqlCall, startShared, viewport, withLock } from "../lib/app/driver.mjs";
 import { clickTarget, groupName } from "../lib/app/clickTarget.mjs";
 import { evalSource, words } from "../lib/app/page.mjs";
 import { merge } from "../lib/config.mjs";
@@ -224,4 +224,22 @@ test("withLock: a lock left by a killed run is taken over once stale, and one he
   assert.equal(await withLock(dir, async () => "ran", { staleMs: 5_000 }), "ran");
   mkdirSync(dir);
   await assert.rejects(withLock(dir, async () => "ran", { waitMs: 0, pause: async () => {} }), /held by another start/);
+});
+
+test("a shot, a page, or a screenshot is a .png in the run's state folder or a .cache picture folder, never through a link (SEC-079)", () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-shot-")));
+  const state = join(root, "state");
+  mkdirSync(join(root, ".cache/e2e/run"), { recursive: true });
+  mkdirSync(state);
+  const s = { root, state };
+  assert.equal(shotPath(s, join(state, "a.png")), join(state, "a.png"));
+  assert.equal(shotPath(s, ".cache/e2e/run/a.png"), join(root, ".cache/e2e/run/a.png"));
+  assert.equal(shotPath(s, join(root, ".cache/e2e/b.png")), join(root, ".cache/e2e/b.png"));
+  assert.equal(shotPath(s, ".cache/screens/latest/home-wide.png"), join(root, ".cache/screens/latest/home-wide.png"));
+  writeFileSync(join(root, "target.png"), "");
+  symlinkSync(join(root, "target.png"), join(state, "link.png"));
+  symlinkSync(root, join(root, ".cache/e2e/up"));
+  for (const out of ["/home/u/.bashrc", "/home/u/a.png", join(root, "src/a.png"), join(state, "state.json"), join(state, "data/app.db"), join(state, "../x.png"), ".cache/e2e/../a.png", join(state, "link.png"), ".cache/e2e/up/a.png", ""]) {
+    assert.throws(() => shotPath(s, out), /\.png|link|state folder/, out);
+  }
 });

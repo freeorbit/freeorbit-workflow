@@ -13,7 +13,7 @@
 // Input: the hook's JSON on stdin. Output: a deny decision on stdout, or
 // nothing to let the call go on.
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, join, normalize, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -40,6 +40,7 @@ export const WEB_DOMAINS = [
  * as deny rules for Claude Code's settings and OpenCode's agents (W-11).
  */
 export const SECRET_GLOBS = [".env", ".env.*", "*.pem", "*.key", "*.p12", "*.pfx", "id_rsa*", "id_ed25519*", "id_ecdsa*"];
+// A command that chains, pipes, redirects, or substitutes could run anything.
 // A command that chains, pipes, redirects, or substitutes could run anything.
 const SHELL_META = /[;&|`<>\n\r]|\$\(/;
 
@@ -75,6 +76,92 @@ export function inside(root, path) {
   return rel.startsWith("..") || isAbsolute(rel) ? null : rel === "." ? "" : rel;
 }
 
+const realRoot = (root) => {
+  try {
+    return realpathSync(root);
+  } catch {
+    return root;
+  }
+};
+
+/**
+ * A project path as the path it really leads to, through any link on the way
+ * (SEC-082), or null when that is outside the project. The part that does not
+ * exist yet is kept as written, after the deepest part that does.
+ */
+export function where(root, path) {
+  const rel = inside(root, path);
+  if (rel === null) return null;
+  const parts = rel ? rel.split("/") : [];
+  for (let n = parts.length; n >= 0; n -= 1) {
+    const head = join(root, ...parts.slice(0, n));
+    if (!existsSync(head)) continue;
+    let real;
+    try {
+      real = realpathSync(head);
+    } catch {
+      return null;
+    }
+    return inside(realRoot(root), join(real, ...parts.slice(n)));
+  }
+  return rel;
+}
+
+/** A path inside the project, through its links, that is in one of `dirs` and names no secret; else null. */
+function allowedIn(root, path, dirs) {
+  const rel = where(root, path);
+  if (rel === null || isSecret(rel) || isSecret(inside(root, path))) return null;
+  return dirs.some((dir) => dir === "**" || rel === dir || rel.startsWith(`${dir}/`)) ? rel : null;
+}
+
+// A tool's own glob, as a search pattern: ** any depth, * and ? within a name, [...] a class.
+const searchGlob = (pattern) => {
+  let out = "";
+  for (let i = 0; i < pattern.length; i += 1) {
+    const c = pattern[i];
+    if (c === "*" && pattern[i + 1] === "*") {
+      out += ".*";
+      i += pattern[i + 2] === "/" ? 2 : 1;
+    } else if (c === "*") out += "[^/]*";
+    else if (c === "?") out += "[^/]";
+    else if (c === "[") {
+      const end = pattern.indexOf("]", i + 2);
+      if (end < 0) out += "\\[";
+      else {
+        out += `[${pattern.slice(i + 1, end).replace(/^!/, "^").replace(/\\/g, "\\\\")}]`;
+        i = end;
+      }
+    } else out += c.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+  }
+  return new RegExp(`^${out}$`);
+};
+
+// One level of {a,b} at a time, so *.{rs,pem} is checked as *.rs and *.pem.
+const braces = (pattern) => {
+  const m = pattern.match(/^(.*?)\{([^{}]*)\}(.*)$/);
+  return m ? m[2].split(",").flatMap((alt) => braces(`${m[1]}${alt}${m[3]}`)) : [pattern];
+};
+
+const SECRET_NAMES = [".env", ".env.local", "server.pem", "server.key", "cert.p12", "cert.pfx", "id_rsa", "id_rsa.pub", "id_ed25519", "id_ecdsa"];
+const PLAIN_NAMES = ["a.rs", "main.mjs", "README.md", "notes.txt", "Cargo.toml", "data.csv", "shot.png"];
+
+/**
+ * Why a Glob pattern or a Grep glob is refused, or null (SEC-082): it may not
+ * leave its folder, and it may not pick out the files SECRET_GLOBS names. A
+ * pattern that matches ordinary files as well, such as *, is left to the folder check.
+ */
+export function patternProblem(pattern) {
+  if (pattern === undefined || pattern === null || pattern === "") return null;
+  const text = String(pattern);
+  if (isAbsolute(text) || text.startsWith("~")) return `the pattern ${text} starts outside the folder`;
+  for (const alt of braces(text)) {
+    if (alt.split("/").includes("..")) return `the pattern ${text} climbs out of the folder`;
+    const name = searchGlob(alt.split("/").pop());
+    if (SECRET_NAMES.some((file) => name.test(file)) && !PLAIN_NAMES.some((file) => name.test(file))) return `the pattern ${text} picks out files that may hold a secret`;
+  }
+  return null;
+}
+
 /** What each agent may read, as globs from the project root, and whether it may search a folder. */
 export function policies(config) {
   const areas = (config.areas ?? []).filter((area) => area.docs);
@@ -99,46 +186,91 @@ export function policies(config) {
   };
 }
 
-/** A command split into words, keeping "quoted words" together. */
+
+// Outside quotes the shell expands these, or reads them as syntax, so the
+// guard would check text other than what runs (SEC-077).
+const EXPANDS = new Set(["$", "~", "{", "}", "*", "?", "[", "]", "(", ")", "#", "!", "`"]);
+
+/**
+ * A command split into words as the shell reads them: quoted parts joined to
+ * their neighbours, quotes removed, and backslashes undone (SEC-078). Returns
+ * the words, or a string saying why the command cannot be read safely: an
+ * unbalanced quote, or anything the shell would expand.
+ */
 export function shellWords(text) {
   const out = [];
-  for (const m of text.matchAll(/"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+)/g)) out.push(m[1] ?? m[2] ?? m[3]);
+  let word = null;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    if (c === " " || c === "\t") {
+      if (word !== null) out.push(word);
+      word = null;
+      continue;
+    }
+    word ??= "";
+    if (c === "'") {
+      const end = text.indexOf("'", i + 1);
+      if (end < 0) return "it has an unbalanced quote";
+      word += text.slice(i + 1, end);
+      i = end;
+    } else if (c === '"') {
+      let j = i + 1;
+      for (; j < text.length && text[j] !== '"'; j += 1) {
+        if (text[j] === "$" || text[j] === "`") return "it expands a variable or a command inside double quotes; use single quotes";
+        if (text[j] === "\\" && j + 1 < text.length && '$`"\\'.includes(text[j + 1])) j += 1;
+        word += text[j];
+      }
+      if (j >= text.length) return "it has an unbalanced quote";
+      i = j;
+    } else if (c === "\\") {
+      if (i + 1 >= text.length) return "it ends in a backslash";
+      i += 1;
+      word += text[i];
+    } else if (EXPANDS.has(c)) return `the shell would expand its ${c}; quote it, or name the path in full`;
+    else word += c;
+  }
+  if (word !== null) out.push(word);
   return out;
 }
+
+// The flags each looking command may take, none of which reads a file or a
+// name list (SEC-077); any other flag, long ones included, is refused.
+const FLAGS = {
+  grep: /^-[rnilcwvxHhsEFoLq]+$/,
+  ls: /^-[laRh1tSrd]+$/,
+  head: /^-\d+$/,
+  wc: /^-[lwcm]+$/,
+  file: /^-[bi]+$/,
+};
 
 /** Whether a Bash command is one the e2e tester may run, or why not. `search` is the folders it may search. */
 export function e2eCommand(command, root, search = [".cache/e2e"]) {
   const text = String(command ?? "").trim();
   if (SHELL_META.test(text)) return "it chains, pipes, redirects, or substitutes; run one command at a time";
-  if (/^npx wf config$/.test(text)) return null;
-  const app = text.match(/^(?:npx wf app|pnpm -s app|pnpm app) (\S+)/);
-  if (app) {
-    if (["db", "logs", "reset"].includes(app[1])) return `wf app ${app[1]} is not something a user has`;
-    if (/(^|\s)--real(\s|$)/.test(text)) return "--real would open the user's real data";
+  const words = shellWords(text);
+  if (typeof words === "string") return words;
+  const [first, ...rest] = words;
+  if (words.join(" ") === "npx wf config") return null;
+  const lead = first === "npx" && rest[0] === "wf" && rest[1] === "app" ? 3 : first === "pnpm" && rest[0] === "app" ? 2 : first === "pnpm" && rest[0] === "-s" && rest[1] === "app" ? 3 : 0;
+  if (lead && words[lead] !== undefined) {
+    const sub = words[lead];
+    if (["db", "logs", "reset"].includes(sub)) return `wf app ${sub} is not something a user has`;
+    if (words.some((word) => word === "--real" || word.startsWith("--real="))) return "--real would open the user's real data";
     return null;
   }
+  const flags = FLAGS[first];
+  if (!flags) return "the tester runs only npx wf app, npx wf config, grep in its own folders, and ls, head, wc, or file on the files the app wrote";
+  const bad = rest.find((word) => word.startsWith("-") && word !== "-" && !flags.test(word));
+  if (bad) return `${first} may not take ${bad}: the flags it may use read no other file`;
+  const plain = rest.filter((word) => !(word.startsWith("-") && word !== "-"));
   // Some Claude Code builds have no Grep tool, so the tester searches with grep, in its own folders only.
-  if (/^grep\s/.test(text)) {
-    const words = shellWords(text).slice(1);
-    const rest = words.filter((word) => !/^-[A-Za-z]+$/.test(word));
-    const paths = rest.slice(1);
-    if (!rest[0] || paths.length === 0) return "grep needs a pattern and a path inside the folders it may search";
-    const outside = paths.find((path) => {
-      const rel = inside(root, path);
-      return rel === null || !search.some((dir) => rel === dir || rel.startsWith(`${dir}/`));
-    });
-    return outside ? `grep may search only ${search.join(", ")}` : null;
+  if (first === "grep") {
+    const paths = plain.slice(1);
+    if (!plain[0] || paths.length === 0) return "grep needs a pattern and a path inside the folders it may search";
+    return paths.every((path) => allowedIn(root, path, search) !== null) ? null : `grep may search only ${search.join(", ")}, and no file that may hold a secret`;
   }
-  const look = text.match(/^(ls|head|wc|file)((?:\s+-\w+)*)\s+(.+)$/);
-  if (look) {
-    const paths = look[3].split(/\s+/).filter((part) => !part.startsWith("-"));
-    const outside = paths.find((path) => {
-      const rel = inside(root, path.replace(/^['"]|['"]$/g, "")) ?? "";
-      return !(rel === ".cache/e2e" || rel.startsWith(".cache/e2e/"));
-    });
-    return outside ? `${look[1]} may look only at the files the app wrote, under .cache/e2e/` : null;
-  }
-  return "the tester runs only npx wf app, npx wf config, grep in its own folders, and ls, head, wc, or file on the files the app wrote";
+  if (plain.length === 0) return `${first} needs a path under .cache/e2e/`;
+  return plain.every((path) => allowedIn(root, path, [".cache/e2e"]) !== null) ? null : `${first} may look only at the files the app wrote, under .cache/e2e/`;
 }
 
 /** The decision for one tool call: null to let it go on, or the reason it is denied. */
@@ -153,16 +285,21 @@ export function decide(input, root, config) {
 
   if (["Edit", "Write", "NotebookEdit", "MultiEdit"].includes(tool)) return deny("it never edits a file");
   if (tool === "Read") {
-    const path = inside(root, args.file_path);
-    if (path === null) return deny(`${args.file_path} is outside the project`);
-    if (isSecret(path)) return deny(`${path} may hold a secret`);
+    if (inside(root, args.file_path) === null) return deny(`${args.file_path} is outside the project`);
+    // Where the path leads, through any link, is what is read (SEC-082).
+    const path = where(root, args.file_path);
+    if (path === null) return deny(`${args.file_path} leads outside the project`);
+    if (isSecret(path) || isSecret(inside(root, args.file_path))) return deny(`${path} may hold a secret`);
     return policy.read.some((pattern) => glob(pattern).test(path)) ? null : deny(`${path} is not among what it may read`);
   }
   if (tool === "Grep" || tool === "Glob") {
-    const path = inside(root, args.path ?? root);
-    if (path === null) return deny(`${args.path} is outside the project`);
-    if (isSecret(path)) return deny(`${path} may hold a secret`);
-    const ok = policy.search.some((pattern) => pattern === "**" || path === pattern || path.startsWith(`${pattern}/`));
+    if (inside(root, args.path ?? root) === null) return deny(`${args.path} is outside the project`);
+    const path = where(root, args.path ?? root);
+    if (path === null) return deny(`${args.path} leads outside the project`);
+    if (isSecret(path) || isSecret(inside(root, args.path ?? root))) return deny(`${path} may hold a secret`);
+    const pattern = patternProblem(tool === "Glob" ? args.pattern : args.glob);
+    if (pattern) return deny(pattern);
+    const ok = policy.search.some((dir) => dir === "**" || path === dir || path.startsWith(`${dir}/`));
     return ok ? null : deny(`search only in ${policy.search.join(", ") || "nothing"}, with that as the path`);
   }
   if (tool === "Bash") {

@@ -216,7 +216,10 @@ test("the workflow installs with the project's own package manager, from its loc
     if (file) writeFileSync(join(root, file), "");
     return root;
   };
-  assert.deepEqual(installSteps(dir("pnpm-lock.yaml")), ["npm install --global pnpm", "pnpm install --frozen-lockfile"]);
+  const pnpm = dir("pnpm-lock.yaml");
+  assert.throws(() => installSteps(pnpm), /needs packageManager/, "never the newest pnpm (SEC-080)");
+  writeFileSync(join(pnpm, "package.json"), JSON.stringify({ packageManager: "pnpm@10.4.1" }));
+  assert.deepEqual(installSteps(pnpm), ["npm install --global pnpm@10.4.1", "pnpm install --frozen-lockfile"]);
   assert.deepEqual(installSteps(dir("yarn.lock")), ["corepack enable", "yarn install --frozen-lockfile"]);
   assert.deepEqual(installSteps(dir("package-lock.json")), ["npm ci"]);
   assert.deepEqual(installSteps(dir(null)), ["npm install"]);
