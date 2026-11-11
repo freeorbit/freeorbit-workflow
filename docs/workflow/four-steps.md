@@ -83,6 +83,7 @@ Before anything in a chunk is built, run `npx wf doc:facts status` for where thi
 - Put any story added or changed since the last chunk start into the [build order](build-order.md#making-or-updating-an-areas-order): an existing chunk or a new row. Move this chunk's row to In progress.
 - If the chunk builds on an outside service, make one real call first and read that service's rules for clients. A stand-in proves only what it was told. The chunk that first uses an outside thing also builds its stand-in, so a scenario can reach the screens behind it. A test-only stub is not enough.
 - With the design plugin's screen review, run `npx wf screens --gate <this>`. It lists each frame showing this chunk's stories that no Reach opens. Each one is reached in this chunk, or, with the designer's yes in the questions below, waits on a later chunk named in its Reach.
+- Read the status's `Revisit` lines. Each untied question whose trigger may now hold goes to its role in the questions below, and one that holds moves under this chunk's heading. Give a trigger to each question under `No revisit trigger`, or ask its role for one.
 
 <!-- wf:local chunk-start -->
 

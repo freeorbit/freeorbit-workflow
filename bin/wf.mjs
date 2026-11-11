@@ -19,7 +19,7 @@
 //   wf board <setup [--create] | plan | sync | feedback [--json] | reply <id> <Q-ID ...|--noted>>   the client's monday.com board
 //   wf signoffs [--bypass "<reason>"]   the questions this branch still waits on, or an admin's bypass of them
 //   wf decision add <file> "<decision>" "<why>" | supersede <ID> <by ID>   the decisions log
-//   wf question add <chunk | none> "<question>" <needs> "<from>" [story] | resolve <Q-ID> "<decision>"   the open questions log
+//   wf question add <chunk | none> "<question>" <needs> "<from>" [story] [--revisit "<when>"] | resolve <Q-ID> "<decision>"   the open questions log
 //   wf release <next | check | set | verify> ...   the project's release commands
 //   wf ready <quick | chunk | area> [chunk]   what a track needs before work starts
 //   wf done <quick | chunk | area> [chunk]    what a track needs before its pull request
@@ -240,14 +240,17 @@ const commands = {
     return 2;
   },
 
-  async question([sub, ...args]) {
+  async question([sub, ...rest]) {
     const root = projectRoot();
     const config = loadConfig(root);
     const today = localToday();
-    if (sub === "add" && (args.length === 4 || args.length === 5)) {
+    const flag = rest.indexOf("--revisit");
+    const revisit = flag === -1 ? "" : rest[flag + 1] ?? "";
+    const args = flag === -1 ? rest : rest.filter((_, i) => i !== flag && i !== flag + 1);
+    if (sub === "add" && (args.length === 4 || args.length === 5) && (flag === -1 || revisit)) {
       const [chunk, question, needs, from, story = "none"] = args;
       const row = chunk === "none" ? null : findChunk([config.buildOrder.file, config.buildOrder.done].map((path) => (existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "")), chunk);
-      console.log(addQuestion(root, config, { chunk, question, needs, from, story, date: today, title: row?.title ?? "" }));
+      console.log(addQuestion(root, config, { chunk, question, needs, from, story, date: today, title: row?.title ?? "", revisit }));
       return 0;
     }
     if (sub === "resolve" && args.length === 2) {
@@ -255,7 +258,7 @@ const commands = {
       console.log(`${row.id} moved to ${config.logs.questionsResolved}`);
       return 0;
     }
-    console.log('Usage: wf question add <chunk | none> "<question>" <needs role> "<from: role or client (<channel>)>" [story IDs]   or   wf question resolve <Q-ID> "<D-IDs or none: why>"');
+    console.log('Usage: wf question add <chunk | none> "<question>" <needs role> "<from: role or client (<channel>)>" [story IDs] [--revisit "<when to ask again>"]   or   wf question resolve <Q-ID> "<D-IDs or none: why>"');
     return 2;
   },
 

@@ -86,6 +86,8 @@ Change the ledger only with `npx wf ledger`; it keeps every row in step and refu
 
 Ask once, in batches up to the question tool's limit, one question per new or changed finding: its ID, severity, title, and evidence in a line. Options are Accept, Defer, and Reject, plus Accept risk for a `SEC-` or `DEP-` finding. Recommend one and say why.
 
+In the same batch, read the `Revisit` lines of `npx wf doc:facts status` against this run's findings. Where a trigger now holds, such as a kind of finding it names coming up again, ask that question's role whether it moves under the chunk.
+
 Write each answer as its Status and a Decision of `<note>, <date>`. An accepted `STD-` finding adds its rule to the rubric, with the date, and becomes `verified`. Accepted findings are work: fix the small ones in this chunk with the reviewer's yes, and propose a larger one as a session of its own.
 
 ## 6. Close
