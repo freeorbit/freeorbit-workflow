@@ -4,7 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { appPage, appSettings, shotPath, BACK_SCRIPT, chromiumArgs, databasePath, goBack, goScript, headlessFor, psqlCall, startShared, viewport, withLock } from "../lib/app/driver.mjs";
+import { appPage, appSettings, chromiumArgs, databasePath, headlessFor, psqlCall, shotPath, viewport } from "../lib/app/appsettings.mjs";
+import { BACK_SCRIPT, goBack, goScript } from "../lib/app/inspector.mjs";
+import { startShared, withLock } from "../lib/app/start.mjs";
 import { clickTarget, groupName } from "../lib/app/clickTarget.mjs";
 import { evalSource, words } from "../lib/app/page.mjs";
 import { merge } from "../lib/config.mjs";

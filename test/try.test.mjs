@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { appSettings } from "../lib/app/driver.mjs";
+import { appSettings } from "../lib/app/appsettings.mjs";
 import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { againCommand, parseArgs, runTry, tryHome } from "../lib/try/index.mjs";
