@@ -7,7 +7,7 @@ import { join } from "node:path";
 
 import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
-import { boxArgs, checkSpec, fit, indexHtml, KIT_KINDS as KINDS, kindsFor, legend, viewerHtml } from "../lib/design/annotate.mjs";
+import { boxArgs, checkSpec, magickText, fit, indexHtml, KIT_KINDS as KINDS, kindsFor, legend, viewerHtml } from "../lib/design/annotate.mjs";
 import { designPaths, findFrame, frameFiles, pickFrames, sectionFolder } from "../lib/design/frames.mjs";
 import { renderArgs } from "../lib/design/index.mjs";
 import { changed, frames, grid, picture, screenLists, storyboard } from "../lib/design/storyboard.mjs";
@@ -31,6 +31,11 @@ test("a spec that cannot be drawn says what is wrong", () => {
     [{ pictures: [{ frame: "f", boxes: [{ rect: [0, 0, 1] }] }] }, /four numbers/],
     [{ pictures: [{ frame: "f", boxes: [{}] }] }, /a selector or a rect/],
     [{ pictures: [{ image: "x.png", boxes: [{ selector: ".a" }] }] }, /screenshot, so its boxes are rects/],
+    // SEC-083: a label and a box number reach ImageMagick, which reads @file and expands %.
+    [{ pictures: [{ label: "@/home/u/.ssh/id_rsa", frame: "f" }] }, /one to three capital letters or digits/],
+    [{ pictures: [{ label: "%[pixel:p]", frame: "f" }] }, /one to three capital letters or digits/],
+    [{ pictures: [{ label: "ABCD", frame: "f" }] }, /one to three capital letters or digits/],
+    [{ pictures: [{ frame: "f", boxes: [{ n: "@x", rect: [0, 0, 1, 1] }] }] }, /a whole number/],
   ];
   for (const [spec, message] of bad) assert.throws(() => checkSpec(spec), message);
 });
@@ -284,4 +289,11 @@ test("the question-pictures server is added to launch.json once, and a sheet und
   assert.equal(viewAddress("/p", "/tmp/sheet.html"), null);
   assert.throws(() => withViewServer("[]"), /launch.json is not an object/);
   assert.throws(() => withViewServer("null"), /launch.json is not an object/);
+});
+
+test("text bound for ImageMagick cannot read a file or expand an escape (SEC-083)", () => {
+  assert.equal(magickText("@/home/u/.ssh/id_rsa"), "\\@/home/u/.ssh/id_rsa");
+  assert.equal(magickText("A   100% %[pixel:p] a\\n"), "A   100%% %%[pixel:p] a\\\\n");
+  assert.equal(magickText("A   gm-accounts"), "A   gm-accounts");
+  assert.deepEqual(checkSpec({ pictures: [{ label: "B2", frame: "f", boxes: [{ n: 12, rect: [0, 0, 1, 1] }] }] }).pictures[0].label, "B2");
 });

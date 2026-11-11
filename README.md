@@ -85,6 +85,14 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.42.0: a tighter blind-agent guard, pinned workflows, fenced client comments
+
+- The e2e tester's Bash guard reads a command as the shell does, refuses anything the shell would expand (`$`, `~`, `*`, `?`, braces), allows only flags that read no other file, and checks every path, through links, against its folders and the secret names. Quoting no longer hides `--real`, `db`, `logs`, or `reset`. Read, Grep, and Glob check where a path leads, and a Glob pattern or Grep glob may not leave its folder or pick out secret files.
+- `wf app` saves a `shot`, `page`, or `screenshot` only as a `.png` under the run's state folder, `.cache/e2e/`, or `.cache/screens/`, never through a link.
+- The generated check and board-sync workflows pin `actions/checkout` and `actions/setup-node` by commit, and install the pnpm that `package.json`'s `packageManager` names. `wf github check` flags any workflow `uses:` not pinned to a full commit SHA.
+- `wf board feedback` cuts each client comment at 2000 characters and prints it fenced as data; `wf design annotate` takes only labels of one to three capital letters or digits, and escapes text for ImageMagick.
+- After upgrading, run `npx wf github sync`, then `npx wf github check`, and pin any `uses:` it lists. A pnpm project with a board needs `packageManager` in `package.json`.
+
 ### v0.41.0: an overview of how the pieces fit
 
 - `docs/workflow/overview.md` shows, in four diagrams, how the plugins, the `wf` command, the docs, GitHub, the app, and the client board fit together, an area's four steps, a chunk from start to the client board, and the board's feedback loop.

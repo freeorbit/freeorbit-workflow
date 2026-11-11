@@ -1,0 +1,12 @@
+# gitleaks reads this file from the repo root. The board tests pass a synthetic
+# monday token, tok-0123456789abcdef, which is no one's secret (SEC-084). Only
+# that exact value is allowed, so any other token, in test/ or not, still shows.
+# No path is named: some gitleaks builds read paths and regexes as either-or,
+# which would hide every secret under test/.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "The board tests' synthetic monday token"
+regexTarget = "secret"
+regexes = ['''^tok-0123456789abcdef$''']
