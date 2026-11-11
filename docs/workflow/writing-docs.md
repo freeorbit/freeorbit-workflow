@@ -103,6 +103,7 @@ Where each note goes is the table in [AGENTS.md](../../AGENTS.md).
 - **From.** Who raised it: a role, or `client (<channel>)`.
 - **Story.** The story IDs it touches, or `none`. **Raised** is the date.
 - **Detail.** The Question cell is one short sentence. More goes in one bullet per ID under the table, `- **Q-012.** ...`, with sub-bullets if needed.
+- **Revisit.** An untied question blocks nothing, so its detail says when to ask it again: a `Revisit when: ...` line on its bullet or a sub-bullet, or `--revisit "<when>"` on `npx wf question add`. `npx wf doc:facts status` lists each trigger for chunk start and the code review, and names the untied questions with none.
 - **Answered.** In the same pass, the answer goes in the decisions log, and `npx wf question resolve <ID> "<D-IDs or none: why>"` moves the row to the resolved log with the date. Nothing ticked stays in the open log, and `npx wf doc:check` fails one.
 - Do not record a tech stack, a library, or an architecture boundary as a decision before Step 3 of that area.
 

@@ -8,7 +8,8 @@ import { fileURLToPath } from "node:url";
 import { merge } from "../lib/config.mjs";
 import { DEFAULTS } from "../lib/defaults.mjs";
 import { emptyOpen, emptyResolved } from "../lib/questions.mjs";
-import { addQuestion, blockingRows, insertRow, looseBullets, nextId, questionCounts, questionProblems, questionRows, resolveQuestion } from "../lib/questions.mjs";
+import { addQuestion, blockingRows, insertRow, looseBullets, nextId, questionCounts, questionProblems, questionRows, resolveQuestion, revisitTriggers, untiedRows } from "../lib/questions.mjs";
+import { status } from "../lib/docs/facts.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/questions", name), "utf8");
@@ -149,4 +150,68 @@ test("add assigns the next ID and refuses a bad cell; resolve moves the row, its
   assert.throws(() => resolveQuestion(root, config(), "Q-014", "because", "2026-11-16"), /decision IDs/);
   assert.throws(() => resolveQuestion(root, config(), "Q-099", "D-REV-001", "2026-11-16"), /Q-099 is not in/);
   assert.deepEqual(check({ [OPEN]: open, [RESOLVED]: readFileSync(join(root, RESOLVED), "utf8") }), []);
+});
+
+const UNTIED_LOG = [
+  "# Open questions",
+  "",
+  "## CH-03: Risk register",
+  "",
+  "| ID | Question | Needs | From | Story | Raised |",
+  "| --- | --- | --- | --- | --- | --- |",
+  "| Q-012 | Which fields does the import keep? | owner | owner | none | 2026-11-14 |",
+  "",
+  "- **Q-012.** Revisit when: never read, since a chunk's question comes back at its chunk.",
+  "",
+  "## Not tied to a chunk yet",
+  "",
+  "| ID | Question | Needs | From | Story | Raised |",
+  "| --- | --- | --- | --- | --- | --- |",
+  "| Q-014 | When does inviting users become a story? | owner | owner | none | 2026-11-10 |",
+  "| Q-015 | When does the code get a linter? | developer | owner | none | 2026-11-11 |",
+  "| Q-016 | When is the board public? | owner | owner | none | 2026-11-11 |",
+  "",
+  "- **Q-014.** Revisit when: email sending is built.",
+  "- **Q-015.** Not yet, from a check on 2026-11-11.",
+  "  - Revisit when: a lint-catchable finding comes up twice.",
+  "  - Revisit when: a second trigger is ignored; the first one counts.",
+  "- **Q-016.** No trigger here.",
+  "Revisit when: a line outside any detail is not a trigger.",
+  "",
+].join("\n");
+
+test("a revisit trigger is read from a question's detail bullet or a sub-bullet, first one only", () => {
+  assert.deepEqual(Object.fromEntries(revisitTriggers(UNTIED_LOG)), {
+    "Q-012": "never read, since a chunk's question comes back at its chunk.",
+    "Q-014": "email sending is built.",
+    "Q-015": "a lint-catchable finding comes up twice.",
+  });
+  assert.deepEqual(untiedRows(UNTIED_LOG).map((row) => `${row.id} ${row.role} ${row.revisit}`), [
+    "Q-014 owner email sending is built.",
+    "Q-015 developer a lint-catchable finding comes up twice.",
+    "Q-016 owner null",
+  ]);
+  assert.deepEqual(check({ [OPEN]: UNTIED_LOG.replace(/^Revisit when: a line.*\n/m, "") }), [], "triggers pass doc:check");
+});
+
+test("add --revisit writes the trigger bullet for an untied question, and refuses one under a chunk", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-questions-"));
+  mkdirSync(join(root, "docs/log"), { recursive: true });
+  writeFileSync(join(root, OPEN), emptyOpen({ decisions: "decisions", resolved: "questions-resolved.md" }));
+  const first = addQuestion(root, config(), { chunk: "none", question: "When does the code get a linter?", needs: "developer", from: "owner", date: "2026-11-11", revisit: "a finding  comes\nup twice" });
+  const second = addQuestion(root, config(), { chunk: "none", question: "When is the board public?", needs: "owner", from: "owner", date: "2026-11-11", revisit: "the client asks" });
+  addQuestion(root, config(), { chunk: "none", question: "No trigger?", needs: "owner", from: "owner", date: "2026-11-11" });
+  const text = readFileSync(join(root, OPEN), "utf8");
+  assert.match(text, /\| Q-003 \| No trigger\? .*\|\n\n- \*\*Q-001\.\*\* Revisit when: a finding comes up twice\n- \*\*Q-002\.\*\* Revisit when: the client asks\n$/);
+  assert.deepEqual(untiedRows(text).map((row) => `${row.id} ${row.revisit}`), [`${first} a finding comes up twice`, `${second} the client asks`, "Q-003 null"]);
+  assert.deepEqual(check({ [OPEN]: text }), []);
+  assert.throws(() => addQuestion(root, config(), { chunk: "CH-01", question: "Q?", needs: "owner", from: "owner", date: "2026-11-11", revisit: "later" }), /only|untied/);
+});
+
+test("doc:facts status lists each untied question's trigger and names those with none", async () => {
+  const lines = await status({ root: tmpdir(), config: config(), tracked: [OPEN], files: () => UNTIED_LOG });
+  assert.ok(lines.includes("  Revisit Q-014 (owner) when: email sending is built."), lines.join("\n"));
+  assert.ok(lines.includes("  Revisit Q-015 (developer) when: a lint-catchable finding comes up twice."));
+  assert.ok(lines.includes("  No revisit trigger: Q-016"));
+  assert.ok(!lines.some((line) => line.includes("Q-012")), "a chunk's question is not listed");
 });
