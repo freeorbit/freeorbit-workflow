@@ -1,6 +1,6 @@
 {
   "name": "freeorbit-workflow",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "description": "The Freeorbit agent workflow: Claude Code and OpenCode plugins, and the scripts they run.",
   "license": "MIT",
   "type": "module",
