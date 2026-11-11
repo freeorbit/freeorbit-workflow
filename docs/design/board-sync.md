@@ -28,6 +28,7 @@ One item per story, grouped the way the story file groups them.
 | PR | Link | The pull request of the story's lane finished last, as in [PR links](#pr-links) |
 | Owner | People | Assigned by hand on the board. `wf board setup` makes it, and sync never reads or writes it |
 | Client review | Status | The client's and the team's say, as in [Client review](#client-review). `wf board setup` makes it once, and sync never reads or writes it |
+| Frames | File | Every frame picture whose screen-list row names the story, in order, as in [Frames](#frames). Sync owns it, while `board.show.frames` is on |
 
 ### Client review
 
@@ -114,6 +115,16 @@ All in the core plugin, beside `wf question` and `wf decision`.
   - monday's threads are one level deep, so a comment is handled when a bot reply sits in its thread after it. A later guest comment there is new again.
   - A comment whose `updated_at` is after its bot reply is listed as edited, with the Q-IDs the reply named, and is never logged twice.
 
+### Frames
+
+Each story's item holds the design frames that show it, so the client sees the screens beside the story.
+
+- **Which.** Every row of a screens.md table headed Frame whose Stories name the story, in screen-list order. A table headed Screen has no picture.
+- **The picture.** `<design.review>/<area>/<section>/<frame>.png`, found under its area. Only a .png inside `design.review` is read, never through a link, and one over `board.frameMaxBytes` is skipped with a note.
+- **Kept in step.** Each upload is named `<frame>.<sha8>.png`, from the picture's sha256. When the names on the item differ from the wanted ones, in set, order, or content, sync clears the column and uploads the set again.
+- **In plan.** `frames  APP-01 3 to upload (sign-in, sign-in-wait, home)`, `frames  APP-02 clear` when no frame names it any more, and a `skip` note for a frame with no picture.
+- **Cost.** An upload took 2 to 3 seconds and about 100,000 complexity on 2026-11-11, so about 100 a minute; a clear, 30,000. monday removes cleared files from the item.
+
 ### Delivery notes and client questions
 
 Sync speaks for the team on two more things, each on its `board.show` switch.
@@ -167,7 +178,8 @@ An optional `board` section; a project without it has no board commands.
 | `board.columns.clientReview`, `board.titles.clientReview` | `"client_review"`, `"Client review"` | The Client review column, never synced |
 | `board.reviewLabels`, `board.reviewDone` | the four above, `"Approved"` | Client review's labels when setup makes it, and the one marked done |
 | `board.show.deliveryNotes` | `true` | A note on each story's item when its Build first reaches Built, from the done list's For the client cells |
-| `board.show.frames` | `true` | The frame PNG on the item, later a screenshot of the built screen |
+| `board.show.frames` | `true` | The Frames column and its pictures; off, sync neither checks the column nor uploads. Later, a screenshot of the built screen |
+| `board.columns.frames`, `board.titles.frames`, `board.frameMaxBytes` | `"frames"`, `"Frames"`, 5,000,000 | The Frames column, and the largest picture uploaded |
 | `board.show.clientQuestions` | `true` | Open questions the client answers, as updates on their stories |
 | `board.show.analysisSamples` | `false` | Synthetic analysis output, for a product that makes it |
 

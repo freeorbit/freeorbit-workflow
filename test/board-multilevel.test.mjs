@@ -28,7 +28,7 @@ const LABELS = { 0: "Drafting", 3: "Backlog", 7: "Planned", 9: "In progress", 17
  */
 function multiLevelMonday({ rollup = true, status = true } = {}) {
   const statusColumn = (id, title) => ({ id, title, type: "status", revision: "r1", settings_str: JSON.stringify({ labels: LABELS }), settings: { labels: [] }, capabilities: { calculated: { function: "COUNT_KEYS" } } });
-  const others = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"]].map(([id, type]) => ({ id, title: id, type, settings_str: "{}", capabilities: { calculated: null } }));
+  const others = [["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"], ["frames", "file"]].map(([id, type]) => ({ id, title: id, type, settings_str: "{}", capabilities: { calculated: null } }));
   others.push({ id: "client_review", title: "Client review", type: "status", settings_str: "{}", capabilities: { calculated: null } });
   const state = { columns: [...others], items: [], groups: [{ id: "topics", title: "Group Title" }], next: 1, ops: [], cleared: [] };
   if (status) {

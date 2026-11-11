@@ -28,7 +28,7 @@ function board({ multiLevel = false, review = true, views = ["Build", "Client re
   const status = (id, title, labels) => ({ id, title, type: "status", revision: `${id}-r1`, labels, capabilities: { calculated: null } });
   const state = {
     columns: [
-      ...[["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"]].map(([id, type]) => ({ id, title: id, type, capabilities: { calculated: null } })),
+      ...[["story_id", "text"], ["area", "text"], ["chunk", "text"], ["story", "long_text"], ["pr", "link"], ["owner", "people"], ["frames", "file"]].map(([id, type]) => ({ id, title: id, type, capabilities: { calculated: null } })),
       // Atlas NX's project_status before v0.35.0: titled Status, Done marked done.
       status("project_status", "Status", [
         { id: 0, label: "In progress", color: 0, index: 0 },
