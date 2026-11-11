@@ -146,7 +146,8 @@ def most_changed(paths, report):
     out = subprocess.check_output(
         ["git", "log", f"-{RECENT_COMMITS}", "--name-only", "--format="], text=True
     )
-    counts = Counter(line for line in out.splitlines() if line in set(paths))
+    wanted = set(paths)
+    counts = Counter(line for line in out.splitlines() if line in wanted)
     for path, times in counts.most_common(MOST_CHANGED):
         report["changed"].append(f"{path}: {times} of the last {RECENT_COMMITS} commits")
 

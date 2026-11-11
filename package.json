@@ -8,5 +8,5 @@
   "bin": { "wf": "bin/wf.mjs" },
   "files": ["bin", "docs", "lib", "templates", "plugins", ".claude-plugin", "LICENSE", "README.md", "SECURITY.md"],
   "engines": { "node": ">=22" },
-  "scripts": { "test": "node --test \"test/*.test.mjs\" && python3 -I plugins/review/scripts/ledger_test.py" }
+  "scripts": { "test": "node --test \"test/*.test.mjs\" && python3 -I plugins/review/scripts/ledger_test.py && python3 -I plugins/review/scripts/scan_test.py" }
 }
