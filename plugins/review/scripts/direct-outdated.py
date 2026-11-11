@@ -27,9 +27,16 @@ for node in meta["resolve"]["nodes"]:
             direct.setdefault(pkg["name"], set()).add(pkg["version"])
 
 behind = []
+# A search that fails, such as with no network, says nothing about the
+# version, so it is reported on its own rather than as behind.
+failed = []
 for name in sorted(direct):
-    found = subprocess.run(["cargo", "search", name, "--limit", "1"], capture_output=True, text=True).stdout
-    match = re.match(rf'^{re.escape(name)} = "([^"]+)"', found)
+    search = subprocess.run(["cargo", "search", name, "--limit", "1"], capture_output=True, text=True)
+    if search.returncode != 0:
+        why = (search.stderr.strip().splitlines() or [f"exit {search.returncode}"])[-1]
+        failed.append(f"{name}\t{why}")
+        continue
+    match = re.match(rf'^{re.escape(name)} = "([^"]+)"', search.stdout)
     latest = match.group(1) if match else "?"
     if latest not in direct[name]:
         behind.append(f"{name}\tlocked {','.join(sorted(direct[name]))}\tlatest {latest}")
@@ -37,4 +44,7 @@ for name in sorted(direct):
 with open(f"{scan}/direct-outdated.txt", "w") as out:
     out.write("# Direct deps behind the newest crates.io version (cargo metadata + cargo search)\n")
     out.write("\n".join(behind) + "\n")
-print(f"{len(direct)} direct deps, {len(behind)} behind")
+    if failed:
+        out.write("\n# Searches that failed, so these deps were not checked\n")
+        out.write("\n".join(failed) + "\n")
+print(f"{len(direct)} direct deps, {len(behind)} behind" + (f", {len(failed)} not checked: cargo search failed" if failed else ""))

@@ -167,6 +167,9 @@ def set_finding(args, ledger, closed):
     source = ledger if in_ledger else closed
     block = source[place[0] : place[1]]
     row = row_of(ledger if in_ledger else closed, finding)
+    if row is None:
+        where = "the ledger's summary" if in_ledger else "the closed file's summary"
+        sys.exit(f"{finding} has details but no row in {where}; add its row, then run this again.")
     was = field(block, "Status")
     status = args.status or was
     if args.severity:
@@ -299,9 +302,15 @@ def main():
         ledger = defer(args, ledger)
     else:
         ledger = state(args, ledger)
+    # A change that would put the files out of step is not written; problems
+    # they already had are reported, and do not block a change.
+    had = set(problems(ledger_path.read_text(), closed_path.read_text()))
+    found = problems(ledger, closed)
+    new = [problem for problem in found if problem not in had]
+    if new:
+        sys.exit("Nothing written; the change would leave:\n" + "\n".join(new))
     ledger_path.write_text(ledger)
     closed_path.write_text(closed)
-    found = problems(ledger, closed)
     if found:
         sys.exit("\n".join(found))
 

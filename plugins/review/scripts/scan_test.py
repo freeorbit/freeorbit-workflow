@@ -207,6 +207,14 @@ class DirectOutdated(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("serde\tlocked 1.0.1\tlatest ?", report)
 
+    def test_a_failed_search_is_reported_on_its_own_not_as_behind(self):
+        result, report = self.run_script({"rand": "0.8.5"}, failing=["serde"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        behind, _, failed = report.partition("# Searches that failed")
+        self.assertNotIn("serde", behind)
+        self.assertIn("serde\terror: network down", failed)
+        self.assertIn("1 not checked: cargo search failed", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
