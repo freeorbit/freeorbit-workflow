@@ -12,7 +12,7 @@
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
-//   wf app <start | run | stop | ...>   drive the project's Tauri app under a memory cap
+//   wf app <start | run | stop | ...>   drive the project's app, Tauri or web, under a memory cap
 //   wf try [scenario] [--keep] [--dry-run] [--files]   open the app yourself at a test scenario
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
 //   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply

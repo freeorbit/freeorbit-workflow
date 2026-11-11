@@ -73,7 +73,7 @@ A run on 2026-11-10 against a throwaway board, as the owner's own token, at API 
 - **Errors come back as HTTP 200.** A failed call has a 200 status and an `errors` list, so the client checks the body, not the status.
 - **A column update is costly.** Each `change_multiple_column_values` cost about 30,000 complexity, so a minute holds about 330. A project's stories fit, but sync sends only the items that changed.
 - **No Kanban from the API.** `create_view` offers table, form, dashboard, and app views (checked again 2026-11-11). `create_view_table` takes `settings.group_by.conditions`, so setup makes the Build and Client review views as tables grouped by their columns, and a Kanban is made by hand once. `wf board setup` only checks it is there.
-- **The done label.** A new status column marks label 1 as done (`done_colors`). `wf board setup` sets Done as the done label, which the trial did not try.
+- **The done label.** A new status column marks label 1 as done (`done_colors`). `wf board setup` marks each status column's last label done: `board.statuses.done` (Built) on Build, and `board.reviewDone` on Client review. A board set up before v0.35.0 has Done there, renamed in place.
 
 ## Status
 
@@ -98,7 +98,7 @@ All in the core plugin, beside `wf question` and `wf decision`.
 
 | Command | What it does |
 | --- | --- |
-| `wf board plan` | A dry run: each item it would create, change, or retire, with the fields that differ. Needs the token to read the board, never to write |
+| `wf board plan` | A dry run: each item it would create, change, or retire, with the fields that differ, and each acceptance comment, delivery note, restyled note, and client question it would post or edit. Needs the token to read the board, never to write |
 | `wf board sync` | Finds each item by its Story ID column and writes only the fields that changed. Runs in CI on every merge to `main` |
 | `wf board setup` | Checks the board's columns and status labels against the config, and creates what is missing on a yes |
 | `wf board feedback [--json]` | Lists client comments with no bot reply after them, and apart, those edited after they were logged. No state is kept in the repo: the reply marks a comment handled |
@@ -211,7 +211,7 @@ An optional `board` section; a project without it has no board commands.
 
 ## Token and where sync runs
 
-- **The token.** The owner's personal monday API token, named by `board.tokenEnv`: a local environment variable, and in CI a secret of the `board.environment` GitHub Environment, never a repository-wide secret.
+- **The token.** The owner's personal monday API token, named by `board.tokenEnv`: locally an environment variable or a gitignored `.env`, and in CI a secret of the `board.environment` GitHub Environment, never a repository-wide secret.
   - Locally, `wf board` reads it from the environment, else from a `.env` at the repo root. It reads the `.env` only when git ignores it and does not track it, and writes nothing to the environment.
 - **Why an environment.** A repository secret is readable by a workflow on any branch a team member pushes. An environment whose deployment branches are only `board.branch` is not.
 - **CI.** `wf github sync` writes `.github/workflows/board-sync.yml` while `board.boardId` is set, and removes it when it is emptied.

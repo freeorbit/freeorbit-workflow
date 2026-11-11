@@ -6,10 +6,10 @@ For how the plugins, the `wf` command, the docs, GitHub, the app, and the client
 
 ## Install in a project
 
-1. Add the package, pinned to a tag:
+1. Add the package, pinned to the latest tag, the top `### vX.Y.Z` under Upgrading below:
 
    ```sh
-   pnpm add -D "freeorbit-workflow@git+https://github.com/freeorbit/freeorbit-workflow.git#v0.4.0"
+   pnpm add -D "freeorbit-workflow@git+https://github.com/freeorbit/freeorbit-workflow.git#vX.Y.Z"
    ```
 
 2. Add the plugin for Claude Code, at project scope so everyone gets it:
@@ -61,7 +61,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf app <start \| run \| stop \| ...>` | Drives the project's app on Linux under a memory cap, from `app` in the config, with the project's `app.hooks`: a Tauri app through WebKit's inspector (`app.kind` tauri), or a web app's servers and a headless Chromium through its debugging protocol (web) |
 | `wf disk [--dry-run] [GB]` | Free disk space, and when short, removes only the leftovers in `disk`, cheapest first |
 | `wf try [scenario] [--keep \| --dry-run \| --files]` | Opens the project's app for a person at a test-data scenario, in a throwaway folder: the dev command for a Tauri app, or the servers and a browser window of its own for a web app. The scenarios and questions come from the project's `app.hooks` |
-| `wf screens <--light \| --deep \| names \| scope \| --brief \| --accept \| --check \| --gate>` | The screen review: shoots each screen's Reach through `wf app`, beside its frame, lists what changed since the last accept, and writes briefs for the `screen-reader` agent, from `screens` in the config |
+| `wf screens <--light \| --deep \| --defer \| names \| scope \| --sheets \| --brief \| --accept \| --check \| --gate>` | The screen review: shoots each screen's Reach through `wf app`, beside its frame, lists what changed since the last accept, and writes briefs for the `screen-reader` agent, from `screens` in the config |
 | `wf release <next \| check \| set \| verify> ...` | The project's release commands, from `release.commands`, for the release skill |
 | `wf github sync \| check \| ruleset` | The `.github` files the `github` switches turn on (pull request and issue templates, CODEOWNERS from roles, the check workflow, Dependabot), the board-sync workflow while `board.boardId` is set, drift, and the ruleset to apply when the plan has them |
 | `wf decision add <file> "<decision>" "<why>"`, `wf decision supersede <ID> <by ID>` | The decisions log, one short table per area and topic, newest on top: the next ID, the word limit, and moving a superseded row to its closed file. doc:check holds the IDs, the order, the lengths, and that every cited ID exists |
