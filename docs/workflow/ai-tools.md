@@ -41,7 +41,8 @@ The generic workflow is moving into the `freeorbit-workflow` kit, a public MIT r
 - **Who decides.** The block in `AGENTS.md` is written from `people` and `decisions` in `.workflow/config.json`. After changing either, run `npx wf roles --write`; `doc:check` fails a stale block.
 <!-- wf:local ci -->
 - **A new version** is a new tag in the kit. Change the tag in `package.json` and `.claude/settings.json` together, then run `pnpm install`.
-  - Claude Code keeps the old plugin until the marketplace is added again at the new tag: `claude plugin marketplace add "freeorbit/freeorbit-workflow#<tag>" --scope project`, then `claude plugin update core@freeorbit-workflow --scope project`. Changing the `ref` alone does not update it.
+  - Claude Code keeps the old plugins until the marketplace is added again at the new tag: `claude plugin marketplace add "freeorbit/freeorbit-workflow#<tag>" --scope project`, then `claude plugin update <plugin>@freeorbit-workflow --scope project` for each installed plugin, and `claude plugin install` for each one turned on but missing. Changing the `ref` alone does not update them.
+  - Then run `npx wf doctor`. It reads the plugins Claude Code installed for this project, and names each one missing or at another version, with the command that fixes it.
 
 ## Skills and commands
 

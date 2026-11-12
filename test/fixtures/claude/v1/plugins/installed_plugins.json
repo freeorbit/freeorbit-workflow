@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "plugins": {
+    "core@freeorbit-workflow": { "version": "0.46.0", "installPath": "/c/core/0.46.0" },
+    "release@freeorbit-workflow": { "version": "0.46.0", "installPath": "/c/release/0.46.0" }
+  }
+}
