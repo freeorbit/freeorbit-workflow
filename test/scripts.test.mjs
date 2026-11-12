@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { chosen, line, logName, passed, runChecks } from "../lib/checks.mjs";
+import { chosen, line, logName, passed, runChecks, skipReason } from "../lib/checks.mjs";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { hooksLine, HOOKS_PATH, install, isProtected, nameProblem, pushProblems, runHook, scopesOf, shim } from "../lib/setup/hooks.mjs";
@@ -156,4 +156,35 @@ test("wf hooks with an unknown hook prints its usage and exits 2", () => {
   const result = spawnSync(process.execPath, [new URL("../bin/wf.mjs", import.meta.url).pathname, "hooks", "post-merge"], { encoding: "utf8" });
   assert.equal(result.status, 2);
   assert.match(result.stdout, /Usage: wf hooks <install \| pre-commit \| pre-push>/);
+});
+
+test("a step with paths runs only when the branch changes a matching file, or with --all", () => {
+  const step = { name: "release tests", command: "r", paths: ["scripts/release/**", "release.config.json"] };
+  assert.equal(skipReason(step, [], ["scripts/release/check.mjs"]), null);
+  assert.equal(skipReason(step, [], ["src/app.ts"]), "no change to scripts/release/**, release.config.json");
+  assert.equal(skipReason(step, ["--all"], ["src/app.ts"]), null);
+  assert.equal(skipReason(step, [], null), null);
+  assert.equal(skipReason({ name: "lint", command: "l" }, [], []), null);
+});
+
+test("wf check prints a skipped path step as SKIP, and runs it when the base is unknown", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-check-paths-"));
+  const steps = [{ name: "lint", command: "lint" }, { name: "infra", command: "infra", paths: ["infra/**"] }];
+  const config = merge(DEFAULTS, { check: { steps } });
+  const ran = [];
+  const run = (command) => (ran.push(command), { status: 0, stdout: "" });
+  const out = [];
+  assert.equal(runChecks(root, config, [], (l) => out.push(l), run, () => ["src/a.ts"]), 0);
+  assert.deepEqual(ran, ["lint"]);
+  assert.ok(out.includes("SKIP infra: no change to infra/**"));
+  ran.length = 0;
+  out.length = 0;
+  runChecks(root, config, [], (l) => out.push(l), run, () => null);
+  assert.deepEqual(ran, ["lint", "infra"]);
+  assert.ok(out.some((l) => /^infra: runs, since the base main cannot be found/.test(l)));
+  ran.length = 0;
+  let looked = false;
+  runChecks(root, config, ["--all"], () => {}, run, () => ((looked = true), []));
+  assert.deepEqual(ran, ["lint", "infra"]);
+  assert.equal(looked, false);
 });

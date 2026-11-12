@@ -67,7 +67,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf decision add <file> "<decision>" "<why>"`, `wf decision supersede <ID> <by ID>` | The decisions log, one short table per area and topic, newest on top: the next ID, the word limit, and moving a superseded row to its closed file. doc:check holds the IDs, the order, the lengths, and that every cited ID exists |
 | `wf ready <quick \| chunk \| area> [chunk]`, `wf done ... [--agreed]` | A track's checks before work starts and before its pull request: OK, FAIL, or SKIP for each scripted one, then ASK lines to judge, from `tracks` in the config. A lane, such as `CH-01-fe`, also waits for the rows it waits on and runs the contract's checks from `lanes.contract` |
 | `wf tools` | What this computer has of the tables in `tools.md`, failing only for a required tool, and whether the branch hooks are on |
-| `wf check [--all]` | The project's checks from `check.steps`, one line each with test counts; a slow step runs only with `--all`, and each output is saved under `check.logs` |
+| `wf check [--all]` | The project's checks from `check.steps`, one line each with test counts; a slow step runs only with `--all`, a step with `paths` only when the branch changes a matching file, and each output is saved under `check.logs` |
 | `wf hooks <install \| pre-commit \| pre-push>` | Writes two shims to `.workflow/hooks/` and points `core.hooksPath` at them; they refuse a commit or push to a protected branch (`branches.protected`) and a push of a branch not named `<scope>/<slug>` |
 | `wf init <answers.json>` | Sets up a new project from the `workflow-init` skill's answers: the config, the logs, each area's first docs, the docs index, the package scripts, and the Claude Code settings, then the docs, agent settings, and hooks. It keeps every file that exists |
 | `wf doctor` | Whether a project's set-up is whole: the config, the kit's pin and install, the plugins, the docs, the agent settings, the tools, the hooks, and GitHub |
@@ -84,6 +84,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.46.0: notes on the GitHub Release, and check steps by path
+
+- `release.notes`, `"changelog"` by default, says where the release notes go. `"github"` puts every release's notes on its tag's GitHub Release, with `gh release create --notes-file --verify-tag` (`--prerelease` for a pre-release) on the releaser's yes, and leaves the changelog alone. A kind `release.prepare` turns off now gets drafted notes on its GitHub Release in either mode, where v0.45.0 dropped them.
+- With `"github"`, or for an unprepared kind, the project's `release.commands.check` and `verify` must pass without notes in the changelog, at most a WARN.
+- A `check.steps` entry can take `paths`, globs such as `["infra/**"]`: `wf check` runs it only when the branch changes a matching file since its merge-base with `design.base`, committed or not, and prints SKIP otherwise. `--all` runs it, and so does a clone where the base cannot be found. Keep `slow` for steps that take long.
+- The generated `check.yml` checks out the whole history, `fetch-depth: 0`, so path steps see the base on a pull request. Run `npx wf github sync` to write it, then `npx wf docs sync`.
 
 ### v0.45.0: a prepare pull request only for the kinds that want one
 

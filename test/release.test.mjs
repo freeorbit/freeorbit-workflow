@@ -103,3 +103,9 @@ test("both kinds of release are prepared unless the project turns one off", () =
   assert.deepEqual(unknownKeys({ release: { prepare: { preRelease: false, stable: true } } }), []);
   assert.notDeepEqual(unknownKeys({ release: { prepare: { draft: false } } }), []);
 });
+
+test("the notes go in the changelog unless the project puts them on the GitHub Release", () => {
+  assert.equal(DEFAULTS.release.notes, "changelog");
+  assert.equal(merge(DEFAULTS, { release: { notes: "github" } }).release.notes, "github");
+  assert.deepEqual(unknownKeys({ release: { notes: "github" } }), []);
+});
