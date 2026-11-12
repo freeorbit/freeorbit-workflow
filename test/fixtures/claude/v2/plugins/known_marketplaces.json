@@ -1,0 +1,4 @@
+{
+  "claude-plugins-official": { "source": { "source": "github", "repo": "anthropics/claude-plugins-official" } },
+  "freeorbit-workflow": { "source": { "source": "github", "repo": "freeorbit/freeorbit-workflow", "ref": "v0.41.0" }, "installLocation": "/m/freeorbit-workflow" }
+}

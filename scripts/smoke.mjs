@@ -18,10 +18,12 @@ import { fileURLToPath } from "node:url";
 const KIT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const WF = join(KIT, "bin", "wf.mjs");
 const root = mkdtempSync(join(tmpdir(), "wf smoke "));
+// An empty Claude Code config folder, so the doctor reads no plugins this machine happens to have.
+const claudeHome = mkdtempSync(join(tmpdir(), "wf-smoke-claude-"));
 let failed = 0;
 
 function run(cmd, args, opts = {}) {
-  return spawnSync(cmd, args, { cwd: root, encoding: "utf8", env: { ...process.env, GIT_AUTHOR_NAME: "Smoke", GIT_AUTHOR_EMAIL: "smoke@example.com", GIT_COMMITTER_NAME: "Smoke", GIT_COMMITTER_EMAIL: "smoke@example.com" }, ...opts });
+  return spawnSync(cmd, args, { cwd: root, encoding: "utf8", env: { ...process.env, CLAUDE_CONFIG_DIR: claudeHome, GIT_AUTHOR_NAME: "Smoke", GIT_AUTHOR_EMAIL: "smoke@example.com", GIT_COMMITTER_NAME: "Smoke", GIT_COMMITTER_EMAIL: "smoke@example.com" }, ...opts });
 }
 const wf = (...args) => run(process.execPath, [WF, ...args]);
 

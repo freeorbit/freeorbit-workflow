@@ -85,6 +85,11 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.47.0: the doctor checks the installed Claude Code plugins
+
+- `wf doctor` reads Claude Code's own `plugins/installed_plugins.json` and `known_marketplaces.json`, under `CLAUDE_CONFIG_DIR` or `~/.claude`, not only `.claude/settings.json`. It fails for each kit plugin turned on in the settings but not installed for this project, or installed at a version other than the pin, and prints the `claude plugin` command that fixes each one. It also notes a known marketplace at another ref than the pin.
+- Without those files, as in CI or with OpenCode only, the check is a SKIP. After upgrading, run `npx wf doctor` and the commands it prints, then `npx wf docs sync`.
+
 ### v0.46.0: notes on the GitHub Release, and check steps by path
 
 - `release.notes`, `"changelog"` by default, says where the release notes go. `"github"` puts every release's notes on its tag's GitHub Release, with `gh release create --notes-file --verify-tag` (`--prerelease` for a pre-release) on the releaser's yes, and leaves the changelog alone. A kind `release.prepare` turns off now gets drafted notes on its GitHub Release in either mode, where v0.45.0 dropped them.

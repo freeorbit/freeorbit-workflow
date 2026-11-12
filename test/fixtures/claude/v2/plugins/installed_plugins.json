@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "plugins": {
+    "core@freeorbit-workflow": [
+      { "scope": "project", "projectPath": "/projects/other", "installPath": "/c/core/0.46.0", "version": "0.46.0" },
+      { "scope": "project", "projectPath": "/projects/atlas", "installPath": "/c/core/0.27.0", "version": "0.27.0" }
+    ],
+    "review@freeorbit-workflow": [
+      { "scope": "user", "installPath": "/c/review/0.46.0", "version": "0.46.0" }
+    ],
+    "design@freeorbit-workflow": [
+      { "scope": "user", "installPath": "/c/design/0.46.0", "version": "0.46.0" },
+      { "scope": "local", "projectPath": "/projects/atlas", "installPath": "/c/design/0.41.0", "version": "0.41.0" }
+    ],
+    "e2e@freeorbit-workflow": [
+      { "scope": "project", "projectPath": "/projects/other", "installPath": "/c/e2e/0.46.0", "version": "0.46.0" }
+    ]
+  }
+}
