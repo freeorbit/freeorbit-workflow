@@ -4,8 +4,8 @@ description: >-
   Makes a pre-release or stable release, only when the person who holds the
   project's release role (decisions.release in .workflow/config.json, the
   owner unless the project names another) runs it. Asks which kind, offers the
-  next version, runs the release checks, then walks the prepare pull request,
-  the tag, and whichever of the build, signing and staging, publishing, and
+  next version, runs the release checks, then walks the prepare pull request
+  when release.prepare asks for one for that kind, the tag, and whichever of the build, signing and staging, publishing, and
   the runbook's after-tag steps the project has, stopping for their yes before
   each one. Use only when that person invokes /release.
 disable-model-invocation: true
@@ -35,15 +35,21 @@ Ask the releaser: pre-release or stable. Then run `git fetch --tags` and `npx wf
 Run `npx wf release check <version>`. It prints each fact as OK, WARN, or FAIL.
 
 - **FAIL** stops the release. Show each one with how to fix it, and stop.
-  - The one exception is the notes. Their FAILs are expected here, because step 3 drafts them. Say so, and go on.
+  - The one exception is the notes, when step 3 runs for this kind. Their FAILs are expected here, because step 3 drafts them. Say so, and go on.
 - **WARN** goes to the releaser, who accepts it or stops.
 - **Open questions.** List each item the runbook says a release still waits on. For a pre-release, the releaser accepts each one or stops. For a stable version, each one stops the release until it is resolved.
 
 Then run the project's full check in the background. A failure stops the release.
 
+### Prepare or not
+
+`release.prepare` in the config says which kinds go through step 3: `preRelease` for a pre-release, `stable` for a stable version. Both are `true` unless the project sets them. When this kind's is `true`, go on to step 3. When it is `false`, go to step 4: there is no prepare pull request, `set` does not run, no notes are drafted, and the version in the project's files stays as it is until a prepare pull request sets it.
+
+A project that turns a kind off must have `check` and `verify` commands that accept this for that kind: missing or out-of-date notes are a WARN, not a FAIL, and the version in its files need not match the tag. When either fails such a release only for its notes or that version, say the project's command needs this change, and stop.
+
 ## 3. Prepare
 
-Ask once, then on the releaser's yes:
+Only when `release.prepare` is `true` for this kind. Ask once, then on the releaser's yes:
 
 1. Start `release/prepare-<version with hyphens>` from `main`, such as `release/prepare-0-2-0-rc-1`.
 2. Run `npx wf release set <version>`.
@@ -55,7 +61,7 @@ Ask once, then on the releaser's yes:
 
 ### Draft the notes
 
-The notes cover the whole line since the last stable version. Each pre-release of the line redrafts the same Unreleased section, so the stable version's notes are the line's notes.
+The notes cover the whole line since the last stable version. Each prepared pre-release of the line redrafts the same Unreleased section, so the stable version's notes are the line's notes.
 
 1. **Gather.** Find the last stable tag with `git tag --list '<tagPrefix>*' --sort=-v:refname`, the first without `release.preRelease` in it. Read `git log --format='%s%n%b' <that tag>..HEAD`, or the whole log when there is none. Keep the text under `## Unreleased` too.
 2. **Find what users see.** Each commit body names IDs. Look up each story ID, by the prefixes in `areas`, with `npx wf doc:find <ID>`, and write from what the story says the user can do.
@@ -72,7 +78,7 @@ Steps 4 to 6 each run a workflow from `release.workflows`. When its entry is `""
 
 ## 4. Tag, and build
 
-After the merge, run `git switch main && git pull --ff-only`, then `npx wf release verify <tagPrefix><version>`. Ask once, then on the releaser's yes:
+After the prepare pull request merges, or straight after step 2 when this kind has none, run `git switch main && git pull --ff-only`, then `npx wf release verify <tagPrefix><version>`. A FAIL stops the release, and a WARN goes to the releaser, as in step 2. Then ask once, and on the releaser's yes:
 
 ```bash
 git tag <tagPrefix><version>
