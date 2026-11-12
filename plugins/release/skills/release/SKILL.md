@@ -5,7 +5,9 @@ description: >-
   project's release role (decisions.release in .workflow/config.json, the
   owner unless the project names another) runs it. Asks which kind, offers the
   next version, runs the release checks, then walks the prepare pull request
-  when release.prepare asks for one for that kind, the tag, and whichever of the build, signing and staging, publishing, and
+  when release.prepare asks for one for that kind, the tag, the notes on the
+  tag's GitHub Release when release.notes or an unprepared kind puts them
+  there, and whichever of the build, signing and staging, publishing, and
   the runbook's after-tag steps the project has, stopping for their yes before
   each one. Use only when that person invokes /release.
 disable-model-invocation: true
@@ -35,15 +37,27 @@ Ask the releaser: pre-release or stable. Then run `git fetch --tags` and `npx wf
 Run `npx wf release check <version>`. It prints each fact as OK, WARN, or FAIL.
 
 - **FAIL** stops the release. Show each one with how to fix it, and stop.
-  - The one exception is the notes, when step 3 runs for this kind. Their FAILs are expected here, because step 3 drafts them. Say so, and go on.
+  - The one exception is the changelog's notes, when step 3 writes them for this kind. Their FAILs are expected here, because step 3 drafts them. Say so, and go on.
 - **WARN** goes to the releaser, who accepts it or stops.
 - **Open questions.** List each item the runbook says a release still waits on. For a pre-release, the releaser accepts each one or stops. For a stable version, each one stops the release until it is resolved.
 
-Then run the project's full check in the background. A failure stops the release.
+Then run the project's full check, `npx wf check --all`, in the background. `--all` runs every step, the slow ones and those with `paths` too, whatever the branch changed. A failure stops the release.
+
+### Where the notes go
+
+`release.notes` says where: `"changelog"`, the default, or `"github"`.
+
+- **In the changelog.** With `"changelog"` and a kind that is prepared, step 3 writes the notes under `## Unreleased`, as now.
+- **On the GitHub Release.** With `"github"`, or for a kind that is not prepared, the notes go on the tag's GitHub Release instead, in step 7, and the changelog is not touched. Draft them now, before the tag, as in [Draft the notes](#draft-the-notes), and keep the accepted draft in a temporary file outside the repository, such as one from `mktemp`.
+
+What the project's `check` and `verify` do with the notes, by mode:
+
+- **`"changelog"`, prepared kind.** `check` FAILs notes that are missing or break the template before step 3, and `verify` requires them on `main`.
+- **`"changelog"`, unprepared kind, or `"github"`.** The changelog holds no notes for this release, so both must pass without them, at most a WARN. The releaser's review of the draft is the notes' check.
 
 ### Prepare or not
 
-`release.prepare` in the config says which kinds go through step 3: `preRelease` for a pre-release, `stable` for a stable version. Both are `true` unless the project sets them. When this kind's is `true`, go on to step 3. When it is `false`, go to step 4: there is no prepare pull request, `set` does not run, no notes are drafted, and the version in the project's files stays as it is until a prepare pull request sets it.
+`release.prepare` in the config says which kinds go through step 3: `preRelease` for a pre-release, `stable` for a stable version. Both are `true` unless the project sets them. When this kind's is `true`, go on to step 3. When it is `false`, go to step 4: there is no prepare pull request, `set` does not run, the notes go on the GitHub Release as above, and the version in the project's files stays as it is until a prepare pull request sets it.
 
 A project that turns a kind off must have `check` and `verify` commands that accept this for that kind: missing or out-of-date notes are a WARN, not a FAIL, and the version in its files need not match the tag. When either fails such a release only for its notes or that version, say the project's command needs this change, and stop.
 
@@ -53,15 +67,15 @@ Only when `release.prepare` is `true` for this kind. Ask once, then on the relea
 
 1. Start `release/prepare-<version with hyphens>` from `main`, such as `release/prepare-0-2-0-rc-1`.
 2. Run `npx wf release set <version>`.
-3. Draft the notes, as in [Draft the notes](#draft-the-notes), and write them under `## Unreleased` once the releaser accepts them.
-4. Stable only: rename `## Unreleased` to `## <version> (YYYY-MM-DD)` with today's date, and start a new empty `## Unreleased` above it. A pre-release leaves its notes under Unreleased.
+3. With `release.notes` `"changelog"`: draft the notes, as in [Draft the notes](#draft-the-notes), and write them under `## Unreleased` once the releaser accepts them. With `"github"`, the notes were drafted in step 2, and this step and the next are skipped.
+4. Stable only, with `"changelog"`: rename `## Unreleased` to `## <version> (YYYY-MM-DD)` with today's date, and start a new empty `## Unreleased` above it. A pre-release leaves its notes under Unreleased.
 5. Commit with the `commit` skill, as `release: prepare <version>`.
 6. Run `npx wf release check <version>` again. Every line but the branch must still pass.
 7. Propose the pull request with the `pull-request` skill. Its yes covers the push. Merging needs its own yes, from whoever holds `decisions.merge`.
 
 ### Draft the notes
 
-The notes cover the whole line since the last stable version. Each prepared pre-release of the line redrafts the same Unreleased section, so the stable version's notes are the line's notes.
+The notes cover the whole line since the last stable version. Each pre-release of the line redrafts them, in the same Unreleased section or on its own GitHub Release, so the stable version's notes are the line's notes.
 
 1. **Gather.** Find the last stable tag with `git tag --list '<tagPrefix>*' --sort=-v:refname`, the first without `release.preRelease` in it. Read `git log --format='%s%n%b' <that tag>..HEAD`, or the whole log when there is none. Keep the text under `## Unreleased` too.
 2. **Find what users see.** Each commit body names IDs. Look up each story ID, by the prefixes in `areas`, with `npx wf doc:find <ID>`, and write from what the story says the user can do.
@@ -70,7 +84,7 @@ The notes cover the whole line since the last stable version. Each prepared pre-
 3. **Sort** each change under the headings of the changelog's template. Start an entry with an area's name when it belongs to one. Data that moves, a setting that resets, or anything that stops working goes under Before you update. An open finding or question users would meet goes under Known issues.
 4. **Merge** with what was under Unreleased. Keep the releaser's own wording, and add only what it lacks.
 5. **Write** the summary last: a sentence or two on what the release is about.
-6. **Show** the draft to the releaser whole, with the commits each entry came from listed below it. Change it as they say. Write it only on their yes. No internal ID goes into the notes.
+6. **Show** the draft to the releaser whole, with the commits each entry came from listed below it. Change it as they say. Write it, to the changelog or the draft's file, only on their yes. No internal ID goes into the notes.
 
 ## Steps the project does not have
 
@@ -110,7 +124,17 @@ gh workflow run <release.workflows.publish> -f tag=<tagPrefix><version>
 
 Watch its run. Report the published address, and whether it is a pre-release or the latest release.
 
-## 7. After the tag
+## 7. Notes on the GitHub Release
+
+Only when [Where the notes go](#where-the-notes-go) puts this release's notes on its GitHub Release. Once the tag is pushed and steps 4 to 6 are done, ask once, then on the releaser's yes. Leave out `--prerelease` for a stable version:
+
+```bash
+gh release create <tagPrefix><version> --notes-file <draft> --verify-tag --prerelease
+```
+
+When the sign or publish workflow already made the tag's release, `gh release view <tag>` finds it: run `gh release edit <tagPrefix><version> --notes-file <draft>` instead. Report the release's address.
+
+## 8. After the tag
 
 When the runbook names a step after the tag, such as "deploy the tag with deploy-dev", offer it with its exact command, such as `gh workflow run deploy-dev -f tag=<tagPrefix><version>`. Run it only on its own yes, from whoever the runbook says runs it, and watch it the same way. When the runbook names none, say the release ends at the tag or the published release.
 

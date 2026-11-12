@@ -49,6 +49,7 @@ test("a hand-written file is never overwritten, and the check workflow needs its
   assert.match(syncGithub(root, config({ checkWorkflow: true })).problems[0], /needs the command/);
   syncGithub(root, config({ checkWorkflow: true, check: { command: "npm test", setup: ["npm ci"] } }), { write: true });
   assert.match(readFileSync(join(root, ".github/workflows/check.yml"), "utf8"), /- run: npm ci\n {6}- run: npm test\n$/);
+  assert.match(readFileSync(join(root, ".github/workflows/check.yml"), "utf8"), /fetch-depth: 0\n/);
 });
 
 test("the ruleset follows the team and the switches, and a free private repository gets none", () => {
