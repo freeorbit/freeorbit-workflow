@@ -1,5 +1,5 @@
 {
   "name": "release",
   "version": "0.43.0",
-  "description": "Pre-releases and stable releases on the owner's command: version, checks, notes from commits and stories, tag, build, sign, and publish, with a yes before each step."
+  "description": "Pre-releases and stable releases on the release role's command: version, checks, notes from commits and stories, tag, and whichever of build, sign, publish, and the runbook's after-tag step the project has, with a yes before each step."
 }
