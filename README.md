@@ -85,6 +85,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.44.0: releases for projects without installers
+
+- The `release` skill is run by whoever holds `decisions.release`, `owner` by default, and asks that person's yes before each step; `npx wf roles` says who it is. A project where any developer cuts a release sets `"decisions": { "release": "developer" }`.
+- An empty `release.workflows.build`, `sign`, or `publish` skips its step, and the skill says so instead of running `gh workflow run` with no workflow. The runbook, `release.doc`, can name what comes after the tag, such as a deploy workflow, and the skill offers it with its own yes.
+- `npx wf release next` works without `release.commands.next`: the kit reads the tags by `release.tagPrefix` and `release.preRelease` and lists the next pre-release and stable version of each open line, then a new patch, minor, and major line. A project's own `next` still wins.
+- After upgrading, run `npx wf docs sync`. A project whose `next` command only did this tag arithmetic can drop it.
+
 ### v0.43.0: the kit's code grouped by job, and failures that say so
 
 - Internal files moved. `lib/` keeps nine files at the top and groups the rest in `config/`, `logs/`, `setup/`, and `docs/`; `wf app` is split into `lib/app/appsettings.mjs`, `inspector.mjs`, `start.mjs`, `steps.mjs`, and `stitch.mjs`; one DevTools client and the browser helpers are in `lib/browser/`. `lib/screens/list.mjs` and `lib/design/frames.mjs` stay where they were. A project that imports any other kit file by path points it at the new place.
