@@ -95,3 +95,11 @@ test("with no next command, wf release next reads the repo's tags; the project's
   assert.equal(runRelease(root, own, "next", []), 0);
   assert.equal(readFileSync(join(root, "next.txt"), "utf8"), "mine\n");
 });
+
+test("both kinds of release are prepared unless the project turns one off", () => {
+  assert.deepEqual(DEFAULTS.release.prepare, { preRelease: true, stable: true });
+  const config = merge(DEFAULTS, { release: { prepare: { preRelease: false } } });
+  assert.deepEqual(config.release.prepare, { preRelease: false, stable: true });
+  assert.deepEqual(unknownKeys({ release: { prepare: { preRelease: false, stable: true } } }), []);
+  assert.notDeepEqual(unknownKeys({ release: { prepare: { draft: false } } }), []);
+});

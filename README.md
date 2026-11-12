@@ -85,6 +85,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.45.0: a prepare pull request only for the kinds that want one
+
+- `release.prepare`, `{ "preRelease": true, "stable": true }` by default, says which kinds of release go through the prepare pull request. Nothing changes for a project that leaves it out.
+- A kind set to `false` is verified on an up-to-date `main` with `npx wf release verify <tag>` and tagged from it: `set` does not run, no notes are drafted, and the version in the project's files stays as it is. A project that deploys each pre-release for testing can set `"release": { "prepare": { "preRelease": false } }`.
+- Before turning a kind off, make the project's `release.commands.check` and `verify` accept it: missing notes are a WARN, not a FAIL, and the files' version need not match the tag. Then run `npx wf docs sync`.
+
 ### v0.44.0: releases for projects without installers
 
 - The `release` skill is run by whoever holds `decisions.release`, `owner` by default, and asks that person's yes before each step; `npx wf roles` says who it is. A project where any developer cuts a release sets `"decisions": { "release": "developer" }`.
