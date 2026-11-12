@@ -62,7 +62,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf disk [--dry-run] [GB]` | Free disk space, and when short, removes only the leftovers in `disk`, cheapest first |
 | `wf try [scenario] [--keep \| --dry-run \| --files]` | Opens the project's app for a person at a test-data scenario, in a throwaway folder: the dev command for a Tauri app, or the servers and a browser window of its own for a web app. The scenarios and questions come from the project's `app.hooks` |
 | `wf screens <--light \| --deep \| --defer \| names \| scope \| --sheets \| --brief \| --accept \| --check \| --gate>` | The screen review: shoots each screen's Reach through `wf app`, beside its frame, lists what changed since the last accept, and writes briefs for the `screen-reader` agent, from `screens` in the config |
-| `wf release <next \| check \| set \| verify> ...` | The project's release commands, from `release.commands`, for the release skill |
+| `wf release <next \| check \| set \| verify> ...` | The project's release commands, from `release.commands`, for the release skill. Without `next`, the kit lists the versions that may follow from the tags |
 | `wf github sync \| check \| ruleset` | The `.github` files the `github` switches turn on (pull request and issue templates, CODEOWNERS from roles, the check workflow, Dependabot), the board-sync workflow while `board.boardId` is set, drift, and the ruleset to apply when the plan has them |
 | `wf decision add <file> "<decision>" "<why>"`, `wf decision supersede <ID> <by ID>` | The decisions log, one short table per area and topic, newest on top: the next ID, the word limit, and moving a superseded row to its closed file. doc:check holds the IDs, the order, the lengths, and that every cited ID exists |
 | `wf ready <quick \| chunk \| area> [chunk]`, `wf done ... [--agreed]` | A track's checks before work starts and before its pull request: OK, FAIL, or SKIP for each scripted one, then ASK lines to judge, from `tracks` in the config. A lane, such as `CH-01-fe`, also waits for the rows it waits on and runs the contract's checks from `lanes.contract` |
@@ -84,6 +84,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.44.0: releases for projects without installers
+
+- The `release` skill is run by whoever holds `decisions.release`, `owner` by default, and asks that person's yes before each step; `npx wf roles` says who it is. A project where any developer cuts a release sets `"decisions": { "release": "developer" }`.
+- An empty `release.workflows.build`, `sign`, or `publish` skips its step, and the skill says so instead of running `gh workflow run` with no workflow. The runbook, `release.doc`, can name what comes after the tag, such as a deploy workflow, and the skill offers it with its own yes.
+- `npx wf release next` works without `release.commands.next`: the kit reads the tags by `release.tagPrefix` and `release.preRelease` and lists the next pre-release and stable version of each open line, then a new patch, minor, and major line. A project's own `next` still wins.
+- After upgrading, run `npx wf docs sync`. A project whose `next` command only did this tag arithmetic can drop it.
 
 ### v0.43.0: the kit's code grouped by job, and failures that say so
 

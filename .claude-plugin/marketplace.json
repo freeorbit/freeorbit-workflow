@@ -50,7 +50,7 @@
       "name": "release",
       "source": "./plugins/release",
       "version": "0.39.0",
-      "description": "Releases on the owner's command, through the project's release commands and workflows, a yes before each step."
+      "description": "Releases on the release role's command, through the project's release commands and workflows, a yes before each step."
     }
   ]
 }
