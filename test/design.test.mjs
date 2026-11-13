@@ -278,13 +278,13 @@ test("only a real PNG header gives a size", async () => {
 });
 
 test("the question-pictures server is added to launch.json once, and a sheet under .cache/view gets its address", async () => {
-  const { SERVER, viewAddress, withViewServer } = await import("../lib/design/view.mjs");
+  const { SERVER, viewAddress, withViewServer } = await import("../lib/view/view.mjs");
   const fresh = JSON.parse(withViewServer(null));
   assert.deepEqual(fresh.configurations, [SERVER]);
   const theirs = JSON.parse(withViewServer(JSON.stringify({ version: "0.0.1", configurations: [{ name: "web", port: 5173 }] })));
   assert.deepEqual(theirs.configurations.map((c) => c.name), ["web", "question-pictures"]);
   assert.equal(withViewServer(JSON.stringify(theirs)), `${JSON.stringify(theirs, null, 2)}\n`);
-  const { projectKey } = await import("../lib/design/view.mjs");
+  const { projectKey } = await import("../lib/view/view.mjs");
   assert.match(projectKey("/p"), /^p-[0-9a-f]{6}$/);
   assert.equal(viewAddress("/p", ".cache/view/sign in/sheet.html"), `http://127.0.0.1:8765/${projectKey("/p")}/sign%20in/sheet.html`);
   assert.equal(viewAddress("/p", "/p/.cache/view/sheet.html"), `http://127.0.0.1:8765/${projectKey("/p")}/sheet.html`);

@@ -1,23 +1,23 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { request } from "node:http";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { Script } from "node:vm";
+import { runInNewContext, Script } from "node:vm";
 
-import { answered, answersMarkdown, checkAnswers, recordAnswers } from "../lib/ask/answers.mjs";
+import { answered, answersMarkdown, askState, checkAnswers, recordAnswers } from "../lib/ask/answers.mjs";
 import { answersFromText, EXAMPLES, projectTemplates, runAsk, runView } from "../lib/ask/index.mjs";
-import { buildPage, exportHtml, imageSize, pictureFile } from "../lib/ask/page.mjs";
-import { answersPath, serve, servedFile } from "../lib/ask/serve.mjs";
-import { asker, ensureHub, hubUp, projects, register } from "../lib/ask/hub.mjs";
+import { buildPage, exportHtml, imageSize, pageScript, pictureFile } from "../lib/ask/page.mjs";
+import { answersPath, readSpec, serve, servedFile } from "../lib/view/serve.mjs";
+import { asker, ensureHub, hubUp, projects, register } from "../lib/view/hub.mjs";
 import { checkTemplate, normalize, TEMPLATES } from "../lib/ask/spec.mjs";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
-import { projectKey, SERVER, withViewServer } from "../lib/design/view.mjs";
+import { projectKey, SERVER, withViewServer } from "../lib/view/view.mjs";
 import { emptyFile } from "../lib/logs/decisions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -189,20 +189,29 @@ test("the server serves each project at its key, swaps in its token, and takes a
   const key = projectKey(root);
   const logs = [];
   const find = (k) => (k === key ? { key, view, name: "demo", kinds: KIT_KINDS } : null);
-  const { port, token, close } = await serve({ resolve: find, list: () => [{ key, view, name: "demo" }], port: 0, version: "x", log: (line) => logs.push(line) });
+  writeFileSync(join(view, "ask", spec.id, "p", "evil.svg"), '<svg xmlns="http://www.w3.org/2000/svg"><script>fetch("/")</script></svg>');
+  const { port, token, pageToken, close } = await serve({ resolve: find, list: () => [{ key, view, name: "demo" }], check: checkAnswers, stateOf: askState, port: 0, version: "x", log: (line) => logs.push(line) });
   const base = `http://127.0.0.1:${port}`;
   try {
     assert.deepEqual(await (await fetch(`${base}/__hub`)).json(), { hub: "freeorbit-workflow", version: "x", pid: process.pid, port });
-    const page = await (await fetch(`${base}/${key}/ask/${spec.id}/`)).text();
-    assert.match(page, new RegExp(`<meta name="wf-token" content="${token}">`));
+    const served = await fetch(`${base}/${key}/ask/${spec.id}/`);
+    const page = await served.text();
+    const mine = pageToken(key, spec.id);
+    assert.notEqual(mine, token, "a page never holds the server's own secret");
+    assert.match(page, new RegExp(`<meta name="wf-token" content="${mine}">`));
+    assert.match(served.headers.get("content-security-policy"), /connect-src 'self'/);
+    // Any other file runs sandboxed, in no origin, so its script reads no page's token.
+    const svg = await fetch(`${base}/${key}/ask/${spec.id}/p/evil.svg`);
+    assert.match(svg.headers.get("content-security-policy"), /^sandbox allow-scripts;.*connect-src 'none'/);
     assert.match(page, new RegExp(`"key":"${key}"`));
     assert.equal((await fetch(`${base}/${key}/ask/${spec.id}/p/1.png`)).headers.get("content-type"), "image/png");
     assert.equal((await fetch(`${base}/other-123456/ask/${spec.id}/`)).status, 404, "an unknown project");
     assert.deepEqual(await (await fetch(`${base}/__ask/${key}/version/${spec.id}`)).json(), { hash: spec.hash });
     assert.equal((await fetch(`${base}/${key}/..%2f..%2fsecret.txt`)).status, 404);
-    const post = (body, headers = {}, k = key) => fetch(`${base}/__ask/${k}/answers/${spec.id}`, { method: "POST", headers: { "Content-Type": "application/json", "X-WF-Token": token, ...headers }, body: JSON.stringify(body) });
+    const post = (body, headers = {}, k = key) => fetch(`${base}/__ask/${k}/answers/${spec.id}`, { method: "POST", headers: { "Content-Type": "application/json", "X-WF-Token": mine, ...headers }, body: JSON.stringify(body) });
     const answers = { id: spec.id, hash: spec.hash, answers: { layout: { choice: "tabs" } } };
     assert.equal((await post(answers, { "X-WF-Token": "wrong" })).status, 403);
+    assert.equal((await post(answers, { "X-WF-Token": pageToken(key, "another-page") })).status, 403, "another page's token answers only that page");
     assert.equal((await post(answers, { Origin: "http://evil.test" })).status, 403);
     assert.equal((await post(answers, {}, "other-123456")).status, 404);
     assert.equal((await post({ ...answers, answers: { layout: { choice: "grid" } } })).status, 422);
@@ -211,10 +220,19 @@ test("the server serves each project at its key, swaps in its token, and takes a
     assert.deepEqual(await ok.json(), { ok: true, partial: true, open: ["empty"] });
     assert.equal(JSON.parse(readFileSync(answersPath(view, spec.id), "utf8")).answers.layout.choice, "tabs");
     assert.equal((await fetch(`${base}/${key}/answers/${spec.id}.json`)).status, 403);
+    assert.equal((await fetch(`${base}/${key}/ANSWERS/${spec.id}.json`)).status, process.platform === "linux" ? 404 : 403, "the answers folder in any case");
+    assert.equal(statSync(answersPath(view, spec.id)).mode & 0o777, 0o600, "answers are this user's alone");
     const { items } = await (await fetch(`${base}/__hub/inbox`)).json();
     assert.deepEqual(items.map((i) => `${i.id} ${i.state} ${i.open}/${i.questions} ${i.asker.session} ${i.href}`), [`chunk-12-layout partial 1/2 local_abc12345 /${key}/ask/chunk-12-layout/`]);
     assert.match(await (await fetch(`${base}/`)).text(), /<title>Asks<\/title>/);
+    // A broken spec in one project is skipped and leaves the server up for every other.
+    writeFileSync(join(view, "ask", spec.id, "spec.json"), "{ not json");
+    assert.equal((await fetch(`${base}/__ask/${key}/version/${spec.id}`)).status, 404);
+    assert.equal((await fetch(`${base}/__hub/inbox`)).status, 200);
+    assert.deepEqual((await (await fetch(`${base}/__hub/inbox`)).json()).items, []);
+    writeFileSync(join(view, "ask", spec.id, "spec.json"), JSON.stringify(spec));
     assert.equal((await fetch(`${base}/__hub/stop`, { method: "POST" })).status, 403, "stop needs the token");
+    assert.equal((await fetch(`${base}/__hub/stop`, { method: "POST", headers: { "X-WF-Token": mine } })).status, 403, "a page's token cannot stop the server");
     // A page on another name that resolves here cannot reach the server.
     const other = await new Promise((done) => request({ host: "127.0.0.1", port, path: `/${key}/ask/${spec.id}/`, headers: { Host: "evil.test" } }, (res) => { res.resume(); done(res.statusCode); }).end());
     assert.equal(other, 403);
@@ -311,8 +329,52 @@ test("an exported page carries its pictures inside it", () => {
   assert.doesNotMatch(html, /"src":"p\//);
 });
 
-test("the client script parses, with the shared look before it", () => {
-  new Script(readFileSync(join(here, "../lib/ask/look.js"), "utf8") + readFileSync(join(here, "../lib/ask/client.js"), "utf8"));
+test("the page's script, joined from its parts, parses", () => {
+  new Script(pageScript());
+});
+
+/** The answer steps, loaded as the page loads them. */
+function answerSteps() {
+  const sandbox = { window: {} };
+  runInNewContext(readFileSync(join(here, "../lib/ask/browser/state.js"), "utf8"), sandbox);
+  return sandbox.window.wfAskState;
+}
+
+test("a question's own controls, the bulk actions, and the send panel make the same change", () => {
+  const S = answerSteps();
+  const { spec } = normalize(example("naming"));
+  const q = spec.questions[0];
+  const v = { choice: "other", other: "Link an account", note: "keep" };
+  S.setDecide(v, "agent");
+  assert.deepEqual({ ...v }, { note: "keep", decide: "agent" }, "You decide drops the other text, keeps the note");
+  S.toggleDecide(v, "agent");
+  assert.deepEqual({ ...v }, { note: "keep" });
+  assert.equal(S.takeRecommendation(q, v), true);
+  assert.deepEqual({ ...v }, { note: "keep", choice: "connect" });
+  const { spec: rank } = normalize(example("rank"));
+  const r = { decide: "later" };
+  assert.equal(S.takeRecommendation(rank.questions[0], r), true);
+  assert.deepEqual({ ...r }, { order: ["search", "labels", "offline"] }, "taking a ranking's order clears Later");
+  const { spec: text } = normalize({ id: "a", title: "t", questions: [{ id: "q", text: "x" }] });
+  assert.equal(S.takeRecommendation(text.questions[0], {}), false);
+  assert.equal(S.answered({ note: "only" }), false);
+  assert.equal(S.answered({ decide: "later" }), true);
+  const A = { a: { choice: "", pins: [] }, b: { note: "n", text: "" } };
+  assert.deepEqual(JSON.parse(JSON.stringify(S.prune(A))), { b: { note: "n" } });
+});
+
+test("undo keeps twenty steps back, and redo walks forward again", () => {
+  const S = answerSteps();
+  const h = new S.History(20);
+  for (let i = 0; i < 25; i++) h.push({ n: i });
+  let now = { n: 25 };
+  let steps = 0;
+  for (let back; (back = h.undo(now)); steps++) now = back;
+  assert.equal(steps, 20);
+  assert.deepEqual({ ...now }, { n: 5 });
+  assert.deepEqual({ ...h.redo(now) }, { n: 6 });
+  h.push(now);
+  assert.equal(h.redo(now), null, "a new change drops what redo had");
 });
 
 test("view setup replaces the old python server and keeps the project's own entries", () => {
@@ -376,7 +438,7 @@ const lumOf = (rgb) => { const c = rgb.map((v) => (v <= 0.03928 ? v / 12.92 : ((
 const contrast = (a, b) => { const [x, y] = [lumOf(hslRgb(a)), lumOf(hslRgb(b))].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
 test("every kit theme, light and dark, passes WCAG contrast for text, controls, and states", () => {
-  const { themes, default: first } = JSON.parse(readFileSync(join(here, "../lib/ask/themes.json"), "utf8"));
+  const { themes, default: first } = JSON.parse(readFileSync(join(here, "../lib/ask/browser/themes.json"), "utf8"));
   assert.ok(themes[first], "the default is a theme");
   const failures = [];
   for (const [name, theme] of Object.entries(themes)) for (const mode of ["light", "dark"]) {
@@ -485,6 +547,55 @@ test("a page carries the kit's themes, and the server hands out the Claude Deskt
 });
 
 test("the inbox script parses", async () => {
-  const { inboxHtml } = await import("../lib/ask/inbox.mjs");
+  const { inboxHtml } = await import("../lib/view/inbox.mjs");
   new Script(inboxHtml().split("<script>\n")[1].split("\n</script>")[0]);
+});
+
+test("a spec is read only for an id that is one, and only when it is a page's", () => {
+  const raw = example("rank");
+  const { root, view } = project(raw);
+  buildPage(root, view, raw, KIT_KINDS);
+  assert.equal(readSpec(view, "next-chunks").id, "next-chunks");
+  assert.equal(readSpec(view, "../../../../etc/x"), null);
+  assert.equal(readSpec(view, undefined), null);
+  writeFileSync(join(view, "ask/next-chunks/spec.json"), JSON.stringify({ id: "other", questions: [] }));
+  assert.equal(readSpec(view, "next-chunks"), null, "a spec whose id is not its folder's");
+  writeFileSync(join(view, "ask/next-chunks/spec.json"), "null");
+  assert.equal(readSpec(view, "next-chunks"), null);
+});
+
+test("answered means one thing: sent after the page was built, for the page as it is", () => {
+  const raw = example("decision");
+  const { root, view } = project(raw);
+  const { spec } = buildPage(root, view, raw, KIT_KINDS);
+  assert.equal(askState(view, spec.id, spec).state, "waiting");
+  mkdirSync(join(view, "answers"), { recursive: true });
+  const file = answersPath(view, spec.id);
+  const later = (Date.now() + 2000) / 1000;
+  writeFileSync(file, JSON.stringify({ id: spec.id, hash: "000000000000", answers: { layout: { choice: "tabs" } } }));
+  utimesSync(file, later, later);
+  assert.equal(askState(view, spec.id, spec).state, "waiting", "answers to an older page");
+  writeFileSync(file, JSON.stringify({ id: spec.id, hash: spec.hash, answers: { layout: { choice: "tabs" } } }));
+  utimesSync(file, later, later);
+  assert.deepEqual([askState(view, spec.id, spec).state, askState(view, spec.id, spec).open], ["partial", 1]);
+});
+
+test("a submitted time is the browser's only when it is a time, and never breaks the Markdown", () => {
+  const { spec } = normalize(example("rank"));
+  const at = (submitted) => checkAnswers(spec, { id: spec.id, hash: spec.hash, submitted, answers: {} }, KIT_KINDS).answers.submitted;
+  assert.equal(at("2026-11-13T09:30:00Z"), "2026-11-13T09:30:00Z");
+  assert.notEqual(at("2026\n# Forged"), "2026\n# Forged");
+  assert.match(at("2026\n# Forged"), /^\d{4}-\d{2}-\d{2}T/);
+  assert.doesNotMatch(answersMarkdown(spec, { submitted: "2026-11\n# x", answers: {} }).split("\n")[0], /\n/);
+});
+
+test("doctor and view setup read the server entry the same way", async () => {
+  const { viewEntry } = await import("../lib/view/view.mjs");
+  const kind = (entry) => viewEntry({ configurations: [entry] }).kind;
+  assert.equal(kind(SERVER), "kit");
+  assert.equal(kind({ ...SERVER, runtimeArgs: ["wf", "view", "serve", "--port", "9000"] }), "kit");
+  assert.equal(kind({ name: SERVER.name, runtimeExecutable: "node", runtimeArgs: ["node_modules/freeorbit-workflow/bin/wf.mjs", "view", "serve"] }), "kit");
+  assert.equal(kind({ name: SERVER.name, runtimeExecutable: "python3", runtimeArgs: ["-m", "http.server", "8765"] }), "old");
+  assert.equal(kind({ name: SERVER.name, runtimeExecutable: "node", runtimeArgs: ["mine.js"] }), "own");
+  assert.equal(viewEntry({ configurations: [] }).kind, "none");
 });

@@ -70,6 +70,12 @@ a { color: var(--accent); }
 .num { font-variant-numeric: tabular-nums; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .muted { color: var(--muted); }
+.small { font-size: 12px; }
+.desc-sm { font-size: 13px; }
+.view-note { margin: 0 0 8px; }
+.keys-foot { margin: 10px 0 0; }
+.theme-pick { max-width: 210px; }
+.sel.shown { opacity: 1; }
 .grow { flex: 1; min-width: 0; }
 kbd { font: 500 11px/16px var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--panel); white-space: nowrap; }
 .hint { opacity: 0; transition: opacity 150ms var(--ease); }
@@ -152,7 +158,6 @@ nav.rail { display: none; }
 /* A question */
 .q { margin: 0 0 var(--gap-q); scroll-margin-top: calc(var(--head) + 20px); scroll-margin-bottom: calc(var(--foot) + 20px); }
 .q:focus { outline: none; }
-.q.cur .q-head h2::before { content: ""; position: absolute; left: -14px; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; background: var(--accent); }
 .q-head { display: flex; gap: 10px; align-items: flex-start; }
 .q-head h2 { position: relative; flex: 1; min-width: 0; font-size: 15px; line-height: 22px; font-weight: 600; margin: 0; letter-spacing: -0.005em; }
 .q-head .n { color: var(--muted); font-weight: 500; margin-right: 6px; font-variant-numeric: tabular-nums; }
@@ -244,8 +249,11 @@ input.other-text { margin: 6px 0 0 28px; width: calc(100% - 28px); }
 :root[data-sep="sections"] .section .opt.on, :root[data-sep="cards"] .section .opt.on { background: var(--accent-soft); }
 :root[data-sep="sections"] .section .folded, :root[data-sep="cards"] .section .folded { background: var(--app); border-color: transparent; }
 :root[data-sep="sections"] .section .viewer, :root[data-sep="cards"] .section .viewer { background: var(--app); }
-:root[data-sep] .q.cur .q-head h2::before { left: -12px; }
-:root[data-sep="cards"] .q.cur .q-head h2::before, :root[data-sep="bands"] .q.cur .q-head h2::before { opacity: 0; }
+/* The question you are on: a card's border lights up, a band tints, and in sections and lines an accent edge runs down its side, clear of the select box. */
+:root[data-sep="sections"] .section > .q { transition: box-shadow 200ms var(--ease); }
+:root[data-sep="sections"] .section > .q.cur { box-shadow: inset 3px 0 0 var(--accent); }
+:root[data-sep="lines"] .section > .q { transition: box-shadow 200ms var(--ease); }
+:root[data-sep="lines"] .section > .q.cur { box-shadow: -16px 0 0 -13px var(--accent); }
 
 /* Folding: the line and the body each animate their height */
 .fold-line, .fold-body { display: grid; transition: grid-template-rows 280ms var(--ease), opacity 220ms var(--ease), margin 280ms var(--ease); }
@@ -459,7 +467,6 @@ dialog[open]::backdrop { animation: wf-fade 200ms var(--ease); }
 .outline a { transition: background-color 160ms var(--ease), color 160ms var(--ease); }
 .thumb { transition: outline-color 160ms var(--ease), transform 160ms var(--ease); }
 .thumb:hover { transform: translateY(-1px); }
-.q-head h2::before { transition: opacity 200ms var(--ease); }
 /* A frame changing: the old fades out to one side, the new comes in from the other. */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 220ms; animation-timing-function: var(--ease); }
 @keyframes wf-out-left { to { opacity: 0; transform: translateX(-14px); } }
