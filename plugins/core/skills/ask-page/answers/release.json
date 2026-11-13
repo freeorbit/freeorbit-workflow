@@ -1,0 +1,93 @@
+{
+  "id": "release-0-9-plan",
+  "title": "Release 0.9: what goes in",
+  "template": "decision",
+  "intro": "Six questions before release 0.9 is cut. Each richer answer has a recommendation; change any of it, or leave it to me or for later.",
+  "from": "developer",
+  "questions": [
+    {
+      "id": "ship",
+      "text": "Ship 0.9 this week?",
+      "type": "one",
+      "options": [
+        { "id": "yes", "label": "Ship it", "why": "The checks pass and the notes are written." },
+        { "id": "hold", "label": "Hold a week", "why": "Time to finish the sync fix first." }
+      ],
+      "recommended": "yes",
+      "why": "Everything planned is done, and the sync fix can follow in 0.9.1."
+    },
+    {
+      "id": "confidence",
+      "text": "How sure are you the import change is safe?",
+      "type": "scale",
+      "scale": { "min": 1, "max": 5, "low": "Not sure", "high": "Very sure" },
+      "recommended": 4,
+      "why": "It passed the migration tests on three real databases.",
+      "showIf": { "question": "ship", "is": "yes" }
+    },
+    {
+      "id": "hold-why",
+      "text": "What should the extra week finish?",
+      "type": "text",
+      "showIf": { "question": "ship", "is": "hold" }
+    },
+    {
+      "id": "platforms",
+      "text": "Which build goes to each platform?",
+      "type": "grid",
+      "rows": [
+        { "id": "linux", "label": "Linux" },
+        { "id": "mac", "label": "macOS" },
+        { "id": "windows", "label": "Windows" }
+      ],
+      "options": [
+        { "id": "stable", "label": "Stable", "why": "Everyone on the platform gets it." },
+        { "id": "beta", "label": "Beta", "why": "Only people who chose beta builds." },
+        { "id": "skip", "label": "Skip", "why": "This platform stays on 0.8." }
+      ],
+      "recommended": { "linux": "stable", "mac": "stable", "windows": "beta" },
+      "why": "The Windows installer change has had one week of testing, not two.",
+      "owners": ["Ken", "Release lead", "The agent"]
+    },
+    {
+      "id": "issues",
+      "text": "Sort the open issues into this release or later.",
+      "type": "buckets",
+      "items": [
+        { "id": "sync", "label": "Sync drops a row on reconnect", "why": "Seen twice this month." },
+        { "id": "font", "label": "Settings font is too small" },
+        { "id": "export", "label": "CSV export misses the header" },
+        { "id": "dark", "label": "Dark mode flashes on start" }
+      ],
+      "options": [
+        { "id": "now", "label": "In 0.9", "why": "Fixed before the release is cut." },
+        { "id": "next", "label": "0.9.1", "why": "Fixed in the first patch." },
+        { "id": "later", "label": "Later", "why": "Kept on the list, no date yet." }
+      ],
+      "recommended": { "export": "now", "font": "now", "sync": "next", "dark": "later" },
+      "why": "The two small fixes are done; the sync fix needs a week."
+    },
+    {
+      "id": "notes",
+      "text": "Accept the suggested edits to the release notes?",
+      "type": "edits",
+      "edits": [
+        { "id": "title", "label": "The headline", "before": "Release 0.9 brings many improvements.", "after": "Release 0.9 imports from every 0.8 database.", "why": "Says what changed, not that something did." },
+        { "id": "known", "label": "Known issues", "before": "There are no known issues.", "after": "Sync can drop a row on reconnect; 0.9.1 fixes it.", "why": "The sync issue is known, so the notes say so." }
+      ],
+      "recommended": "accept",
+      "why": "Both make the notes say what is true."
+    },
+    {
+      "id": "cut",
+      "text": "The release itself",
+      "type": "form",
+      "fields": [
+        { "id": "date", "label": "Cut on", "kind": "date", "required": true },
+        { "id": "builds", "label": "Builds to make", "kind": "number", "min": 1, "max": 12, "help": "One for each platform and channel." },
+        { "id": "channel", "label": "Announce in", "kind": "select", "options": [{ "id": "blog", "label": "The blog" }, { "id": "list", "label": "The mailing list" }] },
+        { "id": "checked", "label": "The checklist is done", "kind": "check", "required": true }
+      ]
+    }
+  ]
+}

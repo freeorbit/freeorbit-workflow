@@ -650,7 +650,7 @@ test("blocks: a page or a project turns block kinds and features off", () => {
   assert.deepEqual(problems, []);
   assert.deepEqual(spec.sections[0].blocks.map((b) => b.type), ["text"], "stats is off for the project");
   assert.deepEqual(spec.off, ["bulk"], "palette came back on for this page");
-  assert.match(normalize({ ...base, off: ["everything"] }, {}, {}).problems.join(), /"everything" is not a block kind or a page feature/);
+  assert.match(normalize({ ...base, off: ["everything"] }, {}, {}).problems.join(), /"everything" is not a block kind, a question type, or a page feature/);
 });
 
 test("blocks: the named sources read the project's logs, and an absent one is an empty table", async () => {
@@ -682,4 +682,189 @@ test("the block example and its part build", async () => {
   const out = normalize(spec, {}, { parts, source: () => ({ columns: [{ key: "id", label: "ID" }], rows: [], empty: "None." }) });
   assert.deepEqual(out.problems, []);
   assert.deepEqual(out.spec.sections.map((s) => s.blocks.map((b) => b.type).join(",")), ["stats,text,table", "table,table", "diff,diff,questions"]);
+});
+
+// --- richer answers -----------------------------------------------------------
+const releaseExample = () => JSON.parse(readFileSync(join(EXAMPLES, "../answers/release.json"), "utf8"));
+const why = (id, label = id) => ({ id, label, why: `${label}, as it says.` });
+// The asking rules' own problems, left out where a test checks something else.
+const ADVICE = /a recommendation|a suggested order|in why/;
+const unadvised = (out) => ({ ...out, problems: out.problems.filter((p) => !ADVICE.test(p)) });
+/** One question on a page, checked, less the asking rules' problems. */
+const one = (q, extra = {}) => unadvised(normalize({ id: "rich", title: "Rich", questions: [q], ...extra }));
+
+test("richer answers: the example checks clean and builds", async () => {
+  const raw = releaseExample();
+  const { spec, problems } = normalize(raw);
+  assert.deepEqual(problems, []);
+  assert.deepEqual(spec.questions.map((q) => q.type), ["one", "scale", "text", "grid", "buckets", "edits", "form"]);
+  assert.deepEqual(spec.questions[1].scale, { min: 1, max: 5, step: 1, style: "stars", low: "Not sure", high: "Very sure", unit: "" });
+  assert.deepEqual(spec.questions[5].recommended, { title: "accept", known: "accept" }, "one word recommends every edit");
+  assert.equal(spec.questions[5].edits[0].by, "word");
+  assert.ok(spec.questions[5].edits[0].ops.some((o) => o.op === "add"));
+  const { root, view } = project(raw);
+  const built = buildPage(root, view, raw, KIT_KINDS);
+  assert.deepEqual(built.problems ?? [], []);
+});
+
+test("richer answers: each type is checked", () => {
+  const scale = (s, extra = {}) => one({ id: "s", text: "Rate", type: "scale", scale: s, ...extra }).problems.join(" | ");
+  assert.equal(scale({ min: 0, max: 100, step: 5 }), "");
+  assert.equal(one({ id: "s", text: "Rate", type: "scale", scale: { min: 0, max: 100, step: 5 } }).spec.questions[0].scale.style, "slider", "a wide range is a slider");
+  assert.match(scale({ min: 5, max: 1 }), /runs from min to a larger max/);
+  assert.match(scale({ max: 20, style: "stars" }), /stars count whole steps/);
+  assert.match(scale({}, { recommended: 2.5 }), /a number on the scale/);
+  assert.match(scale({ min: 0, max: 1e6, step: 1 }), /at most 1000 steps/);
+  const grid = (extra) => one({ id: "g", text: "Grid", type: "grid", rows: ["a", "b"], options: ["x", "y"], ...extra }).problems.join(" | ");
+  assert.equal(grid({ recommended: { a: "x" } }), "");
+  assert.match(grid({ recommended: { a: "z", c: "x" } }), /recommended places a, c on something it does not have/);
+  assert.match(grid({ rows: [] }), /lists its rows/);
+  assert.match(grid({ options: ["x"] }), /at least two options, the columns/);
+  assert.match(one({ id: "b", text: "Sort", type: "buckets", options: ["now", "later"] }).problems.join(), /lists its items/);
+  const edits = (list, extra) => one({ id: "e", text: "Edits", type: "edits", edits: list, ...extra }).problems.join(" | ");
+  assert.match(edits([{ id: "a", before: "x", after: "x" }]), /before and after are the same/);
+  assert.match(edits([{ id: "a", before: "x", after: "y" }], { recommended: "maybe" }), /recommended places a on something/);
+  const form = (fields, extra) => one({ id: "f", text: "Form", type: "form", fields, ...extra }).problems.join(" | ");
+  assert.equal(form([{ id: "n", kind: "number", min: 0 }]), "");
+  assert.match(form([{ id: "n", kind: "colour" }]), /kind is one of text, long, number, check, select, date/);
+  assert.match(form([{ id: "s", kind: "select", options: ["a"] }]), /a select field has at least two options/);
+  assert.match(form([{ id: "n" }], { recommended: "x" }), /a form recommends nothing/);
+  assert.match(form([{ id: "n" }, { id: "n" }]), /field ids repeat/);
+  assert.match(one({ id: "o", text: "Who?", owners: [] }).problems.join(), /owners lists one to 12 names/);
+  assert.match(one({ id: "o", text: "Who?", owners: ["Ken", "Ken"] }).problems.join(), /owners repeat/);
+});
+
+test("richer answers: the asking rules hold, with a recommendation and why on each", () => {
+  const advice = (q) => normalize({ id: "rich", title: "Rich", template: "decision", questions: [q] }).problems.join(" | ");
+  assert.match(advice({ id: "s", text: "Rate", type: "scale" }), /give the number in recommended, or say in noPick why/);
+  assert.equal(advice({ id: "s", text: "Rate", type: "scale", noPick: "It is yours to say." }), "");
+  assert.match(advice({ id: "g", text: "Grid", type: "grid", rows: ["a"], options: ["x", "y"], recommended: { a: "x" }, why: "w" }), /every option says what it means, in why; x, y do not/);
+  assert.match(advice({ id: "e", text: "Edits", type: "edits", edits: [{ id: "a", before: "x", after: "y" }], recommended: "accept", why: "w" }), /every edit says why it is suggested/);
+  assert.equal(advice({ id: "f", text: "Form", type: "form", fields: [{ id: "a" }] }), "", "a form, like text, asks for no recommendation");
+});
+
+test("richer answers: a follow-up names an earlier question, and what it names fits", () => {
+  const page = (follow) => unadvised(normalize({ id: "rich", title: "Rich", questions: [
+    { id: "a", text: "Pick", options: ["x", "y"] },
+    { id: "s", text: "Rate", type: "scale" },
+    { id: "f", text: "Then", ...follow },
+  ] })).problems.join(" | ");
+  assert.equal(page({ showIf: { question: "a", is: "x" } }), "");
+  assert.equal(page({ showIf: { question: "s", atLeast: 3 } }), "");
+  assert.equal(page({ showIf: { question: "a" } }), "", "with nothing named, it shows once a is answered");
+  assert.match(page({ showIf: { question: "z" } }), /showIf names z, which is not an earlier question/);
+  assert.match(page({ showIf: { question: "a", is: "q" } }), /showIf's is names options a does not have/);
+  assert.match(page({ showIf: { question: "s", is: "x" } }), /showIf's is needs a one or many question; s is scale/);
+  assert.match(page({ showIf: { question: "a", atLeast: 2 } }), /atLeast and atMost need a scale/);
+  const later = normalize({ id: "rich", title: "Rich", questions: [{ id: "f", text: "Then", showIf: { question: "a" } }, { id: "a", text: "Pick", options: ["x", "y"] }] });
+  assert.match(later.problems.join(), /not an earlier question/, "a follow-up never comes before what it follows");
+});
+
+test("richer answers: a page or a project turns the types, follow-ups, owners, and boxes off", () => {
+  const raw = releaseExample();
+  assert.match(normalize({ ...raw, off: ["edits"] }).problems.join(), /notes: edits questions are turned off here/);
+  const config = merge(DEFAULTS, { ask: { off: ["followups", "owners", "regions"] } });
+  const { spec, problems } = normalize(raw, {}, { config });
+  assert.deepEqual(problems, []);
+  assert.ok(spec.questions.every((q) => !q.showIf && !q.owners.length));
+  assert.deepEqual([...spec.off].sort(), ["followups", "owners", "regions"]);
+  assert.deepEqual(normalize({ ...raw, on: ["owners"] }, {}, { config }).spec.questions[3].owners, ["Ken", "Release lead", "The agent"]);
+});
+
+test("richer answers: the answers are checked, and a follow-up not asked holds none", () => {
+  const { spec } = normalize(releaseExample());
+  const send = (answers) => checkAnswers(spec, { id: spec.id, hash: spec.hash, answers }, KIT_KINDS);
+  const full = {
+    ship: { choice: "yes" }, confidence: { number: 4 }, "hold-why": { text: "never asked" },
+    platforms: { rows: { linux: "stable", mac: "stable", windows: "beta" }, owner: "Ken" },
+    issues: { rows: { sync: "next", font: "now", export: "now", dark: "later" } },
+    notes: { edits: { title: "accept", known: "reject" } },
+    cut: { fields: { date: "2026-11-20", builds: 3, checked: true } },
+  };
+  const ok = send(full);
+  assert.equal(ok.problems, undefined);
+  assert.equal(ok.answers.partial, false);
+  assert.equal(ok.answers.answers["hold-why"], undefined, "hold-why follows a Hold, so its text goes");
+  const held = send({ ...full, ship: { choice: "hold" } }).answers;
+  assert.equal(held.answers.confidence, undefined, "with Hold, confidence is not asked and its number goes");
+  assert.deepEqual(held.answers["hold-why"], { text: "never asked" }, "and hold-why is asked instead");
+  assert.deepEqual(send({ ...full, ship: { choice: "hold" }, "hold-why": {} }).answers.open, ["hold-why"]);
+  const part = send({ ship: { choice: "yes" }, platforms: { rows: { linux: "stable" } }, cut: { fields: { builds: 3 } } }).answers;
+  assert.deepEqual(part.open, ["confidence", "platforms", "issues", "notes", "cut"], "a part-placed grid and a form missing a needed field are open");
+  const wrong = (answers, pattern) => assert.match((send(answers).problems ?? []).join(" | "), pattern);
+  wrong({ confidence: { number: 9 } }, /confidence: the number is from 1 to 5, by 1/);
+  wrong({ confidence: { number: 2.5 } }, /from 1 to 5, by 1/);
+  wrong({ ship: { number: 2 } }, /ship: takes no number/);
+  wrong({ platforms: { rows: { linux: "nightly" } } }, /rows place each of its rows on one of its options/);
+  wrong({ notes: { edits: { title: "maybe" } } }, /edits accept or reject each of its edits/);
+  wrong({ cut: { fields: { builds: 40 } } }, /field builds: At most 12/);
+  wrong({ cut: { fields: { colour: "red" } } }, /field colour is not one of its fields/);
+  wrong({ cut: { fields: { channel: "radio" } } }, /field channel: One of the choices/);
+  wrong({ platforms: { owner: "Someone" } }, /owner is one of Ken, Release lead, The agent/);
+  wrong({ ship: { owner: "Ken" } }, /owner is not offered here/);
+});
+
+test("richer answers: a box drawn on a picture is a pin with a size, unless boxes are off", () => {
+  const raw = { id: "boxes", title: "Boxes", questions: [{ id: "q", text: "What is wrong?", pins: true, pictures: [{ image: "a.png" }] }] };
+  const { spec } = normalize(raw);
+  const pin = { picture: 0, x: 10.4, y: 20, w: 30.6, h: 40, kind: "bug", text: "cut off" };
+  const got = checkAnswers(spec, { id: spec.id, hash: spec.hash, answers: { q: { pins: [pin] } } }, KIT_KINDS);
+  assert.deepEqual(got.answers.answers.q.pins, [{ picture: 0, x: 10, y: 20, w: 31, h: 40, kind: "bug", text: "cut off" }]);
+  assert.match(answersMarkdown(spec, got.answers), /Box 1 on picture 1 at a box at 10, 20, 31×40 \(bug\): cut off/);
+  assert.match(checkAnswers(spec, { id: spec.id, hash: spec.hash, answers: { q: { pins: [{ ...pin, w: 0 }] } } }, KIT_KINDS).problems.join(), /a box a width and a height above 0/);
+  const { spec: offSpec } = normalize({ ...raw, off: ["regions"] });
+  assert.match(checkAnswers(offSpec, { id: offSpec.id, hash: offSpec.hash, answers: { q: { pins: [pin] } } }, KIT_KINDS).problems.join(), /boxes are turned off here/);
+});
+
+test("richer answers: the Markdown says each one, and what was not asked", () => {
+  const { spec } = normalize(releaseExample());
+  const { answers } = checkAnswers(spec, { id: spec.id, hash: spec.hash, answers: {
+    ship: { choice: "yes" }, confidence: { number: 4 }, platforms: { rows: { linux: "stable", mac: "beta", windows: "beta" }, owner: "Ken" },
+    issues: { rows: { sync: "next", font: "now" } }, notes: { edits: { title: "accept", known: "reject" } }, cut: { fields: { date: "2026-11-20", checked: true, channel: "blog" } },
+  } }, KIT_KINDS);
+  const md = answersMarkdown(spec, answers);
+  assert.match(md, /\*\*confidence\*\* .*: \*\*4\*\* \(recommended\)\./);
+  assert.match(md, /\*\*hold-why\*\* .*: not asked, as it follows ship\./);
+  assert.match(md, /- Owner: Ken\n {2}- Linux: Stable\n {2}- macOS: Beta/);
+  assert.match(md, /\*\*issues\*\* .*: 2 of 4 done, so still open\./);
+  assert.match(md, /Edit \*\*known\*\* Known issues: rejected/);
+  assert.match(md, /- Cut on: 2026-11-20\n {2}- Builds to make: empty\n {2}- Announce in: The blog\n {2}- The checklist is done: yes/);
+  assert.match(md, /, 1 of 6 open/);
+});
+
+test("richer answers: the page's steps and the record read one rule", () => {
+  const S = answerSteps();
+  const { spec } = normalize(releaseExample());
+  const q = Object.fromEntries(spec.questions.map((x) => [x.id, x]));
+  const byId = new Map(spec.questions.map((x) => [x.id, x]));
+  // Follow-ups, and a follow-up of a hidden one.
+  const chain = normalize({ id: "c", title: "C", questions: [{ id: "a", text: "A", options: ["x", "y"] }, { id: "b", text: "B", type: "scale", showIf: { question: "a", is: "x" } }, { id: "c", text: "C", showIf: { question: "b", atLeast: 3 } }] }).spec;
+  const cById = new Map(chain.questions.map((x) => [x.id, x]));
+  const shows = (A) => chain.questions.filter((x) => S.shown(x, A, cById)).map((x) => x.id).join();
+  assert.equal(shows({}), "a");
+  assert.equal(shows({ a: { choice: "x" } }), "a,b");
+  assert.equal(shows({ a: { choice: "x" }, b: { number: 4 } }), "a,b,c");
+  assert.equal(shows({ a: { choice: "y" }, b: { number: 4 } }), "a", "c follows b, which is hidden");
+  assert.equal(shows({ a: { decide: "agent" } }), "a", "a question left to the agent shows no follow-ups");
+  assert.equal(S.shown(q.confidence, { ship: { choice: "yes" } }, byId), true);
+  // Taking a recommendation: a number, a place for each row, the edits; a form has none.
+  const v = { decide: "later" };
+  assert.equal(S.takeRecommendation(q.confidence, v), true);
+  assert.deepEqual({ ...v }, { number: 4 });
+  const g = { rows: { windows: "skip" } };
+  S.takeRecommendation(q.platforms, g);
+  assert.deepEqual({ ...g.rows }, { linux: "stable", mac: "stable", windows: "skip" }, "a row already placed stays");
+  assert.equal(S.takeRecommendation(q.cut, {}), false);
+  // Answered, by the page and by the record alike.
+  const cases = [[q.platforms, { rows: { linux: "stable" } }], [q.platforms, { rows: { linux: "stable", mac: "beta", windows: "beta" } }], [q.cut, { fields: { date: "2026-11-20" } }], [q.cut, { fields: { date: "2026-11-20", checked: true } }], [q.cut, { fields: { date: "2026-11-20", checked: true, builds: 99 } }], [q.notes, { edits: { title: "accept" } }]];
+  assert.deepEqual(cases.map(([x, a]) => S.answered(a, x)), [false, true, false, true, false, false]);
+  assert.deepEqual(cases.map(([x, a]) => answered(a, x)), cases.map(([x, a]) => S.answered(a, x)));
+  assert.equal(S.answered({ rows: { linux: "stable" } }), true, "without the question, anything placed counts");
+  const w = { number: 3, rows: { a: "b" }, edits: { e: "accept" }, fields: { f: 1 }, note: "keep", owner: "Ken" };
+  S.clearAnswer(w);
+  assert.deepEqual({ ...w }, { note: "keep", owner: "Ken" });
+  const A = { a: { rows: {}, note: "n" } };
+  assert.deepEqual(JSON.parse(JSON.stringify(S.prune(A))), { a: { note: "n" } });
+  assert.equal(S.fieldProblem({ kind: "date", required: false }, "2026-02-30x"), "A date, such as 2026-11-13.");
+  assert.equal(S.fieldProblem({ kind: "check", required: true }, false), "Tick this to go on.");
 });

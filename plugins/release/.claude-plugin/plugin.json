@@ -1,5 +1,5 @@
 {
   "name": "release",
-  "version": "0.51.0",
+  "version": "0.52.0",
   "description": "Pre-releases and stable releases on the release role's command: version, checks, a prepare pull request for the kinds release.prepare names, notes from commits and stories in the changelog or on the GitHub Release, tag, and whichever of build, sign, publish, and the runbook's after-tag step the project has, with a yes before each step."
 }

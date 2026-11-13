@@ -36,7 +36,7 @@ A block is one object with a `type`; the page draws them in order.
 
 ## Blocks
 
-Phase 1 builds the first four; each later phase adds its row.
+Phase 1 built the first four; phase 2 the richer answers, below; phase 3 adds its rows.
 
 | Block | Holds | Export | Phase |
 | --- | --- | --- | --- |
@@ -77,9 +77,26 @@ A part is a block list kept as data in `.workflow/ask-parts/<name>.json`, used w
 - **A project default.** `ask.off` in `.workflow/config.json` does the same for every page.
 - **On again.** A page's `on` turns back on what the project turned off.
 
+## Richer answers
+
+Phase 2 asks for more than a pick, an order, or text. Each is a question `type`, checked at build like the rest, with its answer in a field of its own.
+
+| Type | Asks for | Answer | Answered when |
+| --- | --- | --- | --- |
+| `scale` | Stars, a slider, or a number, from `min` to `max` by `step` | `number` | It is set |
+| `grid` | One column for each row | `rows` | Every row has one |
+| `buckets` | Each item sorted into a bucket | `rows` | Every item is placed |
+| `edits` | Accept or reject each suggested change, shown as a diff | `edits` | Every edit is decided |
+| `form` | A few fields: text, long text, a number, a tick, a choice, a date | `fields` | Every field is fine, and one is filled |
+
+- **One rule.** What "answered" means, and when a follow-up shows, live in the page's `state.js`, which the kit's checks load too, so the page and the record cannot disagree.
+- **Follow-ups.** `showIf` names an earlier question and what its answer must be. A follow-up not shown is not asked: never open, and its answer is dropped.
+- **Owners and boxes.** `owners` lets the person assign a question; a drag in comment mode draws a box, a pin with a size.
+- **Off.** Each type, and `followups`, `owners`, and `regions`, turns off like a block.
+- **Export.** The answers' Markdown says each one in full: a grid row by row, the buckets, each edit, each field, the owner, and each box with its size.
+
 ## Later phases
 
-- **Phase 2, richer answers.** Follow-ups that show when an earlier answer fits (`showIf`), a grid of choices, sorting into buckets, accepting or rejecting suggested edits, ratings, numbers and sliders, a small form with checks, drawing a box on a picture, and assigning an owner.
 - **Phase 3, more to show.** Charts, diagrams, timelines, and the board view.
 - **Phase 4, live pages.** A status page the agent updates while a step runs, a reply under a question, a history of every ask, what changed since the last ask, and step-by-step pages.
 

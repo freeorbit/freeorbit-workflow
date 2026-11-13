@@ -54,7 +54,7 @@ When none of the templates fits a question that will come back, such as a depend
 ## The spec
 
 - **Top.** `id` (lowercase, dashes), `title`, `template`, `intro`; `chunk` and `from` (a role) for the record.
-- **A question.** `id`, `text`, `type` (`one`, `many`, `text`, `rank`), `options` of `id`, `label`, `why`, `preview` (a text sketch), `kind` (a colour), and `recommended` with `why`.
+- **A question.** `id`, `text`, `type` (`one`, `many`, `text`, `rank`, or a richer one below), `options` of `id`, `label`, `why`, `preview` (a text sketch), `kind` (a colour), and `recommended` with `why`.
   - **Recommend.** In `decision`, `batch`, `naming`, and `triage`, every option says what it means in its own `why`, as the question tool's descriptions do, and every choice names `recommended` and says `why`; `rank` lists its items in the suggested order and says `why` at the top. The page check fails without them.
   - `noPick` instead, only when there is honestly nothing to recommend, says why; the page shows it. A review template's verdicts are the person's own, so they recommend nothing.
   - `role`, `group`, `look` (where to look), `detail`, `chunk`.
@@ -92,12 +92,31 @@ A page can show more than questions: give `sections`, each a `title` and its `bl
 
 - **Every block** takes a `title` and a `note`. A titled block has its own Export menu; an untitled one's sits in its section's.
 - **Limits.** 60 blocks and 500 table rows a page, and 4,000 characters a text block.
-- **Off.** `off` lists block kinds or features a page leaves out (`bulk`, `outline`, `palette`, `pins`, `compare`); `ask.off` in `.workflow/config.json` does it for every page, and a page's `on` brings one back.
+- **Off.** `off` lists block kinds, question types, or features a page leaves out (`bulk`, `outline`, `palette`, `pins`, `compare`, `regions`, `followups`, `owners`); `ask.off` in `.workflow/config.json` does it for every page, and a page's `on` brings one back.
+
+## Richer answers
+
+Beyond picking, ordering, and typing, a question can ask for a number, a grid, a sort, edits, or a small form. The example is `answers/release.json` beside this skill.
+
+| Type | Fields | Answer | Recommend |
+| --- | --- | --- | --- |
+| `scale` | `scale`: `min` (1), `max` (5), `step` (1), `style` (`stars` up to ten steps, `slider`, `number`), `low` and `high` labels, `unit` | `number` | A number on the scale |
+| `grid` | `rows` of `id`, `label`, `why`; `options` are the columns | `rows`: a column for each row | `{ row: option }` |
+| `buckets` | `items` of `id`, `label`, `why`; `options` are the buckets; drag, or pick on the card | `rows`: a bucket for each item | `{ item: bucket }` |
+| `edits` | `edits` of `id`, `label`, `before`, `after`, `by` (word, or line), `why` | `edits`: `accept` or `reject` each | `"accept"`, or `{ edit: "accept" }` |
+| `form` | `fields` of `id`, `label`, `kind` (`text`, `long`, `number`, `check`, `select`, `date`), `required`, `min`, `max`, `options`, `help`, `placeholder` | `fields` | Nothing; say what fits in `help` |
+
+- **Answered.** A grid, a sort, or edits is answered when every row has its place; a form when every field is fine and something is filled in. Each is checked as it is filled.
+- **The asking rules.** In the advised templates, every column and bucket says what it means in `why`, every edit says why it is suggested, and each recommends in `recommended` with `why`, or says in `noPick` why not. R takes it; rows already placed stay.
+- **Follow-ups.** `showIf: { "question": "<earlier id>", "is": "<option>" }` shows a question only when that answer fits: `is` or `not` (one option or a list) for a choice, `atLeast` or `atMost` for a scale, or nothing, for any answer. A follow-up not shown is not asked, so it is never open, and what it held is not sent. Follow-ups are for list pages, not the paged reviews.
+- **Owners.** `owners`, a list of names, puts a "who owns this" pick on a question; the answer's `owner` is one of them.
+- **Boxes.** With `pins: true`, a drag in comment mode draws a box, a pin with a `w` and `h`; a click still drops a pin.
+- **Off.** `off` and `ask.off` take the types too, and `followups`, `owners`, and `regions` (boxes); a spec using a type that is off fails its check.
 
 ## Answers
 
 
-Each answer has `choice`, `order`, `text`, or `decide` (`agent`: you decide, `later`: an open question), with an optional `note`, `other`, and `pins` (picture index, x, y, kind, text, box).
+Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, or `decide` (`agent`: you decide, `later`: an open question), with an optional `note`, `other`, `owner`, and `pins` (picture index, x, y, a `w` and `h` for a box, kind, text, box).
 
 - `npx wf ask answers <id>` prints them again; `--json` gives the file. They are in `.cache/view/answers/<id>.json`.
 - `npx wf ask export <id>` writes one `.html` with the pictures inside, and the answers as `.md` and `.json`. Offline, the page saves an answers file for `wf ask import`.
