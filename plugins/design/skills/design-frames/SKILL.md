@@ -76,9 +76,10 @@ A question about a frame, a screen, or an image comes with its picture, sent jus
 
 - A frame's boxes come from its elements (`selector`, optional `text` and `nth`), found in Chromium at the render size. A screenshot's boxes are rects: x, y, width, height.
 - Kinds: `look` blue, `bug` red, `drift` amber, `ok` green, `new` purple for what is new or changed in a picture sent for review. When nothing fits, add a kind under `design.kinds` in `.workflow/config.json` with a `color`, `word`, and `use`. A kit kind is never changed and no two kinds share a colour; the command fails on either.
-- A comparison is one labelled sheet, such as the frame on the left and the app on the right. Several questions share one sheet, and each question says where to look, such as "sheet A, box 2".
+- In the chat, a comparison is one labelled sheet, such as the frame on the left and the app on the right. Several questions share one sheet, and each question says where to look, such as "sheet A, box 2".
 - The command also writes the sheet's `.html` page and an `index.html` beside it, and prints the page's address.
-- Where a browser pane is open beside the chat, put the sheet on an ask page with its questions, as the core `ask-page` skill says, or open the sheet's address that `wf design annotate` prints; it starts the shared `question-pictures` server when none runs.
+- **For an ask page, add `--ask`.** `npx wf design annotate <spec> --ask` draws no sheet: it writes each picture on its own and `<out>.ask.json`, the pictures with their boxes as data, and a frame followed by its app picture as one compare pair (or the pairs `pairs` names, such as `[["A", "B"]]`). Put a pair in a question's `compare`, or the `compare` template's `pairs`, so the page draws the boxes, zooms, and takes pins. Never put the joined sheet on an ask page; the core `ask-page` skill says which part fits each question.
+- Without a pane, send the sheet, or open the sheet's address that `wf design annotate` prints; it starts the shared `question-pictures` server when none runs.
 
 ## Compare the app with a frame
 

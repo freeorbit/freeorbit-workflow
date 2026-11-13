@@ -10,12 +10,13 @@ On this machine, decide what you can from the repo, these rules, and the chat. W
   - Group them: one page for what blocks the same piece of work, related questions together under what they decide, and questions of the same shape as one. The skill says how.
 - **Show what a visual question is about.** A question about a frame, a screen, or an image comes with its picture. So does a picture sent for review, such as a new or redrawn frame.
   - Send the picture just before the question, so it stays in view while the question is open.
-  - A comparison is one labelled picture, such as the frame on the left and the app on the right. Several questions share one labelled sheet.
+  - In the chat, a comparison is one labelled picture, such as the frame on the left and the app on the right. Several questions share one labelled sheet.
   - With the design plugin, make every picture you send with `npx wf design annotate <spec>`. Each one gets a bar with its letter and frame name, and numbered boxes around what to look at: blue to look, red for a bug, amber for drift, green for fine, purple for new or changed.
     - When nothing fits, add a kind under `design.kinds` in [.workflow/config.json](.workflow/config.json), never changing an existing one.
     - A frame's boxes come from its elements. The spec is in the kit's `design-frames` skill.
   - Each question says where to look, such as "sheet A, box 2". Option previews hold text only, so a layout choice can add a rough text sketch.
-  - Where a browser pane is open beside the chat, ask on an ask page, so each picture sits beside its question; an annotate sheet can be one of its pictures. Without a pane, send the sheet just before the question.
+  - Where a browser pane is open beside the chat, ask on an ask page, so each picture sits beside its question. Without a pane, send the sheet just before the question.
+  - On an ask page, never the joined sheet: `npx wf design annotate <spec> --ask` gives each picture with its boxes as data, and a frame and the app as one compare pair.
 <!-- wf:local asking-pictures -->
 - The full list of when to ask and when not is in [asking.md]({{docs.workflow}}/asking.md).
 - **Missing packages.** Never install a system package. Name what is missing, give the install command, and wait for the person at this computer, or ask when it would only make the job easier. The steps are in [tools.md]({{docs.workflow}}/tools.md#missing-packages).

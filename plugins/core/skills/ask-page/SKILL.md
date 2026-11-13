@@ -32,6 +32,21 @@ No limit on questions is no reason to ask them all at once. `wf ask page` prints
 - **One question for the same shape.** Three or more with the same options are one `grid`; several facts about one thing, one `form`; the same verdict on many items, `triage` or a table; a choice that matters only after another answer, a `showIf` follow-up.
 - **Answerable in a few minutes**, about a dozen answers. Past that, steps, or a second page once the first is answered.
 
+## Which part for which question
+
+| What you show or ask | Use |
+| --- | --- |
+| A frame against the app, or before and after | A `compare` pair, or the `compare` template, from `wf design annotate --ask` |
+| Several frames to judge | `frame-review`, a frame a page; never one joined sheet |
+| Where to look on a picture | `boxes` as data, from `--ask`, so a box lights up and takes pins |
+| Numbers, a trend, a count | `stats` tiles, a `trend`, or a chart |
+| Rows from a log, or a list | A `table`, with a `source` for the kit's logs |
+| A wording or text change | A `diff` block, or an `edits` question |
+| Context | A `text` block in a section, not a long `intro` |
+| The choice the evidence leads to | Its own question, after the evidence |
+
+`wf ask page` prints Pictures advice for a joined sheet, a "box" with no boxes, or a frame and the app with no compare.
+
 ## Templates
 
 | Template | Items field | Each item becomes |
@@ -55,21 +70,21 @@ A paged template (`compare`, `frame-review`, `storyboard`) shows one item at a t
 
 - **Top.** `id` (lowercase, dashes), `title`, `template`, `intro`; `chunk` and `from` (a role) for the record.
 - **A question.** `id`, `text`, `type` (`one`, `many`, `text`, `rank`, or a richer one below), `options` of `id`, `label`, `why`, `preview` (a text sketch), `kind` (a colour), and `recommended` with `why`.
-  - **Recommend.** In `decision`, `batch`, `naming`, and `triage`, every option says what it means in its own `why`, as the question tool's descriptions do, and every choice names `recommended` and says `why`; `rank` lists its items in the suggested order and says `why` at the top. The page check fails without them.
+  - **Recommend.** In `decision`, `batch`, `naming`, and `triage`, every option says what it means in its own `why`, and every choice names `recommended` and says `why`; `rank` lists its items in the suggested order and says `why` at the top. The page check fails without them.
   - `noPick` instead, only when there is honestly nothing to recommend, says why; the page shows it. A review template's verdicts are the person's own, so they recommend nothing.
   - `role`, `group`, `look` (where to look), `detail`, `chunk`.
   - `pictures`: `image` (a path in the project), `label`, `name`, and `boxes` of `n`, `kind`, `rect` `[x, y, width, height]` in the picture's pixels.
   - `compare`: two pictures, the frame or before first. `pins: true` lets the person pin comments on the pictures.
   - `other: true` adds "Something else" with a text box; `defer: false` hides "You decide" and "Later".
   - `record`: a decisions file id, such as an area's, for `wf ask record`.
-- **Pictures.** A sheet from `npx wf design annotate`, or a shot from `wf screens` or `wf app`, works as a picture; the box kinds are the annotate kinds.
+- **Pictures.** `npx wf design annotate <spec> --ask` gives each frame or shot as its own picture, with its boxes; a shot from `wf screens` or `wf app` works too.
 
 ## The page
 
 Every template shares one layout: a header with the title, who asked, the draft state, the other asks, and the progress; a column of questions; and a footer whose one primary button is Send.
 
 - **Keys.** J and K move between questions, 1–9 pick, R takes the recommendation, D and L are You decide and Later, N is a note, Enter goes to the next open question, X selects, Ctrl+K opens the command list, Ctrl+Z undoes, and ? lists them all.
-- **Reviews.** A compare opens on Swipe, the slider. A paged template shows one frame with a filmstrip of verdict colours and comment counts; 1–4 give a verdict and move to the next frame, which the settings can turn off. C turns on comment mode for pins, M changes the compare view, Z zooms.
+- **Reviews.** A compare opens on Swipe. A paged template shows one frame with a filmstrip; 1–4 give a verdict and move on. C is comment mode for pins, M the compare view, Z zoom.
 - **Many at once.** Take all recommendations, or select questions or rows and give them one answer. Every change can be undone, from the toast or Ctrl+Z.
 - **Sending.** Questions left open get one panel: send them as You decide, as Later, or open. A receipt then shows exactly what was sent, with Change answers and the next waiting ask.
 - **Look.** Themes use Claude Desktop's own colour tokens: its theme and palettes when it is installed, and the kit's six, each light and dark. Any theme takes an accent, a text size, and a density.
@@ -89,7 +104,7 @@ Every template shares one layout: a header with the title, who asked, the draft 
 ## Answers
 
 
-Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, or `decide` (`agent`: you decide, `later`: an open question), with an optional `note`, `other`, `owner`, `reply` (to your reply under it), and `pins` (picture index, x, y, a `w` and `h` for a box, kind, text, box).
+Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, or `decide` (`agent` or `later`), with an optional `note`, `other`, `owner`, `reply`, and `pins` (picture, x, y, `w` and `h` for a box, kind, text).
 
 - `npx wf ask answers <id>` prints them again; `--json` gives the file. They are in `.cache/view/answers/<id>.json`.
 - `npx wf ask export <id>` writes one `.html` with the pictures inside, and the answers as `.md` and `.json`. Offline, the page saves an answers file for `wf ask import`.

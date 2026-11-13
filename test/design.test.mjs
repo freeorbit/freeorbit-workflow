@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { boxArgs, checkSpec, magickText, fit, indexHtml, KIT_KINDS as KINDS, kindsFor, legend, viewerHtml } from "../lib/design/annotate.mjs";
+import { annotateForAsk, askPictures, boxArgs, checkSpec, magickText, fit, indexHtml, KIT_KINDS as KINDS, kindsFor, legend, viewerHtml } from "../lib/design/annotate.mjs";
 import { designPaths, findFrame, frameFiles, pickFrames, sectionFolder } from "../lib/design/frames.mjs";
 import { renderArgs } from "../lib/design/index.mjs";
 import { changed, frames, grid, picture, screenLists, storyboard } from "../lib/design/storyboard.mjs";
@@ -299,4 +299,35 @@ test("text bound for ImageMagick cannot read a file or expand an escape (SEC-083
   assert.equal(magickText("A   100% %[pixel:p] a\\n"), "A   100%% %%[pixel:p] a\\\\n");
   assert.equal(magickText("A   gm-accounts"), "A   gm-accounts");
   assert.deepEqual(checkSpec({ pictures: [{ label: "B2", frame: "f", boxes: [{ n: 12, rect: [0, 0, 1, 1] }] }] }).pictures[0].label, "B2");
+});
+
+test("for an ask page, a frame and its app picture are one compare pair, each with its boxes as data", () => {
+  const spec = checkSpec({ pictures: [
+    { label: "A", frame: "dr-overview", boxes: [{ rect: [10.4, 20, 300, 40] }] },
+    { label: "B", name: "the app", image: ".cache/screens/latest/overview.png", boxes: [{ n: 2, kind: "drift", rect: [12, 22, 300, 44], text: "Requests" }] },
+    { label: "C", name: "settings", image: ".cache/screens/latest/settings.png" },
+  ] });
+  const files = ["p/a.png", "p/b.png", "p/c.png"];
+  const parts = askPictures(spec.pictures, files);
+  assert.deepEqual(parts.pairs, [{ label: "A-B",
+    left: { image: "p/a.png", label: "A", name: "dr-overview", boxes: [{ n: 1, kind: "look", rect: [10, 20, 300, 40] }] },
+    right: { image: "p/b.png", label: "B", name: "the app", boxes: [{ n: 2, kind: "drift", rect: [12, 22, 300, 44], text: "Requests" }] } }]);
+  assert.deepEqual(parts.pictures.map((p) => p.label), ["C"], "a picture with no partner stands alone");
+  // Named pairs win over the order.
+  const named = checkSpec({ pictures: [{ image: "a.png" }, { image: "b.png" }, { image: "c.png" }], pairs: [["A", "C"]] });
+  const parts2 = askPictures(named.pictures, ["a", "b", "c"], named.pairs);
+  assert.deepEqual([parts2.pairs[0].label, parts2.pictures.map((p) => p.label)], ["A-C", ["B"]]);
+  assert.throws(() => checkSpec({ pictures: [{ image: "a.png" }], pairs: [["A", "Z"]] }), /a pair is two picture labels/);
+});
+
+test("annotate --ask writes each picture as it is, beside the sheet's name, and the spec's parts", async () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-annotate-ask-"));
+  mkdirSync(join(root, ".cache/screens"), { recursive: true });
+  writeFileSync(join(root, ".cache/screens/app.png"), "png bytes");
+  const paths = { root, config: merge(DEFAULTS, {}) };
+  const { json, parts } = await annotateForAsk({ out: ".cache/view/38f2.png", pictures: [{ name: "the app", image: ".cache/screens/app.png", boxes: [{ rect: [1, 2, 3, 4] }] }] }, paths);
+  assert.equal(readFileSync(join(root, ".cache/view/38f2-A.png"), "utf8"), "png bytes", "copied as it is, with no boxes drawn");
+  assert.deepEqual(parts, { pairs: [], pictures: [{ image: ".cache/view/38f2-A.png", label: "A", name: "the app", boxes: [{ n: 1, kind: "look", rect: [1, 2, 3, 4] }] }] });
+  assert.deepEqual(JSON.parse(readFileSync(json, "utf8")), parts);
+  assert.ok(!existsSync(join(root, ".cache/view/38f2.png")), "no joined sheet");
 });
