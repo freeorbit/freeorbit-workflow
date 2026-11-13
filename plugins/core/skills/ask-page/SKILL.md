@@ -72,7 +72,8 @@ Every template shares one layout: a header with the title, who asked, the draft 
 - **Reviews.** A paged template shows one frame with a filmstrip of verdict colours and comment counts; 1–4 give a verdict and move to the next frame, which the settings can turn off. C turns on comment mode for pins, M changes the compare view, Z zooms.
 - **Many at once.** Take all recommendations, or select questions or rows and give them one answer. Every change can be undone, from the toast or Ctrl+Z.
 - **Sending.** Questions left open get one panel: send them as You decide, as Later, or open. A receipt then shows exactly what was sent, with Change answers and the next waiting ask.
-- **Look.** Themes are in Claude Desktop's own colour tokens. With Claude Desktop installed, the page follows its theme, including a claude-desktop-extra palette; the kit's Clay, Teal, Moss, Indigo, Slate, and High contrast are there too, each light and dark, with Comfortable or Compact density.
+- **Look.** Themes are in Claude Desktop's own colour tokens. With Claude Desktop installed, the page follows its theme and offers every palette it bundles; the kit's Clay, Teal, Moss, Indigo, Slate, and High contrast are there too, each light and dark. Any theme takes one of nine accents or a colour of the person's own, a text size, and Comfortable or Compact density.
+- **Folding.** Answered questions fold to one line; Expand all (E), Collapse all (⇧E), or Fold answered changes that, and Select all (⇧X) selects every question for one bulk answer.
 - **Wording.** A question is at most 160 characters, a label 60, a reason 200, and an option's description 160. Where the person asked for more detail, or the question opens follow-ups, `explain: true` gives its reasons and descriptions room.
 
 ## Answers

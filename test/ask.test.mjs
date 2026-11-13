@@ -311,8 +311,8 @@ test("an exported page carries its pictures inside it", () => {
   assert.doesNotMatch(html, /"src":"p\//);
 });
 
-test("the client script parses", () => {
-  new Script(readFileSync(join(here, "../lib/ask/client.js"), "utf8"));
+test("the client script parses, with the shared look before it", () => {
+  new Script(readFileSync(join(here, "../lib/ask/look.js"), "utf8") + readFileSync(join(here, "../lib/ask/client.js"), "utf8"));
 });
 
 test("view setup replaces the old python server and keeps the project's own entries", () => {
@@ -437,6 +437,12 @@ test("the Claude Desktop theme is read from the install: the stock tokens, under
   assert.deepEqual(cleanTokens({ "--bg-100": "1 2% 3%", "--bg-200": "1 2% 3%; background: url(x)" }), { "--bg-100": "1 2% 3%" });
   assert.deepEqual(objectAt('x {"a":"}{","b":{"c":1}} y', 2), { a: "}{", b: { c: 1 } });
   assert.equal(claudeTheme({ WF_CLAUDE_RESOURCES: join(dir, "none"), WF_CLAUDE_CONFIG: config }), null);
+  const { claudePalettes } = await import("../lib/ask/claudetheme.mjs");
+  writeFileSync(join(resources, "app.asar"), asar({ ".vite/build/index.js": `${js}var u={"rose-dawn":{"light":{"--bg-100":"30 40% 96%"},"dark":{"--bg-100":"250 20% 12%"}},"no-bg":{"light":{"--text-000":"1 2% 3%"}}};` }));
+  assert.deepEqual(claudePalettes(env), { active: "night", list: [{ id: "claude", name: "Claude" }, { id: "night", name: "Night" }, { id: "rose-dawn", name: "Rose Dawn" }] });
+  assert.equal(claudeTheme(env, "rose-dawn").dark["--bg-100"], "250 20% 12%");
+  assert.equal(claudeTheme(env, "claude").name, "Claude");
+  assert.equal(claudeTheme(env, "missing"), null);
 });
 
 test("wording is held short, unless the question asks for more detail", () => {
@@ -457,9 +463,14 @@ test("a page carries the kit's themes, and the server hands out the Claude Deskt
   assert.deepEqual(Object.keys(data.themes.themes).sort(), ["clay", "contrast", "indigo", "moss", "slate", "teal"]);
   const key = projectKey(root);
   const theme = { name: "Night", id: "night", light: { "--bg-100": "1 2% 3%" }, dark: { "--bg-100": "4 5% 6%" } };
-  const { port, close } = await serve({ resolve: () => null, list: () => [{ key, view, name: "x" }], port: 0, log: () => {}, theme: () => theme });
+  const asked = [];
+  const { port, close } = await serve({ resolve: () => null, list: () => [{ key, view, name: "x" }], port: 0, log: () => {}, theme: (id) => { asked.push(id); return theme; }, themes: () => ({ active: "night", list: [{ id: "night", name: "Night" }] }) });
   try {
     assert.deepEqual(await (await fetch(`http://127.0.0.1:${port}/__hub/theme`)).json(), { ok: true, ...theme });
+    await fetch(`http://127.0.0.1:${port}/__hub/theme?id=nord`);
+    assert.deepEqual(await (await fetch(`http://127.0.0.1:${port}/__hub/theme?id=../x`)).json(), { ok: false });
+    assert.deepEqual(asked, ["", "nord"], "an id that is not a palette name is never asked for");
+    assert.deepEqual(await (await fetch(`http://127.0.0.1:${port}/__hub/themes`)).json(), { ok: true, active: "night", list: [{ id: "night", name: "Night" }] });
     const inbox = await (await fetch(`http://127.0.0.1:${port}/`)).text();
     assert.match(inbox, /<script type="application\/json" id="themes">/);
   } finally {

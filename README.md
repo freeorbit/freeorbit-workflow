@@ -91,7 +91,8 @@ Each kit version that changes a project's own files says what to do here. After 
 
 - One layout for every ask page: a sticky header with who asked, the draft, the other waiting asks, and progress; an outline of the questions; answered ones folded to a line; and a footer with Send. A receipt after sending shows exactly what was sent.
 - Keyboard first: J/K, 1–9, R, D, L, N, Enter to the next open question, Ctrl+K commands, Ctrl+Z undo, [ and ] between asks. Reviews add verdict keys that move to the next frame, comment mode for pins, and a filmstrip of verdict colours.
-- The page's colours are Claude Desktop's tokens: it follows the installed Claude Desktop theme, a claude-desktop-extra palette included, or one of six kit themes, each light and dark and checked for WCAG contrast.
+- The page's colours are Claude Desktop's tokens: it follows the installed Claude Desktop theme and offers every palette the app bundles, or one of six kit themes, each light and dark and checked for WCAG contrast. Nine accents or a colour of your own, four text sizes, and two densities.
+- Expand all, Collapse all, Fold answered, and Select all above the questions. Folding, menus, dialogs, the send panel, the receipt, and moving between frames are animated, and still for reduced motion.
 - `wf ask page` refuses over-long wording; `explain: true` on a question gives its reasons room.
 - Nothing to change in a project. Rebuild any open ask page with `npx wf ask page`.
 

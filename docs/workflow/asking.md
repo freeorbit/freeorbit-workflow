@@ -41,7 +41,8 @@ An ask page holds any number of questions, with their pictures, on one page in t
 - **The keyboard.** J and K move, 1–9 pick, R takes the recommendation, Enter goes to the next open question, Ctrl+K lists commands, Ctrl+Z undoes, Ctrl+Enter sends, and ? lists the rest.
 - **Moving between asks.** Each page's header shows the other waiting asks; [ and ] go to the previous and next, I opens the inbox, and the receipt after Send offers the next one.
 - **Project templates.** A question that comes back often can get a template of its own, as data in `.workflow/ask-templates/`. The agent proposes one and the owner says yes; it holds no code.
-- **Colours.** The page follows the Claude Desktop theme when Claude Desktop is installed, or one of the kit's six themes, each light and dark, kept in the browser.
+- **Colours.** The page follows the Claude Desktop theme when Claude Desktop is installed, and offers every palette it bundles, or one of the kit's six themes, each light and dark. An accent of nine or the person's own, and a text size, sit over any theme; all are kept in the browser.
+- **Folding.** Expand all, Collapse all, and Fold answered sit above the questions with Select all.
 - **Wording.** Questions, labels, and reasons are held short; `explain: true` gives room where the person asked for more detail.
 - **Drafts.** The page keeps a draft in the browser, so a reload loses nothing. A newer version of the page says so at the top.
 - **Export.** `npx wf ask export <id>` writes one HTML file, pictures inside, for someone without the pane, and the answers as Markdown and JSON. Their answers file comes back through `npx wf ask import`.
