@@ -51,10 +51,11 @@ An area's test data is the `test-data/` folder in its docs folder, one flow area
 
 - **One screen a file.** A small flow area is one file. One that will not fit on a screen becomes a folder of one-screen files: rules, data, states, gaps, and a topic file per part of the flow with its checks and edge cases side by side. The docs index takes one row for the folder's README.
 - **Rules sit beside their data.** A rule about one flow area is in its rules table, and a rule two need is in `core.md`. Each row has an ID, a category, its stories, and the day the reviewer accepted it.
-- **Risk decides depth.** Every story gets checks and rules. Only a story with a `Risk: high` line gets edge-case fixtures, so a low-risk story costs a few rows.
+- **Risk decides depth.** Every story gets checks and rules. Only a story with a `Risk: high` line gets input classes and edge-case fixtures, so a low-risk story costs a few rows.
+- **Classes once, fixtures few.** The classes of an input, such as a pasted address or an imported file, are listed once, for the input, and tested once, where its rule lives. Edge-case fixtures are only for what a flow alone can show, about five a story.
 - **A story reaches the files that name it.** `npx wf testdata route <area> <ids>` lists them, from their `Covers` lines, rule tags, and other mentions. A refresh reads `core.md`, `formats.md`, and only those.
 - **Areas follow the flows**, which change less than the stories. A story in two flows reaches two files. Dataset ids, fixtures, and states are unique across the folder, so one file can name another's.
-- **An area stays reviewable.** `npx wf doc:check` warns for a file past `testdata.limits.lines` and a flow area past `testdata.limits.areaKB`, and the refresh that touches it proposes the split. A file not yet split goes on `testdata.limits.loose` until it is.
+- **An area stays reviewable.** `npx wf doc:check` warns for a file past `testdata.limits.lines`, a flow area past `testdata.limits.areaKB`, and fixtures past `testdata.limits.fixtures`, and the refresh that touches it proposes the split or the merge. A file not yet split goes on `testdata.limits.loose` until it is.
 
 <!-- wf:local folder-checks -->
 
@@ -68,6 +69,8 @@ Where an area rule is stricter or more specific than a generic one, the area rul
 ## Kinds of data
 
 Fixtures are small committed files for the edge cases the spec names. Generated datasets are the profiles and named sets the spec gives, written when a test or a scenario needs them and never committed. Seeded app states start the app at a journey point. Fake services stand in for real ones.
+
+Input classes are not fixtures: a test reads their values from the spec's table, or restates the table as its own, and stores no file.
 
 <!-- wf:local kinds -->
 

@@ -87,6 +87,19 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.58.0: test data lists an input's classes once
+
+- **Input classes.** A new table in the test-data formats: `| Input | Class | Values | Expect | Stories | Rules |`, one row a class of one input, such as a pasted address or an imported file. The unhappy paths (empty, at and past a limit, malformed, duplicated, encodings, dates) are listed once, for the input, in `formats.md` or the one flow that has it, and tested once where the rule lives, with no fixture file and no journey state.
+- **Fixtures are for the flow.** An edge-case fixture now shows only what a flow alone can: a state, an order, an interruption, a restart. A case that varies one input's value is a class.
+- **A budget.** About five fixtures a story, fifteen a flow area, and four on one rule, in `testdata.limits.fixtures`. The designer merges rows, or asks the reviewer about a row kept past it.
+- **doc:check warns.** It now warns for:
+  - an input class listed twice;
+  - a fixture that reaches `unit`;
+  - fixtures past a budget.
+
+  They are warnings, never failures.
+- **What changes in a project.** Nothing breaks: existing fixture tables still parse. A spec written before this warns where it is over budget, which is the list to prune. Freeorbit's spec gives 69 such warnings today. Run `npx wf docs sync` for the new formats doc.
+
 ### v0.57.0: ask pages group their questions
 
 - **The rule.** `AGENTS.md` now asks the agent to group what it asks: one page for what blocks the same piece of work, related questions together under what they decide, and questions of the same shape as one. The `ask-page` skill has a Grouping section on how.
@@ -201,7 +214,7 @@ Each kit version that changes a project's own files says what to do here. After 
 - The `test-data-designer` has a `check` mode that returns only gaps and contradictions, as questions for the story's owner. Its rules, gaps, checks, and fixtures come back as tables with rule IDs and a category, and a flow area too long for one screen becomes a folder of one-screen files. Edge-case fixtures go only to stories with a `Risk: high (<why>)` line.
 - The formats are in a new synced doc, `test-data-formats.md`, which the designer may read, with the kit's eight rule categories. A project adds its own in `testdata.categories`, each `{ name, use }`.
 - `kind` names what the project is, `app` by default, and an area can set its own. `project-kinds.md` describes each kind, and Step 0 source analysis, outside registers, and packs for a domain product. Nothing else reads the kind yet but the designer.
-- `wf doc:check` takes one index row for a folder's README that links its files, and fails a story's `Risk:` line that says neither high nor low. It warns for a test-data file past `testdata.limits.lines` (40), a flow area past `testdata.limits.areaKB` (40), and a rules table's category on no list. List files not yet split in `testdata.limits.loose`.
+- `wf doc:check` takes one index row for a folder's README that links its files, and fails a story's `Risk:` line that says neither high nor low. It warns for a test-data file past `testdata.limits.lines` (40), a flow area past `testdata.limits.areaKB` (40), a rules table's category on no list, an input class listed twice, a fixture that reaches `unit`, and fixtures past `testdata.limits.fixtures`. List files not yet split in `testdata.limits.loose`.
 - `wf decision supersede` keeps the closed file newest on top, and takes several IDs before the one that replaces them, moving none when one is wrong. `wf question add` keeps every story ID given.
 - After upgrading, run `npx wf docs sync`, then `npx wf doc:check`. Add each category its warnings name to `testdata.categories`, or rename it to the kit's, and list long test-data files in `testdata.limits.loose` until they are split. A folder's own index rows can then go. The project's `wf testdata` tool should read rules as the table in `test-data-formats.md`, finding columns by header.
 

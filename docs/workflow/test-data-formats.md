@@ -8,14 +8,14 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 | --- | --- |
 | `README.md` | The `Updated:` line, a one-sentence status, the area index, and `## Refresh history`, newest first |
 | `core.md` | The rules and spec every flow area shares: personal data, placeholders, generation, real names, never, sources, personas, size profiles |
-| `formats.md` | The input and output formats, and the public spec for each |
+| `formats.md` | The input and output formats, the public spec for each, and each format's input classes |
 | `<flow>.md` | One flow area, the `user-flows.md` sections on its `Flows:` line, while it fits on one screen |
 | `<flow>/` | One flow area too long for one screen, as a folder of one-screen files |
 | `coverage.toml` | Each story's acceptance hash when the spec last covered it, written by the project's tool |
 
 - **One screen.** A file holds about 40 lines (`testdata.limits.lines`). `wf doc:check` warns past it, and past `testdata.limits.areaKB` for one flow area. A small flow area stays one file.
 - **One index row.** The docs index lists the area's `README.md`, or a folder's `README.md`, which links each file in it.
-- **Unique names.** Rule IDs, dataset ids, fixtures, and states are unique across the area's folder, so one file can name another's.
+- **Unique names.** Rule IDs, dataset ids, fixtures, states, and inputs are unique across the area's folder, so one file can name another's.
 
 ## A flow area's folder
 
@@ -26,9 +26,9 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 | `data.md` | Its datasets: seed, counts, stand-ins, and markers |
 | `states.md` | Its journey states |
 | `gaps.md` | Its gaps table |
-| `<topic>.md` | One part of the flow, such as `review.md`: its checks and its edge cases side by side |
+| `<topic>.md` | One part of the flow, such as `review.md`: its checks, input classes, and edge cases side by side |
 
-A one-file flow area has the same parts as `##` sections: `## Rules`, `## Datasets`, `## Checks`, `## Edge-case fixtures`, `## Journey states`, `## Gaps`, `## Proposed rules`, each only when it has something.
+A one-file flow area has the same parts as `##` sections: `## Rules`, `## Datasets`, `## Checks`, `## Input classes`, `## Edge-case fixtures`, `## Journey states`, `## Gaps`, `## Proposed rules`, each only when it has something.
 
 ## Rules
 
@@ -62,20 +62,43 @@ A project adds its own in `testdata.categories`, such as Stand-ins or Data marke
 A story's owner tags it with a line before Acceptance: `Risk: high (money, outside input)`, or `Risk: low`. No line is low.
 
 - **High** is for money, privacy, irreversible steps, outside input, evidence, or workspaces.
-- **Low** gets its checks and its rules. **High** also gets edge-case fixtures.
+- **Low** gets its checks and its rules. **High** also gets the input classes of what it reads, and edge-case fixtures for what only its flow can show.
 
-## Checks and edge cases
+## Checks, input classes, and edge cases
 
-A topic file, or a one-file area, holds two tables.
+A topic file, or a one-file area, holds up to three tables: what a run shows, the classes of each input, and the few cases only a flow can show.
 
 ```markdown
 | Check | Stories | Rules |
+| Input | Class | Values | Expect | Stories | Rules |
 | Fixture | Varies | Expect | Stories | Rules | Reach |
 ```
 
 - **Check.** What a passing run shows, in one line.
-- **Varies.** What the fixture sets, against which state. Where axes combine, name them, and the generator expands them, pairwise when every combination is too many.
-- **Reach.** ``typed at `state` ``, ``date at `state` ``, ``stored in `state` ``, or `unit` (no person can reach it), then a step after a comma.
+
+### Input classes
+
+One row for each class of one input: a field, a file format, a header, a request. Every value in a class gets the same outcome, so one test of the class covers them all.
+
+```markdown
+| Input | Class | Values | Expect | Stories | Rules |
+| --- | --- | --- | --- | --- | --- |
+| `new-address` | Blanks at the edges | Two leading spaces; a trailing tab; U+00A0 and U+3000 around it | Trimmed, then accepted | GM-06 | R-112 |
+| `new-address` | A domain no mail reaches | `mara@192.0.2.10`, `mara@localhost`, `mara@box.local` | Refused, with why | GM-06 | R-113 |
+```
+
+- **Input.** The input's id, in backticks. A format's input lives in `formats.md`, shared by every flow that reads it; a field only one flow has lives in that flow's file.
+- **Class.** One class, or one boundary where the outcome changes: at the limit and one past it, not every value between.
+- **Values.** The representatives, several in one cell. They are data, not fixtures: the project tests the input once, where its rule lives, with one test that walks the rows or a property test, and stores no file and no journey state for them.
+- **Which classes.** Each input gets the unhappy classes it implies, once: empty, at and past its limit, malformed, duplicated, mixed encodings, and dates or time zones at the edges. A flow that reads the input does not list them again; it names the input's classes it relies on in its checks.
+
+### Edge-case fixtures
+
+A fixture is for what only a flow can show: a state, an order of steps, an interruption, a restart, or what one step leaves for the next. A case that varies only one input's value is an input class, not a fixture.
+
+- **Varies.** What the fixture sets, against which state. Where axes combine, name them in one row, and the generator expands them, pairwise when every combination is too many.
+- **Reach.** ``typed at `state` ``, ``date at `state` ``, or ``stored in `state` ``, then a step after a comma. A case no person can reach is an input class.
+- **How many.** About five a story and fifteen a flow area (`testdata.limits.fixtures`), and four on one rule. `wf doc:check` warns past them: merge rows into one with axes, move the one-input cases to input classes, or keep them and say why in the reviewer's question.
 
 ## Datasets
 

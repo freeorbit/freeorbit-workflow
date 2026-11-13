@@ -61,9 +61,13 @@ The reviewer reads every line. Volume is a cost; the gaps are the value.
 
 - **Tables, not prose.** Rules, checks, fixtures, states, and gaps are rows in the tables `test-data-formats.md` gives, each rule with an ID and a category, each row citing its stories and rule IDs.
 - **One screen a file.** Keep each file to about `testdata.limits.lines` lines, 40 by default. A flow area that will not fit becomes a folder: `README.md`, `rules.md`, `data.md`, `states.md`, `gaps.md`, and one topic file per part of the flow, holding that part's checks and edge cases side by side.
-- **Risk decides depth.** Every story gets its checks and rules. Only a story whose `Risk:` line says `high` gets edge-case fixtures. A story with no line is low; if it looks high (money, privacy, irreversible steps, outside input, evidence, or workspaces), propose its tag, and write no fixtures for it yet. A high-risk story's fixtures cover the unhappy paths it implies: empty, huge, malformed, duplicated, interrupted, mixed encodings, and dates or time zones at the edges.
+- **Risk decides depth.** Every story gets its checks and rules. Only a story whose `Risk:` line says `high` gets input classes and edge-case fixtures. A story with no line is low; if it looks high (money, privacy, irreversible steps, outside input, evidence, or workspaces), propose its tag, and write neither for it yet.
+- **Classes belong to the input.** The unhappy paths of an input, such as a pasted address, a header, or an imported file, are its input classes: empty, at and past its limit, malformed, duplicated, mixed encodings, and dates or time zones at the edges. List them once, for the input: a format's in `formats.md`, a field one flow alone has in that flow's file. A story that reads the input names the classes it relies on in its checks, and never lists them again.
+- **One row a class.** Values that get the same outcome share a row; a boundary gets the value at it and one past it. A new value with the same outcome joins an existing row.
+- **Fixtures are for the flow.** An edge-case fixture shows what only the flow can: a state, an order of steps, an interruption, a restart, what one step leaves for the next. A case that varies one input's value is an input class. Combine axes in one row, and let the generator expand them, pairwise.
+- **A budget.** About five fixtures a story, fifteen a flow area, and four on one rule (`testdata.limits.fixtures`). Past it, merge rows, move one-input cases to input classes, or keep a row and ask the reviewer, in a question, whether its risk is worth it.
 - **Categories.** Use the kit's categories, then `testdata.categories`. When no category fits a rule, ask for one as a question.
-- **Reuse.** A new story mostly adds its ID to existing rules and checks. Do not invent a new persona, mailbox, or seed when a dataset that already covers the story can take it.
+- **Reuse.** A new story mostly adds its ID to existing rules, checks, and input classes. Do not invent a new persona, mailbox, or seed when a dataset that already covers the story can take it.
 
 ## By kind
 
@@ -93,7 +97,7 @@ Read the named stories and their flow sections, `core.md`, and the files the pro
 
 A first draft from the overview and stories only. Return `core.md` and `formats.md`, each ready to save, holding only rules, in the rules table. Rules about one flow area wait for the spec draft.
 
-`core.md` covers the personal data the area touches, the placeholders (addresses, names, numbers, ids, secrets, and canary tokens), how data is generated, the real names allowed and why, and what must never appear. `formats.md` covers each input and output format, its public spec, and what to confirm by shape check.
+`core.md` covers the personal data the area touches, the placeholders (addresses, names, numbers, ids, secrets, and canary tokens), how data is generated, the real names allowed and why, and what must never appear. `formats.md` covers each input and output format, its public spec, and what to confirm by shape check. Input classes wait for the spec draft.
 
 ## Spec mode
 
@@ -112,6 +116,7 @@ The folder exists and the prompt names the stories that changed and the files th
 - **Rules only.** The data still passes, but a rule had to be assumed.
 - **Spec.** A check, fixture, gap, or state is missing or wrong. Edit it in the file that holds it.
 - **A new story** goes in the flow area whose `Flows:` line holds its flow. A flow no area holds gets a new file, named in the delta.
+- **A new edge case** joins the input class that already gets its outcome, or the input gets a new class. Only what the flow alone shows becomes a fixture.
 - **A file past one screen**, or a flow area past `testdata.limits.areaKB`, after the edits: propose the split, naming each new file and what moves to it.
 
 If every story is no change, return `Need: none` and nothing else. Otherwise:
