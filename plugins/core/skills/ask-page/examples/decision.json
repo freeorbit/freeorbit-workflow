@@ -1,0 +1,59 @@
+{
+  "id": "chunk-12-layout",
+  "title": "Chunk 12: the accounts screen",
+  "template": "decision",
+  "intro": "Two choices before the accounts screen is built. Each has a recommendation; pick another, or leave it to me or for later.",
+  "chunk": "CH-12",
+  "from": "developer",
+  "questions": [
+    {
+      "id": "layout",
+      "text": "How should the accounts list be laid out?",
+      "type": "one",
+      "role": "designer",
+      "look": "Picture A, box 1: the list as the frame draws it.",
+      "pictures": [
+        {
+          "label": "A",
+          "name": "accounts frame",
+          "image": ".cache/screens/latest/accounts-wide.png",
+          "boxes": [
+            {
+              "n": 1,
+              "kind": "look",
+              "rect": [
+                240,
+                96,
+                1000,
+                366
+              ]
+            }
+          ]
+        }
+      ],
+      "options": [
+        {
+          "id": "tabs",
+          "label": "Tabs per provider",
+          "why": "Matches the frame; one provider at a time.",
+          "preview": "[Gmail] [Outlook] [IMAP]\n- ken@…\n- work@…"
+        },
+        {
+          "id": "list",
+          "label": "One list, grouped",
+          "why": "Every account at a glance; longer page.",
+          "preview": "Gmail\n- ken@…\nOutlook\n- work@…"
+        }
+      ],
+      "recommended": "tabs",
+      "why": "The frame already draws tabs, and the screen list says one provider at a time.",
+      "record": "app"
+    },
+    {
+      "id": "empty",
+      "text": "What does the screen say with no accounts?",
+      "type": "text",
+      "role": "owner"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "accounts-words",
+  "title": "Words on the accounts screen",
+  "template": "naming",
+  "items": [
+    {
+      "id": "add-button",
+      "where": "The add button",
+      "current": "Add account",
+      "options": [
+        {
+          "id": "add",
+          "label": "Add account",
+          "why": "Short and familiar; says nothing of what happens next."
+        },
+        {
+          "id": "connect",
+          "label": "Connect an account",
+          "why": "Says the app links an account the person already has."
+        }
+      ],
+      "recommended": "connect",
+      "picture": {
+        "label": "A",
+        "image": ".cache/screens/latest/accounts-wide.png",
+        "boxes": [
+          {
+            "n": 1,
+            "kind": "look",
+            "rect": [
+              40,
+              600,
+              170,
+              40
+            ]
+          }
+        ]
+      },
+      "look": "Picture A, box 1.",
+      "why": "Says what happens: the app links an account it does not own."
+    }
+  ]
+}

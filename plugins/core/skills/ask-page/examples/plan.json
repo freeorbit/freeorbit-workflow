@@ -1,0 +1,11 @@
+{
+  "id": "chunk-14-plan",
+  "title": "Chunk 14: the plan",
+  "template": "plan",
+  "prompt": "Go ahead with the plan as a whole?",
+  "steps": [
+    { "text": "Add the labels table and its migration", "detail": "One table, label id and thread id." },
+    "Show labels on the thread row",
+    "Filter the list by a label"
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "id": "chunk-13-start",
+  "title": "Chunk 13: questions at the start",
+  "template": "batch",
+  "intro": "Everything chunk 13 needs answered before it starts, by the role that owns each.",
+  "chunk": "CH-13",
+  "from": "developer",
+  "questions": [
+    {
+      "id": "retention",
+      "role": "owner",
+      "text": "How long is a deleted mail kept before it is gone for good?",
+      "type": "one",
+      "options": [
+        {
+          "id": "30",
+          "label": "30 days",
+          "why": "Short and common; the trash stays small, and a mistake is still undone within a month."
+        },
+        {
+          "id": "90",
+          "label": "90 days",
+          "why": "Safer for slow-to-notice mistakes; the trash grows three times as large."
+        },
+        {
+          "id": "never",
+          "label": "Until the trash is emptied",
+          "why": "Nothing is lost until the person empties the trash; storage grows without limit."
+        }
+      ],
+      "recommended": "30",
+      "why": "Matches what the big providers do."
+    },
+    {
+      "id": "icon",
+      "role": "designer",
+      "text": "Which icon marks an unread thread?",
+      "type": "one",
+      "options": [
+        {
+          "id": "dot",
+          "label": "A dot",
+          "why": "A coloured dot before the sender; reads at a glance at any width."
+        },
+        {
+          "id": "bold",
+          "label": "Bold text only",
+          "why": "The sender and subject in bold; quieter, but easy to miss on a narrow window."
+        }
+      ],
+      "recommended": "dot",
+      "why": "A dot reads at a glance in the narrow layout, where bold text is easy to miss."
+    },
+    {
+      "id": "sync",
+      "role": "developer",
+      "text": "Which sync runs first on start?",
+      "type": "many",
+      "options": [
+        {
+          "id": "inbox",
+          "label": "Inbox",
+          "why": "Fetches the inbox first, so the first screen fills fastest."
+        },
+        {
+          "id": "sent",
+          "label": "Sent",
+          "why": "Fetches sent mail, which replies and threads draw on."
+        },
+        {
+          "id": "all",
+          "label": "Every folder",
+          "why": "Every folder at once; complete, but the first screen waits longest."
+        }
+      ],
+      "recommended": [
+        "inbox"
+      ],
+      "why": "The inbox is what the person looks at first; the rest can follow."
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "accounts-rules",
+  "title": "Accounts: test-data rules",
+  "template": "testdata",
+  "intro": "The rules the test-data check found. Mark each row; say what is missing in the note.",
+  "tables": [
+    {
+      "id": "R-ACC",
+      "title": "Account names",
+      "columns": ["Rule", "Category", "Fixture"],
+      "rows": [
+        { "id": "R-ACC-01", "cells": ["A name is at most 64 characters", "limit", "long-name"] },
+        { "id": "R-ACC-02", "cells": ["Two accounts may share a name", "edge", "none"] }
+      ]
+    }
+  ]
+}

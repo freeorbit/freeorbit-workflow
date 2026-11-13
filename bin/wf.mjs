@@ -11,6 +11,8 @@
 //   wf ledger <ledger.py arguments>         change the review ledger
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
+//   wf ask <templates | example | page | wait | answers | record | export | import> ...   ask a person on a page beside the chat
+//   wf view <serve | setup>   the question-pictures server, which serves .cache/view and takes an ask page's answers
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
 //   wf app <start | run | stop | ...>   drive the project's app, Tauri or web, under a memory cap
 //   wf try [scenario] [--keep] [--dry-run] [--files]   open the app yourself at a test scenario
@@ -38,6 +40,7 @@ import { localToday } from "../lib/docs/check.mjs";
 import { runApp } from "../lib/app/driver.mjs";
 import { runTry } from "../lib/try/index.mjs";
 import { design } from "../lib/design/index.mjs";
+import { runAsk, runView } from "../lib/ask/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
 import { addDecision, supersedeAll } from "../lib/logs/decisions.mjs";
 import { runQuestion } from "../lib/logs/questions.mjs";
@@ -164,6 +167,12 @@ const commands = {
   },
 
   design,
+  async ask(args) {
+    return runAsk(args);
+  },
+  async view(args) {
+    return runView(args);
+  },
 
   async app(args) {
     const root = projectRoot();

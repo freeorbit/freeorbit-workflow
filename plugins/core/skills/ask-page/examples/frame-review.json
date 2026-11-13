@@ -1,0 +1,11 @@
+{
+  "id": "chunk-12-screens",
+  "title": "Chunk 12: screen review",
+  "template": "frame-review",
+  "intro": "Every screen the chunk changed. Page with the arrow keys; click a picture to pin what is wrong.",
+  "frames": [
+    { "id": "accounts-wide", "name": "Accounts, wide", "area": "app", "image": ".cache/screens/latest/accounts-wide.png" },
+    { "id": "accounts-narrow", "name": "Accounts, narrow", "area": "app", "image": ".cache/screens/latest/accounts-narrow.png" },
+    { "id": "accounts-narrow-stress", "name": "Accounts, narrow, stress", "area": "app", "image": ".cache/screens/latest/accounts-narrow-stress.png", "look": "The long names at the foot." }
+  ]
+}

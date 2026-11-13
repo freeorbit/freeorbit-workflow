@@ -1,0 +1,11 @@
+{
+  "id": "deps-november",
+  "title": "Dependency updates, November",
+  "template": "dependency-review",
+  "intro": "Three packages the update would change. Each has a recommendation.",
+  "packages": [
+    { "id": "vite", "label": "vite", "change": "5.4 → 6.0", "kind": "Build", "notes": "A major version: the config moves, the dev server is faster.", "recommended": "update", "why": "The move is small and the changelog lists nothing we use as removed." },
+    { "id": "date-fns", "label": "date-fns", "change": "3.6 → 4.1", "kind": "App", "notes": "Time zones become first-class.", "recommended": "keep", "why": "Every date helper changes its import; better in its own chunk." },
+    { "id": "left-pad", "label": "left-pad", "change": "1.3 → 1.3.1", "kind": "App", "notes": "Unmaintained.", "recommended": "replace", "why": "String.prototype.padStart does the same, with no package." }
+  ]
+}
