@@ -664,6 +664,17 @@ test("blocks: the named sources read the project's logs, and an absent one is an
   assert.ok(source("open-questions").rows.length > 0);
   writeFileSync(join(root, config.logs.ledger), "# Findings\n\n| ID | Severity | Status | Title | Where |\n| --- | --- | --- | --- | --- |\n| [SEC-001](#sec-001) | Medium | proposed | A | `a.mjs:1` |\n| [SEC-002](#sec-002) | Low | verified | B | `b.mjs:2` |\n\n## Open\n\n| ID | x |\n| --- | --- |\n| SEC-009 | not summary |\n");
   assert.deepEqual(source("ledger").rows, [{ id: "SEC-001", severity: "Medium", status: "proposed", title: "A", where: "a.mjs:1" }]);
+  // Open is proposed, accepted, or deferred, as ledger.py counts it; a fixed finding waits for review.
+  writeFileSync(join(root, config.logs.ledger), "| ID | Severity | Status | Title | Where |\n| --- | --- | --- | --- | --- |\n| A-1 | Low | accepted | a | x |\n| A-2 | Low | deferred | b | x |\n| A-3 | Low | fixed | c | x |\n| A-4 | Low | accepted-risk | d | x |\n| A-5 | Low | superseded | e | x |\n");
+  assert.deepEqual(source("ledger").rows.map((r) => r.id), ["A-1", "A-2"]);
+  // A log path from the config is read only inside the project.
+  const outside = mkdtempSync(join(tmpdir(), "wf-ask-out-"));
+  writeFileSync(join(outside, "q.md"), "secret");
+  for (const path of [join(outside, "q.md"), `../${outside.split("/").pop()}/q.md`]) {
+    assert.equal(sourcesFor(root, { ...config, logs: { ...config.logs, openQuestions: path } })("open-questions").rows.length, 0);
+  }
+  symlinkSync(join(outside, "q.md"), join(root, "docs/log/link.md"));
+  assert.match(sourcesFor(root, { ...config, logs: { ...config.logs, openQuestions: "docs/log/link.md" } })("open-questions").empty, /No docs\/log\/link\.md/, "a link that leads out is not followed");
   assert.equal(source("decisions").empty, "No decisions yet.");
   assert.equal(source("../secrets"), null);
 });
@@ -859,7 +870,9 @@ test("richer answers: the page's steps and the record read one rule", () => {
   const cases = [[q.platforms, { rows: { linux: "stable" } }], [q.platforms, { rows: { linux: "stable", mac: "beta", windows: "beta" } }], [q.cut, { fields: { date: "2026-11-20" } }], [q.cut, { fields: { date: "2026-11-20", checked: true } }], [q.cut, { fields: { date: "2026-11-20", checked: true, builds: 99 } }], [q.notes, { edits: { title: "accept" } }]];
   assert.deepEqual(cases.map(([x, a]) => S.answered(a, x)), [false, true, false, true, false, false]);
   assert.deepEqual(cases.map(([x, a]) => answered(a, x)), cases.map(([x, a]) => S.answered(a, x)));
-  assert.equal(S.answered({ rows: { linux: "stable" } }), true, "without the question, anything placed counts");
+  assert.deepEqual({ ...S.progressOf(q.platforms, { rows: { linux: "stable" } }) }, { done: 1, total: 3 });
+  assert.deepEqual({ ...S.progressOf(q.notes, { edits: { title: "accept" } }) }, { done: 1, total: 2 });
+  assert.equal(S.progressOf(q.ship, { choice: "yes" }), null, "a choice places nothing");
   const w = { number: 3, rows: { a: "b" }, edits: { e: "accept" }, fields: { f: 1 }, note: "keep", owner: "Ken" };
   S.clearAnswer(w);
   assert.deepEqual({ ...w }, { note: "keep", owner: "Ken" });
@@ -930,4 +943,69 @@ test("the chart example builds, and the new blocks turn off like the rest", () =
   assert.deepEqual(off.sections.map((s) => s.blocks.map((b) => b.type).join(",")), ["stats", "timeline,questions"]);
   const { root, view } = project(raw);
   assert.deepEqual(buildPage(root, view, raw, KIT_KINDS).problems ?? [], []);
+});
+
+// --- the v0.53.0 review's fixes -------------------------------------------------
+test("every block limit is checked, and the costly ones before the work they guard", async () => {
+  const { BLOCK_LIMITS, layout } = await import("../lib/ask/blocks.mjs");
+  const L = BLOCK_LIMITS;
+  const words = (n) => Array.from({ length: n }, (_, i) => `w${i}`).join(" ");
+  const lines = (n) => Array.from({ length: n }, (_, i) => `l${i}`).join("\n");
+  const cases = [
+    [{ type: "text", text: "x".repeat(L.text + 1) }, /at most 4000 characters/],
+    [{ type: "table", columns: ["a"], rows: Array.from({ length: L.rows + 1 }, () => ["x"]) }, /at most 500 rows/],
+    [{ type: "table", columns: Array.from({ length: L.columns + 1 }, (_, i) => `c${i}`), rows: [] }, /at most 20 columns/],
+    [{ type: "diff", before: lines(L.diff + 1), after: "x" }, /a diff compares at most 2000 lines a side/],
+    [{ type: "diff", by: "word", before: words(L.diff + 1), after: "x" }, /a diff compares at most 2000 words a side/],
+    [{ type: "chart", labels: Array.from({ length: L.points + 1 }, (_, i) => `p${i}`), series: [{ values: Array(L.points + 1).fill(1) }] }, /at most 200 points/],
+    [{ type: "diagram", nodes: ["a", "b"], links: Array.from({ length: L.links + 1 }, () => ({ from: "a", to: "b" })) }, /at most 80 links/],
+    [{ type: "timeline", events: Array.from({ length: L.events + 1 }, () => ({ title: "e" })) }, /at most 100 events/],
+    [{ type: "board", columns: ["a"], cards: Array.from({ length: L.cards + 1 }, () => ({ title: "c", column: "a" })) }, /at most 200 cards/],
+    [{ type: "board", columns: Array.from({ length: L.lanes + 1 }, (_, i) => `c${i}`) }, /at most 8 columns/],
+  ];
+  for (const [b, pattern] of cases) assert.match(oneBlock(b).problems, pattern, b.type);
+  assert.equal(oneBlock({ type: "diff", by: "word", before: words(L.diff), after: "x" }).problems, "", "2000 words is within the limit");
+  const cell = oneBlock({ type: "table", columns: ["a"], rows: [["x".repeat(L.cell + 50)]] }).block.rows[0][0];
+  assert.equal(cell.length, L.cell, "a long cell is cut, ending in …");
+  assert.ok(cell.endsWith("…"));
+  // A page over the block limit is refused before any block is built.
+  const many = { id: "viz", title: "Viz", questions: [{ id: "q", text: "Fine?" }], blocks: Array.from({ length: L.blocks + 1 }, () => ({ type: "diff", before: lines(L.diff), after: lines(L.diff).replace("l0", "x") })) };
+  const started = Date.now();
+  assert.match(normalize(many).problems.join(), /61 blocks; a page holds at most 60/);
+  assert.ok(Date.now() - started < 1000, "no diff was worked out");
+  // A diagram over its limit is not laid out, and a long chain cannot run out of the stack.
+  const chain = Array.from({ length: 20000 }, (_, i) => ({ id: `n${i}` }));
+  const links = chain.slice(1).map((n, i) => ({ from: `n${i}`, to: n.id }));
+  assert.match(oneBlock({ type: "diagram", nodes: chain, links }).problems, /at most 40 nodes/);
+  const walked = layout(chain.slice(0, 5000), links.slice(0, 4999).map((l) => ({ ...l })).filter((l) => Number(l.to.slice(1)) < 5000));
+  assert.equal(walked.nodes.at(-1).rank, 4999);
+  // An edits question over its count is refused before its diffs are worked out.
+  const edits = one({ id: "e", text: "Edits", type: "edits", edits: Array.from({ length: 31 }, (_, i) => ({ id: `e${i}`, before: "a", after: "b" })) });
+  assert.match(edits.problems.join(), /at most 30 edits/);
+  assert.equal(edits.spec.questions[0].edits.length, 30);
+});
+
+test("a CSV cell a spreadsheet would run as a formula opens as text", () => {
+  const sandbox = { window: {} };
+  runInNewContext(readFileSync(join(here, "../lib/ask/browser/shared.js"), "utf8"), sandbox);
+  const { csvCell } = sandbox.window.wfAskShared;
+  assert.equal(csvCell("=HYPERLINK(\"x\")"), `"'=HYPERLINK(""x"")"`);
+  for (const lead of ["+", "-", "@", "\t", "\r"]) assert.ok(csvCell(`${lead}cmd`).replace(/^"/, "").startsWith("'"), JSON.stringify(lead));
+  assert.equal(csvCell("-2.5"), "-2.5", "a plain number stays a number");
+  assert.equal(csvCell("+1,000"), `"+1,000"`);
+  assert.equal(csvCell("a\rb"), `"a\rb"`, "a return is quoted");
+  assert.equal(csvCell("plain"), "plain");
+  assert.equal(csvCell(null), "");
+});
+
+test("a number is on a scale by one rule, on the page and in the record", () => {
+  const S = answerSteps();
+  const sc = { min: 1, max: 5, step: 1 };
+  assert.deepEqual([1, 5, 3, 2.5, 0, 6, NaN, "3"].map((n) => S.onScale(sc, n)), [true, true, true, false, false, false, false, false]);
+  assert.equal(S.onScale({ min: 0, max: 1, step: 0.1 }, 0.3), true, "a step of a tenth");
+  assert.match(one({ id: "s", text: "Rate", type: "scale", recommended: 2.5 }).problems.join(), /a number on the scale/);
+  const { spec } = normalize({ id: "s", title: "S", questions: [{ id: "s", text: "Rate", type: "scale" }] });
+  assert.match(checkAnswers(spec, { id: spec.id, hash: spec.hash, answers: { s: { number: 2.5 } } }, KIT_KINDS).problems.join(), /from 1 to 5, by 1/);
+  const page = readFileSync(join(here, "../lib/ask/browser/page/35-answers.js"), "utf8");
+  assert.match(page, /S\.onScale\(sc, n\)/, "the page's number box uses the same rule");
 });

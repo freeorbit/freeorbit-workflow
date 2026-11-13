@@ -1,0 +1,83 @@
+/*
+ * The ask page. Colours come in Claude Desktop's own token names, as "H S% L%"
+ * triples (--bg-000..500, --text-000..500, --border-*, --accent-brand,
+ * --accent-000, --oncolor-100, --danger/--warning/--success-100), so a Claude
+ * Desktop palette applies as is. The page sets them on <html> from the kit's
+ * themes or the Claude Desktop theme; the values here are the kit's Clay, for
+ * a page read without its script. Everything else reads the roles below.
+ */
+:root {
+  --bg-000: 0 0% 100%; --bg-100: 48 33% 97%; --bg-200: 50 28% 94.5%; --bg-300: 48 24% 91.5%; --bg-400: 50 20% 87%; --bg-500: 50 16% 80%;
+  --text-000: 60 3% 8%; --text-200: 60 2.5% 22%; --text-400: 51 3% 38%;
+  --border-300: 30 3% 12%;
+  --accent-brand: 15 58% 44%; --accent-000: 210 72% 40%; --oncolor-100: 0 0% 100%;
+  --danger-100: 0 62% 42%; --warning-100: 35 92% 27%; --success-100: 103 62% 26%;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"]) {
+    --bg-000: 60 2% 18.5%; --bg-100: 60 2.7% 14.5%; --bg-200: 30 3.3% 11.8%; --bg-300: 60 2.6% 8%; --bg-400: 0 0% 4%; --bg-500: 0 0% 0%;
+    --text-000: 48 33% 97%; --text-200: 50 9% 76%; --text-400: 48 5% 64%;
+    --border-300: 51 16% 84%;
+    --accent-brand: 15 70% 66%; --accent-000: 210 70% 70%; --oncolor-100: 20 30% 8%;
+    --danger-100: 0 75% 71%; --warning-100: 39 85% 58%; --success-100: 97 48% 56%;
+    color-scheme: dark;
+  }
+}
+:root[data-mode="dark"] { color-scheme: dark; }
+:root[data-mode="light"] { color-scheme: light; }
+
+:root {
+  /* Roles */
+  --app: hsl(var(--bg-100));
+  --panel: hsl(var(--bg-000));
+  --sunk: hsl(var(--bg-200));
+  --hover: hsl(var(--bg-200));
+  --press: hsl(var(--bg-300));
+  --backdrop: hsl(var(--bg-300));
+  --line: hsl(var(--border-300) / 0.14);
+  --line-2: hsl(var(--border-300) / 0.24);
+  --line-3: hsl(var(--border-300) / 0.4);
+  --text: hsl(var(--text-000));
+  --text-2: hsl(var(--text-200));
+  --muted: hsl(var(--text-400));
+  --accent: hsl(var(--accent-brand));
+  --accent-soft: hsl(var(--accent-brand) / 0.1);
+  --accent-line: hsl(var(--accent-brand) / 0.4);
+  --on-accent: hsl(var(--oncolor-100));
+  --ok: hsl(var(--success-100)); --ok-soft: hsl(var(--success-100) / 0.12);
+  --bad: hsl(var(--danger-100)); --bad-soft: hsl(var(--danger-100) / 0.12);
+  --warn: hsl(var(--warning-100)); --warn-soft: hsl(var(--warning-100) / 0.14);
+  --info: hsl(var(--accent-000)); --info-soft: hsl(var(--accent-000) / 0.12);
+  --float: 0 10px 30px -8px rgb(0 0 0 / 28%), 0 0 0 1px hsl(var(--border-300) / 0.12);
+  /* Type, space, shape, motion */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Ubuntu, Cantarell, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  --r-ctl: 6px; --r-card: 8px; --r-pop: 12px;
+  --ctl: 32px; --pad: 14px; --gap-q: 28px; --gap-opt: 8px;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --head: 52px; --foot: 60px;
+}
+:root[data-density="compact"] { --ctl: 28px; --pad: 10px; --gap-q: 18px; --gap-opt: 6px; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--app); scrollbar-gutter: stable; scroll-padding-top: calc(var(--head) + 16px); scroll-padding-bottom: calc(var(--foot) + 16px); }
+body { zoom: var(--zoom, 1); margin: 0; background: var(--app); color: var(--text); font: 14px/20px var(--font); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-ctl); }
+.num { font-variant-numeric: tabular-nums; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.desc-sm { font-size: 13px; }
+.view-note { margin: 0 0 8px; }
+.keys-foot { margin: 10px 0 0; }
+.theme-pick { max-width: 210px; }
+.sel.shown { opacity: 1; }
+.grow { flex: 1; min-width: 0; }
+kbd { font: 500 11px/16px var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--panel); white-space: nowrap; }
+.hint { opacity: 0; transition: opacity 150ms var(--ease); }
+body.keys .hint { opacity: 1; }
+
