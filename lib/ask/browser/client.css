@@ -539,3 +539,76 @@ th[aria-sort="descending"] .arrow::after { content: "▼"; font-size: 9px; }
 .d-line.d-add { background: var(--ok-soft); } .d-line.d-add .d-mark { color: var(--ok); }
 del.d-del { background: var(--bad-soft); color: var(--bad); text-decoration: line-through; border-radius: 3px; }
 ins.d-add { background: var(--ok-soft); color: var(--ok); text-decoration: none; border-radius: 3px; }
+/* Inline, a word taken out and the word put in sit apart, so they read as two. */
+.diff.inline.by-word del.d-del, .diff.inline.by-word ins.d-add { padding: 0 2px; }
+.diff.inline.by-word del.d-del + ins.d-add { margin-left: .3em; }
+
+/* --- richer answers: follow-ups, scale, grid, sort, edits, form, owner, boxes --- */
+.q.is-hidden { display: none !important; }
+.chip.follow { color: var(--accent); border-color: var(--accent-line); }
+.scale { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 2px; }
+.stars { display: inline-flex; gap: 2px; }
+.star { position: relative; width: 34px; height: 34px; border: 0; background: transparent; color: var(--line-3); font-size: 26px; line-height: 1; cursor: pointer; border-radius: 6px; padding: 0; transition: color 100ms var(--ease), transform 100ms var(--ease); }
+.star:hover:not(.lit) { color: var(--accent-line); }
+.star.lit { color: var(--accent); }
+.star:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.star:active { transform: scale(.92); }
+.star.rec::after { content: ""; position: absolute; left: 50%; bottom: 1px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--accent); }
+.star-n { position: absolute; inset: auto 0 -12px; font-size: 10px; color: var(--muted); }
+.scale-said { font-size: 13px; color: var(--text-2); min-width: 8ch; }
+.scale-slider input[type="range"] { flex: 1 1 260px; accent-color: var(--accent); }
+.scale-slider input.unset { opacity: .55; }
+.scale input.num-input { width: 9em; }
+.scale input[aria-invalid="true"] { border-color: var(--bad); }
+.scale-ends { display: flex; justify-content: space-between; max-width: 420px; margin-top: 8px; }
+.scale-slider + .scale-ends { max-width: none; }
+.rec-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); vertical-align: middle; margin-left: 4px; }
+table.grid-q { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.grid-q th, table.grid-q td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: center; }
+table.grid-q thead th { font-weight: 600; color: var(--text-2); vertical-align: bottom; }
+table.grid-q th[scope="row"] { text-align: left; font-weight: 500; }
+table.grid-q .row-label { display: block; color: var(--text); }
+table.grid-q td label { display: flex; justify-content: center; align-items: center; min-height: 28px; cursor: pointer; }
+table.grid-q td input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+table.grid-q td.rec label::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin-left: 4px; }
+table.grid-q tbody tr:hover { background: var(--sunk); }
+.defs { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; font-size: 12.5px; margin: 8px 0 0; color: var(--text-2); }
+.defs dt { font-weight: 600; color: var(--text); }
+.defs dd { margin: 0; }
+.buckets { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin: 4px 0; }
+.lane { background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r-card); padding: 8px; min-height: 96px; display: flex; flex-direction: column; gap: 6px; transition: border-color 120ms var(--ease), background-color 120ms var(--ease); }
+.lane.over { border-color: var(--accent); background: var(--accent-soft); }
+.lane.unsorted { border-style: dashed; }
+.lane-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+.lane-why { margin-top: -4px; }
+.lane-cards { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.card { background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 7px 8px; cursor: grab; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.card.dragging { opacity: .5; }
+.card .pick { align-self: flex-start; max-width: 100%; }
+.card-label { font-weight: 500; }
+.edits { display: flex; flex-direction: column; gap: 8px; }
+.edit { border: 1px solid var(--line-2); border-radius: var(--r-card); padding: 8px 10px; background: var(--panel); transition: border-color 120ms var(--ease), opacity 120ms var(--ease); }
+.edit[data-v="accept"] { border-color: var(--accent); }
+.edit[data-v="reject"] { opacity: .65; }
+.edit[data-v="reject"] ins { text-decoration: line-through; }
+.edit-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+.edit-head .n { color: var(--muted); min-width: 1.5em; }
+.edit .diff { margin: 0; }
+.form { display: grid; gap: 10px; max-width: 520px; }
+.form-row { display: flex; flex-direction: column; gap: 4px; }
+.form-row.check { flex-direction: column; }
+.field-label { font-size: 13px; font-weight: 600; }
+.check-label { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 500; cursor: pointer; }
+.check-label input { accent-color: var(--accent); width: 16px; height: 16px; }
+.req { color: var(--accent); }
+.form input[type="text"], .form input[type="number"], .form input[type="date"], .form textarea { width: 100%; }
+.form [aria-invalid="true"] { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+.field-err { font-size: 12px; color: var(--bad); min-height: 0; }
+.field-err:empty { display: none; }
+.owner-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.region { position: absolute; border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); border-radius: 3px; pointer-events: none; }
+.region.ghost { border-style: dashed; }
+.pin.region { width: auto; height: auto; margin: 0; border-radius: 3px; background: color-mix(in srgb, var(--c) 12%, transparent); border: 2px solid var(--c); box-shadow: none; color: transparent; }
+.pin.region span { position: absolute; top: -2px; left: -2px; transform: translateY(-100%); background: var(--c); color: #fff; font: 700 11px/1.4 var(--font); padding: 0 5px; border-radius: 3px 3px 0 0; }
+.pin.region.hl { transform: none; box-shadow: 0 0 0 2px var(--c); }
+@media (max-width: 560px) { .buckets { grid-template-columns: 1fr; } }

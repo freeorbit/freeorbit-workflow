@@ -87,6 +87,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.52.0: ask pages take richer answers
+
+- A question can ask for a rating, a slider, or a number (`scale`), a choice for each row (`grid`), a sort into buckets (`buckets`), accepting or rejecting suggested edits (`edits`), or a small form whose fields are checked as they are filled (`form`). Each recommends in the advised templates, and R takes it.
+- `showIf` makes a follow-up that shows only when an earlier answer fits; one not shown is not asked. `owners` lets the person assign a question. In comment mode a drag draws a box on a picture.
+- `off` and `ask.off` take the new types, and `followups`, `owners`, and `regions`.
+- Nothing to change in a project. Rebuild any open ask page with `npx wf ask page`.
+
 ### v0.51.0: ask pages show blocks
 
 - A page can be made of `sections` of blocks around its questions: text, number tiles, tables, and before-and-after diffs. A table can read the open questions, the decisions, or the review ledger by name. A part kept in `.workflow/ask-parts/` is reused across pages. Each block exports its data as CSV, Markdown, or a diff.
