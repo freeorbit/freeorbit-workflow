@@ -46,6 +46,7 @@ An ask page holds any number of questions, with their pictures, on one page in t
 - **Wording.** Questions, labels, and reasons are held short; `explain: true` gives room where the person asked for more detail.
 - **Blocks.** A page can also show text, number tiles, tables from the open questions, decisions, or review ledger, before-and-after diffs, bar and line charts, diagrams, timelines, and boards, around its questions; each one exports its data.
 - **Richer answers.** A question can also ask for a rating or a number, a choice for each row of a grid, a sort into buckets, accepting or rejecting suggested edits, or a small form; a follow-up shows only when an earlier answer fits, a question can be given an owner, and a box can be drawn on a picture.
+- **Live pages.** A status page shows where a long step stands while it runs, and the agent can reply under a question; every send is kept, a page asked again marks what changed, a page can go step by step, and the tab says how many asks wait.
 - **Drafts.** The page keeps a draft in the browser, so a reload loses nothing. A newer version of the page says so at the top.
 - **Export.** `npx wf ask export <id>` writes one HTML file, pictures inside, for someone without the pane, and the answers as Markdown and JSON. Their answers file comes back through `npx wf ask import`.
 - **The record.** `npx wf ask record <id>` adds each "Later" to the open questions, and each answer the spec marks with `record` to that decisions file.

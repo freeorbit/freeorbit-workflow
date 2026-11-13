@@ -1,0 +1,13 @@
+{
+  "id": "e2e-run-status",
+  "title": "The e2e run",
+  "template": "status",
+  "intro": "Where the e2e run stands. This page updates while it runs; nothing to answer unless something fails.",
+  "blocks": [
+    { "type": "stats", "items": [
+      { "label": "Flows", "value": "0 of 12" },
+      { "label": "Failures", "value": "0", "tone": "ok" }
+    ] }
+  ],
+  "questions": []
+}

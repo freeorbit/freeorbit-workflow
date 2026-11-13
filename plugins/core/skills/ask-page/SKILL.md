@@ -38,6 +38,7 @@ No browser pane: send `wf ask export <id>`'s `.html` file, or ask in the chat. T
 | `testdata` | `tables`: `columns`, `rows` of `id` and `cells` | Fine, a gap, or wrong, per row |
 | `plan` | `steps`, and `prompt` | Approve or change, per step, then the plan as a whole |
 | `signoff` | `checks` | Done or object, per check |
+| `status` | `questions`, which may be none | A live page: where a step stands while it runs, with any questions as written |
 
 A paged template (`compare`, `frame-review`, `storyboard`) shows one item at a time, with a strip of every item and an all-at-once grid. `verdicts` in the spec replaces the template's options.
 
@@ -77,51 +78,16 @@ Every template shares one layout: a header with the title, who asked, the draft 
 - **Folding.** Answered questions fold to one line; Expand all (E), Collapse all (⇧E), or Fold answered changes that, and Select all (⇧X) selects every question for one bulk answer.
 - **Wording.** A question is at most 160 characters, a label 60, a reason 200, and an option's description 160. Where the person asked for more detail, or the question opens follow-ups, `explain: true` gives its reasons and descriptions room.
 
-## Blocks
+## More, read when the page needs it
 
-A page can show more than questions: give `sections`, each a `title` and its `blocks`, or plain `blocks`. The design and the phase still to come are in the kit's `docs/design/ask-blocks.md`; the examples are `blocks/status.json` and `blocks/charts.json` beside this skill.
-
-| Block | Fields | Export |
-| --- | --- | --- |
-| `text` | `text`: headings (`#`), paragraphs, `-` and `1.` lists, `**bold**`, `*italic*`, `` `code` ``, and fenced code; no links or HTML | Markdown |
-| `stats` | `items` of `label`, `value` (24 characters), `tone` (ok, warn, bad, info), `note`, and `trend`, up to 60 numbers drawn as a sparkline | Markdown, CSV |
-| `table` | `columns` and `rows`, or `source`: `open-questions`, `decisions` (with `filter`, a file id), or `ledger`; sortable, and filterable over 8 rows | CSV, Markdown |
-| `diff` | `before` and `after`, `by` line or word, `view` side or inline, `labels` | A unified diff |
-| `chart` | `kind` (`bar` or `line`), `labels`, `series` of `name` and `values` (a number or null for each label, 8 series at most), `stacked` for bars, `unit`; one axis, a tooltip on hover, the arrow keys, and Show the numbers for the table | SVG, CSV, Markdown |
-| `diagram` | `nodes` of `id`, `label`, `note`, `tone`; `links` of `from`, `to`, `label`; `direction` `right` or `down`; laid out by the kit, a loop's arrow dashed | SVG, Mermaid |
-| `timeline` | `events` of `date`, `title`, `note`, `state` (`done`, `now`, `next`) | Markdown |
-| `board` | `columns` (ids, or `id` and `title`), `cards` of `title`, `column`, `note`, `tone`, `owner`, `tags`; read only | Markdown, CSV |
-| `questions` | Where the questions go; with none, they come after the blocks | — |
-| `part` | `name` of a part in `.workflow/ask-parts/<name>.json`, and `with`, values for `{field}` | — |
-
-- **Every block** takes a `title` and a `note`. A titled block has its own Export menu; an untitled one's sits in its section's.
-- **Limits.** 60 blocks and 500 table rows a page, 4,000 characters a text block, 200 points a chart, 40 boxes a diagram, 100 events, and 200 cards.
-- **Which one.** A single number is a `stats` tile, with a `trend` when its change matters. Change over time is a line; amounts across a few things, bars. Two measures of different scale are two charts, never one with two axes.
-- **Off.** `off` lists block kinds, question types, or features a page leaves out (`bulk`, `outline`, `palette`, `pins`, `compare`, `regions`, `followups`, `owners`); `ask.off` in `.workflow/config.json` does it for every page, and a page's `on` brings one back.
-
-## Richer answers
-
-Beyond picking, ordering, and typing, a question can ask for a number, a grid, a sort, edits, or a small form. The example is `answers/release.json` beside this skill.
-
-| Type | Fields | Answer | Recommend |
-| --- | --- | --- | --- |
-| `scale` | `scale`: `min` (1), `max` (5), `step` (1), `style` (`stars` up to ten steps, `slider`, `number`), `low` and `high` labels, `unit` | `number` | A number on the scale |
-| `grid` | `rows` of `id`, `label`, `why`; `options` are the columns | `rows`: a column for each row | `{ row: option }` |
-| `buckets` | `items` of `id`, `label`, `why`; `options` are the buckets; drag, or pick on the card | `rows`: a bucket for each item | `{ item: bucket }` |
-| `edits` | `edits` of `id`, `label`, `before`, `after`, `by` (word, or line), `why` | `edits`: `accept` or `reject` each | `"accept"`, or `{ edit: "accept" }` |
-| `form` | `fields` of `id`, `label`, `kind` (`text`, `long`, `number`, `check`, `select`, `date`), `required`, `min`, `max`, `options`, `help`, `placeholder` | `fields` | Nothing; say what fits in `help` |
-
-- **Answered.** A grid, a sort, or edits is answered when every row has its place; a form when every field is fine and something is filled in. Each is checked as it is filled.
-- **The asking rules.** In the advised templates, every column and bucket says what it means in `why`, every edit says why it is suggested, and each recommends in `recommended` with `why`, or says in `noPick` why not. R takes it; rows already placed stay.
-- **Follow-ups.** `showIf: { "question": "<earlier id>", "is": "<option>" }` shows a question only when that answer fits: `is` or `not` (one option or a list) for a choice, `atLeast` or `atMost` for a scale, or nothing, for any answer. A follow-up not shown is not asked, so it is never open, and what it held is not sent. Follow-ups are for list pages, not the paged reviews.
-- **Owners.** `owners`, a list of names, puts a "who owns this" pick on a question; the answer's `owner` is one of them.
-- **Boxes.** With `pins: true`, a drag in comment mode draws a box, a pin with a `w` and `h`; a click still drops a pin.
-- **Off.** `off` and `ask.off` take the types too, and `followups`, `owners`, and `regions` (boxes); a spec using a type that is off fails its check.
+- **[Blocks](reference/blocks.md).** Sections of text, tiles, tables, diffs, charts, diagrams, timelines, and boards around the questions, with their exports and what turns off.
+- **[Answer types](reference/answer-types.md).** Scale, grid, buckets, edits, and form questions; follow-ups with `showIf`, owners, and boxes on pictures.
+- **[Live pages](reference/live.md).** A status page you update while a step runs, a reply under a question, history, what changed, step-by-step pages, and the waiting count and notifications.
 
 ## Answers
 
 
-Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, or `decide` (`agent`: you decide, `later`: an open question), with an optional `note`, `other`, `owner`, and `pins` (picture index, x, y, a `w` and `h` for a box, kind, text, box).
+Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, or `decide` (`agent`: you decide, `later`: an open question), with an optional `note`, `other`, `owner`, `reply` (to your reply under it), and `pins` (picture index, x, y, a `w` and `h` for a box, kind, text, box).
 
 - `npx wf ask answers <id>` prints them again; `--json` gives the file. They are in `.cache/view/answers/<id>.json`.
 - `npx wf ask export <id>` writes one `.html` with the pictures inside, and the answers as `.md` and `.json`. Offline, the page saves an answers file for `wf ask import`.

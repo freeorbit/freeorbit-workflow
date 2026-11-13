@@ -57,7 +57,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
 | `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands` |
-| `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import` | Ask pages: any number of questions on one page in the browser pane, from eleven templates or the project's own in `.workflow/ask-templates/`, with pictures, boxes, pins, compare views, paging, bulk answers, and colour themes. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file. The `ask-page` skill has the spec |
+| `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import \| live \| reply \| history` | Ask pages: any number of questions on one page in the browser pane, from twelve templates or the project's own in `.workflow/ask-templates/`, with pictures, boxes, pins, compare views, paging, bulk answers, and colour themes. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file; `live` updates a status page while a step runs, `reply` answers under a question, and `history` lists every round sent. The `ask-page` skill has the spec |
 | `wf view serve \| stop \| setup` | The shared `question-pictures` server: one per machine on 127.0.0.1, serving each project's `.cache/view` at its own key, with an inbox of every ask at `/`, and taking answers with a per-run token. `serve` starts or joins it, `stop` ends it, `setup` writes it into `.claude/launch.json` |
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
 | `wf app <start \| run \| stop \| ...>` | Drives the project's app on Linux under a memory cap, from `app` in the config, with the project's `app.hooks`: a Tauri app through WebKit's inspector (`app.kind` tauri), or a web app's servers and a headless Chromium through its debugging protocol (web) |
@@ -86,6 +86,18 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.55.0: live ask pages
+
+- **A live page.** A `status` page, or one with `"live": true`, shows where a step stands while it runs: its state, step, progress, log, and blocks. It redraws in place as the agent runs `npx wf ask live <id> --step … --progress 3/12 --log … --blocks …`.
+- **Replies.** `npx wf ask reply <id> <question> <text>` puts the agent's reply under a question. The page asks again, and the person's reply comes back with the answers.
+- **History.** Every send keeps a round. `npx wf ask history [<id>]` lists them, the page's ⋯ menu shows Earlier answers, and `wf ask export` adds them as Markdown.
+- **Changes.** A page asked again marks its New and Changed questions and lists what was removed.
+- **Steps.** `"steps": true` shows one section at a time, each a step. A `questions` block with a `group` or `ids` places those questions, so each step asks its own.
+- **Waiting.** A served page's tab shows how many asks wait. The person can turn on a browser notification for a new ask, a reply, or a live page finishing.
+- **Off.** Each of these turns off with `off` or `ask.off`: `live`, `replies`, `history`, `changes`, `notify`, and `tabcount`.
+- **The skill.** The `ask-page` skill keeps its steps and spec in `SKILL.md`, now under 10 KB. Blocks, answer types, and live pages moved to `reference/`, which it reads when a page needs them.
+- Nothing to change in a project. Rebuild any open ask page with `npx wf ask page`, and restart the server with `npx wf view stop` so it serves the new routes.
 
 ### v0.54.1: fixes from the code review of blocks and richer answers
 
