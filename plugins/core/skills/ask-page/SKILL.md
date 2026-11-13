@@ -64,11 +64,19 @@ When none of the templates fits a question that will come back, such as a depend
   - `record`: a decisions file id, such as an area's, for `wf ask record`.
 - **Pictures.** A sheet from `npx wf design annotate`, or a shot from `wf screens` or `wf app`, works as a picture; the box kinds are the annotate kinds.
 
+## The page
+
+Every template shares one layout: a header with the title, who asked, the draft state, the other asks, and the progress; a column of questions; and a footer whose one primary button is Send.
+
+- **Keys.** J and K move between questions, 1–9 pick, R takes the recommendation, D and L are You decide and Later, N is a note, Enter goes to the next open question, X selects, Ctrl+K opens the command list, Ctrl+Z undoes, and ? lists them all.
+- **Reviews.** A paged template shows one frame with a filmstrip of verdict colours and comment counts; 1–4 give a verdict and move to the next frame, which the settings can turn off. C turns on comment mode for pins, M changes the compare view, Z zooms.
+- **Many at once.** Take all recommendations, or select questions or rows and give them one answer. Every change can be undone, from the toast or Ctrl+Z.
+- **Sending.** Questions left open get one panel: send them as You decide, as Later, or open. A receipt then shows exactly what was sent, with Change answers and the next waiting ask.
+- **Look.** Themes are in Claude Desktop's own colour tokens. With Claude Desktop installed, the page follows its theme, including a claude-desktop-extra palette; the kit's Clay, Teal, Moss, Indigo, Slate, and High contrast are there too, each light and dark, with Comfortable or Compact density.
+- **Wording.** A question is at most 160 characters, a label 60, a reason 200, and an option's description 160. Where the person asked for more detail, or the question opens follow-ups, `explain: true` gives its reasons and descriptions room.
+
 ## Answers
 
-The viewer picks a colour theme (Orbit, Slate, Forest, Ember, or High contrast), each light or dark or following the system; it is kept in their browser for every page. In a compare, Swipe has a line to drag across the pictures.
-
-The page's bulk bar answers many at once: take every recommendation, mark a shared verdict (such as every frame Fine), or You decide or Later. It applies to the selected questions or rows, or to every open one, and Undo puts the answers back.
 
 Each answer has `choice`, `order`, `text`, or `decide` (`agent`: you decide, `later`: an open question), with an optional `note`, `other`, and `pins` (picture index, x, y, kind, text, box).
 

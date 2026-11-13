@@ -38,9 +38,11 @@ An ask page holds any number of questions, with their pictures, on one page in t
 - **Recommendations.** Every option on a page says what it means, every choice names the recommended option and why, and a ranking lists its suggested order and why; `wf ask page` refuses a spec without them. A review's verdicts recommend nothing.
 - **Answering.** Each question can take "You decide" or "Later", a note, and pins on its pictures. A partial send is fine; the agent carries on with what is answered.
 - **Many at once.** The bulk bar takes every recommendation, marks a shared verdict, or leaves questions to the agent or for later, for the selected questions or every open one. Undo puts them back.
-- **The keyboard.** 1–9 picks an option, ← → pages, j and k move between questions, n finds the next open one, x selects one, Ctrl+Enter sends, and ? lists them.
+- **The keyboard.** J and K move, 1–9 pick, R takes the recommendation, Enter goes to the next open question, Ctrl+K lists commands, Ctrl+Z undoes, Ctrl+Enter sends, and ? lists the rest.
+- **Moving between asks.** Each page's header shows the other waiting asks; [ and ] go to the previous and next, I opens the inbox, and the receipt after Send offers the next one.
 - **Project templates.** A question that comes back often can get a template of its own, as data in `.workflow/ask-templates/`. The agent proposes one and the owner says yes; it holds no code.
-- **Colours.** The page has five colour themes, each light and dark, picked on the page and kept in the browser.
+- **Colours.** The page follows the Claude Desktop theme when Claude Desktop is installed, or one of the kit's six themes, each light and dark, kept in the browser.
+- **Wording.** Questions, labels, and reasons are held short; `explain: true` gives room where the person asked for more detail.
 - **Drafts.** The page keeps a draft in the browser, so a reload loses nothing. A newer version of the page says so at the top.
 - **Export.** `npx wf ask export <id>` writes one HTML file, pictures inside, for someone without the pane, and the answers as Markdown and JSON. Their answers file comes back through `npx wf ask import`.
 - **The record.** `npx wf ask record <id>` adds each "Later" to the open questions, and each answer the spec marks with `record` to that decisions file.

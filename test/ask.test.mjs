@@ -369,3 +369,111 @@ test("a second start finds the shared server and reuses it, and stop ends it", a
   for (let i = 0; i < 20 && (await hubUp(port)); i++) await new Promise((done) => setTimeout(done, 100));
   assert.equal(await hubUp(port), null);
 });
+
+// WCAG contrast of two "H S% L%" triples.
+const hslRgb = (t) => { const [h, s, l] = t.replace(/%/g, "").split(/\s+/).map(Number); const a = (s / 100) * Math.min(l / 100, 1 - l / 100); const f = (n) => { const k = (n + h / 30) % 12; return l / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); }; return [f(0), f(8), f(4)]; };
+const lumOf = (rgb) => { const c = rgb.map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+const contrast = (a, b) => { const [x, y] = [lumOf(hslRgb(a)), lumOf(hslRgb(b))].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+
+test("every kit theme, light and dark, passes WCAG contrast for text, controls, and states", () => {
+  const { themes, default: first } = JSON.parse(readFileSync(join(here, "../lib/ask/themes.json"), "utf8"));
+  assert.ok(themes[first], "the default is a theme");
+  const failures = [];
+  for (const [name, theme] of Object.entries(themes)) for (const mode of ["light", "dark"]) {
+    const v = theme[mode];
+    const need = [["--text-000", "--bg-100", 7], ["--text-400", "--bg-000", 4.5], ["--text-400", "--bg-100", 4.5], ["--oncolor-100", "--accent-brand", 4.5], ["--accent-brand", "--bg-100", 3], ["--danger-100", "--bg-000", 4.5], ["--warning-100", "--bg-000", 4.5], ["--success-100", "--bg-000", 4.5], ["--accent-000", "--bg-000", 4.5]];
+    for (const [fg, bg, min] of need) {
+      const r = contrast(v[fg], v[bg]);
+      if (r < min) failures.push(`${name} ${mode} ${fg} on ${bg}: ${r.toFixed(2)} < ${min}`);
+    }
+  }
+  assert.deepEqual(failures, []);
+});
+
+/** A small asar archive, laid out as Electron's: a pickled JSON header, then the files. */
+function asar(files) {
+  const tree = { files: {} };
+  const bodies = [];
+  let offset = 0;
+  for (const [path, text] of Object.entries(files)) {
+    const buf = Buffer.from(text);
+    let node = tree;
+    const parts = path.split("/");
+    for (const part of parts.slice(0, -1)) node = node.files[part] ??= { files: {} };
+    node.files[parts.at(-1)] = { size: buf.length, offset: String(offset) };
+    bodies.push(buf);
+    offset += buf.length;
+  }
+  const json = Buffer.from(JSON.stringify(tree));
+  const padded = Math.ceil(json.length / 4) * 4;
+  const head = Buffer.alloc(16);
+  head.writeUInt32LE(4, 0);
+  head.writeUInt32LE(8 + padded, 4);
+  head.writeUInt32LE(4 + padded, 8);
+  head.writeUInt32LE(json.length, 12);
+  return Buffer.concat([head, json, Buffer.alloc(padded - json.length), ...bodies]);
+}
+
+test("the Claude Desktop theme is read from the install: the stock tokens, under the active palette", async () => {
+  const { claudeTheme, cleanTokens, objectAt } = await import("../lib/ask/claudetheme.mjs");
+  const dir = mkdtempSync(join(tmpdir(), "wf-claude-"));
+  const resources = join(dir, "resources");
+  const config = join(dir, "config");
+  mkdirSync(resources);
+  mkdirSync(config);
+  const css = "x{}[data-theme=claude],[data-theme=claude][data-mode=light]{--bg-100:48 33.3% 97.1%;--text-000:60 2.6% 7.6%;--accent-brand:15 63.1% 59.6%;--x:red}[data-theme=claude][data-mode=dark]{--bg-100:60 2.7% 14.5%;--text-000:48 33.3% 97.1%;--accent-brand:15 63.1% 59.6%}";
+  writeFileSync(join(resources, "ion-dist.asar"), asar({ "assets/v1/a.css": "body{}", "assets/v1/b.css": css }));
+  const js = 'var a={"other":1};var t={"night":{"name":"Night","light":{"--bg-100":"220 20% 95%"},"dark":{"--bg-100":"240 20% 10%","--accent-brand":"199 75% 69%","--evil":"url(x)","--text-000":"red"}}};';
+  writeFileSync(join(resources, "app.asar"), asar({ ".vite/build/index.js": js }));
+  const env = { WF_CLAUDE_RESOURCES: resources, WF_CLAUDE_CONFIG: config };
+  assert.deepEqual(claudeTheme(env), { name: "Claude", id: "claude", light: { "--bg-100": "48 33.3% 97.1%", "--text-000": "60 2.6% 7.6%", "--accent-brand": "15 63.1% 59.6%" }, dark: { "--bg-100": "60 2.7% 14.5%", "--text-000": "48 33.3% 97.1%", "--accent-brand": "15 63.1% 59.6%" } });
+  writeFileSync(join(config, "claude-desktop-extra.jsonc"), '// a comment\n{\n  // "activeTheme": "mario",\n  "activeTheme": "night", // mine\n}\n');
+  const t = claudeTheme(env);
+  assert.equal(t.name, "Night");
+  assert.equal(t.dark["--bg-100"], "240 20% 10%");
+  assert.equal(t.dark["--accent-brand"], "199 75% 69%");
+  assert.equal(t.dark["--text-000"], "48 33.3% 97.1%", "a value that is not a triple falls back to the stock token");
+  assert.equal(t.dark["--evil"], undefined);
+  assert.deepEqual(cleanTokens({ "--bg-100": "1 2% 3%", "--bg-200": "1 2% 3%; background: url(x)" }), { "--bg-100": "1 2% 3%" });
+  assert.deepEqual(objectAt('x {"a":"}{","b":{"c":1}} y', 2), { a: "}{", b: { c: 1 } });
+  assert.equal(claudeTheme({ WF_CLAUDE_RESOURCES: join(dir, "none"), WF_CLAUDE_CONFIG: config }), null);
+});
+
+test("wording is held short, unless the question asks for more detail", () => {
+  const long = "word ".repeat(60).trim();
+  const problems = (more) => normalize({ id: "a", title: "t", questions: [{ id: "q", text: "x", options: [{ id: "a", label: "A", why: long }, { id: "b", label: "B", why: "short" }], recommended: "a", why: "short", ...more }] }).problems.join("\n");
+  assert.match(problems({}), /q: option a's why is 299 characters, over 160; say it shorter, or set explain: true/);
+  assert.equal(problems({ explain: true }), "");
+  assert.match(normalize({ id: "a", title: "t", questions: [{ id: "q", text: long, type: "text" }] }).problems.join(), /q: the question is 299 characters, over 160/);
+  assert.match(normalize({ id: "a", title: "t", questions: [{ id: "q", text: "x", options: [{ id: "a", label: long, why: "w" }, { id: "b", label: "B", why: "w" }], recommended: "a", why: "w", explain: true }] }).problems.join(), /label is 299 characters, over 60/, "explain never lengthens a label");
+});
+
+test("a page carries the kit's themes, and the server hands out the Claude Desktop theme", async () => {
+  const raw = example("rank");
+  const { root, view } = project(raw);
+  const { page } = buildPage(root, view, raw, KIT_KINDS);
+  const data = JSON.parse(readFileSync(page, "utf8").split('id="ask-data">')[1].split("</script>")[0]);
+  assert.equal(data.themes.default, "clay");
+  assert.deepEqual(Object.keys(data.themes.themes).sort(), ["clay", "contrast", "indigo", "moss", "slate", "teal"]);
+  const key = projectKey(root);
+  const theme = { name: "Night", id: "night", light: { "--bg-100": "1 2% 3%" }, dark: { "--bg-100": "4 5% 6%" } };
+  const { port, close } = await serve({ resolve: () => null, list: () => [{ key, view, name: "x" }], port: 0, log: () => {}, theme: () => theme });
+  try {
+    assert.deepEqual(await (await fetch(`http://127.0.0.1:${port}/__hub/theme`)).json(), { ok: true, ...theme });
+    const inbox = await (await fetch(`http://127.0.0.1:${port}/`)).text();
+    assert.match(inbox, /<script type="application\/json" id="themes">/);
+  } finally {
+    await close();
+  }
+  const none = await serve({ resolve: () => null, list: () => [], port: 0, log: () => {} });
+  try {
+    assert.deepEqual(await (await fetch(`http://127.0.0.1:${none.port}/__hub/theme`)).json(), { ok: false });
+  } finally {
+    await none.close();
+  }
+});
+
+test("the inbox script parses", async () => {
+  const { inboxHtml } = await import("../lib/ask/inbox.mjs");
+  new Script(inboxHtml().split("<script>\n")[1].split("\n</script>")[0]);
+});
