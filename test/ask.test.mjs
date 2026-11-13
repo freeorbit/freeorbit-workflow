@@ -152,6 +152,9 @@ test("the answers read as Markdown, and the page's copied text reads back", () =
   assert.match(md, /^# Accounts: frame against the app \(accounts-drift\), answered 2026-11-13 09:30\n/);
   assert.match(md, /- \*\*accounts-wide\*\* Accounts, wide: do these match\?: \*\*drift\*\* Drifts from the frame\.\n  - Pin 1 on App at 640, 380 \(drift\), in box 1: tags clipped/);
   assert.match(md, /- \*\*accounts-narrow\*\* .*: you decide\./);
+  const { spec: grouped } = normalize(example("batch"));
+  const notes = answersMarkdown(grouped, { answers: { retention: { choice: "30", note: "fine" }, icon: { choice: "dot" } } });
+  assert.match(notes, /  - Note: fine\n\n## designer\n/, "a heading after a note still has its blank line");
   const copied = `Answers to the ask page x.\n\n\`\`\`json\n${JSON.stringify({ id: "x", answers: {} })}\n\`\`\`\n`;
   assert.deepEqual(answersFromText(copied), { id: "x", answers: {} });
   assert.deepEqual(answersFromText('{"id":"y"}'), { id: "y" });
