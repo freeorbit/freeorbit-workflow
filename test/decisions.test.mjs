@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
-import { addDecision, decisionFiles, decisionProblems, emptyFile, rows, supersede } from "../lib/logs/decisions.mjs";
+import { addDecision, decisionFiles, decisionProblems, emptyFile, rows, supersede, supersedeAll } from "../lib/logs/decisions.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { matcher } from "../lib/config/config.mjs";
 
@@ -55,4 +55,18 @@ test("doc:check holds IDs, order, status, length, and citations", () => {
   assert.ok(!decisionProblems(longForm, matcher(longForm.config.docs.history)).some((problem) => /words, over/.test(problem)));
   const moved = { config: config(), tracked: ["docs/log/decisions-closed/uplink.md"], files: () => `${emptyFile(file, true)}| D-GM-003 | 2026-11-07 | Moved. | Why. | moved to D-ST-009 |\n` };
   assert.deepEqual(decisionProblems(moved, matcher(moved.config.docs.history)), []);
+});
+
+test("supersede keeps the closed file newest on top, and moves several IDs or none", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-dec-"));
+  for (const [text, date] of [["One.", "2026-11-01"], ["Two.", "2026-11-03"], ["Three.", "2026-11-05"], ["Four.", "2026-11-07"]]) addDecision(root, config(), "uplink", text, "Why.", date);
+  supersedeAll(root, config(), ["D-GM-003"], "D-GM-004");
+  supersedeAll(root, config(), ["D-GM-001", "D-GM-002"], "D-GM-004");
+  const closedPath = join(root, "docs/log/decisions-closed/uplink.md");
+  assert.deepEqual(rows(readFileSync(closedPath, "utf8")).map((row) => row.id), ["D-GM-003", "D-GM-002", "D-GM-001"]);
+  const context = { config: config(), tracked: ["docs/log/decisions-closed/uplink.md"], files: () => readFileSync(closedPath, "utf8") };
+  assert.deepEqual(decisionProblems(context, matcher(context.config.docs.history)), []);
+  const open = readFileSync(join(root, "docs/log/decisions/uplink.md"), "utf8");
+  assert.throws(() => supersedeAll(root, config(), ["D-GM-004", "D-GM-009"], "D-GM-010"), /D-GM-009 is not in/);
+  assert.equal(readFileSync(join(root, "docs/log/decisions/uplink.md"), "utf8"), open, "a bad ID moves none");
 });

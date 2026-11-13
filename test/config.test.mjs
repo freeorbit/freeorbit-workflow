@@ -116,3 +116,24 @@ test("a written date is checked against the latest date on Earth, not the runner
   assert.deepEqual(await dated(latestToday(), undefined), []);
   assert.equal((await dated(shift(latestToday(), 1), undefined)).length, 1);
 });
+
+test("doc:check takes one index row for a folder's README, which stands for the files it links", async () => {
+  const root = scratch({
+    ".workflow/config.json": '{"docs":{"synced":[]}}',
+    "docs/README.md": "# Index\n\n[area](app/test-data/README.md)\n",
+    "docs/app/test-data/README.md": "# Test data\n\n[core](core.md), [tab](tab/README.md)\n",
+    "docs/app/test-data/core.md": "# Core\n",
+    "docs/app/test-data/stray.md": "# Stray\n",
+    "docs/app/test-data/tab/README.md": "# Tab\n\n[rules](rules.md)\n",
+    "docs/app/test-data/tab/rules.md": "# Rules\n",
+    "docs/app/test-data/tab/gaps.md": "# Gaps\n",
+    "docs/app/loose/README.md": "# Loose\n\n[a](a.md)\n",
+    "docs/app/loose/a.md": "# A\n",
+  });
+  assert.deepEqual(await problems(project(root), "2026-11-08"), [
+    "docs/README.md: no row for docs/app/loose/README.md",
+    "docs/README.md: no row for docs/app/loose/a.md",
+    "docs/README.md: no row for docs/app/test-data/stray.md",
+    "docs/README.md: no row for docs/app/test-data/tab/gaps.md",
+  ]);
+});

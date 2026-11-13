@@ -54,6 +54,8 @@ If a story is dropped, leave the ID in place with a one-line "Removed" note and 
 
 As a first-time user, I want a short privacy promise, so that I know my mail never leaves this machine unless I send it.
 
+Risk: high (privacy)
+
 Acceptance:
 
 - Given I launch the app for the first time, the promise is shown before the plugin catalog.
@@ -62,6 +64,7 @@ Acceptance:
 
 - Role, want, and reason, in that order.
 - Acceptance is testable. "Given / when / then" or a plain checklist both work.
+- `Risk: high (<why>)` marks a story about money, privacy, irreversible steps, outside input, evidence, or workspaces, so its test data gets edge cases. `Risk: low`, or no line, is low.
 <!-- wf:local story-rules -->
 
 
