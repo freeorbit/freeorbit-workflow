@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { request } from "node:http";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
@@ -9,17 +9,21 @@ import { fileURLToPath } from "node:url";
 import { Script } from "node:vm";
 
 import { answered, answersMarkdown, checkAnswers, recordAnswers } from "../lib/ask/answers.mjs";
-import { answersFromText, EXAMPLES, projectTemplates, runAsk } from "../lib/ask/index.mjs";
+import { answersFromText, EXAMPLES, projectTemplates, runAsk, runView } from "../lib/ask/index.mjs";
 import { buildPage, exportHtml, imageSize, pictureFile } from "../lib/ask/page.mjs";
 import { answersPath, serve, servedFile } from "../lib/ask/serve.mjs";
+import { asker, ensureHub, hubUp, projects, register } from "../lib/ask/hub.mjs";
 import { checkTemplate, normalize, TEMPLATES } from "../lib/ask/spec.mjs";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
-import { SERVER, withViewServer } from "../lib/design/view.mjs";
+import { projectKey, SERVER, withViewServer } from "../lib/design/view.mjs";
 import { emptyFile } from "../lib/logs/decisions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
+// No shared server is started, and the registry is a throwaway one.
+process.env.WF_ASK_NO_SERVER = "1";
+process.env.WF_STATE_DIR = mkdtempSync(join(tmpdir(), "wf-ask-state-"));
 // A one-pixel PNG, and another, so a page has real pictures to copy.
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 const PNG2 = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
@@ -176,38 +180,73 @@ test("record writes later answers as open questions and recorded choices as deci
   assert.match(readFileSync(join(root, config.logs.openQuestions), "utf8"), /What does the screen say with no accounts\?/);
 });
 
-test("the server serves the view folder, swaps in its token, and takes answers only from its own pages", async () => {
+test("the server serves each project at its key, swaps in its token, and takes answers only from its own pages", async () => {
   const raw = example("decision");
   const { root, view } = project(raw);
-  const { spec } = buildPage(root, view, raw, KIT_KINDS);
+  const { spec } = buildPage(root, view, raw, KIT_KINDS, {}, { asker: { project: "demo", branch: "main", worktree: "", session: "local_abc12345" } });
   mkdirSync(join(view, "answers"), { recursive: true });
   writeFileSync(join(root, "secret.txt"), "no");
+  const key = projectKey(root);
   const logs = [];
-  const { port, token, close } = await serve({ dir: view, port: 0, kinds: KIT_KINDS, log: (line) => logs.push(line) });
+  const find = (k) => (k === key ? { key, view, name: "demo", kinds: KIT_KINDS } : null);
+  const { port, token, close } = await serve({ resolve: find, list: () => [{ key, view, name: "demo" }], port: 0, version: "x", log: (line) => logs.push(line) });
   const base = `http://127.0.0.1:${port}`;
   try {
-    const page = await (await fetch(`${base}/ask/${spec.id}/`)).text();
+    assert.deepEqual(await (await fetch(`${base}/__hub`)).json(), { hub: "freeorbit-workflow", version: "x", pid: process.pid, port });
+    const page = await (await fetch(`${base}/${key}/ask/${spec.id}/`)).text();
     assert.match(page, new RegExp(`<meta name="wf-token" content="${token}">`));
-    assert.equal((await fetch(`${base}/ask/${spec.id}/p/1.png`)).headers.get("content-type"), "image/png");
-    assert.deepEqual(await (await fetch(`${base}/__ask/version/${spec.id}`)).json(), { hash: spec.hash });
-    assert.equal((await fetch(`${base}/..%2f..%2fsecret.txt`)).status, 404);
-    const post = (body, headers = {}) => fetch(`${base}/__ask/answers/${spec.id}`, { method: "POST", headers: { "Content-Type": "application/json", "X-WF-Token": token, ...headers }, body: JSON.stringify(body) });
+    assert.match(page, new RegExp(`"key":"${key}"`));
+    assert.equal((await fetch(`${base}/${key}/ask/${spec.id}/p/1.png`)).headers.get("content-type"), "image/png");
+    assert.equal((await fetch(`${base}/other-123456/ask/${spec.id}/`)).status, 404, "an unknown project");
+    assert.deepEqual(await (await fetch(`${base}/__ask/${key}/version/${spec.id}`)).json(), { hash: spec.hash });
+    assert.equal((await fetch(`${base}/${key}/..%2f..%2fsecret.txt`)).status, 404);
+    const post = (body, headers = {}, k = key) => fetch(`${base}/__ask/${k}/answers/${spec.id}`, { method: "POST", headers: { "Content-Type": "application/json", "X-WF-Token": token, ...headers }, body: JSON.stringify(body) });
     const answers = { id: spec.id, hash: spec.hash, answers: { layout: { choice: "tabs" } } };
     assert.equal((await post(answers, { "X-WF-Token": "wrong" })).status, 403);
     assert.equal((await post(answers, { Origin: "http://evil.test" })).status, 403);
+    assert.equal((await post(answers, {}, "other-123456")).status, 404);
     assert.equal((await post({ ...answers, answers: { layout: { choice: "grid" } } })).status, 422);
     const ok = await post(answers);
     assert.equal(ok.status, 200);
     assert.deepEqual(await ok.json(), { ok: true, partial: true, open: ["empty"] });
     assert.equal(JSON.parse(readFileSync(answersPath(view, spec.id), "utf8")).answers.layout.choice, "tabs");
-    assert.equal((await fetch(`${base}/answers/${spec.id}.json`)).status, 403);
+    assert.equal((await fetch(`${base}/${key}/answers/${spec.id}.json`)).status, 403);
+    const { items } = await (await fetch(`${base}/__hub/inbox`)).json();
+    assert.deepEqual(items.map((i) => `${i.id} ${i.state} ${i.open}/${i.questions} ${i.asker.session} ${i.href}`), [`chunk-12-layout partial 1/2 local_abc12345 /${key}/ask/chunk-12-layout/`]);
+    assert.match(await (await fetch(`${base}/`)).text(), /<title>Asks<\/title>/);
+    assert.equal((await fetch(`${base}/__hub/stop`, { method: "POST" })).status, 403, "stop needs the token");
     // A page on another name that resolves here cannot reach the server.
-    const other = await new Promise((done) => request({ host: "127.0.0.1", port, path: `/ask/${spec.id}/`, headers: { Host: "evil.test" } }, (res) => { res.resume(); done(res.statusCode); }).end());
+    const other = await new Promise((done) => request({ host: "127.0.0.1", port, path: `/${key}/ask/${spec.id}/`, headers: { Host: "evil.test" } }, (res) => { res.resume(); done(res.statusCode); }).end());
     assert.equal(other, 403);
-    assert.match(logs.join("\n"), /answers for decision-free|answers for chunk-12-layout: 1 of 2 still open/);
+    assert.match(logs.join("\n"), new RegExp(`answers for ${key}/chunk-12-layout: 1 of 2 still open`));
   } finally {
     await close();
   }
+});
+
+test("the registry keeps projects by key, and drops a root that is no longer a project", () => {
+  const a = mkdtempSync(join(tmpdir(), "wf-ask-reg-"));
+  const b = mkdtempSync(join(tmpdir(), "wf-ask-reg-"));
+  for (const root of [a, b]) {
+    mkdirSync(join(root, ".workflow"));
+    writeFileSync(join(root, ".workflow/config.json"), "{}");
+  }
+  const env = { WF_STATE_DIR: mkdtempSync(join(tmpdir(), "wf-ask-state-")) };
+  const ka = register(a, env);
+  const kb = register(b, env);
+  assert.notEqual(ka, kb);
+  assert.deepEqual(Object.keys(projects(env)).sort(), [ka, kb].sort());
+  rmSync(join(b, ".workflow"), { recursive: true });
+  assert.deepEqual(Object.keys(projects(env)), [ka]);
+});
+
+test("who asks names the repository, the branch, the worktree, and the session", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-ask-who-"));
+  spawnSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+  const who = asker(root, { CLAUDE_CODE_HOST_SESSION_ID: "local_1234abcd" });
+  assert.equal(who.branch, "main");
+  assert.equal(who.worktree, "");
+  assert.equal(who.session, "local_1234abcd");
 });
 
 test("a served file stays in the folder", () => {
@@ -231,8 +270,16 @@ test("wait returns once answers to the page as it is now are sent, and export ma
   try {
     const out = [];
     const log = (line) => out.push(line);
+    process.env.CLAUDE_CODE_HOST_SESSION_ID = "local_first123";
     assert.equal(await runAsk(["page", join(EXAMPLES, "rank.json")], log), 0);
-    assert.match(out.join("\n"), /Open: http:\/\/127\.0\.0\.1:8765\/ask\/next-chunks\/index\.html/);
+    assert.match(out.join("\n"), new RegExp(`Open: http://127\\.0\\.0\\.1:8765/${projectKey(root)}/ask/next-chunks/index\\.html`));
+    // Another session's page that still waits is not replaced without --replace.
+    const mine = process.env.CLAUDE_CODE_HOST_SESSION_ID;
+    process.env.CLAUDE_CODE_HOST_SESSION_ID = "local_other123";
+    await assert.rejects(runAsk(["page", join(EXAMPLES, "rank.json")], log), /another session \(local_\w+\) is still waiting on the ask page next-chunks/);
+    assert.equal(await runAsk(["page", join(EXAMPLES, "rank.json"), "--replace"], log), 0);
+    if (mine === undefined) delete process.env.CLAUDE_CODE_HOST_SESSION_ID;
+    else process.env.CLAUDE_CODE_HOST_SESSION_ID = mine;
     const spec = JSON.parse(readFileSync(join(view, "ask/next-chunks/spec.json"), "utf8"));
     assert.equal(await runAsk(["wait", "next-chunks", "--timeout", "0.6"], log), 3);
     const file = answersPath(view, "next-chunks");
@@ -307,4 +354,18 @@ test("a picture's size is read from its header, so the page keeps its space", ()
   const gif = Buffer.from("R0lGODlhAwACAIAAAP///wAAACH5BAEAAAAALAAAAAADAAIAAAICjAsAOw==", "base64");
   assert.deepEqual(imageSize(gif), [3, 2]);
   assert.equal(imageSize(Buffer.from("not a picture")), null);
+});
+
+test("a second start finds the shared server and reuses it, and stop ends it", async () => {
+  const port = 20000 + Math.floor(Math.random() * 20000);
+  const env = { ...process.env, WF_ASK_NO_SERVER: "" };
+  const first = await ensureHub({ port, env });
+  assert.equal(first.hub, "freeorbit-workflow");
+  const second = await ensureHub({ port, env });
+  assert.equal(second.pid, first.pid, "the same server");
+  const out = [];
+  assert.equal(await runView(["stop", "--port", String(port)], (line) => out.push(line)), 0);
+  assert.match(out.join(), /stopped/);
+  for (let i = 0; i < 20 && (await hubUp(port)); i++) await new Promise((done) => setTimeout(done, 100));
+  assert.equal(await hubUp(port), null);
 });

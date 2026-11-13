@@ -44,4 +44,5 @@ An ask page holds any number of questions, with their pictures, on one page in t
 - **Drafts.** The page keeps a draft in the browser, so a reload loses nothing. A newer version of the page says so at the top.
 - **Export.** `npx wf ask export <id>` writes one HTML file, pictures inside, for someone without the pane, and the answers as Markdown and JSON. Their answers file comes back through `npx wf ask import`.
 - **The record.** `npx wf ask record <id>` adds each "Later" to the open questions, and each answer the spec marks with `record` to that decisions file.
-- **The server.** The `question-pictures` entry in `.claude/launch.json` runs `npx wf view serve`. `npx wf view setup` writes it, or replaces the old file server.
+- **The server.** One `question-pictures` server serves every project, worktree, and session on the machine, each at its own address. `wf ask page` starts it when none runs, and `.claude/launch.json`'s entry joins it.
+- **Many sessions.** Its front page is an inbox of every ask, waiting ones first, with the repository, branch or worktree, and session that asked. A page another session still waits on is never replaced without `--replace`.
