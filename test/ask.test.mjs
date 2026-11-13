@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { request } from "node:http";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
@@ -214,7 +214,7 @@ test("a served file stays in the folder", () => {
   const { view } = project();
   mkdirSync(join(view, "a"), { recursive: true });
   writeFileSync(join(view, "a/index.html"), "x");
-  assert.equal(servedFile(view, "/a/"), join(view, "a/index.html"));
+  assert.equal(servedFile(view, "/a/"), realpathSync(join(view, "a/index.html")), "the real path, as on macOS where /var is /private/var");
   assert.equal(servedFile(view, "/../x"), null);
   assert.equal(servedFile(view, "/%E0%A4%A"), null);
 });
