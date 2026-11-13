@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { ledgerOnlyAfter } from "../lib/screens/run.mjs";
 import { changedFiles, chunkRow, outsideQuick, runTrack } from "../lib/tracks.mjs";
 
 const LEDGER = "Last reviewed: abc1234 on 2026-11-09\n";
@@ -18,7 +19,7 @@ function io({ branch = "core/x", head = "abc1234", files = [], failing = [], tex
     ran.push(cmd);
     return { status: failing.some((part) => cmd.includes(part)) ? 1 : 0 };
   };
-  return { ran, sh: result, wf: (args) => result(`npx wf ${args.join(" ")}`), read: (path) => texts[path] ?? "", branch: () => branch, head: () => head, files: () => files };
+  return { ran, sh: result, wf: (args) => result(`npx wf ${args.join(" ")}`), read: (path) => texts[path] ?? "", branch: () => branch, head: () => head, files: () => files, ledgerOnlyAfter: () => false };
 }
 
 function run(config, phase, args, stub) {
@@ -113,6 +114,45 @@ test("changed files are the branch's commits and untracked files, and null with 
   const out = [];
   runTrack(root, merge(DEFAULTS, { design: { base: "trunk" } }), "done", ["quick"], { wf: () => ({ status: 0 }) }, (line) => out.push(line));
   assert.ok(out.some((line) => line.includes("cannot find the merge base")));
+});
+
+test("the review gate passes at a commit followed only by ledger edits, on HEAD's history", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-tracks-"));
+  const git = (...args) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.test", ...args], { cwd: root, encoding: "utf8", stdio: "pipe" }).trim();
+  const config = merge(DEFAULTS, {});
+  const ledgerPath = config.logs.ledger;
+  const commit = (file, text, message) => {
+    mkdirSync(join(root, dirname(file)), { recursive: true });
+    writeFileSync(join(root, file), text);
+    git("add", "."); git("commit", "-qm", message);
+    return git("rev-parse", "--short", "HEAD");
+  };
+  const gate = () => {
+    const out = [];
+    runTrack(root, config, "done", ["chunk", "35i"], { sh: () => ({ status: 0 }), wf: () => ({ status: 0 }), read: () => readFileSync(join(root, ledgerPath), "utf8"), branch: () => "core/x" }, (line) => out.push(line));
+    return out.find((line) => line.includes("the code review covers HEAD"));
+  };
+  git("init", "-q", "-b", "main");
+  const code = commit("app.rs", "fn main() {}\n", "code");
+  // Exact HEAD: the ledger edit is left uncommitted.
+  mkdirSync(join(root, dirname(ledgerPath)), { recursive: true });
+  writeFileSync(join(root, ledgerPath), `Last reviewed: none.\nDeferred: 1 times, last at ${code} on 2026-11-13.\n`);
+  assert.match(gate(), /^OK/);
+  // The deferral committed after the commit it names, then a review's ledger edits.
+  commit(ledgerPath, `Last reviewed: none.\nDeferred: 1 times, last at ${code} on 2026-11-13.\n`, "defer");
+  assert.match(gate(), /^OK/);
+  commit(config.logs.ledgerClosed, "closed\n", "close a finding");
+  assert.match(gate(), /^OK/);
+  // Any other file after it fails.
+  commit("app.rs", "fn main() { 1; }\n", "more code");
+  assert.match(gate(), /^FAIL/);
+  // A commit not on HEAD's history fails, though only the ledger follows it on its own branch.
+  git("checkout", "-qb", "side", code);
+  const side = commit("side.rs", "\n", "side");
+  git("checkout", "-q", "main");
+  commit(ledgerPath, `Last reviewed: ${side} on 2026-11-13, diff.\nDeferred: none.\n`, "review elsewhere");
+  assert.match(gate(), /^FAIL/);
+  assert.equal(ledgerOnlyAfter(root, [ledgerPath])("0000000"), false);
 });
 
 test("a detached HEAD is not a work branch", () => {

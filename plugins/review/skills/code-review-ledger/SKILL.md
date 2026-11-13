@@ -28,7 +28,7 @@ Deferred: none. | Deferred: <n> times, last at <short HEAD> on <date>.
 - **Chunk end**, before the commit proposal. Ask the reviewer once: a light diff run now, a deep one now, or defer.
   - **Show** the range `<Last reviewed>..HEAD` (plus uncommitted), its commit count, and the `Deferred` line when it is not `none`. When `Light runs` has rows, also show `<Deep reviewed>..HEAD` and its count.
   - **Recommend** light, or deep when two or more light runs are waiting, or when the change is mostly in a repo the scope list does not reach (copy those files into the scan folder so the agent can read them).
-  - **Defer:** run nothing. `npx wf ledger defer --at <short HEAD>`, then go on to the commit proposal. The ledger edit is committed with the chunk.
+  - **Defer:** run nothing. `npx wf ledger defer --at <short HEAD>`, then go on to the commit proposal. The ledger edit is committed with the chunk, in a commit after the one it names: `wf done chunk` passes when every commit after the named one changes only the ledger and its closed file.
 
 ## 1. Scan
 
@@ -97,4 +97,4 @@ Write each answer as its Status and a Decision of `<note>, <date>`. An accepted 
 - **Light run:** also `--light "| \`<since>..<HEAD>\`[ and uncommitted] | <date> | diff |"`.
 - **Deep run:** also `--deep "<short HEAD> on <date>."`, which clears `Light runs`.
 
-The ledger is committed with the chunk.
+The ledger is committed with the chunk, in a commit after the one `Last reviewed` names. `wf done chunk` and a chunk-end screen review pass when every commit after it changes only the ledger and its closed file; a code change after it needs another run or a deferral.
