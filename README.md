@@ -57,6 +57,8 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
 | `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands` |
+| `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import` | Ask pages: any number of questions on one page in the browser pane, from eleven templates, with pictures, boxes, pins, compare views, and paging. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file. The `ask-page` skill has the spec |
+| `wf view serve \| setup` | The `question-pictures` server: serves `.cache/view` on 127.0.0.1 and takes an ask page's answers, with a per-run token. `setup` writes it into `.claude/launch.json`, replacing the old python file server |
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
 | `wf app <start \| run \| stop \| ...>` | Drives the project's app on Linux under a memory cap, from `app` in the config, with the project's `app.hooks`: a Tauri app through WebKit's inspector (`app.kind` tauri), or a web app's servers and a headless Chromium through its debugging protocol (web) |
 | `wf disk [--dry-run] [GB]` | Free disk space, and when short, removes only the leftovers in `disk`, cheapest first |
@@ -84,6 +86,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.49.0: ask pages
+
+- `wf ask` builds a page of questions from a JSON spec and one of eleven templates: decision, batch, compare, frame review, storyboard, triage, rank, naming, test data, plan, and sign-off. It has no four-question limit; pictures have boxes, pins, paging, and swipe, onion-skin, and difference compares. The answers come back to the agent through `wf ask wait`.
+- The `question-pictures` server is now `npx wf view serve`, which takes the answers. Run `npx wf view setup` to replace the old python entry in `.claude/launch.json`, then restart that server in the browser pane. `wf doctor` checks it.
+- Run `npx wf docs sync`: AGENTS.md's asking rules send more than four questions, or any visual question, to an ask page, and `asking.md` gains an Ask pages section.
 
 ### v0.48.2: a page shot that takes more than one window is joined again
 
