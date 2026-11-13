@@ -169,6 +169,8 @@ test("a chunk-end run waits until the code review has run or been deferred at HE
   assert.equal(reviewCovers(ledger("42c017c", "2 times, last at 3a25687 on 2026-11-09."), "3a256870"), true);
   assert.equal(reviewCovers(ledger("42c017c", "2 times, last at f9399b9 on 2026-11-08."), "3a25687"), false);
   assert.equal(reviewCovers(ledger("none", "none."), "3a25687"), false);
+  assert.equal(reviewCovers(ledger("f9399b9", "none."), "3a25687", (commit) => commit === "f9399b9"), true);
+  assert.equal(reviewCovers(ledger("f9399b9", "none."), "3a25687", () => false), false);
 });
 
 test("an unreached frame names its chunk, or says it cannot be reached", () => {
