@@ -34,37 +34,27 @@ No limit on questions is no reason to ask them all at once. `wf ask page` prints
 
 ## Which part for which question
 
-| What you show or ask | Use |
+Every template, question type, and block is made for one kind of question. Pick by what you need; `npx wf ask example <template>` gives its spec, and [templates](reference/templates.md) lists each one's items.
+
+| You need | Use |
 | --- | --- |
-| A frame against the app, or before and after | A `compare` pair, or the `compare` template, from `wf design annotate --ask` |
-| Several frames to judge | `frame-review`, a frame a page; never one joined sheet |
-| Where to look on a picture | `boxes` as data, from `--ask`, so a box lights up and takes pins |
-| Numbers, a trend, a count | `stats` tiles, a `trend`, or a chart |
-| Rows from a log, or a list | A `table`, with a `source` for the kit's logs |
-| A wording or text change | A `diff` block, or an `edits` question |
-| Context | A `text` block in a section, not a long `intro` |
-| The choice the evidence leads to | Its own question, after the evidence |
+| One of a few plans or answers | `decision` |
+| Answers from several people, each their own | `batch`, by `role`: chunk start, a story check |
+| The open questions: now, keep, or drop | `triage`, with `verdicts` for others, such as Accept, Defer, Reject on review findings |
+| An order: chunks, fixes, stories | `rank`, or a `rank` question |
+| A plan approved step by step | `plan` |
+| A chunk closed: done or object per check | `signoff` |
+| Words for a label or a message | `naming`, with the screen as a picture |
+| Rows judged: test data, a rules table | `testdata`, a table each |
+| A frame against the app, before against after | `compare`, pairs from `wf design annotate --ask` |
+| Several frames, or a journey | `frame-review`, or `storyboard` step by step |
+| Where a long step stands | `status`, updated with `wf ask live` |
+| A rating, a choice per row, a sort, edits, a few fields | `scale`, `grid`, `buckets`, `edits`, `form` |
+| Several decisions that follow one another | `"steps": true`, a section each |
+| To show numbers, rows, text, a change, a plan in time, work in columns, a flow | `stats`, `table`, `text`, `diff`, `timeline`, `board`, `diagram`, `chart` |
+| Where to look on a picture | `boxes` as data, from `--ask` |
 
-`wf ask page` prints Pictures advice for a joined sheet, a "box" with no boxes, or a frame and the app with no compare.
-
-## Templates
-
-| Template | Items field | Each item becomes |
-| --- | --- | --- |
-| `decision` | `questions` | A question as written |
-| `batch` | `questions`, each with a `role` | A question, grouped under its role |
-| `compare` | `pairs`: `left`, `right`, `label`, `look` | A verdict on the pair, with side by side, swipe, onion skin, and difference views |
-| `frame-review` | `frames`: `image`, `name`, `area`, `boxes` | A verdict on the frame: fine, bug, drift, or look again |
-| `storyboard` | `steps`: `image`, `caption` | Works or breaks, step by step |
-| `triage` | `items`: `id`, `text`, `context`, `needs` | Answer now, keep open, or drop |
-| `rank` | `items`: `id`, `label`, `why`, and `prompt` | One ordering of every item |
-| `naming` | `items`: `where`, `current`, `options`, `picture` | A pick, or the person's own words |
-| `testdata` | `tables`: `columns`, `rows` of `id` and `cells` | Fine, a gap, or wrong, per row |
-| `plan` | `steps`, and `prompt` | Approve or change, per step, then the plan as a whole |
-| `signoff` | `checks` | Done or object, per check |
-| `status` | `questions`, which may be none | A live page: where a step stands while it runs, with any questions as written |
-
-A paged template (`compare`, `frame-review`, `storyboard`) shows one item at a time, with a strip of every item and an all-at-once grid. `verdicts` in the spec replaces the template's options.
+`wf ask page` prints advice where a page could use a better part: Grouping, Pictures, and Template.
 
 ## The spec
 

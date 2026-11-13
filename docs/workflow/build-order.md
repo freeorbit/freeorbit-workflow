@@ -64,7 +64,7 @@ A chunk can be split so a front-end and a back-end developer build it at once, e
 2. Group whole stories into chunks, and order them by the rules above.
 3. Add the rows to the log's Chunks table with the next free ids, counting those in the done list, a short Title, the Who role, and the area. Ids name a chunk and are not always the build sequence. A row that goes ahead of a not-started chunk says so.
 4. In the area's file, add a short "Why this order" and a map. A chunk of another area this one needs is a node in its map.
-5. Ask the owner once about the order, along with any chunks it adds to other areas.
+5. Ask the owner once about the order, along with any chunks it adds to other areas: a `rank` question, on the same ask page as the rest.
 6. At each [chunk start](four-steps.md#chunk-start), put a new or changed story into a chunk or a new row, and ask in the same set of questions.
 7. When Step 1 or Step 2 is reopened for an area past its Step 3, the change that accepts a new story also puts it in a chunk: an existing row, or a new Not started row.
    - Ask about its place in the same set of questions as the story.

@@ -44,7 +44,7 @@ Changed stories: <ids>
 Files: <area files route lists, or none>
 ```
 
-Ask the story's owner its questions, in batches as the asking rules say, with your recommendation for each. Each answer goes into the story and, when it is a choice, the decisions log. Then ask the owner about its Risk tags: a story they mark high gets a `Risk: high (<why>)` line before Acceptance. `No questions.` needs nothing.
+Ask the story's owner its questions, in batches as the asking rules say, with your recommendation for each: on an ask page, a `batch` page by owner. Each answer goes into the story and, when it is a choice, the decisions log. Then ask the owner about its Risk tags: a story they mark high gets a `Risk: high (<why>)` line before Acceptance. `No questions.` needs nothing.
 
 ## 2. Draft the rules, once per area
 
@@ -55,7 +55,7 @@ Area id: <area>
 Mode: rules
 ```
 
-Save the two files it returns, `core.md` and `formats.md`, and ask the reviewer to review them, one category at a time. Never add rules yourself from what you know of the code: you are not blind. Later rules arrive as proposed rules in a refresh.
+Save the two files it returns, `core.md` and `formats.md`, and ask the reviewer to review them on a `testdata` ask page, a table each category, one category at a time. Never add rules yourself from what you know of the code: you are not blind. Later rules arrive as proposed rules in a refresh.
 
 ## 3. Write or refresh the spec
 

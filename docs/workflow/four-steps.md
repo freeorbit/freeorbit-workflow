@@ -92,6 +92,7 @@ Before anything in a chunk is built, run `npx wf doc:facts status` for where thi
 
 - Before building a guard, a check, a tool, or test data to make a check easier, say what it protects, what it costs, and what would show it is not worth keeping. Put it to the owner with the questions below.
 - Ask once, in one set of questions, each to the role that owns it: each drift with its suggested fix, each change to the build order, and each question the steps above raised. Work that depends on none of the answers can go on.
+  - On an ask page, that is a `batch` page by role, with the order as a `rank` question. The open questions whose trigger holds go on a `triage` page, and a plan to approve on a `plan` page.
 
 ## Chunk end
 
@@ -112,6 +113,7 @@ With the design plugin's screen review, a chunk that changed UI files or frames 
 Then move the chunk's row in [build-order.md](../log/build-order.md#chunks): to Waiting if something about the chunk is left to check, or to [chunks-done.md](../log/chunks-done.md) if not.
 
 - A row moved to the done list gets its "For the client" sentence: what the client can now do, in plain words, with no ids, such as "You can sign in with your work email and password." The client's board posts it when the chunk's stories are built.
+- When the owner checks what is left by hand, ask on a `signoff` page, one check an acceptance line, so each is done or objected to with a note.
 
 After the commit, propose the chunk's pull request with the `pull-request` skill. It is squash-merged on the owner's yes, as in [branches.md](branches.md).
 
