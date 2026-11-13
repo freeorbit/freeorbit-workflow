@@ -87,6 +87,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.56.0: ask pages move smoothly
+
+- **What glides.** Rank items, bucket cards, sorted or filtered table rows, and inbox rows glide to their new place instead of jumping.
+- **What opens and closes.** Follow-ups open and close in place, steps slide in from the side, and popovers fade as they close.
+- **What draws in.** Charts draw themselves in the first time they come into view: bars grow, lines run, and a diagram's boxes come in before its arrows. A live page's bar eases, its numbers count up, new log lines slide in, and a block already there no longer flashes on an update.
+- **What else.** A new theme, accent, or light or dark cross-fades, and buttons give a little under a press.
+- **The Motion setting.** Motion in the ⋯ menu is System by default, which follows the computer's setting for less motion. Full, Subtle (fades only), or Off is the person's own choice and wins over the computer. `off: ["motion"]` or `ask.off` turns it off for a page or a project.
+- **How it moves.** One motion part, `lib/ask/browser/motion.js`, holds the timings (140, 220, and 320 ms) and the moves. Only position, size, and opacity move, and nothing waits on a move.
+- Nothing to change in a project. Rebuild any open ask page with `npx wf ask page`.
+
 ### v0.55.0: live ask pages
 
 - **A live page.** A `status` page, or one with `"live": true`, shows where a step stands while it runs: its state, step, progress, log, and blocks. It redraws in place as the agent runs `npx wf ask live <id> --step … --progress 3/12 --log … --blocks …`.

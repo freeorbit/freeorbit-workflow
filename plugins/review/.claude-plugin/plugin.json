@@ -1,5 +1,5 @@
 {
   "name": "review",
-  "version": "0.55.0",
+  "version": "0.56.0",
   "description": "Read-only code review: scans, a reviewer agent in security and structure modes, an optional verify pass on another model, and a findings ledger with verdicts."
 }

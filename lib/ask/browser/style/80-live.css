@@ -10,7 +10,7 @@
 .live-state.failed { background: var(--bad-soft); color: var(--bad); }
 .live-state.waiting { background: var(--warn-soft); color: var(--warn); }
 @keyframes live-pulse { 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .live-state.running span { animation: none; } }
+:root[data-motion="subtle"] .live-state.running span { animation: none; }
 .live-step { font-weight: 500; min-width: 0; }
 .live-progress { position: relative; height: 20px; background: var(--sunk); border-radius: 999px; overflow: hidden; }
 .live-progress i { position: absolute; inset: 0 auto 0 0; background: var(--accent-soft); border-right: 2px solid var(--accent); transition: width 300ms var(--ease); }
@@ -42,3 +42,4 @@ dialog.history { width: min(760px, calc(100vw - 32px)); max-height: 82vh; paddin
 .step.done .step-n { background: var(--ok-soft); color: var(--ok); }
 .step-nav { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
 :root[data-status="1"] .content { padding-bottom: 24px; }
+.live-progress[hidden], .live-blocks[hidden], .live-logbox[hidden] { display: none; }

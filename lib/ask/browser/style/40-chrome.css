@@ -96,7 +96,6 @@ dialog[open]::backdrop { animation: wf-fade 200ms var(--ease); }
 .sendpanel { animation: wf-rise 220ms var(--ease); }
 .notice { animation: wf-fade-up 240ms var(--ease); }
 .receipt:not([hidden]), .questions-in { animation: wf-fade-up 280ms var(--ease); }
-.item-row { animation: wf-fade 200ms var(--ease); }
 .badge, .tick { transition: background-color 160ms var(--ease), color 160ms var(--ease); }
 .outline a { transition: background-color 160ms var(--ease), color 160ms var(--ease); }
 .thumb { transition: outline-color 160ms var(--ease), transform 160ms var(--ease); }
@@ -113,8 +112,21 @@ dialog[open]::backdrop { animation: wf-fade 200ms var(--ease); }
 :root[data-dir="prev"]::view-transition-old(frame) { animation-name: wf-out-right; }
 :root[data-dir="prev"]::view-transition-new(frame) { animation-name: wf-in-left; }
 
-@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+/* A press: controls give a little under the pointer and settle back. */
+.btn:active:not(:disabled), .seg button:active, .verdict:active, .ghost:active:not(:disabled), .stepper .step:active, .swatch-btn:active { transform: scale(.97); }
+.btn, .seg button, .ghost, .stepper .step { transition-property: background-color, border-color, color, box-shadow, transform; }
+.viz-tip:not([hidden]) { animation: wf-fade 120ms var(--ease); }
+.live-log .ll.new { animation: wf-fade-up 220ms var(--ease); }
+
+/* Motion: the person's setting (look.js), the system's, and a page's off. Subtle keeps the fades and drops the movement. */
+/* data-motion is set before anything draws; until then, the computer's setting holds. */
+:root[data-motion="full"], :root[data-motion="subtle"] { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion]) *, :root:not([data-motion]) *::before, :root:not([data-motion]) *::after { transition: none !important; animation: none !important; } }
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after { transition: none !important; animation: none !important; }
+:root[data-motion="off"]::view-transition-group(*), :root[data-motion="off"]::view-transition-old(*), :root[data-motion="off"]::view-transition-new(*) { animation: none !important; }
+:root[data-motion="subtle"] .pop, :root[data-motion="subtle"] dialog[open], :root[data-motion="subtle"] .sendpanel, :root[data-motion="subtle"] .notice, :root[data-motion="subtle"] .receipt:not([hidden]), :root[data-motion="subtle"] .questions-in, :root[data-motion="subtle"] .live-log .ll.new { animation-name: wf-fade; }
+:root[data-motion="subtle"]::view-transition-old(frame), :root[data-motion="subtle"]::view-transition-new(frame) { animation-name: wf-fade; }
+:root[data-motion="subtle"] .btn:active, :root[data-motion="subtle"] .seg button:active, :root[data-motion="subtle"] .verdict:active, :root[data-motion="subtle"] .ghost:active, :root[data-motion="subtle"] .opt:active, :root[data-motion="subtle"] .star:active { transform: none; }
 @media print {
   header.top, footer.commit, nav.rail, .meta, .vbar, .strip, .pager, .toast, .no-print { display: none !important; }
   .q[hidden], .q { display: block !important; break-inside: avoid; }
