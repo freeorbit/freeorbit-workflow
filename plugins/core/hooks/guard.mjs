@@ -176,7 +176,7 @@ export function policies(config) {
       web: false,
     },
     "test-data-designer": {
-      read: [".workflow/config.json", ...docs(["overview.md", "user-stories.md", "user-flows.md", "test-data/**"]), ...testdataReads],
+      read: [".workflow/config.json", `${config.docs?.workflow ?? "docs/workflow"}/test-data-formats.md`, ...docs(["overview.md", "user-stories.md", "user-flows.md", "test-data/**"]), ...testdataReads],
       search: docs(["test-data"]),
       bash: false,
       web: "any",

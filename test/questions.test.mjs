@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { emptyOpen, emptyResolved } from "../lib/logs/questions.mjs";
-import { addQuestion, blockingRows, insertRow, looseBullets, nextId, questionCounts, questionProblems, questionRows, resolveQuestion, revisitTriggers, untiedRows } from "../lib/logs/questions.mjs";
+import { addQuestion, blockingRows, storyList, insertRow, looseBullets, nextId, questionCounts, questionProblems, questionRows, resolveQuestion, revisitTriggers, untiedRows } from "../lib/logs/questions.mjs";
 import { status } from "../lib/docs/facts.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -214,4 +214,12 @@ test("doc:facts status lists each untied question's trigger and names those with
   assert.ok(lines.includes("  Revisit Q-015 (developer) when: a lint-catchable finding comes up twice."));
   assert.ok(lines.includes("  No revisit trigger: Q-016"));
   assert.ok(!lines.some((line) => line.includes("Q-012")), "a chunk's question is not listed");
+});
+
+test("question add keeps every story ID given", () => {
+  assert.equal(storyList([]), "none");
+  assert.equal(storyList(["none"]), "none");
+  assert.equal(storyList(["GM-01"]), "GM-01");
+  assert.equal(storyList(["GM-01", "GM-02,GM-03", "GM-02"]), "GM-01, GM-02, GM-03");
+  assert.equal(storyList(["GM-01, GM-04"]), "GM-01, GM-04");
 });

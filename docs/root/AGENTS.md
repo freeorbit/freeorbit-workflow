@@ -73,6 +73,6 @@ Efficiency that leads to our outcome is how we work, in every chat and every tas
 | Raw research | a new file under `docs/research/` |
 | An issue we hit, with its cause and fix | `{{logs.troubleshooting}}` |
 | Real wasted effort, and the change it led to | `{{logs.efficiencyLog}}` |
-| Synthetic test data for an area | the area's `test-data/` folder, one file per flow area with its rules beside its datasets, process in `{{docs.workflow}}/test-data-process.md` |
+| Synthetic test data for an area | the area's `test-data/` folder, one-screen files by flow area, with its rules beside its datasets, process in `{{docs.workflow}}/test-data-process.md` |
 
 <!-- wf:local notes -->

@@ -2,18 +2,19 @@
 name: design-test-data
 description: >-
   Designs synthetic test data so development never uses real personal data:
-  runs the blind test-data-designer agent to write an area's test-data spec,
-  refreshes only what stale stories reach, checks the spec stayed blind, and
-  keeps the project's seeded generator in step. Use when an area reaches Step
-  3, at chunk start, when a chunk needs data or a journey state, or when test
-  data, fixtures, or scenarios come up.
+  runs the blind test-data-designer agent to check stories for gaps, write an
+  area's test-data spec as one-screen tables, and refresh only what stale
+  stories reach; checks the spec stayed blind and short; and keeps the
+  project's seeded generator in step. Use when an area reaches Step 3, at chunk
+  start, when stories change, when a chunk needs data or a journey state, or
+  when test data, fixtures, or scenarios come up.
 ---
 
 # Design test data
 
-The project's process and its generator are in its test-data doc, `testdata.processDoc` in `.workflow/config.json`; read it first. Its folder table says what each file in an area's `test-data/` holds. Rule verdicts go to the reviewer in **Who decides** in `AGENTS.md`.
+The project's process and its generator are in its test-data doc, `testdata.processDoc` in `.workflow/config.json`; read it first. The shapes of every file are in the kit's `test-data-formats.md`, in `docs.workflow`. Rule verdicts go to the reviewer, and story questions to the story's owner, in **Who decides** in `AGENTS.md`.
 
-The project's test-data commands run through `npx wf testdata <command> <area> [arguments]`, from `testdata.commands`:
+The project's test-data commands run through `npx wf testdata <command> <area> [arguments]`, from `testdata.commands`. Each takes every story ID given.
 
 | Command | Does |
 | --- | --- |
@@ -24,28 +25,45 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 | `journeys <area> [--chunks ...]` | Each journey's starting states, and the scenario that holds each |
 | `refresh-close <area> <ids>` | `covered`, then `index`, after a refresh is applied |
 
-## 1. Draft the rules, once per area
+## The designer's three jobs
 
-If the area's `test-data/core.md` does not exist, run the `test-data-designer` subagent in rules mode:
+| Job | Mode | When |
+| --- | --- | --- |
+| Story check | `check` | Whenever stories change, before frames or a refresh build on them |
+| Rules and spec | `rules`, then `spec` | At Step 3, once per area |
+| Refresh | `spec` with changed stories | At chunk start, and when a story this chunk builds changes |
+
+## 1. Check the stories
+
+When stories are written or changed, run the subagent in check mode. It reads and returns only questions, so it is cheap.
+
+```text
+Area id: <area>
+Mode: check
+Changed stories: <ids>
+Files: <area files route lists, or none>
+```
+
+Ask the story's owner its questions, in batches as the asking rules say, with your recommendation for each. Each answer goes into the story and, when it is a choice, the decisions log. Then ask the owner about its Risk tags: a story they mark high gets a `Risk: high (<why>)` line before Acceptance. `No questions.` needs nothing.
+
+## 2. Draft the rules, once per area
+
+If the area's `test-data/core.md` does not exist, run the subagent in rules mode:
 
 ```text
 Area id: <area>
 Mode: rules
 ```
 
-Save the two files it returns, `core.md` and `formats.md`, and ask the reviewer to review them. Never add rules yourself from what you know of the code: you are not blind. Later rules arrive as "Proposed rules" in a refresh.
+Save the two files it returns, `core.md` and `formats.md`, and ask the reviewer to review them, one category at a time. Never add rules yourself from what you know of the code: you are not blind. Later rules arrive as proposed rules in a refresh.
 
-## When to refresh
+## 3. Write or refresh the spec
 
 A story edit does not start the designer. Each story's acceptance is hashed, and a story whose hash differs from what the spec last covered is stale. Refresh at these points only:
 
 - **Chunk start.** `stale <area> --chunks <this>,<next>`. If it lists stories, run one refresh for exactly those.
 - **During a chunk**, when a story this chunk builds changes, before building the part that depends on it.
 - **When asked**: refresh every story `stale` lists.
-
-After the delta is applied, or after `Need: none`, run `refresh-close` for the same stories, and commit what it writes with the spec. Then run `journeys --chunks <this>,<next>`: a state or a stored fixture with no scenario is built in this chunk, and "not set" goes back to the designer in the next refresh.
-
-## 2. Write or refresh the spec
 
 Run the subagent in spec mode. Name only the area id, the mode, and, for a refresh, the stale story IDs and the files `route` lists for them. Leave out a file whose only hits are passing mentions unless the stories' flow is on its `Flows:` line. A story `route` finds nowhere goes to the area whose flow holds it.
 
@@ -56,31 +74,34 @@ Changed stories: <ids>
 Files: <area files>
 ```
 
-A first draft returns the whole folder: save each file, then run `index`. A refresh returns a delta naming each edit's file: apply only the lines it names, never a rewritten dataset or section.
+A first draft returns the whole folder: save each file, then run `index`. A refresh returns a delta naming each edit's file: apply only the rows it names, never a rewritten dataset or section.
 
 - `Need: none`. Stop. Change nothing, not even the `Updated` line.
-- `Need: rules` or `both`. Leave each proposed rule under `## Proposed rules` until the reviewer accepts it, then move it into that file's `## Rules`, or `core.md` when two areas need it, with `new` replaced by the day.
-- `Need: spec` or `both`. Apply the edits and set `Updated:` in the README to the day the spec changed; a change to `## Rules` alone does not count.
+- **Proposed rules.** Leave each under `## Proposed rules` until the reviewer accepts it, then move its row into that file's rules table, or `core.md` when two flow areas need it, with `new` replaced by the day.
+- **Spec edits.** Apply them and set `Updated:` in the README to the day the spec changed; a change to rules alone does not count.
+- **Questions.** Ask them as in step 1.
 - **README.** Keep `Status:` to one sentence. Add the refresh as one bullet at the top of `## Refresh history`: the day, what changed, and the stories.
 
-Then follow the test-data doc's steps for a changed spec or format.
+After the delta is applied, or after `Need: none`, run `refresh-close` for the same stories, and commit what it writes with the spec. Then run `journeys --chunks <this>,<next>`: a state or a stored fixture with no scenario is built in this chunk, and "not set" goes back to the designer in the next refresh. Then follow the test-data doc's steps for a changed spec or format.
 
-## 3. Check it stayed blind
+## 4. Check it stayed blind and short
 
 Send it back, or fix the line, when any of these is true in a file it touched:
 
-- It names a table, a column, a function, a code file, or a library.
+- It names a table, a column, a function, a code file, or a library of the project.
 - A person has a real domain or a real name.
 - A story the area builds has no dataset, or a path `testdata.mustCover` names is missing.
 - A dataset has no seed or no counts.
-- It breaks a rule in `core.md`, `formats.md`, or the area's own `## Rules`.
-- A rule line has no `(stories; date)` tag, or a rule about one area sits in `core.md`.
+- It breaks a rule in `core.md`, `formats.md`, or the flow area's own rules.
+- A rule has no ID, category, stories, or Accepted cell, or a rule about one flow area sits in `core.md`.
+- A low-risk story got edge-case fixtures, or prose stands where `test-data-formats.md` gives a table.
+- `npx wf doc:check` warns for a file it wrote: past one screen, a flow area past its size, or a category on no list.
 
-Then ask the reviewer. A first draft gets its own review. A refresh is reviewed with the chunk-start questions: the spec edits in a line each, and each proposed rule to accept or drop. Update the area's row in the build order's Areas table, and add a line to its History.
+Then ask the reviewer. A first draft gets its own review, rules one category at a time. A refresh is reviewed with the chunk-start questions: the spec edits in a line each, and the proposed rules by category, to accept or drop. Update the area's row in the build order's Areas table, and add a line to its History.
 
-## 4. Build and use it
+## 5. Build and use it
 
-Build the data the current chunk needs with the project's seeded generator, as its test-data doc says: scenarios, generated datasets, and fixtures. Data for a later chunk waits for that chunk.
+Build the data the current chunk needs with the project's seeded generator, as its test-data doc says: scenarios, generated datasets, and fixtures. Data for a later chunk waits for that chunk. A combined fixture row is expanded by the generator, pairwise when every combination is too many.
 
 With the design plugin's screen review, a new scenario goes on the area's screen list in the same change: as the Reach of each frame whose state it holds, replacing that frame's `none, <chunk>`, or as a row under "Screens with no frame". `npx wf screens --check` fails a scenario on no row.
 
@@ -90,4 +111,4 @@ With the design plugin's screen review, a new scenario goes on the area's screen
 - Name area files the stories do not reach.
 - Have a model write data files. Code writes them from a seed.
 - Commit generated datasets. Only the generator and the fixtures it writes are committed.
-- Read anyone's real data or real export. A shape check of a real export is something its owner runs themselves.
+- Read anyone's real data or real export. A shape check of a real export, and a domain product's Step 0 profiles, run where the samples are kept, by their owner.

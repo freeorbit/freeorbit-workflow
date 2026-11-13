@@ -10,6 +10,9 @@ The project is built in four steps, and each area goes through them on its own. 
 
 Who the user is, what they are trying to finish, and the path they take. Written as stories with acceptance criteria and as mermaid flows. No screens yet, and no tech stack.
 
+- With the testdata plugin, the blind designer's story check reads the new stories and returns their gaps and contradictions as questions, and the story's owner tags each high-risk story with a `Risk: high` line.
+- An area whose rules come from source documents, such as a domain product's, starts with Step 0, source analysis, as [project-kinds.md](project-kinds.md) says.
+
 ### Step 2. Design frames
 
 Screens and interaction for the stories from Step 1, drawn as frames that the designer reviews. Design follows the stories. It does not invent a new journey.

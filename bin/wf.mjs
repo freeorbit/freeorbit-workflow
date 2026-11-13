@@ -18,8 +18,8 @@
 //   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply
 //   wf board <setup [--create] | plan | sync | feedback [--json] | reply <id> <Q-ID ...|--noted>>   the client's monday.com board
 //   wf signoffs [--bypass "<reason>"]   the questions this branch still waits on, or an admin's bypass of them
-//   wf decision add <file> "<decision>" "<why>" | supersede <ID> <by ID>   the decisions log
-//   wf question add <chunk | none> "<question>" <needs> "<from>" [story] [--revisit "<when>"] | resolve <Q-ID> "<decision>"   the open questions log
+//   wf decision add <file> "<decision>" "<why>" | supersede <ID> [<ID> ...] <by ID>   the decisions log
+//   wf question add <chunk | none> "<question>" <needs> "<from>" [story IDs ...] [--revisit "<when>"] | resolve <Q-ID> "<decision>"   the open questions log
 //   wf release <next | check | set | verify> ...   the project's release commands
 //   wf ready <quick | chunk | area> [chunk]   what a track needs before work starts
 //   wf done <quick | chunk | area> [chunk]    what a track needs before its pull request
@@ -39,7 +39,7 @@ import { runApp } from "../lib/app/driver.mjs";
 import { runTry } from "../lib/try/index.mjs";
 import { design } from "../lib/design/index.mjs";
 import { diskCheck } from "../lib/disk.mjs";
-import { addDecision, supersede } from "../lib/logs/decisions.mjs";
+import { addDecision, supersedeAll } from "../lib/logs/decisions.mjs";
 import { runQuestion } from "../lib/logs/questions.mjs";
 import { runBoard } from "../lib/board/index.mjs";
 import { ruleset, rulesetBlocked, syncGithub } from "../lib/setup/github.mjs";
@@ -56,7 +56,7 @@ import { syncDocs } from "../lib/docs/docsync.mjs";
 import { didNotRun, ledger, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
 import { loadConfig, project, projectRoot } from "../lib/config/config.mjs";
-import { problems } from "../lib/docs/check.mjs";
+import { problems, warnings } from "../lib/docs/check.mjs";
 import { growth, status } from "../lib/docs/facts.mjs";
 import { findEntries } from "../lib/docs/shape.mjs";
 import { roleProblems, rolesBlock, writeRoles } from "../lib/roles.mjs";
@@ -83,9 +83,13 @@ const commands = {
   },
 
   async "doc:check"() {
-    const found = await problems(project());
+    const context = project();
+    const found = await problems(context);
     for (const problem of found) console.log(problem);
-    console.log(found.length === 0 ? "Docs are in step." : `${found.length} to look at.`);
+    const noted = warnings(context);
+    for (const warning of noted) console.log(`WARN ${warning}`);
+    const also = noted.length ? `, and ${noted.length} ${noted.length === 1 ? "warning" : "warnings"} to judge` : "";
+    console.log(found.length === 0 ? `Docs are in step${also}.` : `${found.length} to look at${also}.`);
     return found.length === 0 ? 0 : 1;
   },
 
@@ -201,12 +205,14 @@ const commands = {
       console.log(addDecision(root, config, args[0], args[1], args[2], localToday()));
       return 0;
     }
-    if (sub === "supersede" && args.length === 2) {
-      supersede(root, config, args[0], args[1]);
-      console.log(`${args[0]} superseded by ${args[1]}`);
+    if (sub === "supersede" && args.length >= 2) {
+      // Every ID before the last is superseded by the last, so none given is dropped.
+      const by = args.at(-1);
+      supersedeAll(root, config, args.slice(0, -1), by);
+      for (const id of args.slice(0, -1)) console.log(`${id} superseded by ${by}`);
       return 0;
     }
-    console.log('Usage: wf decision add <file> "<decision>" "<why>"   or   wf decision supersede <ID> <by ID>');
+    console.log('Usage: wf decision add <file> "<decision>" "<why>"   or   wf decision supersede <ID> [<ID> ...] <by ID>');
     return 2;
   },
 
