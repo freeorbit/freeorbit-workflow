@@ -45,6 +45,8 @@ A paged template (`compare`, `frame-review`, `storyboard`) shows one item at a t
 
 - **Top.** `id` (lowercase, dashes), `title`, `template`, `intro`; `chunk` and `from` (a role) for the record.
 - **A question.** `id`, `text`, `type` (`one`, `many`, `text`, `rank`), `options` of `id`, `label`, `why`, `preview` (a text sketch), `kind` (a colour), and `recommended` with `why`.
+  - **Recommend.** In `decision`, `batch`, `naming`, and `triage`, every choice names `recommended` and says `why`; `rank` lists its items in the suggested order and says `why` at the top. The page check fails without them.
+  - `noPick` instead, only when there is honestly nothing to recommend, says why; the page shows it. A review template's verdicts are the person's own, so they recommend nothing.
   - `role`, `group`, `look` (where to look), `detail`, `chunk`.
   - `pictures`: `image` (a path in the project), `label`, `name`, and `boxes` of `n`, `kind`, `rect` `[x, y, width, height]` in the picture's pixels.
   - `compare`: two pictures, the frame or before first. `pins: true` lets the person pin comments on the pictures.

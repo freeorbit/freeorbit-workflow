@@ -35,6 +35,7 @@ How to ask, and how to show a visual question, are in [AGENTS.md](../../AGENTS.m
 An ask page holds any number of questions, with their pictures, on one page in the browser pane. The steps and the spec are in the kit's `ask-page` skill.
 
 - **Templates.** `npx wf ask templates` lists them: a decision, a batch by role, a compare, a frame review, a storyboard, a triage, a ranking, naming, test-data rows, a plan, and a sign-off.
+- **Recommendations.** Every choice on a page names the recommended option and why, and a ranking lists its suggested order and why; `wf ask page` refuses a spec without them. A review's verdicts recommend nothing.
 - **Answering.** Each question can take "You decide" or "Later", a note, and pins on its pictures. A partial send is fine; the agent carries on with what is answered.
 - **The keyboard.** 1–9 picks an option, ← → pages, j and k move between questions, n finds the next open one, Ctrl+Enter sends, and ? lists them.
 - **Drafts.** The page keeps a draft in the browser, so a reload loses nothing. A newer version of the page says so at the top.

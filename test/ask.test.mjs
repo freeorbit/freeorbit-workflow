@@ -66,6 +66,20 @@ test("a spec names what is wrong with it", () => {
   assert.match(bad({ id: "a", title: "t", questions: [{ id: "q", text: "x", record: "app" }] }), /only a one or many question records/);
 });
 
+test("a choice recommends one and says why, or says why it cannot", () => {
+  const problems = (raw) => normalize({ id: "a", title: "t", ...raw }).problems;
+  const q = (more) => ({ questions: [{ id: "q", text: "x", options: ["a", "b"], ...more }] });
+  assert.match(problems(q({})).join(), /q: a recommendation: name the option in recommended, or say in noPick/);
+  assert.match(problems(q({ recommended: "a" })).join(), /q: a recommendation says why/);
+  assert.deepEqual(problems(q({ recommended: "a", why: "because" })), []);
+  assert.deepEqual(problems(q({ noPick: "a product call with no data yet" })), []);
+  assert.match(problems(q({ noPick: "none", recommended: "a" })).join(), /noPick says there is no recommendation/);
+  assert.deepEqual(problems({ questions: [{ id: "q", text: "x" }] }), [], "a text question asks for a fact");
+  assert.match(problems({ template: "rank", items: ["a", "b"] }).join(), /a suggested order says why/);
+  assert.match(problems({ template: "triage", items: [{ id: "Q-001", text: "x" }] }).join(), /Q-001: a recommendation/);
+  assert.deepEqual(problems({ template: "frame-review", frames: [{ image: "a.png" }] }), [], "a review's verdicts are the person's own");
+});
+
 test("templates expand into plain questions", () => {
   const { spec: plan } = normalize(example("plan"));
   assert.deepEqual(plan.questions.map((q) => q.id), ["step-1", "step-2", "step-3", "plan"]);
