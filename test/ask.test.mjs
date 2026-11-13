@@ -68,7 +68,8 @@ test("a spec names what is wrong with it", () => {
 
 test("a choice recommends one and says why, or says why it cannot", () => {
   const problems = (raw) => normalize({ id: "a", title: "t", ...raw }).problems;
-  const q = (more) => ({ questions: [{ id: "q", text: "x", options: ["a", "b"], ...more }] });
+  const q = (more) => ({ questions: [{ id: "q", text: "x", options: [{ id: "a", why: "what a means" }, { id: "b", why: "what b means" }], ...more }] });
+  assert.match(problems({ questions: [{ id: "q", text: "x", options: ["a", { id: "b", why: "w" }], recommended: "b", why: "w" }] }).join(), /q: every option says what it means, in why; a does not/);
   assert.match(problems(q({})).join(), /q: a recommendation: name the option in recommended, or say in noPick/);
   assert.match(problems(q({ recommended: "a" })).join(), /q: a recommendation says why/);
   assert.deepEqual(problems(q({ recommended: "a", why: "because" })), []);

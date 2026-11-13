@@ -14,15 +14,18 @@
       "options": [
         {
           "id": "30",
-          "label": "30 days"
+          "label": "30 days",
+          "why": "Short and common; the trash stays small, and a mistake is still undone within a month."
         },
         {
           "id": "90",
-          "label": "90 days"
+          "label": "90 days",
+          "why": "Safer for slow-to-notice mistakes; the trash grows three times as large."
         },
         {
           "id": "never",
-          "label": "Until the trash is emptied"
+          "label": "Until the trash is emptied",
+          "why": "Nothing is lost until the person empties the trash; storage grows without limit."
         }
       ],
       "recommended": "30",
@@ -36,11 +39,13 @@
       "options": [
         {
           "id": "dot",
-          "label": "A dot"
+          "label": "A dot",
+          "why": "A coloured dot before the sender; reads at a glance at any width."
         },
         {
           "id": "bold",
-          "label": "Bold text only"
+          "label": "Bold text only",
+          "why": "The sender and subject in bold; quieter, but easy to miss on a narrow window."
         }
       ],
       "recommended": "dot",
@@ -54,15 +59,18 @@
       "options": [
         {
           "id": "inbox",
-          "label": "Inbox"
+          "label": "Inbox",
+          "why": "Fetches the inbox first, so the first screen fills fastest."
         },
         {
           "id": "sent",
-          "label": "Sent"
+          "label": "Sent",
+          "why": "Fetches sent mail, which replies and threads draw on."
         },
         {
           "id": "all",
-          "label": "Every folder"
+          "label": "Every folder",
+          "why": "Every folder at once; complete, but the first screen waits longest."
         }
       ],
       "recommended": [

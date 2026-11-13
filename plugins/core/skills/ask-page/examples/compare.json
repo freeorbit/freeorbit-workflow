@@ -8,14 +8,38 @@
       "id": "accounts-wide",
       "label": "Accounts, wide",
       "look": "The tab row and the account tags.",
-      "left": { "label": "Frame", "image": "docs/design/frames/accounts/png/accounts.png" },
-      "right": { "label": "App", "image": ".cache/screens/latest/accounts-wide.png", "boxes": [{ "n": 1, "kind": "drift", "rect": [633, 373, 598, 35] }] }
+      "left": {
+        "label": "Frame",
+        "image": "docs/design/frames/accounts/png/accounts.png"
+      },
+      "right": {
+        "label": "App",
+        "image": ".cache/screens/latest/accounts-wide.png",
+        "boxes": [
+          {
+            "n": 1,
+            "kind": "drift",
+            "rect": [
+              940,
+              346,
+              185,
+              36
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "accounts-narrow",
       "label": "Accounts, narrow",
-      "left": { "label": "Frame", "image": "docs/design/frames/accounts/png/accounts-narrow.png" },
-      "right": { "label": "App", "image": ".cache/screens/latest/accounts-narrow.png" }
+      "left": {
+        "label": "Frame",
+        "image": "docs/design/frames/accounts/png/accounts-narrow.png"
+      },
+      "right": {
+        "label": "App",
+        "image": ".cache/screens/latest/accounts-narrow.png"
+      }
     }
   ]
 }

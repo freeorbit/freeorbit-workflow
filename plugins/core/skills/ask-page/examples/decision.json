@@ -12,10 +12,38 @@
       "type": "one",
       "role": "designer",
       "look": "Picture A, box 1: the list as the frame draws it.",
-      "pictures": [{ "label": "A", "name": "accounts frame", "image": ".cache/screens/latest/accounts-wide.png", "boxes": [{ "n": 1, "kind": "look", "rect": [240, 96, 720, 420] }] }],
+      "pictures": [
+        {
+          "label": "A",
+          "name": "accounts frame",
+          "image": ".cache/screens/latest/accounts-wide.png",
+          "boxes": [
+            {
+              "n": 1,
+              "kind": "look",
+              "rect": [
+                240,
+                96,
+                1000,
+                366
+              ]
+            }
+          ]
+        }
+      ],
       "options": [
-        { "id": "tabs", "label": "Tabs per provider", "why": "Matches the frame; one provider at a time.", "preview": "[Gmail] [Outlook] [IMAP]\n- ken@…\n- work@…" },
-        { "id": "list", "label": "One list, grouped", "why": "Every account at a glance; longer page.", "preview": "Gmail\n- ken@…\nOutlook\n- work@…" }
+        {
+          "id": "tabs",
+          "label": "Tabs per provider",
+          "why": "Matches the frame; one provider at a time.",
+          "preview": "[Gmail] [Outlook] [IMAP]\n- ken@…\n- work@…"
+        },
+        {
+          "id": "list",
+          "label": "One list, grouped",
+          "why": "Every account at a glance; longer page.",
+          "preview": "Gmail\n- ken@…\nOutlook\n- work@…"
+        }
       ],
       "recommended": "tabs",
       "why": "The frame already draws tabs, and the screen list says one provider at a time.",

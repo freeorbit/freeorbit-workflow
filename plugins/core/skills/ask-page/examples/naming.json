@@ -10,11 +10,13 @@
       "options": [
         {
           "id": "add",
-          "label": "Add account"
+          "label": "Add account",
+          "why": "Short and familiar; says nothing of what happens next."
         },
         {
           "id": "connect",
-          "label": "Connect an account"
+          "label": "Connect an account",
+          "why": "Says the app links an account the person already has."
         }
       ],
       "recommended": "connect",
@@ -28,7 +30,7 @@
             "rect": [
               40,
               600,
-              180,
+              170,
               40
             ]
           }
