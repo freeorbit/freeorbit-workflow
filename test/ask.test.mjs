@@ -631,7 +631,7 @@ test("blocks: sections are checked, the questions go in one place, and a part is
   const placed = run({ blocks: [{ type: "text", text: "hi" }] });
   assert.equal(placed.spec.sections.at(-1).blocks[0].type, "questions", "with no questions block, they come after");
   const bad = (more) => run(more).problems.join("\n");
-  assert.match(bad({ blocks: [{ type: "html", html: "<b>" }] }), /type is one of text, stats, table, diff, questions, part/);
+  assert.match(bad({ blocks: [{ type: "html", html: "<b>" }] }), /type is one of text, stats, table, diff, chart, diagram, timeline, board, questions, part/);
   assert.match(bad({ blocks: [{ type: "questions" }, { type: "questions" }] }), /one questions block at most/);
   assert.match(bad({ blocks: [{ type: "table", source: "/etc/passwd" }] }), /no source \/etc\/passwd/);
   assert.match(bad({ blocks: [{ type: "part", name: "missing" }] }), /no part missing/);
@@ -867,4 +867,67 @@ test("richer answers: the page's steps and the record read one rule", () => {
   assert.deepEqual(JSON.parse(JSON.stringify(S.prune(A))), { a: { note: "n" } });
   assert.equal(S.fieldProblem({ kind: "date", required: false }, "2026-02-30x"), "A date, such as 2026-11-13.");
   assert.equal(S.fieldProblem({ kind: "check", required: true }, false), "Tick this to go on.");
+});
+
+// --- charts, diagrams, timelines, boards --------------------------------------
+/** One block on a page, checked: the block made ready, and the problems. */
+const oneBlock = (b, extra = {}) => {
+  const { spec, problems } = normalize({ id: "viz", title: "Viz", questions: [{ id: "q", text: "Fine?" }], blocks: [b], ...extra });
+  return { block: spec?.sections?.[0]?.blocks?.[0], problems: problems.join(" | ") };
+};
+
+test("charts: a bar or line chart is labels and series on one axis, and a tile's trend is a sparkline", () => {
+  const chart = (extra) => oneBlock({ type: "chart", labels: ["a", "b"], series: [{ name: "One", values: [1, null] }], ...extra });
+  const ok = chart({ kind: "line", unit: "ms" });
+  assert.equal(ok.problems, "");
+  assert.deepEqual({ kind: ok.block.kind, unit: ok.block.unit, values: ok.block.series[0].values }, { kind: "line", unit: "ms", values: [1, null] });
+  assert.equal(chart({}).block.kind, "bar");
+  assert.match(chart({ kind: "pie" }).problems, /a chart's kind is bar or line; a sparkline is a stats tile's trend/);
+  assert.match(chart({ series: [{ values: [1] }] }).problems, /series 1 has one number, or null, for each label/);
+  assert.match(chart({ series: [{ values: [1, "2"] }] }).problems, /one number, or null/);
+  assert.match(chart({ series: Array.from({ length: 9 }, () => ({ values: [1, 2] })) }).problems, /at most 8 series; fold the rest into "Other"/);
+  assert.match(chart({ kind: "line", stacked: true }).problems, /only a bar chart stacks/);
+  assert.match(chart({ stacked: true, series: [{ values: [1, -2] }] }).problems, /a stacked chart has no values below 0/);
+  assert.match(chart({ labels: [] , series: [] }).problems, /a chart has labels/);
+  const tile = oneBlock({ type: "stats", items: [{ label: "Bugs", value: "23", trend: [41, 30, 23] }, { label: "Odd", value: "1", trend: ["x"] }] });
+  assert.deepEqual(tile.block.items[0].trend, [41, 30, 23]);
+  assert.match(tile.problems, /tile 2's trend is one to 60 numbers/);
+});
+
+test("diagrams: boxes are ranked by what points to them, and a loop's arrow is marked back", async () => {
+  const { layout } = await import("../lib/ask/blocks.mjs");
+  const { nodes, links } = layout([{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }], [{ from: "a", to: "b" }, { from: "b", to: "c" }, { from: "c", to: "a" }, { from: "a", to: "d" }, { from: "d", to: "c" }]);
+  assert.deepEqual(nodes.map((n) => `${n.id}${n.rank}.${n.order}`), ["a0.0", "b1.0", "c2.0", "d1.1"]);
+  assert.deepEqual(links.map((l) => l.back), [false, false, true, false, false]);
+  const self = layout([{ id: "a" }], [{ from: "a", to: "a" }]);
+  assert.equal(self.links[0].back, true, "an arrow to itself is a loop");
+  const d = oneBlock({ type: "diagram", direction: "down", nodes: ["x", { id: "y", label: "Why", tone: "ok" }], links: [{ from: "x", to: "y", label: "then" }] });
+  assert.equal(d.problems, "");
+  assert.deepEqual({ dir: d.block.direction, label: d.block.nodes[1].label, rank: d.block.nodes[1].rank }, { dir: "down", label: "Why", rank: 1 });
+  assert.match(oneBlock({ type: "diagram", nodes: ["x", "x"], links: [{ from: "x", to: "z" }] }).problems, /node ids repeat.*link 1 goes from a node to a node/);
+  assert.match(oneBlock({ type: "diagram", nodes: Array.from({ length: 41 }, (_, i) => `n${i}`) }).problems, /at most 40 nodes/);
+  assert.match(oneBlock({ type: "diagram", nodes: [{ id: "x", tone: "pink" }] }).problems, /node 1's tone is ok, warn, bad, or info/);
+});
+
+test("timelines and boards are checked", () => {
+  const t = oneBlock({ type: "timeline", events: [{ date: "2026-11-02", title: "Cut", state: "done" }, { title: "Ship", state: "soon" }, { state: "next" }] });
+  assert.equal(t.block.events[0].state, "done");
+  assert.match(t.problems, /event 2's state is done, now, or next.*event 3 has a title/);
+  assert.match(oneBlock({ type: "timeline", events: [] }).problems, /a timeline lists its events/);
+  const b = oneBlock({ type: "board", columns: ["todo", { id: "done", title: "Done" }], cards: [{ title: "A", column: "todo", tags: ["x"], owner: "Ken" }, { title: "B", column: "later" }] });
+  assert.deepEqual(b.block.lanes, [{ id: "todo", title: "todo" }, { id: "done", title: "Done" }]);
+  assert.deepEqual(b.block.cards[0], { title: "A", column: "todo", note: "", tone: "", owner: "Ken", tags: ["x"] });
+  assert.match(b.problems, /card 2's column is one of todo, done/);
+  assert.match(oneBlock({ type: "board", columns: [] }).problems, /a board lists its columns/);
+});
+
+test("the chart example builds, and the new blocks turn off like the rest", () => {
+  const raw = JSON.parse(readFileSync(join(EXAMPLES, "../blocks/charts.json"), "utf8"));
+  const { spec, problems } = normalize(raw);
+  assert.deepEqual(problems, []);
+  assert.deepEqual(spec.sections.map((s) => s.blocks.map((b) => b.type).join(",")), ["stats,chart,chart,chart", "diagram,timeline,board,questions"]);
+  const off = normalize({ ...raw, off: ["chart", "diagram", "board"] }).spec;
+  assert.deepEqual(off.sections.map((s) => s.blocks.map((b) => b.type).join(",")), ["stats", "timeline,questions"]);
+  const { root, view } = project(raw);
+  assert.deepEqual(buildPage(root, view, raw, KIT_KINDS).problems ?? [], []);
 });
