@@ -1,23 +1,19 @@
-:root {
-  color-scheme: light;
-  --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1f; --muted: #5f6368; --line: #d9d9d6;
-  --accent: #2563eb; --accent-ink: #ffffff; --soft: #eef2ff; --ok: #15803d; --warn: #b45309; --bad: #b91c1c;
-  --focus: #f59e0b; --shadow: 0 1px 2px rgb(0 0 0 / 8%);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #141416; --panel: #1e1f22; --ink: #ececec; --muted: #a0a4ab; --line: #34363b;
-    --accent: #7aa2ff; --accent-ink: #0b1020; --soft: #1f2a44; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171;
-    --shadow: none;
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #141416; --panel: #1e1f22; --ink: #ececec; --muted: #a0a4ab; --line: #34363b;
-  --accent: #7aa2ff; --accent-ink: #0b1020; --soft: #1f2a44; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171;
-  --shadow: none;
-}
+/* Each palette has a light and a dark side. The page follows the system unless the viewer picks one; data-palette and data-theme on <html> say which. */
+:root[data-palette="orbit"], :root:not([data-palette]) { color-scheme: light; --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1f; --muted: #5f6368; --line: #d9d9d6; --accent: #2563eb; --accent-ink: #ffffff; --soft: #eef2ff; --ok: #15803d; --warn: #b45309; --bad: #b91c1c; --focus: #f59e0b; --shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+@media (prefers-color-scheme: dark) { :root[data-palette="orbit"]:not([data-theme="light"]), :root:not([data-palette]):not([data-theme="light"]) { color-scheme: dark; --bg: #141416; --panel: #1e1f22; --ink: #ececec; --muted: #a0a4ab; --line: #34363b; --accent: #7aa2ff; --accent-ink: #0b1020; --soft: #1f2a44; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; } }
+:root[data-palette="orbit"][data-theme="dark"], :root:not([data-palette])[data-theme="dark"] { color-scheme: dark; --bg: #141416; --panel: #1e1f22; --ink: #ececec; --muted: #a0a4ab; --line: #34363b; --accent: #7aa2ff; --accent-ink: #0b1020; --soft: #1f2a44; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; }
+:root[data-palette="slate"] { color-scheme: light; --bg: #f4f5f7; --panel: #ffffff; --ink: #111827; --muted: #4b5563; --line: #d1d5db; --accent: #4f46e5; --accent-ink: #ffffff; --soft: #eef0ff; --ok: #15803d; --warn: #b45309; --bad: #b91c1c; --focus: #f59e0b; --shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+@media (prefers-color-scheme: dark) { :root[data-palette="slate"]:not([data-theme="light"]) { color-scheme: dark; --bg: #0f1115; --panel: #181b21; --ink: #e5e7eb; --muted: #9ca3af; --line: #2b3039; --accent: #a5b4fc; --accent-ink: #111827; --soft: #232845; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; } }
+:root[data-palette="slate"][data-theme="dark"] { color-scheme: dark; --bg: #0f1115; --panel: #181b21; --ink: #e5e7eb; --muted: #9ca3af; --line: #2b3039; --accent: #a5b4fc; --accent-ink: #111827; --soft: #232845; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; }
+:root[data-palette="forest"] { color-scheme: light; --bg: #f3f6f2; --panel: #ffffff; --ink: #17251b; --muted: #4d5d52; --line: #cfdacf; --accent: #15803d; --accent-ink: #ffffff; --soft: #e6f4ea; --ok: #15803d; --warn: #b45309; --bad: #b91c1c; --focus: #f59e0b; --shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+@media (prefers-color-scheme: dark) { :root[data-palette="forest"]:not([data-theme="light"]) { color-scheme: dark; --bg: #0f1511; --panel: #172019; --ink: #e3ece5; --muted: #9db0a2; --line: #2a3a2e; --accent: #6ee7a0; --accent-ink: #0b1a10; --soft: #1b3324; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; } }
+:root[data-palette="forest"][data-theme="dark"] { color-scheme: dark; --bg: #0f1511; --panel: #172019; --ink: #e3ece5; --muted: #9db0a2; --line: #2a3a2e; --accent: #6ee7a0; --accent-ink: #0b1a10; --soft: #1b3324; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; }
+:root[data-palette="ember"] { color-scheme: light; --bg: #faf6f1; --panel: #ffffff; --ink: #2a1d14; --muted: #6b5a4c; --line: #e5d8ca; --accent: #c2410c; --accent-ink: #ffffff; --soft: #fdeee3; --ok: #15803d; --warn: #b45309; --bad: #b91c1c; --focus: #f59e0b; --shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+@media (prefers-color-scheme: dark) { :root[data-palette="ember"]:not([data-theme="light"]) { color-scheme: dark; --bg: #17120e; --panel: #211a15; --ink: #f1e7de; --muted: #b7a595; --line: #3a2e25; --accent: #fb923c; --accent-ink: #1f1209; --soft: #3a2618; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; } }
+:root[data-palette="ember"][data-theme="dark"] { color-scheme: dark; --bg: #17120e; --panel: #211a15; --ink: #f1e7de; --muted: #b7a595; --line: #3a2e25; --accent: #fb923c; --accent-ink: #1f1209; --soft: #3a2618; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; }
+:root[data-palette="contrast"] { color-scheme: light; --bg: #ffffff; --panel: #ffffff; --ink: #000000; --muted: #1f1f1f; --line: #000000; --accent: #0033cc; --accent-ink: #ffffff; --soft: #e6ecff; --ok: #15803d; --warn: #b45309; --bad: #b91c1c; --focus: #f59e0b; --shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+@media (prefers-color-scheme: dark) { :root[data-palette="contrast"]:not([data-theme="light"]) { color-scheme: dark; --bg: #000000; --panel: #000000; --ink: #ffffff; --muted: #e0e0e0; --line: #ffffff; --accent: #ffd400; --accent-ink: #000000; --soft: #262100; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; } }
+:root[data-palette="contrast"][data-theme="dark"] { color-scheme: dark; --bg: #000000; --panel: #000000; --ink: #ffffff; --muted: #e0e0e0; --line: #ffffff; --accent: #ffd400; --accent-ink: #000000; --soft: #262100; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --focus: #f59e0b; --shadow: none; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { background: var(--bg); }
@@ -31,6 +27,9 @@ p { margin: 6px 0; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 button, select, input, textarea { font: inherit; color: inherit; }
+button, .opt, textarea, input, select { transition: background-color .12s ease, border-color .12s ease, color .12s ease; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
 button { cursor: pointer; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 6px 12px; }
 button:hover { border-color: var(--accent); }
 button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
@@ -39,6 +38,8 @@ button:disabled { opacity: .5; cursor: default; }
 textarea, input[type="text"], select { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 6px 8px; }
 textarea { resize: vertical; min-height: 2.4em; }
 
+.look-pick { display: flex; gap: 6px; align-items: center; }
+.look-pick select { width: auto; padding: 5px 6px; }
 .bar { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .bar .grow { flex: 1 1 200px; min-width: 0; }
 .status { font-size: .9rem; color: var(--muted); }
@@ -76,9 +77,9 @@ figure.pic { margin: 0; min-width: 0; }
 figure.pic figcaption { display: flex; gap: 8px; align-items: center; font-size: .85rem; color: var(--muted); margin-bottom: 4px; }
 figure.pic figcaption .grow { flex: 1; }
 .label { font-weight: 700; color: var(--ink); }
-.scroll { overflow: auto; max-height: 75vh; border: 1px solid var(--line); border-radius: 8px; background: repeating-conic-gradient(var(--bg) 0 25%, var(--panel) 0 50%) 0 0 / 16px 16px; }
-.stage { position: relative; display: block; width: var(--w, 100%); }
-.stage img { display: block; width: 100%; height: auto; user-select: none; }
+.scroll { overflow: auto; max-height: 75vh; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); overscroll-behavior: contain; }
+.stage { position: relative; display: block; width: var(--w, 100%); contain: layout; }
+.stage img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
 .stage.pinnable { cursor: crosshair; }
 .box { position: absolute; border: 2px solid var(--c); border-radius: 3px; pointer-events: none; }
 .box span { position: absolute; top: -2px; left: -2px; transform: translateY(-100%); background: var(--c); color: #fff; font: 700 11px/1.4 system-ui; padding: 0 5px; border-radius: 3px 3px 0 0; }
@@ -90,8 +91,14 @@ figure.pic figcaption .grow { flex: 1; }
 .compare .modes { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
 .compare .side { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .compare .over { position: relative; }
-.compare .over .stage + .stage { position: absolute; inset: 0 auto auto 0; }
+.compare .over { touch-action: pan-y; user-select: none; }
+.compare .over .stage + .stage { position: absolute; inset: 0 auto auto 0; width: 100%; }
+.compare .over .top { will-change: clip-path, opacity; }
 .compare .over.swipe .top { clip-path: inset(0 calc(100% - var(--at, 50%)) 0 0); }
+.compare .over.swipe { cursor: ew-resize; }
+.compare .divider { display: none; position: absolute; top: 0; bottom: 0; left: var(--at, 50%); width: 2px; margin-left: -1px; background: var(--accent); box-shadow: 0 0 0 1px rgb(0 0 0 / 35%); pointer-events: none; will-change: left; }
+.compare .over.swipe .divider { display: block; }
+.compare .grip { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 700 15px/30px system-ui; text-align: center; box-shadow: 0 1px 4px rgb(0 0 0 / 40%); }
 .compare .over.onion .top { opacity: var(--op, .5); }
 .compare .over.diff .top { mix-blend-mode: difference; }
 .compare input[type="range"] { width: 220px; max-width: 100%; }

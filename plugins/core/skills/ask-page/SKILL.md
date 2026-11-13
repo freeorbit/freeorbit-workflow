@@ -41,6 +41,16 @@ No browser pane: send `wf ask export <id>`'s `.html` file, or ask in the chat. T
 
 A paged template (`compare`, `frame-review`, `storyboard`) shows one item at a time, with a strip of every item and an all-at-once grid. `verdicts` in the spec replaces the template's options.
 
+## A template of the project's own
+
+When none of the templates fits a question that will come back, such as a dependency review, propose a project template to the owner. Ask first; it is a file in the project, committed like any other.
+
+- **Where.** `.workflow/ask-templates/<name>.json`. `npx wf ask templates` lists it beside the kit's and names what is wrong with it.
+- **What.** Data only, never code: `name`, `use`, `layout` (`list`, `pages`, `groups`, `table`), `items` (the spec's field that lists them), `text` and `detail` with `{field}` and `{n}`, `type`, `options`, `advised`, `pins`, `defer`, `other`, `groupBy`, and `columns` for a table.
+- **Advised.** `advised: true` holds its choices to the asking rules: a recommendation, why, and what each option means.
+- **The example.** `project-template/dependency-review.json` beside this skill, and the spec that uses it.
+- **Why not code.** The page takes answers on this machine; a template that ran its own script could send anything. A layout the kit lacks is a change to the kit.
+
 ## The spec
 
 - **Top.** `id` (lowercase, dashes), `title`, `template`, `intro`; `chunk` and `from` (a role) for the record.
@@ -55,6 +65,8 @@ A paged template (`compare`, `frame-review`, `storyboard`) shows one item at a t
 - **Pictures.** A sheet from `npx wf design annotate`, or a shot from `wf screens` or `wf app`, works as a picture; the box kinds are the annotate kinds.
 
 ## Answers
+
+The viewer picks a colour theme (Orbit, Slate, Forest, Ember, or High contrast), each light or dark or following the system; it is kept in their browser for every page. In a compare, Swipe has a line to drag across the pictures.
 
 The page's bulk bar answers many at once: take every recommendation, mark a shared verdict (such as every frame Fine), or You decide or Later. It applies to the selected questions or rows, or to every open one, and Undo puts the answers back.
 

@@ -1,0 +1,17 @@
+{
+  "_about": "An example project template. Copied to .workflow/ask-templates/ in a project, it adds the dependency-review template; dependency-review.spec.json uses it.",
+  "name": "dependency-review",
+  "use": "Each dependency the update would change: keep it, take the update, or replace it.",
+  "layout": "list",
+  "items": "packages",
+  "text": "{label}: {change}",
+  "detail": "{notes}",
+  "type": "one",
+  "options": [
+    { "id": "keep", "label": "Keep the version we have", "why": "No change now; it comes back at the next update." },
+    { "id": "update", "label": "Take the update", "why": "The new version goes in with this change, and its tests run." },
+    { "id": "replace", "label": "Replace it", "why": "A different package does the job; say which in the note." }
+  ],
+  "advised": true,
+  "groupBy": "kind"
+}

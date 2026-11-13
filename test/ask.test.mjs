@@ -9,10 +9,10 @@ import { fileURLToPath } from "node:url";
 import { Script } from "node:vm";
 
 import { answered, answersMarkdown, checkAnswers, recordAnswers } from "../lib/ask/answers.mjs";
-import { answersFromText, EXAMPLES, runAsk } from "../lib/ask/index.mjs";
-import { buildPage, exportHtml, pictureFile } from "../lib/ask/page.mjs";
+import { answersFromText, EXAMPLES, projectTemplates, runAsk } from "../lib/ask/index.mjs";
+import { buildPage, exportHtml, imageSize, pictureFile } from "../lib/ask/page.mjs";
 import { answersPath, serve, servedFile } from "../lib/ask/serve.mjs";
-import { normalize, TEMPLATES } from "../lib/ask/spec.mjs";
+import { checkTemplate, normalize, TEMPLATES } from "../lib/ask/spec.mjs";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
@@ -271,4 +271,37 @@ test("view setup replaces the old python server and keeps the project's own entr
   assert.deepEqual(now.configurations, [{ name: "web", port: 5173 }, SERVER]);
   const theirs = { version: "0.0.1", configurations: [{ name: "question-pictures", runtimeExecutable: "node", runtimeArgs: ["mine.js"], port: 9000 }] };
   assert.deepEqual(JSON.parse(withViewServer(JSON.stringify(theirs))), theirs, "a project's own server of that name is theirs");
+});
+
+test("a project template is data that expands into questions, checked like the kit's", () => {
+  const dir = join(EXAMPLES, "../project-template");
+  const raw = JSON.parse(readFileSync(join(dir, "dependency-review.json"), "utf8"));
+  const { template, problems } = checkTemplate(raw);
+  assert.equal(problems, undefined);
+  const spec = JSON.parse(readFileSync(join(dir, "dependency-review.spec.json"), "utf8"));
+  const out = normalize(spec, { [template.name]: template });
+  assert.deepEqual(out.problems, []);
+  assert.deepEqual(out.spec.questions.map((q) => `${q.id} ${q.group} ${q.text} ${q.recommended}`), ["vite Build vite: 5.4 → 6.0 update", "date-fns App date-fns: 3.6 → 4.1 keep", "left-pad App left-pad: 1.3 → 1.3.1 replace"]);
+  assert.match(normalize({ ...spec, packages: [{ id: "x", label: "x" }] }, { [template.name]: template }).problems.join(), /x: a recommendation/, "advised holds it to the asking rules");
+  assert.match(checkTemplate({ ...raw, name: "decision" }).problems.join(), /a kit template/);
+  assert.match(checkTemplate({ ...raw, script: "alert(1)" }).problems.join(), /unknown fields script; a template is data only/);
+  assert.match(checkTemplate({ ...raw, layout: "table" }).problems.join(), /lists its columns/);
+  assert.match(normalize({ id: "a", title: "t", template: "nope" }).problems.join(), /template is one of decision/);
+});
+
+test("a project's templates are read from .workflow/ask-templates, and a bad one is named", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-ask-tpl-"));
+  mkdirSync(join(root, ".workflow/ask-templates"), { recursive: true });
+  writeFileSync(join(root, ".workflow/ask-templates/deps.json"), readFileSync(join(EXAMPLES, "../project-template/dependency-review.json")));
+  writeFileSync(join(root, ".workflow/ask-templates/bad.json"), "{ nope");
+  const { templates, problems } = projectTemplates(root);
+  assert.deepEqual(Object.keys(templates), ["dependency-review"]);
+  assert.match(problems.join(), /bad\.json: not JSON/);
+});
+
+test("a picture's size is read from its header, so the page keeps its space", () => {
+  assert.deepEqual(imageSize(PNG), [1, 1]);
+  const gif = Buffer.from("R0lGODlhAwACAIAAAP///wAAACH5BAEAAAAALAAAAAADAAIAAAICjAsAOw==", "base64");
+  assert.deepEqual(imageSize(gif), [3, 2]);
+  assert.equal(imageSize(Buffer.from("not a picture")), null);
 });
