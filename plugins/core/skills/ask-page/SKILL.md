@@ -73,9 +73,26 @@ Every template shares one layout: a header with the title, who asked, the draft 
 - **Many at once.** Take all recommendations, or select questions or rows and give them one answer. Every change can be undone, from the toast or Ctrl+Z.
 - **Sending.** Questions left open get one panel: send them as You decide, as Later, or open. A receipt then shows exactly what was sent, with Change answers and the next waiting ask.
 - **Look.** Themes are in Claude Desktop's own colour tokens. With Claude Desktop installed, the page follows its theme and offers every palette it bundles; the kit's Clay, Teal, Moss, Indigo, Slate, and High contrast are there too, each light and dark. Any theme takes one of nine accents or a colour of the person's own, a text size, and Comfortable or Compact density.
-- **Separation.** Each question is a card by default; Sections, Lines, and Bands are in the settings.
+- **Separation.** Each section is one panel by default, its questions split by hairlines; Cards, Lines, and Bands are in the settings.
 - **Folding.** Answered questions fold to one line; Expand all (E), Collapse all (⇧E), or Fold answered changes that, and Select all (⇧X) selects every question for one bulk answer.
 - **Wording.** A question is at most 160 characters, a label 60, a reason 200, and an option's description 160. Where the person asked for more detail, or the question opens follow-ups, `explain: true` gives its reasons and descriptions room.
+
+## Blocks
+
+A page can show more than questions: give `sections`, each a `title` and its `blocks`, or plain `blocks`. The design and the phases still to come are in the kit's `docs/design/ask-blocks.md`; the example is `blocks/status.json` beside this skill.
+
+| Block | Fields | Export |
+| --- | --- | --- |
+| `text` | `text`: headings (`#`), paragraphs, `-` and `1.` lists, `**bold**`, `*italic*`, `` `code` ``, and fenced code; no links or HTML | Markdown |
+| `stats` | `items` of `label`, `value` (24 characters), `tone` (ok, warn, bad, info), and `note` | Markdown, CSV |
+| `table` | `columns` and `rows`, or `source`: `open-questions`, `decisions` (with `filter`, a file id), or `ledger`; sortable, and filterable over 8 rows | CSV, Markdown |
+| `diff` | `before` and `after`, `by` line or word, `view` side or inline, `labels` | A unified diff |
+| `questions` | Where the questions go; with none, they come after the blocks | — |
+| `part` | `name` of a part in `.workflow/ask-parts/<name>.json`, and `with`, values for `{field}` | — |
+
+- **Every block** takes a `title` and a `note`. A titled block has its own Export menu; an untitled one's sits in its section's.
+- **Limits.** 60 blocks and 500 table rows a page, and 4,000 characters a text block.
+- **Off.** `off` lists block kinds or features a page leaves out (`bulk`, `outline`, `palette`, `pins`, `compare`); `ask.off` in `.workflow/config.json` does it for every page, and a page's `on` brings one back.
 
 ## Answers
 

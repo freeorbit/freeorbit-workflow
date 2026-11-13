@@ -87,6 +87,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.51.0: ask pages show blocks
+
+- A page can be made of `sections` of blocks around its questions: text, number tiles, tables, and before-and-after diffs. A table can read the open questions, the decisions, or the review ledger by name. A part kept in `.workflow/ask-parts/` is reused across pages. Each block exports its data as CSV, Markdown, or a diff.
+- `off` on a page, or `ask.off` in `.workflow/config.json`, leaves out a block kind or a page feature: bulk answers, the outline, the command palette, pins, or the compare views.
+- Each section is now one panel by default, its questions split by hairlines; Cards is still in the settings.
+- Nothing to change in a project. The design and the phases still to come are in `docs/design/ask-blocks.md`.
+
 ### v0.50.1: fixes from the first code review of ask pages
 
 - The kit's blind code reviewer read v0.48.2..v0.50.0, and every finding it kept was fixed. The question-pictures server now gives each ask page its own write token and serves every other file sandboxed, so no file under `.cache/view` can answer a page. Answers and its state files are written for the user alone. One broken `spec.json` no longer stops the server for every session.

@@ -1,0 +1,6 @@
+{
+  "_about": "An example part. Copied to .workflow/ask-parts/release-checks.json in a project, a page uses it with { \"type\": \"part\", \"name\": \"release-checks\", \"with\": { \"version\": \"0.3.0\" } }.",
+  "blocks": [
+    { "type": "table", "title": "Release {version}: what is left", "columns": ["Check", "State"], "rows": [["Changelog names every story", "done"], ["Installers start on a clean machine", "open"], ["No open question blocks a chunk", "done"]] }
+  ]
+}
