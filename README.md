@@ -87,6 +87,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.50.1: fixes from the first code review of ask pages
+
+- The kit's blind code reviewer read v0.48.2..v0.50.0, and every finding it kept was fixed. The question-pictures server now gives each ask page its own write token and serves every other file sandboxed, so no file under `.cache/view` can answer a page. Answers and its state files are written for the user alone. One broken `spec.json` no longer stops the server for every session.
+- A failed send's retry can no longer send again later. Bulk answers make the same change as each question's own controls. New comment kinds are read without a restart. `wf doctor` and `wf view setup` now agree on the server entry.
+- The server's code moved to `lib/view/`, and the page's script into parts under `lib/ask/browser/`.
+- Nothing to change in a project. Rebuild any open ask page with `npx wf ask page`, and stop the old server with `npx wf view stop` so the new one starts.
+
 ### v0.50.0: ask pages, polished
 
 - One layout for every ask page: a sticky header with who asked, the draft, the other waiting asks, and progress; an outline of the questions; answered ones folded to a line; and a footer with Send. A receipt after sending shows exactly what was sent.
