@@ -87,6 +87,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.53.0: ask pages draw charts and diagrams
+
+- New blocks: `chart` (bar, stacked bar, or line, one axis, with a tooltip, the arrow keys, and a table view), `diagram` (boxes and arrows the kit lays out), `timeline` (done, now, and next), and `board` (cards in columns, read only). A stats tile's `trend` draws a sparkline.
+- A chart saves as SVG or CSV and copies as Markdown; a diagram saves as SVG or copies as Mermaid; a timeline and a board copy as Markdown.
+- Each turns off with `off` or `ask.off`, like the other blocks.
+- Nothing to change in a project. Rebuild any open ask page with `npx wf ask page`.
+
 ### v0.52.0: ask pages take richer answers
 
 - A question can ask for a rating, a slider, or a number (`scale`), a choice for each row (`grid`), a sort into buckets (`buckets`), accepting or rejecting suggested edits (`edits`), or a small form whose fields are checked as they are filled (`form`). Each recommends in the advised templates, and R takes it.

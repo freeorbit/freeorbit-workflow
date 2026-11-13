@@ -36,7 +36,7 @@ A block is one object with a `type`; the page draws them in order.
 
 ## Blocks
 
-Phase 1 built the first four; phase 2 the richer answers, below; phase 3 adds its rows.
+Phase 1 built the first four, phase 2 the richer answers below, and phase 3 the last four.
 
 | Block | Holds | Export | Phase |
 | --- | --- | --- | --- |
@@ -46,8 +46,8 @@ Phase 1 built the first four; phase 2 the richer answers, below; phase 3 adds it
 | `diff` | Before and after text, by line or word, side by side or inline | Markdown, a unified diff | 1 |
 | `questions` | Where the template's questions go | The answers | 1 |
 | `part` | A project part, by name, with values to fill | As its blocks | 1 |
-| `chart` | Bar, line, or sparkline from a small spec | SVG, CSV | 3 |
-| `diagram` | Boxes and arrows from nodes and links | SVG | 3 |
+| `chart` | Bar or line from labels and series; a sparkline is a stats tile's `trend` | SVG, CSV, Markdown | 3 |
+| `diagram` | Boxes and arrows from nodes and links, laid out by the kit | SVG, Mermaid | 3 |
 | `timeline` | Events along a line, done and next | Markdown | 3 |
 | `board` | Cards in columns, read only | Markdown | 3 |
 
@@ -95,9 +95,16 @@ Phase 2 asks for more than a pick, an order, or text. Each is a question `type`,
 - **Off.** Each type, and `followups`, `owners`, and `regions`, turns off like a block.
 - **Export.** The answers' Markdown says each one in full: a grid row by row, the buckets, each edit, each field, the owner, and each box with its size.
 
+## Charts and diagrams
+
+Phase 3 draws charts, diagrams, timelines, and boards on the page, as SVG built node by node.
+
+- **Charts.** One axis only; series that need another scale are a chart of their own. The eight series colours keep a fixed order, checked for colour-blind separation against the page's panel in light and dark, and chosen for each mode, not flipped. Three of the light ones are under 3:1 on white, so every chart has a legend from two series up and a table view. Bars are at most 24px wide with a rounded end and a 2px gap between stacked parts; lines are 2px with a ringed end dot. A bar or a column shows its tooltip on hover, a line a crosshair, and the arrow keys read each point.
+- **Diagrams.** The kit ranks each box one past the furthest box pointing to it, and orders a rank by where its arrows come from. An arrow that closes a loop is dashed and left out of the ranking. A wide diagram shrinks to fit, to 70%, then scrolls.
+- **Colours on export.** A chart is drawn in the page's colours at the time, so an exported SVG carries them, and the page redraws when the look changes.
+
 ## Later phases
 
-- **Phase 3, more to show.** Charts, diagrams, timelines, and the board view.
 - **Phase 4, live pages.** A status page the agent updates while a step runs, a reply under a question, a history of every ask, what changed since the last ask, and step-by-step pages.
 
 ## Not chosen, for later

@@ -44,7 +44,7 @@ An ask page holds any number of questions, with their pictures, on one page in t
 - **Colours.** The page follows the Claude Desktop theme when Claude Desktop is installed, and offers every palette it bundles, or one of the kit's six themes, each light and dark. An accent of nine or the person's own, and a text size, sit over any theme; all are kept in the browser.
 - **Folding.** Expand all, Collapse all, and Fold answered sit above the questions with Select all.
 - **Wording.** Questions, labels, and reasons are held short; `explain: true` gives room where the person asked for more detail.
-- **Blocks.** A page can also show text, number tiles, tables from the open questions, decisions, or review ledger, and before-and-after diffs, around its questions; each one exports its data.
+- **Blocks.** A page can also show text, number tiles, tables from the open questions, decisions, or review ledger, before-and-after diffs, bar and line charts, diagrams, timelines, and boards, around its questions; each one exports its data.
 - **Richer answers.** A question can also ask for a rating or a number, a choice for each row of a grid, a sort into buckets, accepting or rejecting suggested edits, or a small form; a follow-up shows only when an earlier answer fits, a question can be given an owner, and a box can be drawn on a picture.
 - **Drafts.** The page keeps a draft in the browser, so a reload loses nothing. A newer version of the page says so at the top.
 - **Export.** `npx wf ask export <id>` writes one HTML file, pictures inside, for someone without the pane, and the answers as Markdown and JSON. Their answers file comes back through `npx wf ask import`.

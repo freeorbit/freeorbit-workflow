@@ -79,19 +79,24 @@ Every template shares one layout: a header with the title, who asked, the draft 
 
 ## Blocks
 
-A page can show more than questions: give `sections`, each a `title` and its `blocks`, or plain `blocks`. The design and the phases still to come are in the kit's `docs/design/ask-blocks.md`; the example is `blocks/status.json` beside this skill.
+A page can show more than questions: give `sections`, each a `title` and its `blocks`, or plain `blocks`. The design and the phase still to come are in the kit's `docs/design/ask-blocks.md`; the examples are `blocks/status.json` and `blocks/charts.json` beside this skill.
 
 | Block | Fields | Export |
 | --- | --- | --- |
 | `text` | `text`: headings (`#`), paragraphs, `-` and `1.` lists, `**bold**`, `*italic*`, `` `code` ``, and fenced code; no links or HTML | Markdown |
-| `stats` | `items` of `label`, `value` (24 characters), `tone` (ok, warn, bad, info), and `note` | Markdown, CSV |
+| `stats` | `items` of `label`, `value` (24 characters), `tone` (ok, warn, bad, info), `note`, and `trend`, up to 60 numbers drawn as a sparkline | Markdown, CSV |
 | `table` | `columns` and `rows`, or `source`: `open-questions`, `decisions` (with `filter`, a file id), or `ledger`; sortable, and filterable over 8 rows | CSV, Markdown |
 | `diff` | `before` and `after`, `by` line or word, `view` side or inline, `labels` | A unified diff |
+| `chart` | `kind` (`bar` or `line`), `labels`, `series` of `name` and `values` (a number or null for each label, 8 series at most), `stacked` for bars, `unit`; one axis, a tooltip on hover, the arrow keys, and Show the numbers for the table | SVG, CSV, Markdown |
+| `diagram` | `nodes` of `id`, `label`, `note`, `tone`; `links` of `from`, `to`, `label`; `direction` `right` or `down`; laid out by the kit, a loop's arrow dashed | SVG, Mermaid |
+| `timeline` | `events` of `date`, `title`, `note`, `state` (`done`, `now`, `next`) | Markdown |
+| `board` | `columns` (ids, or `id` and `title`), `cards` of `title`, `column`, `note`, `tone`, `owner`, `tags`; read only | Markdown, CSV |
 | `questions` | Where the questions go; with none, they come after the blocks | — |
 | `part` | `name` of a part in `.workflow/ask-parts/<name>.json`, and `with`, values for `{field}` | — |
 
 - **Every block** takes a `title` and a `note`. A titled block has its own Export menu; an untitled one's sits in its section's.
-- **Limits.** 60 blocks and 500 table rows a page, and 4,000 characters a text block.
+- **Limits.** 60 blocks and 500 table rows a page, 4,000 characters a text block, 200 points a chart, 40 boxes a diagram, 100 events, and 200 cards.
+- **Which one.** A single number is a `stats` tile, with a `trend` when its change matters. Change over time is a line; amounts across a few things, bars. Two measures of different scale are two charts, never one with two axes.
 - **Off.** `off` lists block kinds, question types, or features a page leaves out (`bulk`, `outline`, `palette`, `pins`, `compare`, `regions`, `followups`, `owners`); `ask.off` in `.workflow/config.json` does it for every page, and a page's `on` brings one back.
 
 ## Richer answers
