@@ -87,6 +87,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.50.0: ask pages, polished
+
+- One layout for every ask page: a sticky header with who asked, the draft, the other waiting asks, and progress; an outline of the questions; answered ones folded to a line; and a footer with Send. A receipt after sending shows exactly what was sent.
+- Keyboard first: J/K, 1–9, R, D, L, N, Enter to the next open question, Ctrl+K commands, Ctrl+Z undo, [ and ] between asks. Reviews add verdict keys that move to the next frame, comment mode for pins, and a filmstrip of verdict colours.
+- The page's colours are Claude Desktop's tokens: it follows the installed Claude Desktop theme and offers every palette the app bundles, or one of six kit themes, each light and dark and checked for WCAG contrast. Nine accents or a colour of your own, four text sizes, and two densities.
+- Each question is a card, with Sections, Lines, and Bands as other ways to set them apart. Expand all, Collapse all, Fold answered, and Select all above the questions. Folding, menus, dialogs, the send panel, the receipt, and moving between frames are animated, and still for reduced motion.
+- `wf ask page` refuses over-long wording; `explain: true` on a question gives its reasons room.
+- Nothing to change in a project. Rebuild any open ask page with `npx wf ask page`.
+
 ### v0.49.1: many sessions ask at once
 
 - The `question-pictures` server is now one per machine, started on its own by `wf ask page` or `wf design annotate` and kept running apart from any session. Each project or worktree is served at `http://127.0.0.1:8765/<key>/`, so two sessions, projects, or worktrees no longer clash on the port or open each other's pages.
