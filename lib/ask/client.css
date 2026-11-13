@@ -201,6 +201,52 @@ nav.rail { display: none; }
 .note { margin-top: 8px; }
 .note textarea { min-height: 56px; }
 
+/*
+ * Separation between questions and sections, picked in settings:
+ *   sections  each section is one panel, its questions split by hairlines
+ *   cards     each question is a panel of its own
+ *   lines     open page, a rule between questions, a heavier rule per section
+ *   bands     open page, alternating soft shades per question
+ */
+.sections { display: grid; gap: 28px; }
+.section > .group-label:first-child { margin-top: 4px; }
+:root[data-layout="pages"] .sections { display: block; }
+
+/* Sections */
+:root[data-sep="sections"] .section { background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; box-shadow: 0 1px 2px rgb(0 0 0 / 5%); }
+:root[data-sep="sections"] .section > .group-label { margin: 0; padding: 11px 18px; border-bottom: 1px solid var(--line-2); background: var(--sunk); border-radius: 12px 12px 0 0; }
+:root[data-sep="sections"] .section > .group-label::after { display: none; }
+:root[data-sep="sections"] .section > .q { margin: 0; padding: 18px 20px; border-top: 1px solid var(--line); }
+:root[data-sep="sections"] .section > .q:first-child, :root[data-sep="sections"] .section > .group-label + .q { border-top: 0; }
+:root[data-sep="sections"] .section > .q.is-folded { padding-top: 12px; padding-bottom: 12px; }
+
+/* Cards */
+:root[data-sep="cards"] .sections { gap: 34px; }
+:root[data-sep="cards"] .section > .q { background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; padding: 18px 20px; margin: 0 0 12px; box-shadow: 0 1px 2px rgb(0 0 0 / 5%); transition: border-color 160ms var(--ease), box-shadow 160ms var(--ease), margin 280ms var(--ease); }
+:root[data-sep="cards"] .section > .q.cur { border-color: var(--accent-line); box-shadow: 0 0 0 1px var(--accent-line), 0 4px 14px -6px rgb(0 0 0 / 18%); }
+:root[data-sep="cards"] .section > .q.is-folded { padding-top: 12px; padding-bottom: 12px; }
+
+/* Lines */
+:root[data-sep="lines"] .sections { gap: 44px; }
+:root[data-sep="lines"] .section > .group-label { margin: 0 0 4px; padding-bottom: 10px; border-bottom: 2px solid var(--line-3); }
+:root[data-sep="lines"] .section > .group-label::after { display: none; }
+:root[data-sep="lines"] .section > .q { margin: 0; padding: 22px 0; border-top: 1px solid var(--line-2); }
+:root[data-sep="lines"] .section > .q:first-child, :root[data-sep="lines"] .section > .group-label + .q { border-top: 0; }
+
+/* Bands */
+:root[data-sep="bands"] .sections { gap: 36px; }
+:root[data-sep="bands"] .section > .q { margin: 0 -18px; padding: 18px; border-radius: 12px; transition: background-color 200ms var(--ease); }
+:root[data-sep="bands"] .section > .q:nth-child(even of .q) { background: color-mix(in srgb, var(--sunk) 70%, transparent); }
+:root[data-sep="bands"] .section > .q.cur { background: var(--accent-soft); }
+
+/* Inside a panel, options and folded lines sit on the page colour, so they read as parts of it. */
+:root[data-sep="sections"] .section .opt, :root[data-sep="cards"] .section .opt { background: var(--app); }
+:root[data-sep="sections"] .section .opt.on, :root[data-sep="cards"] .section .opt.on { background: var(--accent-soft); }
+:root[data-sep="sections"] .section .folded, :root[data-sep="cards"] .section .folded { background: var(--app); border-color: transparent; }
+:root[data-sep="sections"] .section .viewer, :root[data-sep="cards"] .section .viewer { background: var(--app); }
+:root[data-sep] .q.cur .q-head h2::before { left: -12px; }
+:root[data-sep="cards"] .q.cur .q-head h2::before, :root[data-sep="bands"] .q.cur .q-head h2::before { opacity: 0; }
+
 /* Folding: the line and the body each animate their height */
 .fold-line, .fold-body { display: grid; transition: grid-template-rows 280ms var(--ease), opacity 220ms var(--ease), margin 280ms var(--ease); }
 .fold-body { grid-template-rows: 1fr; opacity: 1; }
