@@ -85,6 +85,11 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.48.1: the review gate passes with the ledger edit committed
+
+- `wf done chunk` and a chunk-end screen review passed only when the ledger's `Last reviewed` or `Deferred` line named HEAD itself, so committing the ledger edit with the chunk, as the `code-review-ledger` skill says, always failed the gate. They now also pass when the named commit is on HEAD's history and every commit after it changes only `logs.ledger` or `logs.ledgerClosed`. A change to any other file after it still needs another run or a deferral.
+- Nothing to change in a project. Commit the ledger edit with the chunk, as the skill says; a ledger edit left uncommitted to get past the gate can now be committed.
+
 ### v0.48.0: test data in one-screen tables, a story check, and project kinds
 
 - The `test-data-designer` has a `check` mode that returns only gaps and contradictions, as questions for the story's owner. Its rules, gaps, checks, and fixtures come back as tables with rule IDs and a category, and a flow area too long for one screen becomes a folder of one-screen files. Edge-case fixtures go only to stories with a `Risk: high (<why>)` line.
