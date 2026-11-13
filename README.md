@@ -87,6 +87,29 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.60.0: ask pages use their parts for pictures
+
+- **`wf design annotate <spec> --ask`.** For an ask page, it draws no joined sheet.
+  - It writes each picture on its own, plus `<out>.ask.json`: the spec's pictures with their boxes as data.
+  - A frame followed by its app picture is one compare pair, or the pairs `pairs` names.
+  - The page then draws the numbered boxes, zooms, compares by swipe, onion skin, or difference, and takes pins.
+- **The rules.** `AGENTS.md` and the design skill now say never to put the joined sheet on an ask page; the sheet is for the chat. The `ask-page` skill gains "Which part for which question":
+  - a frame against the app is a compare pair;
+  - several frames are a frame review;
+  - where to look is boxes as data;
+  - numbers are tiles or charts, logs are tables, text changes are diffs, and context is a text block;
+  - the choice is its own question after the evidence.
+- **Pictures advice.** `wf ask page` now prints it, beside the grouping advice:
+  - a picture that looks like several frames joined in one sheet;
+  - a question that names a box its pictures do not have, or that shows no picture;
+  - a frame against the app with no compare pair.
+
+  On Freeorbit's `38f2-review` page it names all three.
+- **Settings are kept.** Questions now start expanded (Expand all).
+  - How they fold, the zoom, and the compare view join the look in this browser's saved settings. Before, they were kept for one tab, and folding for one page.
+  - Every choice is kept until **Reset settings** in the ⋯ menu or the command list. Reset puts back the look, folding, zoom, compare view, inbox filters, and notifications, with an Undo.
+- Run `npx wf docs sync` for the new `AGENTS.md` lines.
+
 ### v0.59.0: fewer, plainer unit tests
 
 - **CS-TEST** in `code-standards.md` now says:

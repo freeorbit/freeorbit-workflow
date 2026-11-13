@@ -68,3 +68,16 @@ test("wf ask page builds the page and prints the advice", async () => {
     process.chdir(cwd);
   }
 });
+
+test("picture advice: a joined sheet, a box the pictures do not have, and a frame against the app with no compare", async () => {
+  const { pictureAdvice } = await import("../lib/ask/spec.mjs");
+  const pic = (w, h, boxes = []) => ({ image: "a.png", label: "A", w, h, boxes });
+  const page = (q) => ({ questions: [{ id: "q", text: "Fine?", look: "", detail: "", pictures: [], compare: null, ...q }] });
+  assert.match(pictureAdvice(page({ pictures: [pic(5136, 1684)] })).join(), /q: picture A is 5136×1684, likely several frames joined in one sheet; give each its own picture with npx wf design annotate --ask/);
+  assert.match(pictureAdvice(page({ look: "Sheet A, box 2", pictures: [pic(1280, 800)] })).join(), /q: names a box, but its pictures have none the page can draw/);
+  assert.equal(pictureAdvice(page({ look: "Sheet A, box 2", pictures: [pic(1280, 800, [{ n: 2 }])] })).length, 0, "a box the page draws is fine");
+  assert.match(pictureAdvice(page({ text: "Does the app match the frame?", pictures: [pic(1280, 800)] })).join(), /compares a frame with the app in one picture; a compare pair, \[frame, app\]/);
+  assert.match(pictureAdvice(page({ text: "Box 3: change the frame or the app?" })).join(), /q: names a box, but shows no picture[\s\S]*is about a frame and the app, and shows neither/);
+  assert.equal(pictureAdvice(page({ text: "Does the app match the frame?", compare: [pic(1280, 800), pic(1280, 800)] })).length, 0);
+  assert.equal(pictureAdvice(page({ pictures: [pic(1280, 800)] })).length, 0, "one screen is fine");
+});

@@ -125,7 +125,7 @@ function look({ reduce, off = "", saved = {} }) {
   runInNewContext(readFileSync(join(browser, "shared.js"), "utf8"), sandbox);
   runInNewContext(readFileSync(join(browser, "look.js"), "utf8"), sandbox);
   sandbox.window.wfLook.init({ default: "clay", themes: { clay: { name: "Clay", light: {}, dark: {} } } }, false);
-  return { root, L: sandbox.window.wfLook };
+  return { root, L: sandbox.window.wfLook, stored };
 }
 
 test("Motion starts at System, which follows the computer; the person's own choice wins, and a page's off wins over both", () => {
@@ -154,4 +154,28 @@ test("the styles move on the motion rhythm, and every move stops with motion off
   const script = pageScript();
   assert.ok(script.includes("window.wfMotion = "));
   assert.ok(!/prefers-reduced-motion/.test(readdirSync(join(browser, "page")).map((f) => readFileSync(join(browser, "page", f), "utf8")).join("\n").replace(/matchMedia\("\(prefers-reduced-motion: reduce\)"\)\.matches \? "System \(off\)"/, "")), "page parts ask the motion part, not the media query");
+});
+
+test("every setting is kept until the person resets it, and questions start expanded", () => {
+  const fresh = look({ reduce: false });
+  assert.deepEqual([fresh.L.look.fold, fresh.L.look.zoom, fresh.L.look.compare], ["none", "fit", "swipe"], "Expand all, Fit, and Swipe to start");
+  fresh.L.remember({ fold: "auto", zoom: "2", compare: "onion" });
+  fresh.L.set({ theme: "teal", density: "compact" });
+  const saved = JSON.parse(fresh.stored.get("wf-ask:look"));
+  assert.deepEqual([saved.fold, saved.zoom, saved.compare, saved.theme, saved.density], ["auto", "2", "onion", "teal", "compact"]);
+  // A new page, the next day, in this browser: the same choices.
+  const later = look({ reduce: false, saved });
+  assert.deepEqual([later.L.look.fold, later.L.look.zoom, later.L.look.compare, later.L.look.theme], ["auto", "2", "onion", "teal"]);
+  later.L.reset();
+  assert.deepEqual(JSON.parse(JSON.stringify(later.L.look)), JSON.parse(JSON.stringify(later.L.defaults)), "reset puts every choice back");
+  assert.equal(JSON.parse(later.stored.get("wf-ask:look")).fold, "none", "and keeps that");
+});
+
+test("the page keeps fold, zoom, and compare in the look, not for one tab", () => {
+  const parts = readdirSync(join(browser, "page")).map((f) => readFileSync(join(browser, "page", f), "utf8")).join("\n");
+  assert.ok(!/session\.(get|set)\("wf-ask:(zoom|compare)"|wf-ask:fold:/.test(parts), "no setting lives in sessionStorage");
+  assert.match(parts, /L\.remember\(\{ fold: mode \}\)/);
+  assert.match(parts, /L\.remember\(\{ zoom \}\)/);
+  assert.match(parts, /if \(chosen\) L\.remember\(\{ compare: mode \}\)/);
+  assert.match(parts, /function resetSettings\(\)/);
 });
