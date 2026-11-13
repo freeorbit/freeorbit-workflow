@@ -1,0 +1,29 @@
+{
+  "id": "new-screen-setup",
+  "title": "Setting up the settings screen",
+  "template": "decision",
+  "intro": "Three steps, one at a time: the layout, the words, then the order of work.",
+  "steps": true,
+  "sections": [
+    { "title": "Layout", "note": "How the screen is laid out.", "blocks": [
+      { "type": "text", "text": "The settings screen has **twelve** options today, in one long list." },
+      { "type": "questions", "group": "Layout" }
+    ] },
+    { "title": "Words", "blocks": [
+      { "type": "diff", "by": "word", "before": "Turn on sync to keep your data.", "after": "Sync keeps your mail on every device." },
+      { "type": "questions", "group": "Words" }
+    ] },
+    { "title": "Order", "blocks": [{ "type": "questions" }] }
+  ],
+  "questions": [
+    { "id": "layout", "group": "Layout", "text": "How should the options be grouped?", "type": "one",
+      "options": [{ "id": "tabs", "label": "Tabs", "why": "One tab per area; nothing scrolls." }, { "id": "list", "label": "One list with headings", "why": "Everything on one page, found with the browser's search." }],
+      "recommended": "tabs", "why": "Twelve options read better split into areas." },
+    { "id": "sync-words", "group": "Words", "text": "Take the new words for the sync switch?", "type": "one",
+      "options": [{ "id": "new", "label": "The new words", "why": "Says what sync does." }, { "id": "old", "label": "Keep the old", "why": "Already in the help pages." }],
+      "recommended": "new", "why": "It says what happens, not what to do." },
+    { "id": "order", "text": "What comes first?", "type": "rank",
+      "options": [{ "id": "layout", "label": "The new layout", "why": "Everything else sits in it." }, { "id": "words", "label": "The words", "why": "Small, and ready now." }],
+      "why": "The layout first, since the words go into it." }
+  ]
+}

@@ -103,15 +103,29 @@ Phase 3 draws charts, diagrams, timelines, and boards on the page, as SVG built 
 - **Diagrams.** The kit ranks each box one past the furthest box pointing to it, and orders a rank by where its arrows come from. An arrow that closes a loop is dashed and left out of the ranking. A wide diagram shrinks to fit, to 70%, then scrolls.
 - **Colours on export.** A chart is drawn in the page's colours at the time, so an exported SVG carries them, and the page redraws when the look changes.
 
-## Later phases
+## Live pages
 
-- **Phase 4, live pages.** A status page the agent updates while a step runs, a reply under a question, a history of every ask, what changed since the last ask, and step-by-step pages.
+Phase 4 lets a page say more between builds. Each is a file the CLI writes and the page reads through the server (`lib/ask/live.mjs`), and each turns off.
+
+| What | Written by | Kept in | Off |
+| --- | --- | --- | --- |
+| A live page's status: state, step, progress, log, blocks | `wf ask live` | `ask/<id>/live.json` | `live` |
+| The agent's reply under a question | `wf ask reply` | `ask/<id>/replies.json` | `replies` |
+| Every round of answers sent, with the page it answered | each send | `history/<id>/` | `history` |
+| What changed since the page was last asked | `wf ask page` | the spec's `changes` | `changes` |
+| Steps: one section at a time | the spec's `steps` | — | — |
+| The waiting count in the tab, and a notification | the page | the browser | `tabcount`, `notify` |
+
+- **Asking again.** A reply asks again, as building does: answers count only when sent after the latest of the two. A changed page drops the replies, which were about the page before.
+- **The status template.** A page with no questions is a status page: nothing to answer, no footer, and Status in the inbox.
+- **Polling.** A live page reads its status every 2.5 s, any other page its replies every 6 s, and the inbox every 5 s, as it did.
+- **Notifications.** The person turns them on. An ask that starts waiting is told once across every tab, and the asks already waiting when they turn it on are not news. A page tells its own replies, and a live page finishing, only while the person is not looking at it.
+- **Export.** `wf ask export` adds the rounds as Markdown and the status as JSON; the live card copies its status as Markdown and saves its log.
 
 ## Not chosen, for later
 
-Ken left these out of the first plan, on 2026-11-13.
+Ken left these out of the first plan, on 2026-11-13; on 2026-11-14 he moved saying a page is waiting into phase 4.
 
 - **Edit a table in place.** Change cells of test data or settings, and send the rows back.
 - **Spread points.** Share 100 points across items.
-- **Say a page is waiting.** A tab count beyond the inbox's, or a browser notification.
 - **A project colour theme.** The project's own colours in its config.
