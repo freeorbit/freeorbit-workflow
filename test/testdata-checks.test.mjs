@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { readStories } from "../lib/docs/stories.mjs";
-import { CATEGORIES, areaKind, categoryCells, categoryNames, flowAreas, testdataProblems, testdataWarnings } from "../lib/testdata.mjs";
+import { CATEGORIES, areaKind, categoryCells, categoryNames, flowAreas, tableRows, testdataProblems, testdataWarnings } from "../lib/testdata.mjs";
 
 const config = (more = {}) => merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], ...more });
 const context = (cfg, texts) => ({ config: cfg, tracked: Object.keys(texts), files: (path) => texts[path] ?? "" });
@@ -60,6 +60,35 @@ test("warnings: a file past one screen, a flow area past its size, an unknown ca
   ]);
   const extended = config({ testdata: { categories: [{ name: "Stand-ins", use: "Fakes" }], limits: { lines: 100, areaKB: 50 } } });
   assert.deepEqual(testdataWarnings(context(extended, texts)), []);
+});
+
+test("a table's rows are read by their header, and only from tables that have the columns asked for", () => {
+  const text = "| Input | Class | Values |\n| --- | --- | --- |\n| `addr` | Blanks | two spaces |\n\n| Other | Class |\n| --- | --- |\n| x | y |\n";
+  assert.deepEqual(tableRows(text, ["Input", "Class"]), [{ line: 3, cells: { Input: "`addr`", Class: "Blanks", Values: "two spaces" } }]);
+});
+
+test("warnings: an input class listed twice, a fixture that reaches unit, and fixtures past a story's, a flow area's, or a rule's budget", () => {
+  const fixtures = (rows) => ["| Fixture | Varies | Expect | Stories | Rules | Reach |", "| --- | --- | --- | --- | --- | --- |", ...rows].join("\n");
+  const row = (id, stories, rules, reach = "typed at `ready`") => `| \`${id}\` | x | y | ${stories} | ${rules} | ${reach} |`;
+  const texts = {
+    [`${DIR}/formats.md`]: "| Input | Class | Values | Expect | Stories | Rules |\n| --- | --- | --- | --- | --- | --- |\n| `addr` | Blanks at the edges | two spaces | Trimmed | GM-06 | R-12 |\n",
+    [`${DIR}/setup.md`]: [
+      "| Input | Class | Values | Expect | Stories | Rules |",
+      "| --- | --- | --- | --- | --- | --- |",
+      "| `addr` | blanks at the edges | a tab | Trimmed | GM-06 | R-12 |",
+      "",
+      fixtures([row("a1", "GM-06", "R-12"), row("a2", "GM-06", "R-12"), row("a3", "GM-06, GM-07", "R-12"), row("a4", "GM-06", "R-12"), row("a5", "GM-06", "R-12"), row("a6", "GM-06", "R-13", "`unit`")]),
+    ].join("\n"),
+  };
+  const found = testdataWarnings(context(config(), texts));
+  assert.deepEqual(found, [
+    `${DIR}/setup.md:3: input \`addr\` class "blanks at the edges" is listed already, at ${DIR}/formats.md:3; list an input's classes once, and name them from other flows`,
+    `${DIR}/setup.md:12: \`a6\` reaches unit, which no person can; make it a class of its input`,
+    `${DIR}/setup.md:7: story GM-06 has 6 edge-case fixtures, over 5; keep the ones only its flow shows, and ask the reviewer about any kept past it`,
+    `${DIR}/setup.md:7: rule R-12 has 5 edge-case fixtures, over 4; most are likely classes of one input; list them as its input classes`,
+  ]);
+  const roomy = config({ testdata: { limits: { fixtures: { story: 10, area: 3, rule: 10 } } } });
+  assert.deepEqual(testdataWarnings(context(roomy, texts)).filter((w) => /fixtures, over/.test(w)), [`${DIR}/setup.md: 6 edge-case fixtures, over 3; merge rows into one with axes, or move the cases that vary one input into its input classes`]);
 });
 
 test("a story's Risk line reads as high or low, and anything else is a problem", () => {

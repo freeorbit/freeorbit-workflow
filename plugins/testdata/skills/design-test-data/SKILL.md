@@ -94,14 +94,15 @@ Send it back, or fix the line, when any of these is true in a file it touched:
 - A dataset has no seed or no counts.
 - It breaks a rule in `core.md`, `formats.md`, or the flow area's own rules.
 - A rule has no ID, category, stories, or Accepted cell, or a rule about one flow area sits in `core.md`.
-- A low-risk story got edge-case fixtures, or prose stands where `test-data-formats.md` gives a table.
-- `npx wf doc:check` warns for a file it wrote: past one screen, a flow area past its size, or a category on no list.
+- A low-risk story got input classes or edge-case fixtures, or prose stands where `test-data-formats.md` gives a table.
+- A fixture varies only one input's value, or reaches `unit`: it belongs in that input's classes. An input's classes are listed again for another flow.
+- `npx wf doc:check` warns for a file it wrote: past one screen, a flow area past its size, a category on no list, an input class listed twice, or fixtures past `testdata.limits.fixtures`. Over a budget, the designer merges rows or asks the reviewer whether a row's risk is worth it.
 
 Then ask the reviewer. A first draft gets its own review, rules one category at a time. A refresh is reviewed with the chunk-start questions: the spec edits in a line each, and the proposed rules by category, to accept or drop. Update the area's row in the build order's Areas table, and add a line to its History.
 
 ## 5. Build and use it
 
-Build the data the current chunk needs with the project's seeded generator, as its test-data doc says: scenarios, generated datasets, and fixtures. Data for a later chunk waits for that chunk. A combined fixture row is expanded by the generator, pairwise when every combination is too many.
+Build the data the current chunk needs with the project's seeded generator, as its test-data doc says: scenarios, generated datasets, and fixtures. Data for a later chunk waits for that chunk. A combined fixture row is expanded by the generator, pairwise when every combination is too many. Input classes are tested once, where their rule lives: one test walks the rows of the table, or a property test covers the class; they need no fixture file and no journey state.
 
 With the design plugin's screen review, a new scenario goes on the area's screen list in the same change: as the Reach of each frame whose state it holds, replacing that frame's `none, <chunk>`, or as a row under "Screens with no frame". `npx wf screens --check` fails a scenario on no row.
 
