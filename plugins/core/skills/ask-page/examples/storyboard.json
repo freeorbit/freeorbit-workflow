@@ -1,0 +1,11 @@
+{
+  "id": "sign-in-flow",
+  "title": "Sign in, step by step",
+  "template": "storyboard",
+  "intro": "The sign-in flow as the app runs it. Mark the first step that breaks.",
+  "steps": [
+    { "caption": "The sign-in screen", "image": ".cache/screens/latest/sign-in-wide.png" },
+    { "caption": "A wrong password", "image": ".cache/screens/latest/sign-in-error-wide.png" },
+    { "caption": "Signed in: the inbox", "image": ".cache/screens/latest/inbox-wide.png" }
+  ]
+}

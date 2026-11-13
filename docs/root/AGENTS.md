@@ -4,7 +4,9 @@ On this machine, decide what you can from the repo, these rules, and the chat. W
 
 - **When.** Look first. Ask before the plan or code that depends on it when plans diverge, a needed fact is missing, or design, architecture, approach, scope, an irreversible or expensive step, a new library or service, naming, security or data kept, or a conflict with a rule is unresolved.
 - **When not.** Take a sensible default that is cheap to change, and say what you assumed. Do not ask what the repo, the rules, or the chat already answers, or re-ask what was already answered.
-- **How.** Ask at the fork, in batches of about 5–6 questions, or the question tool's limit if that is fewer. Recommend one option and say why. Use the structured question tool when it is available. Stop only the work that depends on the answer. Their answer in a later message is the decision. An unstated assumption is not.
+- **How.** Ask at the fork. Recommend one option and say why. Stop only the work that depends on the answer. Their answer in a later message, or on an ask page, is the decision. An unstated assumption is not.
+  - Up to four quick questions with no picture go to the structured question tool when it is available, or in the message.
+  - More than four, or any visual question, go on an ask page, with the kit's `ask-page` skill: `npx wf ask page <spec>`, opened in the browser pane, then `npx wf ask wait <id>` in the background.
 - **Show what a visual question is about.** A question about a frame, a screen, or an image comes with its picture. So does a picture sent for review, such as a new or redrawn frame.
   - Send the picture just before the question, so it stays in view while the question is open.
   - A comparison is one labelled picture, such as the frame on the left and the app on the right. Several questions share one labelled sheet.
@@ -12,7 +14,7 @@ On this machine, decide what you can from the repo, these rules, and the chat. W
     - When nothing fits, add a kind under `design.kinds` in [.workflow/config.json](.workflow/config.json), never changing an existing one.
     - A frame's boxes come from its elements. The spec is in the kit's `design-frames` skill.
   - Each question says where to look, such as "sheet A, box 2". Option previews hold text only, so a layout choice can add a rough text sketch.
-  - Where a browser pane is open beside the chat, also open the sheet's `.html` there from the `question-pictures` server in `.claude/launch.json`, at the address `npx wf design annotate` prints, so they can read the question and the pictures together.
+  - Where a browser pane is open beside the chat, ask on an ask page, so each picture sits beside its question; an annotate sheet can be one of its pictures. Without a pane, send the sheet just before the question.
 <!-- wf:local asking-pictures -->
 - The full list of when to ask and when not is in [asking.md]({{docs.workflow}}/asking.md).
 - **Missing packages.** Never install a system package. Name what is missing, give the install command, and wait for the person at this computer, or ask when it would only make the job easier. The steps are in [tools.md]({{docs.workflow}}/tools.md#missing-packages).

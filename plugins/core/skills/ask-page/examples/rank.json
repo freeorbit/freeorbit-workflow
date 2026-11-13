@@ -1,0 +1,11 @@
+{
+  "id": "next-chunks",
+  "title": "What to build next",
+  "template": "rank",
+  "prompt": "Put the next chunks in the order to build them, first at the top.",
+  "items": [
+    { "id": "search", "label": "Search", "why": "Asked for most in feedback." },
+    { "id": "labels", "label": "Labels", "why": "Unblocks filters." },
+    { "id": "offline", "label": "Offline mode", "why": "Largest; touches sync." }
+  ]
+}

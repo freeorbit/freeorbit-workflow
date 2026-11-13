@@ -1,0 +1,11 @@
+{
+  "id": "release-0-3-signoff",
+  "title": "Release 0.3: sign-off",
+  "template": "signoff",
+  "intro": "The checks before the tag. Tick each, or object with a reason.",
+  "checks": [
+    "The changelog names every story in the release",
+    { "text": "The installers start on a clean machine", "detail": "Windows and Linux; macOS is not built yet." },
+    "No open question blocks a chunk in the release"
+  ]
+}

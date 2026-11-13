@@ -28,4 +28,16 @@ Look first. Ask before writing the plan or the code that depends on the answer w
 
 ## How to ask
 
-How to ask, and how to show a visual question, are in [AGENTS.md](../../AGENTS.md) in full. They apply at a moment when nothing else would load them, so they are always on. If more questions remain after a batch, ask the next batch after the answers come. Without the question tool, ask in the message.
+How to ask, and how to show a visual question, are in [AGENTS.md](../../AGENTS.md) in full. They apply at a moment when nothing else would load them, so they are always on. Without the question tool or a browser pane, ask in the message.
+
+## Ask pages
+
+An ask page holds any number of questions, with their pictures, on one page in the browser pane. The steps and the spec are in the kit's `ask-page` skill.
+
+- **Templates.** `npx wf ask templates` lists them: a decision, a batch by role, a compare, a frame review, a storyboard, a triage, a ranking, naming, test-data rows, a plan, and a sign-off.
+- **Answering.** Each question can take "You decide" or "Later", a note, and pins on its pictures. A partial send is fine; the agent carries on with what is answered.
+- **The keyboard.** 1–9 picks an option, ← → pages, j and k move between questions, n finds the next open one, Ctrl+Enter sends, and ? lists them.
+- **Drafts.** The page keeps a draft in the browser, so a reload loses nothing. A newer version of the page says so at the top.
+- **Export.** `npx wf ask export <id>` writes one HTML file, pictures inside, for someone without the pane, and the answers as Markdown and JSON. Their answers file comes back through `npx wf ask import`.
+- **The record.** `npx wf ask record <id>` adds each "Later" to the open questions, and each answer the spec marks with `record` to that decisions file.
+- **The server.** The `question-pictures` entry in `.claude/launch.json` runs `npx wf view serve`. `npx wf view setup` writes it, or replaces the old file server.

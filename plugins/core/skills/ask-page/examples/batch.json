@@ -1,0 +1,13 @@
+{
+  "id": "chunk-13-start",
+  "title": "Chunk 13: questions at the start",
+  "template": "batch",
+  "intro": "Everything chunk 13 needs answered before it starts, by the role that owns each.",
+  "chunk": "CH-13",
+  "from": "developer",
+  "questions": [
+    { "id": "retention", "role": "owner", "text": "How long is a deleted mail kept before it is gone for good?", "type": "one", "options": [{ "id": "30", "label": "30 days" }, { "id": "90", "label": "90 days" }, { "id": "never", "label": "Until the trash is emptied" }], "recommended": "30", "why": "Matches what the big providers do." },
+    { "id": "icon", "role": "designer", "text": "Which icon marks an unread thread?", "type": "one", "options": [{ "id": "dot", "label": "A dot" }, { "id": "bold", "label": "Bold text only" }], "recommended": "dot" },
+    { "id": "sync", "role": "developer", "text": "Which sync runs first on start?", "type": "many", "options": [{ "id": "inbox", "label": "Inbox" }, { "id": "sent", "label": "Sent" }, { "id": "all", "label": "Every folder" }], "recommended": ["inbox"] }
+  ]
+}

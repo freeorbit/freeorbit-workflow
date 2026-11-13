@@ -1,0 +1,11 @@
+{
+  "id": "open-questions-nov",
+  "title": "Open questions to clear",
+  "template": "triage",
+  "intro": "Questions still open in the log. Answer one in its note, keep it for later, or drop it.",
+  "from": "developer",
+  "items": [
+    { "id": "Q-031", "text": "Does an archived thread count as read?", "context": "Raised at chunk 9; the screen list says nothing.", "needs": "owner", "recommended": "answer" },
+    { "id": "Q-034", "text": "Is the IMAP idle timeout set by the user?", "needs": "developer" }
+  ]
+}
