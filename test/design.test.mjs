@@ -284,8 +284,11 @@ test("the question-pictures server is added to launch.json once, and a sheet und
   const theirs = JSON.parse(withViewServer(JSON.stringify({ version: "0.0.1", configurations: [{ name: "web", port: 5173 }] })));
   assert.deepEqual(theirs.configurations.map((c) => c.name), ["web", "question-pictures"]);
   assert.equal(withViewServer(JSON.stringify(theirs)), `${JSON.stringify(theirs, null, 2)}\n`);
-  assert.equal(viewAddress("/p", ".cache/view/sign in/sheet.html"), "http://127.0.0.1:8765/sign%20in/sheet.html");
-  assert.equal(viewAddress("/p", "/p/.cache/view/sheet.html"), "http://127.0.0.1:8765/sheet.html");
+  const { projectKey } = await import("../lib/design/view.mjs");
+  assert.match(projectKey("/p"), /^p-[0-9a-f]{6}$/);
+  assert.equal(viewAddress("/p", ".cache/view/sign in/sheet.html"), `http://127.0.0.1:8765/${projectKey("/p")}/sign%20in/sheet.html`);
+  assert.equal(viewAddress("/p", "/p/.cache/view/sheet.html"), `http://127.0.0.1:8765/${projectKey("/p")}/sheet.html`);
+  assert.notEqual(projectKey("/a/p"), projectKey("/b/p"), "two checkouts of one repository differ");
   assert.equal(viewAddress("/p", "/tmp/sheet.html"), null);
   assert.throws(() => withViewServer("[]"), /launch.json is not an object/);
   assert.throws(() => withViewServer("null"), /launch.json is not an object/);

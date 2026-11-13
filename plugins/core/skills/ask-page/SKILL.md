@@ -15,8 +15,8 @@ An ask page is one HTML page built from a JSON spec. The person answers in the b
 ## Steps
 
 1. Pick a template: `npx wf ask templates`. Start from its example: `npx wf ask example <template> > .cache/view/<id>.json`, then edit it.
-2. Build the page: `npx wf ask page .cache/view/<id>.json`. It checks the spec, copies the pictures, and prints the address.
-3. Start the `question-pictures` server from `.claude/launch.json` (the browser pane's preview start, by that name), and open the address in the pane.
+2. Build the page: `npx wf ask page .cache/view/<id>.json`. It checks the spec, copies the pictures, starts the shared server if none runs, and prints the address.
+3. Open the address in the browser pane. Where the pane's preview start is needed, start `question-pictures` from `.claude/launch.json`: it joins the shared server.
 4. Run `npx wf ask wait <id>` in the background. Say in one line that the page is open and what it asks; do not repeat the questions in the chat.
 5. When `wait` prints the answers, act on them. A partial send lists the open questions; carry on with what is answered, and wait again for the rest.
 6. Run `npx wf ask record <id>` when the spec marks decisions with `record`, or any answer is "Later".
@@ -76,3 +76,12 @@ Each answer has `choice`, `order`, `text`, or `decide` (`agent`: you decide, `la
 - `npx wf ask export <id>` writes one `.html` with the pictures inside, and the answers as `.md` and `.json`. Offline, the page saves an answers file for `wf ask import`.
 - Building the page again asks again: `wait` waits for a send after the build. Answers to the same page, pictures and all, stay filled in.
 - The server takes answers only from its own pages, on this machine: it listens on 127.0.0.1, refuses other host names, and needs the token it puts in each page it serves.
+
+## Many sessions at once
+
+One server serves every project, worktree, and session on the machine, so asks never clash.
+
+- **Addresses.** Each project is at `http://127.0.0.1:8765/<key>/`, where the key is its folder's name and a short hash; its pages and answers stay in its own `.cache/view`.
+- **The inbox.** `http://127.0.0.1:8765/` lists every ask, waiting first, with who asked: the repository, the branch or worktree, and the session. The tab title counts what waits.
+- **Ids.** A page another session is still waiting on is not replaced; pick another id, or pass `--replace` when it is truly yours.
+- **The server.** It runs on its own, detached, and stops after 12 idle hours; `wait` starts it again if it stopped. `npx wf view stop` stops it. Its log and registry are in `~/.local/state/freeorbit-workflow`.

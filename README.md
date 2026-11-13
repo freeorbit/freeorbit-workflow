@@ -58,7 +58,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
 | `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands` |
 | `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import` | Ask pages: any number of questions on one page in the browser pane, from eleven templates or the project's own in `.workflow/ask-templates/`, with pictures, boxes, pins, compare views, paging, bulk answers, and colour themes. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file. The `ask-page` skill has the spec |
-| `wf view serve \| setup` | The `question-pictures` server: serves `.cache/view` on 127.0.0.1 and takes an ask page's answers, with a per-run token. `setup` writes it into `.claude/launch.json`, replacing the old python file server |
+| `wf view serve \| stop \| setup` | The shared `question-pictures` server: one per machine on 127.0.0.1, serving each project's `.cache/view` at its own key, with an inbox of every ask at `/`, and taking answers with a per-run token. `serve` starts or joins it, `stop` ends it, `setup` writes it into `.claude/launch.json` |
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
 | `wf app <start \| run \| stop \| ...>` | Drives the project's app on Linux under a memory cap, from `app` in the config, with the project's `app.hooks`: a Tauri app through WebKit's inspector (`app.kind` tauri), or a web app's servers and a headless Chromium through its debugging protocol (web) |
 | `wf disk [--dry-run] [GB]` | Free disk space, and when short, removes only the leftovers in `disk`, cheapest first |
@@ -86,6 +86,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.49.1: many sessions ask at once
+
+- The `question-pictures` server is now one per machine, started on its own by `wf ask page` or `wf design annotate` and kept running apart from any session. Each project or worktree is served at `http://127.0.0.1:8765/<key>/`, so two sessions, projects, or worktrees no longer clash on the port or open each other's pages.
+- `http://127.0.0.1:8765/` is an inbox of every ask, waiting first, with the repository, branch or worktree, and session that asked. A page another session still waits on is not replaced without `--replace`.
+- Nothing to change in a project. Rebuild any open ask page with `npx wf ask page`, since its address now has the project's key. `npx wf view stop` stops the server.
 
 ### v0.49.0: ask pages
 

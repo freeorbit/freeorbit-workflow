@@ -47,6 +47,8 @@ textarea { resize: vertical; min-height: 2.4em; }
 .status.error { color: var(--bad); }
 .banner { margin: 12px 0; padding: 10px 12px; border: 1px solid var(--warn); border-radius: 8px; background: var(--panel); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .intro { margin: 12px 0 4px; white-space: pre-wrap; }
+.asker { font-size: .85rem; margin: 2px 0 0; }
+.asker a { color: inherit; }
 .bulk { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 10px; }
 .bulk .grow { flex: 1; }
 .sel { width: 18px; height: 18px; margin: 0; align-self: center; accent-color: var(--accent); }

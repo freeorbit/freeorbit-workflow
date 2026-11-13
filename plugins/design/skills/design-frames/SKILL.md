@@ -78,7 +78,7 @@ A question about a frame, a screen, or an image comes with its picture, sent jus
 - Kinds: `look` blue, `bug` red, `drift` amber, `ok` green, `new` purple for what is new or changed in a picture sent for review. When nothing fits, add a kind under `design.kinds` in `.workflow/config.json` with a `color`, `word`, and `use`. A kit kind is never changed and no two kinds share a colour; the command fails on either.
 - A comparison is one labelled sheet, such as the frame on the left and the app on the right. Several questions share one sheet, and each question says where to look, such as "sheet A, box 2".
 - The command also writes the sheet's `.html` page and an `index.html` beside it, and prints the page's address.
-- Where a browser pane is open beside the chat, put the sheet on an ask page with its questions, as the core `ask-page` skill says, or open the sheet's address from the `question-pictures` server in `.claude/launch.json`. `npx wf view setup` writes that server.
+- Where a browser pane is open beside the chat, put the sheet on an ask page with its questions, as the core `ask-page` skill says, or open the sheet's address that `wf design annotate` prints; it starts the shared `question-pictures` server when none runs.
 
 ## Compare the app with a frame
 
