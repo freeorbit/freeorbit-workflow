@@ -1,0 +1,128 @@
+/* Footer: the commit bar */
+footer.commit { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: color-mix(in srgb, var(--app) 90%, transparent); backdrop-filter: saturate(1.2) blur(10px); border-top: 1px solid var(--line); }
+.commit .row { height: var(--foot); max-width: 1280px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; gap: 8px; }
+.btn .short { display: none; }
+@media (max-width: 640px) {
+  .btn .long { display: none; }
+  .btn .short { display: inline; }
+  .commit .btn kbd { display: none; }
+  .commit .btn { padding: 0 10px; }
+  .commit .row { gap: 6px; }
+  .top .who { display: none; }
+}
+.commit .status { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.commit .status b { color: var(--text); font-weight: 600; }
+.commit .selbar { display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; overflow-x: auto; }
+.sendpanel { position: fixed; left: 50%; bottom: calc(var(--foot) + 10px); transform: translateX(-50%); z-index: 25; width: min(560px, calc(100vw - 32px)); background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--r-pop); box-shadow: var(--float); padding: 14px; }
+.sendpanel h3 { margin: 0 0 4px; font-size: 14px; }
+.sendpanel .choices { display: flex; gap: 16px; margin: 10px 0 12px; flex-wrap: wrap; font-size: 13px; }
+.sendpanel .choices label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.sendpanel .choices input { accent-color: var(--accent); }
+.sendpanel .acts { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Toast */
+.toast { position: fixed; left: 50%; bottom: calc(var(--foot) + 14px); transform: translate(-50%, 8px); opacity: 0; z-index: 30; display: flex; gap: 12px; align-items: center; padding: 8px 8px 8px 14px; border-radius: 10px; background: hsl(var(--text-000)); color: hsl(var(--bg-100)); font-size: 13px; box-shadow: var(--float); transition: opacity 200ms var(--ease), transform 200ms var(--ease); pointer-events: none; max-width: calc(100vw - 32px); }
+.toast.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast button { height: 28px; border: 0; border-radius: var(--r-ctl); padding: 0 10px; background: color-mix(in srgb, hsl(var(--bg-100)) 18%, transparent); color: inherit; font-weight: 600; cursor: pointer; }
+
+/* Popovers, dialogs, the palette */
+.pop { position: fixed; z-index: 40; min-width: 300px; max-width: min(380px, calc(100vw - 24px)); max-height: 70vh; overflow: auto; background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--r-pop); box-shadow: var(--float); padding: 6px; }
+.pop .h { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 8px 4px; }
+.pop .item { display: flex; gap: 10px; align-items: center; width: 100%; padding: 7px 8px; border: 0; background: transparent; border-radius: var(--r-ctl); text-align: left; cursor: pointer; font-size: 13px; color: var(--text); text-decoration: none; }
+.pop .item:hover, .pop .item.on { background: var(--hover); }
+.pop .item .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pop .item .s { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.pop .field { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 8px; font-size: 13px; }
+.pop .field.col { flex-direction: column; align-items: stretch; gap: 8px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.swatch-btn { width: 24px; height: 24px; border-radius: 50%; border: 0; background: var(--sw); cursor: pointer; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 15%); transition: transform 140ms var(--ease), box-shadow 140ms var(--ease); }
+.swatch-btn:hover { transform: scale(1.1); }
+.swatch-btn[aria-checked="true"] { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--sw); }
+.swatch-btn.own { width: auto; border-radius: 999px; padding: 0 9px; background: var(--sunk); color: var(--text-2); font-size: 11px; font-weight: 600; --sw: var(--accent); }
+.custom-accent { width: 28px; height: 26px; padding: 0; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel); cursor: pointer; }
+.custom-accent.on { box-shadow: 0 0 0 2px var(--accent); }
+.pop optgroup { font-weight: 600; }
+dialog { border: 1px solid var(--line-2); border-radius: var(--r-pop); background: var(--panel); color: var(--text); padding: 0; box-shadow: var(--float); max-width: min(96vw, 1400px); }
+dialog::backdrop { background: rgb(0 0 0 / 45%); }
+dialog.palette { width: min(620px, calc(100vw - 32px)); margin-top: 12vh; }
+.palette input { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 14px 16px; font-size: 15px; }
+.palette input:focus { box-shadow: none; }
+.palette .results { max-height: 50vh; overflow: auto; padding: 6px; }
+dialog.keys { padding: 18px 20px; width: min(560px, calc(100vw - 32px)); }
+dialog.keys h2 { margin: 0 0 10px; font-size: 15px; }
+dialog.keys table { border-collapse: collapse; font-size: 13px; width: 100%; }
+dialog.keys td { padding: 4px 8px 4px 0; vertical-align: top; }
+dialog.keys td:first-child { white-space: nowrap; width: 1%; }
+
+/* The receipt */
+.receipt h2 { font-size: 18px; line-height: 26px; margin: 0 0 4px; }
+.receipt .sub { color: var(--muted); margin: 0 0 16px; }
+.receipt .acts { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 20px; }
+.receipt ol { padding: 0; margin: 0; list-style: none; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); }
+.receipt li { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.receipt li:last-child { border-bottom: 0; }
+.receipt .q-t { font-weight: 600; }
+.receipt .a-t { color: var(--text-2); font-size: 13px; margin-top: 2px; }
+.receipt .a-t.open { color: var(--warn); }
+
+/* The inbox */
+.inbox { max-width: 780px; margin: 0 auto; padding: 24px 16px 64px; }
+.inbox h1 { font-size: 18px; line-height: 26px; margin: 0 0 2px; }
+.inbox .summary { color: var(--muted); margin: 0 0 16px; }
+.inbox .filters { display: flex; gap: 8px; margin: 0 0 12px; flex-wrap: wrap; }
+.item-row { display: block; text-decoration: none; color: inherit; background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--r-card); padding: 12px 14px; margin: 8px 0; transition: border-color 120ms var(--ease); }
+.item-row:hover, .item-row.cur { border-color: var(--accent); }
+.item-row:focus-visible { outline-offset: 2px; }
+.item-row .row1 { display: flex; gap: 10px; align-items: baseline; }
+.item-row .title { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-row .when, .item-row .meta2 { color: var(--muted); font-size: 12px; }
+.item-row .meta2 { margin-top: 2px; }
+.state { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--line-2); white-space: nowrap; }
+.state.waiting { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.state.partial { color: var(--warn); border-color: var(--warn); }
+.state.answered { color: var(--ok); }
+.item-row.answered { opacity: .72; }
+.sess { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 20px 0 6px; }
+
+/* Entrances: menus, dialogs, the send panel, notices, and the receipt */
+@keyframes wf-pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+@keyframes wf-rise { from { opacity: 0; transform: translate(-50%, 8px); } }
+@keyframes wf-fade-up { from { opacity: 0; transform: translateY(6px); } }
+@keyframes wf-fade { from { opacity: 0; } }
+.pop { animation: wf-pop 170ms var(--ease); transform-origin: top right; }
+dialog[open] { animation: wf-pop 200ms var(--ease); }
+dialog[open]::backdrop { animation: wf-fade 200ms var(--ease); }
+.sendpanel { animation: wf-rise 220ms var(--ease); }
+.notice { animation: wf-fade-up 240ms var(--ease); }
+.receipt:not([hidden]), .questions-in { animation: wf-fade-up 280ms var(--ease); }
+.item-row { animation: wf-fade 200ms var(--ease); }
+.badge, .tick { transition: background-color 160ms var(--ease), color 160ms var(--ease); }
+.outline a { transition: background-color 160ms var(--ease), color 160ms var(--ease); }
+.thumb { transition: outline-color 160ms var(--ease), transform 160ms var(--ease); }
+.thumb:hover { transform: translateY(-1px); }
+/* A frame changing: the old fades out to one side, the new comes in from the other. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 220ms; animation-timing-function: var(--ease); }
+@keyframes wf-out-left { to { opacity: 0; transform: translateX(-14px); } }
+@keyframes wf-in-right { from { opacity: 0; transform: translateX(14px); } }
+@keyframes wf-out-right { to { opacity: 0; transform: translateX(14px); } }
+@keyframes wf-in-left { from { opacity: 0; transform: translateX(-14px); } }
+:root[data-layout="pages"] .q.cur { view-transition-name: frame; }
+::view-transition-old(frame) { animation: wf-out-left 200ms var(--ease) both; }
+::view-transition-new(frame) { animation: wf-in-right 240ms var(--ease) both; }
+:root[data-dir="prev"]::view-transition-old(frame) { animation-name: wf-out-right; }
+:root[data-dir="prev"]::view-transition-new(frame) { animation-name: wf-in-left; }
+
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+@media print {
+  header.top, footer.commit, nav.rail, .meta, .vbar, .strip, .pager, .toast, .no-print { display: none !important; }
+  .q[hidden], .q { display: block !important; break-inside: avoid; }
+  body { background: #fff; color: #000; }
+  .stage-wrap { max-height: none; overflow: visible; }
+}
+
+/* What a page turns off: bulk selection, and the outline. */
+:root[data-off~="bulk"] .sel, :root[data-off~="bulk"] .toolbar > [role="checkbox"] { display: none !important; }
+:root[data-off~="outline"] nav.rail { display: none !important; }
+:root[data-off~="outline"] .shell { grid-template-columns: minmax(0, 1fr); }
+

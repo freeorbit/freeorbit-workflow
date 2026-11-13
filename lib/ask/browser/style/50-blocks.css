@@ -1,0 +1,50 @@
+/* Blocks: the parts a page shows around its questions */
+.blocks { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+.block-section { min-width: 0; background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 2px rgb(0 0 0 / 5%); }
+.block-section-title { font-size: 15px; line-height: 22px; margin: 0; }
+.section-head { margin: 0 0 4px; }
+.block-section > .questions-host { margin-top: 12px; }
+.block { margin: 14px 0 0; min-width: 0; }
+.block:first-child, .block-section-title + .block, .block-note + .block { margin-top: 8px; }
+.block-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.block-title { font-size: 13px; font-weight: 600; letter-spacing: .02em; margin: 0; flex: 1; min-width: 0; }
+.block-note { margin: 6px 0 0; }
+.block-empty { padding: 10px 0; }
+.prose { max-width: 70ch; line-height: 1.6; color: var(--text-2); }
+.prose h4, .prose h5, .prose h6 { color: var(--text); margin: 14px 0 4px; font-size: 14px; }
+.prose h4 { font-size: 15px; }
+.prose p { margin: 6px 0; }
+.prose ul, .prose ol { margin: 6px 0; padding-left: 22px; }
+.prose code { font: 12.5px/1.4 var(--mono); background: var(--sunk); padding: 1px 5px; border-radius: 4px; }
+.prose pre { background: var(--sunk); border-radius: var(--r-ctl); padding: 10px 12px; overflow: auto; }
+.prose pre code { background: none; padding: 0; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat { background: var(--app); border: 1px solid var(--line-2); border-radius: var(--r-card); padding: 10px 12px; border-left: 3px solid var(--line-3); }
+.stat.tone-ok { border-left-color: var(--ok); } .stat.tone-warn { border-left-color: var(--warn); } .stat.tone-bad { border-left-color: var(--bad); } .stat.tone-info { border-left-color: var(--info); }
+.stat-label { font-size: 12px; color: var(--muted); }
+.stat-value { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em; }
+.stat-note { font-size: 12px; color: var(--muted); }
+.table-tools { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; flex-wrap: wrap; }
+.table-tools .filter { max-width: 260px; padding: 5px 9px; font-size: 13px; }
+table.data td { white-space: normal; }
+table.data td, table.data th { opacity: 1 !important; }
+table.data .right { text-align: right; }
+button.sort { all: unset; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }
+button.sort:focus-visible { outline: 2px solid var(--accent); }
+th[aria-sort="ascending"] .arrow::after { content: "▲"; font-size: 9px; }
+th[aria-sort="descending"] .arrow::after { content: "▼"; font-size: 9px; }
+.diff-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 720px) { .diff-pair { grid-template-columns: 1fr; } }
+.diff-label { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
+.diff { background: var(--app); border: 1px solid var(--line-2); border-radius: var(--r-ctl); padding: 8px 0; font: 12.5px/1.55 var(--mono); overflow: auto; max-height: 60vh; }
+.diff.by-word { padding: 10px 12px; font-family: var(--font); font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+.d-line { padding: 0 12px 0 0; white-space: pre-wrap; display: flex; }
+.d-mark { width: 22px; text-align: center; color: var(--muted); flex: none; user-select: none; }
+.d-line.d-del { background: var(--bad-soft); } .d-line.d-del .d-mark { color: var(--bad); }
+.d-line.d-add { background: var(--ok-soft); } .d-line.d-add .d-mark { color: var(--ok); }
+del.d-del { background: var(--bad-soft); color: var(--bad); text-decoration: line-through; border-radius: 3px; }
+ins.d-add { background: var(--ok-soft); color: var(--ok); text-decoration: none; border-radius: 3px; }
+/* Inline, a word taken out and the word put in sit apart, so they read as two. */
+.diff.inline.by-word del.d-del, .diff.inline.by-word ins.d-add { padding: 0 2px; }
+.diff.inline.by-word del.d-del + ins.d-add { margin-left: .3em; }
+

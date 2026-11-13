@@ -87,6 +87,19 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.54.1: fixes from the code review of blocks and richer answers
+
+- **Exports.** A CSV export no longer carries spreadsheet formulas. A cell starting with `=`, `+`, `-`, `@`, a tab, or a return opens as text, unless it is a plain number.
+- **Ledger tables.** A `ledger` table shows only open findings: proposed, accepted, or deferred, as the ledger's own script counts them. Fixed findings are left out.
+- **Scale numbers.** A scale's number box takes only a number on its step, by the same rule the server checks, so a send is never refused for 2.5 on a whole-number scale.
+- **Limits.** Limits are checked before the work they guard: more than 60 blocks, 30 edits, or a diagram over 40 boxes or 80 links is refused before anything is worked out, and a long chain of boxes cannot overflow the stack. A word diff's limit counts what it compares.
+- **Log paths.** A table's named source reads its log only inside the project, through no link that leads out.
+- **Inside the kit.**
+  - Each block kind is one record, in the spec checks (`BLOCK_DATA`) and on the page (`BLOCKS`).
+  - The page's styles are parts under `lib/ask/browser/style/`.
+  - The page and the record share one count of how far a grid, a sort, or edits has got.
+- Nothing to change in a project. Rebuild any open ask page with `npx wf ask page`.
+
 ### v0.54.0: the review's verify pass is optional, and off by default
 
 - `review.verify` in `.workflow/config.json` turns on the third review pass, which tries to disprove each draft finding on another model before the reviewer sees them. It is `false` by default: the security and structure passes' drafts go to the reviewer as written, and the run's summary says no verify pass ran.

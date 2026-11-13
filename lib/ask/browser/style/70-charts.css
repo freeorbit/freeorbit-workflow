@@ -1,0 +1,51 @@
+/* --- charts, diagrams, timelines, boards ---------------------------------------
+ * The series colours, in a fixed order checked for colour-blind separation
+ * against the page's panel in each mode; light and dark are each chosen, not
+ * flipped. Three light ones sit under 3:1 on white, so every chart has its
+ * table view and a legend. */
+:root {
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-8: #e34948;
+}
+:root[data-mode="dark"] {
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+}
+.viz { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.viz-plot { position: relative; min-width: 0; border-radius: var(--r-ctl); }
+.viz-plot:focus-visible, .viz-diagram:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.viz-svg { display: block; overflow: visible; }
+.viz-svg text.num, .viz-svg text { font-variant-numeric: tabular-nums; }
+.viz-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-2); }
+.viz-key { display: inline-flex; align-items: center; gap: 6px; }
+.viz-key .key { width: 10px; height: 10px; border-radius: 3px; }
+.viz-key .key.line { height: 3px; width: 14px; border-radius: 2px; }
+.viz-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--panel); color: var(--text); border-radius: 8px; box-shadow: var(--float); padding: 7px 9px; font-size: 12px; min-width: 120px; max-width: 260px; }
+.viz-tip-h { font-weight: 600; margin-bottom: 4px; }
+.viz-tip-row { display: flex; align-items: center; gap: 6px; line-height: 18px; color: var(--text-2); }
+.viz-tip-row b { color: var(--text); font-weight: 600; }
+.viz-tip-row .key { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.viz-hits rect.on { fill: var(--hover); fill-opacity: .6; }
+.viz-numbers { margin-top: 2px; }
+.viz-diagram { overflow-x: auto; border-radius: var(--r-ctl); padding-bottom: 2px; }
+.viz-node { cursor: default; }
+.spark { margin: 4px 0 2px; height: 28px; }
+.spark svg { display: block; overflow: visible; }
+.timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+.timeline li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; position: relative; padding-bottom: 14px; }
+.timeline li:not(:last-child)::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: var(--line-2); }
+.timeline li.tl-done:not(:last-child)::before { background: var(--accent-line); }
+.tl-mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--sunk); color: var(--muted); border: 1px solid var(--line-2); }
+.tl-done .tl-mark { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.tl-now .tl-mark { color: var(--accent); border: 2px solid var(--accent); background: var(--panel); }
+.tl-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 14px; line-height: 22px; }
+.tl-date { font-size: 12px; color: var(--muted); }
+.tl-next .tl-head b { font-weight: 500; color: var(--text-2); }
+.board { display: grid; grid-template-columns: repeat(var(--n), minmax(170px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.board-lane { background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r-card); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.board-card { background: var(--panel); border: 1px solid var(--line-2); border-left: 3px solid var(--line-2); border-radius: 7px; padding: 7px 9px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.board-card.tone-ok { border-left-color: var(--ok); } .board-card.tone-warn { border-left-color: var(--warn); } .board-card.tone-bad { border-left-color: var(--bad); } .board-card.tone-info { border-left-color: var(--info); }
+.card-meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.card-meta .chip { margin-top: 0; }
+@media (max-width: 560px) { .board { grid-template-columns: repeat(var(--n), minmax(150px, 80vw)); } }
+@media print { .viz-tip { display: none; } }
