@@ -193,7 +193,7 @@ nav.rail { display: none; }
 .sketch[open] summary::before { content: "▾ "; }
 .sketch pre { margin: 6px 0 0; padding: 10px; background: var(--sunk); border-radius: var(--r-ctl); overflow: auto; max-height: 320px; font: 12.5px/1.45 var(--mono); }
 .list .opt { padding-top: 7px; padding-bottom: 7px; }
-.other-text { margin: 6px 0 0 28px; }
+input.other-text { margin: 6px 0 0 28px; width: calc(100% - 28px); }
 
 /* The quiet row: You decide, Later, + Note */
 .meta { display: flex; gap: 2px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
@@ -253,7 +253,8 @@ nav.rail { display: none; }
 .fold-line { grid-template-rows: 0fr; opacity: 0; }
 .q.is-folded .fold-body { grid-template-rows: 0fr; opacity: 0; }
 .q.is-folded .fold-line { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
-.fold-line > div, .fold-body > div { min-height: 0; overflow: hidden; padding: 4px; margin: -4px; }
+/* clip, not hidden: a clipped box can never be scrolled, so focusing something inside it cannot shift it sideways. */
+.fold-line > div, .fold-body > div { min-height: 0; overflow: clip; overflow-clip-margin: 6px; }
 .q.is-folded { margin-bottom: 14px; }
 .q { transition: margin 280ms var(--ease); }
 .tick.open { background: transparent; border: 1.5px solid var(--line-3); }
@@ -278,7 +279,8 @@ nav.rail { display: none; }
 /* Pictures and compare */
 .viewer { margin-top: 12px; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); overflow: hidden; }
 .vbar { display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 10px; border-bottom: 1px solid var(--line); flex-wrap: wrap; min-height: 42px; }
-.vbar .size { font-size: 12px; color: var(--muted); }
+.vbar .size { font-size: 12px; color: var(--muted); white-space: nowrap; }
+@media (max-width: 860px) { .vbar .size:not(.diff) { display: none; } }
 .vbar .size.diff { color: var(--warn); }
 .vbar input[type="range"] { width: 160px; accent-color: var(--accent); }
 .stage-wrap { background: var(--backdrop); padding: 14px; overflow: auto; max-height: 76vh; overscroll-behavior: contain; }
@@ -340,7 +342,12 @@ table.rows tr:last-child td { border-bottom: 0; }
 table.rows th { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--sunk); }
 table.rows tr.cur td { background: var(--accent-soft); }
 table.rows tr.ok-row td:not(.verdict-cell) { opacity: .62; }
-table.rows .note-cell input { min-width: 140px; padding: 4px 8px; font-size: 13px; }
+table.rows .note-cell input { min-width: 80px; padding: 4px 8px; font-size: 13px; }
+table.rows td:nth-child(2) { min-width: 150px; }
+table.rows .seg button { padding: 0 8px; }
+table.rows .seg kbd { display: none; }
+table.rows td:not(:nth-child(2)):not(.note-cell) { white-space: nowrap; }
+table.rows th:first-child, table.rows td:first-child { width: 1%; padding-right: 0; }
 
 /* Rank */
 ol.rank { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: var(--gap-opt); }
@@ -353,6 +360,15 @@ ol.rank .handle { cursor: grab; color: var(--muted); padding: 0 4px; }
 /* Footer: the commit bar */
 footer.commit { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: color-mix(in srgb, var(--app) 90%, transparent); backdrop-filter: saturate(1.2) blur(10px); border-top: 1px solid var(--line); }
 .commit .row { height: var(--foot); max-width: 1280px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; gap: 8px; }
+.btn .short { display: none; }
+@media (max-width: 640px) {
+  .btn .long { display: none; }
+  .btn .short { display: inline; }
+  .commit .btn kbd { display: none; }
+  .commit .btn { padding: 0 10px; }
+  .commit .row { gap: 6px; }
+  .top .who { display: none; }
+}
 .commit .status { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .commit .status b { color: var(--text); font-weight: 600; }
 .commit .selbar { display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; overflow-x: auto; }
