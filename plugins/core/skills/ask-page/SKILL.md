@@ -90,7 +90,7 @@ Every template shares one layout: a header with the title, who asked, the draft 
 - **Look.** Themes use Claude Desktop's own colour tokens: its theme and palettes when it is installed, and the kit's six, each light and dark. Any theme takes an accent, a text size, and a density.
 - **Motion.** Things glide, open and close, and charts draw in. Motion in the ⋯ menu is System (the computer's setting for less motion), Full, Subtle, or Off; `off: ["motion"]` turns it off.
 - **Separation.** Each section is one panel by default, its questions split by hairlines; Cards, Lines, and Bands are in the settings.
-- **Folding.** Answered questions fold to one line; Expand all (E), Collapse all (⇧E), or Fold answered changes that, and Select all (⇧X) selects every question for one bulk answer.
+- **Folding.** Questions start expanded; Fold answered or Collapse all (⇧E) changes that, and Select all (⇧X) selects every question. Settings are kept until Reset settings.
 - **Wording.** A question is at most 160 characters, a label 60, a reason 200, and an option's description 160. Where the person asked for more detail, or the question opens follow-ups, `explain: true` gives its reasons and descriptions room.
 
 ## More, read when the page needs it

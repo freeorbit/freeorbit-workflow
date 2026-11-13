@@ -105,6 +105,9 @@ Each kit version that changes a project's own files says what to do here. After 
   - a frame against the app with no compare pair.
 
   On Freeorbit's `38f2-review` page it names all three.
+- **Settings are kept.** Questions now start expanded (Expand all).
+  - How they fold, the zoom, and the compare view join the look in this browser's saved settings. Before, they were kept for one tab, and folding for one page.
+  - Every choice is kept until **Reset settings** in the ⋯ menu or the command list. Reset puts back the look, folding, zoom, compare view, inbox filters, and notifications, with an Undo.
 - Run `npx wf docs sync` for the new `AGENTS.md` lines.
 
 ### v0.59.0: fewer, plainer unit tests
