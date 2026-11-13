@@ -110,7 +110,7 @@ After the code review and the fixes for its findings, when UI files or frames ch
 7. **Fix or record.**
    - Fix a difference or fault now, and run those screens again.
    - A difference the designer accepts goes in the frame or in the decisions log, never only in the code.
-   - To ask the designer about a difference, send its pair first, made with `npx wf design annotate` with an amber `drift` or red `bug` box on it, and name where to look.
+   - To ask the designer about differences, use a `compare` ask page, one pair a difference, from `npx wf design annotate --ask` with an amber `drift` or red `bug` box, and the choice each needs as its question. Without a browser pane, send the annotate sheet first, and name where to look.
    - A fault you do not fix goes in the open questions log.
 8. **Report.** Tell the designer each screen read, with a line on what you saw, which lines came from a reader only, and what you did not read at full size. Give the reached count from the run's last line, and name any frame still waiting on this chunk.
 9. **Accept** only once every flagged screen was read and its faults fixed: `npx wf screens --accept`.

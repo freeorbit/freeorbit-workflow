@@ -42,7 +42,7 @@ Skip this question when nothing is missing.
 
 ### Then: which journeys?
 
-One batch, with the structured question tool, each question to the role that owns it:
+One batch, each question to the role that owns it, as the asking rules say: the question tool for four or fewer, else a `batch` ask page by role:
 
 - **Which journeys.**
   - After building, or when nothing was missing: offer all the built journeys (recommended), or one chunk's.
@@ -124,7 +124,7 @@ Do not touch `Last reviewed` or `Deep reviewed`. An E2E run is not a code review
 
 ## 7. Ask for verdicts
 
-Ask the reviewer once, with the structured question tool, in batches of about five: one question per new E2E- finding, with its ID, severity, title, and the evidence in a line. Options: Accept, fix now; Accept, fix later; Defer; Reject. Recommend one and say why. Write each answer with `npx wf ledger set <ID> --status <accepted|deferred|rejected> --decision "<answer>, <date>."`.
+Ask the reviewer once, as the asking rules say: the question tool for four or fewer, else one `triage` ask page with these options as its `verdicts`. One question per new E2E- finding, with its ID, severity, title, and the evidence in a line. Options: Accept, fix now; Accept, fix later; Defer; Reject. Recommend one and say why. Write each answer with `npx wf ledger set <ID> --status <accepted|deferred|rejected> --decision "<answer>, <date>."`.
 
 Accepted findings are work. Fix the small ones now with the owner's yes, and replay their steps to show the fix. A larger one is proposed as a session of its own. A fixed one becomes `fixed` with the commit in its note, and the next code review or E2E run confirms it.
 

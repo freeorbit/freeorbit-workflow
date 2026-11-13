@@ -87,6 +87,33 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.61.0: every template has its moment
+
+- **One table.** The `ask-page` skill's "Which part for which question" now covers every template, question type, and block. Each template's items moved to the skill's `reference/templates.md`. For example:
+  - `batch` for several roles;
+  - `triage` for the open questions, or review findings with their verdicts;
+  - `rank` for an order, `plan` to approve, and `signoff` to close a chunk;
+  - `naming` for words, and `testdata` for rule rows;
+  - `compare`, `frame-review`, or `storyboard` for screens, and `status` while a step runs.
+- **Each moment names its template:**
+  - chunk start: a `batch` page by role, the order a `rank` question, open questions on `triage`, and a plan on `plan`;
+  - what the owner checks by hand at chunk end: `signoff`;
+  - the build order: `rank`;
+  - a story check: `batch`;
+  - test-data rules: a `testdata` page;
+  - code review and E2E verdicts: `triage` with their verdicts;
+  - screen-review differences: a `compare` page from `annotate --ask`.
+
+  The e2e skill no longer asks in fixed batches of five; it follows the asking rules.
+- **Template advice.** `wf ask page` now prints it:
+  - a decision page asking several roles (batch);
+  - open questions (triage), or the same accept or reject on many items (triage with verdicts);
+  - pictures each given a verdict (frame-review or compare);
+  - a question that judges several rules at once (testdata).
+
+  On Freeorbit it names `38f-rules`, where each category's rules are accepted together.
+- Run `npx wf docs sync` for the workflow docs.
+
 ### v0.60.0: ask pages use their parts for pictures
 
 - **`wf design annotate <spec> --ask`.** For an ask page, it draws no joined sheet.

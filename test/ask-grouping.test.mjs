@@ -81,3 +81,20 @@ test("picture advice: a joined sheet, a box the pictures do not have, and a fram
   assert.equal(pictureAdvice(page({ text: "Does the app match the frame?", compare: [pic(1280, 800), pic(1280, 800)] })).length, 0);
   assert.equal(pictureAdvice(page({ pictures: [pic(1280, 800)] })).length, 0, "one screen is fine");
 });
+
+test("template advice: a decision page doing another template's job is pointed at that template", async () => {
+  const { templateAdvice } = await import("../lib/ask/spec.mjs");
+  const tq = (id, extra = {}) => ({ id, text: `Pick ${id}?`, options: [], pictures: [], compare: null, role: "", ...extra });
+  const page = (questions, template = "decision") => templateAdvice({ template, questions });
+  assert.match(page([tq("a", { role: "designer" }), tq("b", { role: "owner" }), tq("c", { role: "owner" })]).join(), /3 questions for 2 roles \(designer, owner\): a batch page/);
+  assert.match(page([tq("a", { text: "Q-012: still open?" }), tq("b", { text: "Q-013: x" }), tq("c", { text: "Q-020: y" })]).join(), /Q-012, Q-013, Q-020 are open questions: a triage page/);
+  const finding = (id) => tq(id, { options: [{ id: "accept-now" }, { id: "defer" }, { id: "reject" }] });
+  assert.match(page([finding("f1"), finding("f2"), finding("f3")]).join(), /3 questions accept or reject an item each: a triage page with those options as its verdicts/);
+  const judged = (id, compare) => tq(id, { pictures: compare ? [] : [{ image: "a.png" }], compare: compare ? [{}, {}] : null, options: [{ id: "ok", kind: "ok" }, { id: "bug", kind: "bug" }] });
+  assert.match(page([judged("a"), judged("b"), judged("c")]).join(), /3 pictures each given a verdict: a frame-review page/);
+  assert.match(page([judged("a", true), judged("b", true), judged("c", true)]).join(), /a compare page/);
+  const rules = tq("cat-time", { text: "Accept the Time rules (R-20, R-21, R-37)?" });
+  assert.match(page([rules], "batch").join(), /cat-time judges several rules in one question: a testdata page gives each rule its row/);
+  assert.deepEqual(page([tq("a", { role: "designer" }), tq("b", { role: "owner" }), tq("c", { role: "owner" })], "batch"), [], "a batch page is grouped by role already");
+  assert.deepEqual(page([tq("a"), tq("b")]), []);
+});
