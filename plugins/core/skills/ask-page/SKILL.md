@@ -23,6 +23,15 @@ An ask page is one HTML page built from a JSON spec. The person answers in the b
 
 No browser pane: send `wf ask export <id>`'s `.html` file, or ask in the chat. The person's Copy answers text, pasted into the chat, is read with `wf ask import` from a file holding it.
 
+## Grouping
+
+No limit on questions is no reason to ask them all at once. `wf ask page` prints Grouping advice where a page could be grouped better; act on it, or say why not.
+
+- **One page per moment.** Ask together what blocks the next piece of work. A question nothing waits on yet goes on a later page; a blocking one never waits behind it.
+- **By what the person thinks about together**: a screen, an area, a role. Each `group` says what it decides; groups go in the order the work will. Past about eight questions, use `sections`, or `steps: true` when they follow one another.
+- **One question for the same shape.** Three or more with the same options are one `grid`; several facts about one thing, one `form`; the same verdict on many items, `triage` or a table; a choice that matters only after another answer, a `showIf` follow-up.
+- **Answerable in a few minutes**, about a dozen answers. Past that, steps, or a second page once the first is answered.
+
 ## Templates
 
 | Template | Items field | Each item becomes |
@@ -41,16 +50,6 @@ No browser pane: send `wf ask export <id>`'s `.html` file, or ask in the chat. T
 | `status` | `questions`, which may be none | A live page: where a step stands while it runs, with any questions as written |
 
 A paged template (`compare`, `frame-review`, `storyboard`) shows one item at a time, with a strip of every item and an all-at-once grid. `verdicts` in the spec replaces the template's options.
-
-## A template of the project's own
-
-When none of the templates fits a question that will come back, such as a dependency review, propose a project template to the owner. Ask first; it is a file in the project, committed like any other.
-
-- **Where.** `.workflow/ask-templates/<name>.json`. `npx wf ask templates` lists it beside the kit's and names what is wrong with it.
-- **What.** Data only, never code: `name`, `use`, `layout` (`list`, `pages`, `groups`, `table`), `items` (the spec's field that lists them), `text` and `detail` with `{field}` and `{n}`, `type`, `options`, `advised`, `pins`, `defer`, `other`, `groupBy`, and `columns` for a table.
-- **Advised.** `advised: true` holds its choices to the asking rules: a recommendation, why, and what each option means.
-- **The example.** `project-template/dependency-review.json` beside this skill, and the spec that uses it.
-- **Why not code.** The page takes answers on this machine; a template that ran its own script could send anything. A layout the kit lacks is a change to the kit.
 
 ## The spec
 
@@ -83,6 +82,8 @@ Every template shares one layout: a header with the title, who asked, the draft 
 
 - **[Blocks](reference/blocks.md).** Sections of text, tiles, tables, diffs, charts, diagrams, timelines, and boards around the questions, with their exports and what turns off.
 - **[Answer types](reference/answer-types.md).** Scale, grid, buckets, edits, and form questions; follow-ups with `showIf`, owners, and boxes on pictures.
+- **[A project's own templates](reference/project-templates.md).** A template kept as data in `.workflow/ask-templates/`, checked like the kit's.
+- **[Many sessions](reference/many-sessions.md).** One server for every project and session, the inbox, ids, and stopping the server.
 - **[Live pages](reference/live.md).** A status page you update while a step runs, a reply under a question, history, what changed, step-by-step pages, and the waiting count and notifications.
 
 ## Answers
@@ -95,11 +96,3 @@ Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, 
 - Building the page again asks again: `wait` waits for a send after the build. Answers to the same page, pictures and all, stay filled in.
 - The server takes answers only from its own pages, on this machine: it listens on 127.0.0.1, refuses other host names, and needs the token it puts in each page it serves.
 
-## Many sessions at once
-
-One server serves every project, worktree, and session on the machine, so asks never clash.
-
-- **Addresses.** Each project is at `http://127.0.0.1:8765/<key>/`, where the key is its folder's name and a short hash; its pages and answers stay in its own `.cache/view`.
-- **The inbox.** `http://127.0.0.1:8765/` lists every ask, waiting first, with who asked: the repository, the branch or worktree, and the session. The tab title counts what waits.
-- **Ids.** A page another session is still waiting on is not replaced; pick another id, or pass `--replace` when it is truly yours.
-- **The server.** It runs on its own, detached, and stops after 12 idle hours; `wait` starts it again if it stopped. `npx wf view stop` stops it. Its log and registry are in `~/.local/state/freeorbit-workflow`.
