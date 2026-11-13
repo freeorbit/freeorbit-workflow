@@ -2,7 +2,7 @@
 name: code-review-ledger
 description: >-
   Runs the read-only code review: scans, the code-reviewer agent in security
-  and structure modes, a verify pass on another model, then asks the reviewer
+  and structure modes, an optional verify pass on another model, then asks the reviewer
   for a verdict on each finding and keeps the findings ledger. Use at chunk end
   before the commit proposal, and for any review, security, CVE, dependency, or
   structure check.
@@ -47,7 +47,7 @@ It empties `.cache/review-scan`, writes `scope.txt`, runs the `every` scans, the
 
 ## 2. Review
 
-Models come from `review.models`. In Claude Code, pass them to each subagent. In OpenCode, run both review passes on the session model and verify on an available fully qualified `provider/model` different from it; if there is none, ask rather than verifying with the same model, and record the run as light.
+Models come from `review.models`. In Claude Code, pass them to each subagent. In OpenCode, run both review passes on the session model; with `review.verify` on, verify on an available fully qualified `provider/model` different from it, and if there is none, ask rather than verifying with the same model, and record the run as light.
 
 Run the `code-reviewer` agent twice, in parallel. The prompt holds only these lines, naming each scanner file, because search tools can skip a gitignored folder. Add nothing of your own about the code:
 
@@ -63,7 +63,9 @@ Leave out the `Diff` line when no diff was written.
 
 ## 3. Verify
 
-Merge the New and Changed sections of both deltas into one list of drafts and run `code-reviewer` once more, on the verify model:
+Merge the New and Changed sections of both deltas into one list of drafts. With `review.verify` off, the default, the drafts go on to step 4 as the two passes wrote them; say in the summary that no verify pass ran.
+
+With it on, run `code-reviewer` once more, on the verify model:
 
 ```text
 Mode: verify

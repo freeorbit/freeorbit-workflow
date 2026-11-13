@@ -18,6 +18,13 @@ test("a project's settings lay over the defaults, objects by key and lists whole
   assert.deepEqual(merged.stories.files, DEFAULTS.stories.files);
 });
 
+test("the review's verify pass is off unless a project turns it on", () => {
+  assert.equal(DEFAULTS.review.verify, false);
+  assert.ok(REASONS["review.verify"], "the default says why");
+  assert.equal(merge(DEFAULTS, { review: { verify: true } }).review.verify, true);
+  assert.deepEqual(unknownKeys({ review: { verify: true } }), []);
+});
+
 test("an unknown key is named, so a typo is not silently ignored", () => {
   assert.deepEqual(unknownKeys({ docs: { blockWord: 50 }, extra: 1, team: "solo" }), ["docs.blockWord", "extra"]);
   assert.deepEqual(unknownKeys({ decisions: { mine: "owner" }, testdata: { commands: { route: "x" }, comand: {} } }), ["testdata.comand"]);
