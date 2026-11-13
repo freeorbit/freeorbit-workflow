@@ -7,7 +7,7 @@ Writes <output folder>/structure.txt. Each line is a fact for the reviewer to
 judge, not a finding. With a list, only those paths are reported.
 
 This is the scan for a Rust and TypeScript project laid out like Freeorbit: it
-counts .rs, .ts, and .tsx files, skips bindings.ts, docs/, and
+counts .rs, .ts, and .tsx files, and the tests in them and in .test.* files, skips bindings.ts, docs/, and
 tools/testdata/fixtures/, and reads tokens.css for inline styles. A project on
 another stack lists its own structure scan under review.scans.structure.
 """
@@ -27,6 +27,8 @@ FOLDER_OVER = 10
 RECENT_COMMITS = 40
 MOST_CHANGED = 15
 GETTER = 3
+SAME_SHAPE = 3
+MOST_TESTS = 10
 
 CODE = (".rs", ".ts", ".tsx")
 GENERATED = "bindings.ts"
@@ -34,6 +36,10 @@ NO_NAMES = {"utils", "helpers", "misc", "common", "constants", "enums", "interfa
 RUST_FN = re.compile(r"^(\s*)(pub(?:\([a-z]+\))? )?(?:async )?fn (\w+)")
 TS_FN = re.compile(r"^(\s*)(export )?(?:default )?(?:async )?function (\w+)")
 COLOR = re.compile(r"#[0-9a-fA-F]{3,8}\b|\brgba?\(")
+RUST_TEST = re.compile(r"^\s*#\[(?:tokio::)?test\b")
+JS_TEST = re.compile(r"^(\s*)(?:it|test)(?:\.\w+)?\(\s*([\"'`])(.*?)\2")
+JS_TESTS = (".test.ts", ".test.tsx", ".test.mjs", ".test.js")
+VALUES = re.compile(r"\"(?:[^\"\\]|\\.)*\"|'(?:[^'\\]|\\.)*'|`[^`]*`|\b\d+(?:\.\d+)?\b")
 
 
 def tracked():
@@ -112,6 +118,70 @@ def scan_code(path, report):
             report["ui"].append(f"{path}:{at} inline style")
 
 
+def rust_tests(lines):
+    """Each Rust test as (line, name, body): the function after #[test]."""
+    out = []
+    for at, line in enumerate(lines):
+        if not RUST_TEST.match(line):
+            continue
+        for start in range(at + 1, min(at + 4, len(lines))):
+            match = RUST_FN.match(lines[start])
+            if match:
+                indent = match.group(1)
+                end = next((e for e in range(start + 1, len(lines)) if lines[e].startswith(indent + "}")), len(lines) - 1)
+                out.append((start + 1, match.group(3), "\n".join(lines[start + 1:end])))
+                break
+    return out
+
+
+def js_tests(lines):
+    """Each node:test, vitest, or jest test as (line, name, body)."""
+    out = []
+    for at, line in enumerate(lines):
+        match = JS_TEST.match(line)
+        if not match:
+            continue
+        indent = match.group(1)
+        end = next((e for e in range(at + 1, len(lines)) if lines[e].startswith(indent + "})")), len(lines) - 1)
+        out.append((at + 1, match.group(3), "\n".join(lines[at + 1:end])))
+    return out
+
+
+CALL = re.compile(r"\b([A-Za-z_]\w*!?)\s*\(")
+
+
+def shape(body):
+    """A test's skeleton: the calls and asserts it makes, in order, with every
+    value left out. Two tests with one skeleton set up, act, and check the same
+    way, and differ only in what they pass: one table could hold them."""
+    calls = CALL.findall(VALUES.sub("V", body))
+    return " ".join(calls) if len(calls) >= 3 else ""
+
+
+def scan_tests(paths, report):
+    """Tests per file, and tests in one file that differ only in their values (CS-TEST)."""
+    counts = []
+    for path in paths:
+        if not (path.endswith(".rs") or path.endswith(JS_TESTS)) or not Path(path).exists():
+            continue
+        lines = Path(path).read_text(encoding="utf-8", errors="replace").split("\n")
+        tests = rust_tests(lines) if path.endswith(".rs") else js_tests(lines)
+        if not tests:
+            continue
+        counts.append((len(tests), path))
+        groups = {}
+        for line, name, body in tests:
+            skeleton = shape(body)
+            if skeleton:
+                groups.setdefault(skeleton, []).append((line, name))
+        for same in groups.values():
+            if len(same) >= SAME_SHAPE:
+                names = ", ".join(name for _, name in same[:6]) + (", …" if len(same) > 6 else "")
+                report["same"].append(f"{path}:{same[0][0]} {len(same)} tests differ only in their values: {names}")
+    for n, path in sorted(counts, reverse=True)[:MOST_TESTS]:
+        report["tests"].append(f"{path}: {n} tests")
+
+
 def scan_css(path, report):
     """Colors written by hand, outside the token file."""
     if path.endswith("tokens.css"):
@@ -159,7 +229,7 @@ def main():
         keep = set(Path(sys.argv[2]).read_text().split())
         paths = [path for path in paths if path in keep]
     code = [path for path in paths if path.endswith(CODE) and Path(path).exists()]
-    keys = ["size", "functions", "comments", "errors", "unwinds", "ui", "folders", "names", "changed"]
+    keys = ["size", "functions", "comments", "errors", "unwinds", "ui", "folders", "names", "same", "tests", "changed"]
     report = {key: [] for key in keys}
     for path in code:
         scan_code(path, report)
@@ -168,6 +238,7 @@ def main():
             scan_css(path, report)
     scan_folders(code, report)
     scan_names(code, report)
+    scan_tests(paths, report)
     most_changed(code, report)
     titles = {
         "size": "File size (CS-SIZE, Rust counted above its tests)",
@@ -178,6 +249,8 @@ def main():
         "ui": "Inline styles and hard-coded colors (CS-UI)",
         "folders": "Folders past the line (CS-FOLDER)",
         "names": "File names not allowed (CS-NAME, CS-TYPES)",
+        "same": "Tests that differ only in their values, one table each (CS-TEST)",
+        "tests": "Most tests in one file",
         "changed": "Most changed lately, read these first",
     }
     with open(folder / "structure.txt", "w", encoding="utf-8") as out:

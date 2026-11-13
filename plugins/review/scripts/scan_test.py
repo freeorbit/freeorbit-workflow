@@ -47,6 +47,17 @@ TREE = {
     "docs/page.rs": "fn a() {}\n" * 900,
     "tools/testdata/fixtures/x.rs": "fn a() {}\n" * 900,
     "crate/tests/whole.rs": "fn a() {}\n" * 900,
+    # Three tests of one shape, which one table could hold, and one that differs.
+    "src/dates.rs": (
+        "/// Said.\npub fn due(d: u32) -> u32 {\n    d\n}\n"
+        "#[cfg(test)]\nmod tests {\n"
+        + "".join(f"    #[test]\n    fn case_{n}() {{\n        assert_eq!(due(parse(\"{n}\")), parse(\"{n + 1}\"));\n        check(due({n}));\n    }}\n" for n in range(3))
+        + "    #[tokio::test]\n    async fn other() {\n        let x = setup();\n        x.run().await;\n        assert!(x.done());\n    }\n}\n"
+    ),
+    "web/parts.test.mjs": (
+        "import { test } from 'node:test';\n"
+        + "".join(f"test('label {n}', () => {{\n  assert.equal(label(make({n})), name('{n}'));\n}});\n" for n in range(4))
+    ),
 }
 for i in range(11):
     TREE[f"many/m{i}.ts"] = "export const a = 1;\n"
@@ -107,6 +118,16 @@ class StructureScan(unittest.TestCase):
         # A whole test file is held to the higher line only, with no function
         # facts; it still counts among the most changed.
         self.assertNotIn("crate/tests/whole.rs", text.split("## Most changed")[0])
+
+    def test_tests_of_one_shape_and_the_most_tests_in_a_file(self):
+        text = self.scan()
+        same = self.section(text, "Tests that differ only in their values")
+        self.assertRegex(same, r"src/dates.rs:\d+ 3 tests differ only in their values: case_0, case_1, case_2\n")
+        self.assertRegex(same, r"web/parts.test.mjs:2 4 tests differ only in their values: label 0, label 1, label 2, label 3\n")
+        self.assertNotIn("other", same)
+        most = self.section(text, "Most tests in one file")
+        self.assertIn("src/dates.rs: 4 tests", most)
+        self.assertIn("web/parts.test.mjs: 4 tests", most)
 
     def test_long_functions_and_missing_comments(self):
         text = self.scan()

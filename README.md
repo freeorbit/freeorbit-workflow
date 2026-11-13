@@ -79,13 +79,27 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf signoffs [--bypass "<reason>"]` | The open questions under a chunk's heading, each waiting on its Needs role, and the `- [ ] needs <role>:` lines open in the pull request body; none in a solo project. `--bypass` lets a repository admin, one of `people`, merge past the open chunk questions with a line in the body, which counts only while gh confirms that admin |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
 
-The review module's `structure-scan.py` is the scan for a Rust and TypeScript project; another stack lists its own under `review.scans.structure`.
+The review module's `structure-scan.py` is the scan for a Rust and TypeScript project, including tests of one shape that one table could hold; another stack lists its own under `review.scans.structure`.
 
 A project adds its own checks and status lines with `extensions` in its config: modules that export `checks(context)` and `status(context)`.
 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.59.0: fewer, plainer unit tests
+
+- **CS-TEST** in `code-standards.md` now says:
+  - a rule is tested where it lives, and a caller gets one test that it uses the rule;
+  - tests that differ only in their values are one table (rstest or test-case in Rust, a loop or `test.each` in JavaScript), each row saying what it shows;
+  - a rule that holds for every input gets a property test (proptest, fast-check);
+  - a project that runs a mutation tool in `review.scans.full`, such as cargo-mutants or Stryker, prunes the tests that kill no mutant another test leaves alive.
+- **The structure scan** (`structure-scan.py`) adds two facts for the structure review:
+  - the tests in one file that differ only in their values, which one table could hold;
+  - the files with the most tests.
+
+  On Freeorbit it finds two such groups, in `dates.rs` and `takeout/archive.rs`. Its other tests vary in what they set up and check.
+- Run `npx wf docs sync` for the new CS-TEST lines.
 
 ### v0.58.0: test data lists an input's classes once
 

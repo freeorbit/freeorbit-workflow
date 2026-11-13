@@ -49,6 +49,10 @@ Nobody adds a rule here without a finding the reviewer accepted, or an owner dec
 - **CS-BOIL.** A simple feature does not need many files, wrappers, or registrations. A pattern that makes every new command or screen touch several layers for nothing is flagged.
 - **CS-ADD.** Adding a feature or a plugin touches few files. When a finding is about this, it lists the files a new feature had to touch.
 - **CS-TEST.** A test proves an acceptance line, a bug fix, or a limit (added 2026-11-01). A test that repeats what another test already proves is flagged. Keep the one closest to the behavior. A fix, a limit, or logic in the UI with no test is a gap (changed 2026-11-02).
+  - **A rule is tested where it lives** (added 2026-11-14). A caller gets one test that it uses the rule, never the rule's cases again.
+  - **Cases of one shape are one table.** Tests that differ only in their values become one test over rows, each row saying what it shows: rstest or test-case in Rust, a loop or `test.each` in JavaScript. A test-data spec's input classes are such a table. The structure scan lists tests of one shape.
+  - **A property for a rule that holds for every input**, such as a parser's round trip or a validator that never panics: one property test (proptest, fast-check) in place of many examples, keeping the examples of bugs it found.
+  - **A mutation tool prunes**, where the project runs one in `review.scans.full`, such as cargo-mutants or Stryker on the changed files. A test that kills no mutant another test leaves alive adds nothing.
 - **CS-PROOF.** A hash, a snapshot, or another recorded value becomes a check only once two fresh runs agree on it (added 2026-11-04). One run can record its own accident.
 - **CS-FMT.** Format only with what the project's check runs, and read a failing check's command before fixing it (added 2026-11-05). A formatter the check does not run rewrites files no one changed.
 <!-- wf:local structure-tests -->
