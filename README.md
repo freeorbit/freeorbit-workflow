@@ -85,6 +85,11 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.48.2: a page shot that takes more than one window is joined again
+
+- On the tauri kind, a `page <file>` step that needed more than one window, such as `wf screens`' narrow picture with the stress look, failed with `sh is not a function`: the part files were written, but the step that joins them with ImageMagick was handed a driver with no `sh`. The join now uses the kit's own.
+- Nothing to change in a project. A screen run that skipped its narrow-stress pictures can shoot them again; leftover `*.part<N>.png` files under `.cache/screens/` can be deleted.
+
 ### v0.48.1: the review gate passes with the ledger edit committed
 
 - `wf done chunk` and a chunk-end screen review passed only when the ledger's `Last reviewed` or `Deferred` line named HEAD itself, so committing the ledger edit with the chunk, as the `code-review-ledger` skill says, always failed the gate. They now also pass when the named commit is on HEAD's history and every commit after it changes only `logs.ledger` or `logs.ledgerClosed`. A change to any other file after it still needs another run or a deferral.
