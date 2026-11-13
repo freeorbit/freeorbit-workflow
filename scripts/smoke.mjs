@@ -23,7 +23,7 @@ const claudeHome = mkdtempSync(join(tmpdir(), "wf-smoke-claude-"));
 let failed = 0;
 
 function run(cmd, args, opts = {}) {
-  return spawnSync(cmd, args, { cwd: root, encoding: "utf8", env: { ...process.env, CLAUDE_CONFIG_DIR: claudeHome, GIT_AUTHOR_NAME: "Smoke", GIT_AUTHOR_EMAIL: "smoke@example.com", GIT_COMMITTER_NAME: "Smoke", GIT_COMMITTER_EMAIL: "smoke@example.com" }, ...opts });
+  return spawnSync(cmd, args, { cwd: root, encoding: "utf8", env: { ...process.env, WF_ASK_NO_SERVER: "1", WF_STATE_DIR: join(claudeHome, "wf-state"), CLAUDE_CONFIG_DIR: claudeHome, GIT_AUTHOR_NAME: "Smoke", GIT_AUTHOR_EMAIL: "smoke@example.com", GIT_COMMITTER_NAME: "Smoke", GIT_COMMITTER_EMAIL: "smoke@example.com" }, ...opts });
 }
 const wf = (...args) => run(process.execPath, [WF, ...args]);
 
@@ -103,7 +103,7 @@ await step("a question sheet", () => {
   expect(run("magick", ["-size", "640x400", "xc:#e8eef3", "in.png"]), "magick");
   writeFileSync(join(root, "spec.json"), JSON.stringify({ out: ".cache/view/smoke/sheet.png", pictures: [{ label: "A", name: "a picture", image: "in.png", boxes: [{ n: 1, kind: "look", rect: [20, 20, 200, 80] }] }] }));
   const out = expect(wf("design", "annotate", "spec.json"), "annotate").stdout;
-  if (!/127\.0\.0\.1:8765\/smoke\/sheet\.html/.test(out)) throw new Error(`no sheet address in: ${out}`);
+  if (!/127\.0\.0\.1:8765\/[a-z0-9-]+\/smoke\/sheet\.html/.test(out)) throw new Error(`no sheet address in: ${out}`);
 });
 
 await step("the web driver against a small page", async () => {
