@@ -87,6 +87,11 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.54.0: the review's verify pass is optional, and off by default
+
+- `review.verify` in `.workflow/config.json` turns on the third review pass, which tries to disprove each draft finding on another model before the reviewer sees them. It is `false` by default: the security and structure passes' drafts go to the reviewer as written, and the run's summary says no verify pass ran.
+- A project that wants the verify pass back sets `"review": { "verify": true }`. `review.models` still names the verify model for when it is on.
+
 ### v0.53.0: ask pages draw charts and diagrams
 
 - New blocks: `chart` (bar, stacked bar, or line, one axis, with a tooltip, the arrow keys, and a table view), `diagram` (boxes and arrows the kit lays out), `timeline` (done, now, and next), and `board` (cards in columns, read only). A stats tile's `trend` draws a sparkline.
