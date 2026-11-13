@@ -599,3 +599,87 @@ test("doctor and view setup read the server entry the same way", async () => {
   assert.equal(kind({ name: SERVER.name, runtimeExecutable: "node", runtimeArgs: ["mine.js"] }), "own");
   assert.equal(viewEntry({ configurations: [] }).kind, "none");
 });
+
+test("blocks: text is parsed into nodes, never HTML", async () => {
+  const { parseText } = await import("../lib/ask/blocks.mjs");
+  const nodes = parseText("## What changed\nSome **bold**, *slant*, and `code` <script>x</script>.\n\n- one\n- two\n\n1. first\n\n```\nraw <b>\n```");
+  assert.deepEqual(nodes.map((n) => n.k), ["h", "p", "ul", "ol", "pre"]);
+  assert.deepEqual(nodes[1].spans.map((s) => s.t), ["text", "b", "text", "i", "text", "code", "text"]);
+  assert.equal(nodes[1].spans.at(-1).s, " <script>x</script>.", "markup stays text, which the page draws as text");
+  assert.equal(nodes[4].text, "raw <b>");
+});
+
+test("blocks: a diff works out what was removed and added, by line or word", async () => {
+  const { diffOps } = await import("../lib/ask/blocks.mjs");
+  assert.deepEqual(diffOps("a\nb\nc", "a\nB\nc"), [{ op: "same", s: "a" }, { op: "del", s: "b" }, { op: "add", s: "B" }, { op: "same", s: "c" }]);
+  const words = diffOps("Add account now", "Connect an account now", "word");
+  assert.deepEqual(words.filter((o) => o.op === "del").map((o) => o.s.trim()), ["Add"]);
+  assert.equal(words.filter((o) => o.op !== "del").map((o) => o.s).join(""), "Connect an account now", "the after side reads back whole");
+  assert.equal(words.filter((o) => o.op !== "add").map((o) => o.s).join(""), "Add account now", "the before side reads back whole");
+});
+
+test("blocks: sections are checked, the questions go in one place, and a part is filled in", async () => {
+  const sources = (name) => (name === "open-questions" ? { columns: [{ key: "id", label: "ID" }], rows: [{ id: "Q-001" }], empty: "" } : null);
+  const parts = { checks: [{ type: "table", title: "Release {version}", columns: ["Check"], rows: [["ok"]] }] };
+  const base = { id: "a", title: "t", questions: [{ id: "q", text: "x" }] };
+  const run = (more, config = merge(DEFAULTS, {})) => normalize({ ...base, ...more }, {}, { config, parts, source: sources });
+  const good = run({ sections: [{ title: "S", blocks: [{ type: "stats", items: [{ label: "L", value: "1", tone: "ok" }] }, { type: "table", source: "open-questions" }, { type: "part", name: "checks", with: { version: "0.3" } }, { type: "questions" }] }] });
+  assert.deepEqual(good.problems, []);
+  assert.deepEqual(good.spec.sections[0].blocks.map((b) => b.type), ["stats", "table", "table", "questions"]);
+  assert.equal(good.spec.sections[0].blocks[2].title, "Release 0.3");
+  assert.deepEqual(good.spec.sections[0].blocks[1].rows, [["Q-001"]]);
+  const placed = run({ blocks: [{ type: "text", text: "hi" }] });
+  assert.equal(placed.spec.sections.at(-1).blocks[0].type, "questions", "with no questions block, they come after");
+  const bad = (more) => run(more).problems.join("\n");
+  assert.match(bad({ blocks: [{ type: "html", html: "<b>" }] }), /type is one of text, stats, table, diff, questions, part/);
+  assert.match(bad({ blocks: [{ type: "questions" }, { type: "questions" }] }), /one questions block at most/);
+  assert.match(bad({ blocks: [{ type: "table", source: "/etc/passwd" }] }), /no source \/etc\/passwd/);
+  assert.match(bad({ blocks: [{ type: "part", name: "missing" }] }), /no part missing/);
+  assert.match(bad({ blocks: [{ type: "stats", items: [{ label: "L", value: "1", tone: "shiny" }] }] }), /tone is ok, warn, bad, or info/);
+  assert.match(bad({ blocks: [{ type: "text", text: "x".repeat(4001) }] }), /at most 4000 characters/);
+  assert.match(bad({ blocks: [{ type: "table", columns: ["a"], rows: Array.from({ length: 501 }, () => ["x"]) }] }), /at most 500 rows/);
+  assert.match(bad({ blocks: [{ type: "text", text: "x" }], sections: [] }), /blocks or sections, not both/);
+  const nested = normalize({ ...base, blocks: [{ type: "part", name: "outer" }] }, {}, { parts: { outer: [{ type: "part", name: "checks" }], checks: parts.checks } }).problems.join();
+  assert.match(nested, /a part does not use a part/);
+});
+
+test("blocks: a page or a project turns block kinds and features off", () => {
+  const base = { id: "a", title: "t", questions: [{ id: "q", text: "x" }], blocks: [{ type: "text", text: "hi" }, { type: "stats", items: [{ label: "L", value: "1" }] }] };
+  const project = merge(DEFAULTS, { ask: { off: ["stats", "palette"] } });
+  const { spec, problems } = normalize({ ...base, off: ["bulk"], on: ["palette"] }, {}, { config: project });
+  assert.deepEqual(problems, []);
+  assert.deepEqual(spec.sections[0].blocks.map((b) => b.type), ["text"], "stats is off for the project");
+  assert.deepEqual(spec.off, ["bulk"], "palette came back on for this page");
+  assert.match(normalize({ ...base, off: ["everything"] }, {}, {}).problems.join(), /"everything" is not a block kind or a page feature/);
+});
+
+test("blocks: the named sources read the project's logs, and an absent one is an empty table", async () => {
+  const { sourcesFor } = await import("../lib/ask/sources.mjs");
+  const root = mkdtempSync(join(tmpdir(), "wf-ask-src-"));
+  const config = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }] });
+  const source = sourcesFor(root, config);
+  assert.match(source("open-questions").empty, /No docs\/log\/open-questions\.md/);
+  mkdirSync(join(root, "docs/log/decisions"), { recursive: true });
+  writeFileSync(join(root, config.logs.openQuestions), readFileSync(join(here, "fixtures/questions/open.md"), "utf8"));
+  assert.ok(source("open-questions").rows.length > 0);
+  writeFileSync(join(root, config.logs.ledger), "# Findings\n\n| ID | Severity | Status | Title | Where |\n| --- | --- | --- | --- | --- |\n| [SEC-001](#sec-001) | Medium | proposed | A | `a.mjs:1` |\n| [SEC-002](#sec-002) | Low | verified | B | `b.mjs:2` |\n\n## Open\n\n| ID | x |\n| --- | --- |\n| SEC-009 | not summary |\n");
+  assert.deepEqual(source("ledger").rows, [{ id: "SEC-001", severity: "Medium", status: "proposed", title: "A", where: "a.mjs:1" }]);
+  assert.equal(source("decisions").empty, "No decisions yet.");
+  assert.equal(source("../secrets"), null);
+});
+
+test("the block example and its part build", async () => {
+  const { projectParts } = await import("../lib/ask/index.mjs");
+  const dir = join(EXAMPLES, "../blocks");
+  const root = mkdtempSync(join(tmpdir(), "wf-ask-parts-"));
+  mkdirSync(join(root, ".workflow/ask-parts"), { recursive: true });
+  writeFileSync(join(root, ".workflow/ask-parts/release-checks.json"), readFileSync(join(dir, "release-checks.json")));
+  writeFileSync(join(root, ".workflow/ask-parts/bad.json"), "{}");
+  const { parts, problems } = projectParts(root);
+  assert.deepEqual(Object.keys(parts), ["release-checks"]);
+  assert.match(problems.join(), /bad\.json: a part is a list of blocks/);
+  const spec = JSON.parse(readFileSync(join(dir, "status.json"), "utf8"));
+  const out = normalize(spec, {}, { parts, source: () => ({ columns: [{ key: "id", label: "ID" }], rows: [], empty: "None." }) });
+  assert.deepEqual(out.problems, []);
+  assert.deepEqual(out.spec.sections.map((s) => s.blocks.map((b) => b.type).join(",")), ["stats,text,table", "table,table", "diff,diff,questions"]);
+});

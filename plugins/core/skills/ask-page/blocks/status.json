@@ -1,0 +1,49 @@
+{
+  "id": "chunk-12-status",
+  "title": "Chunk 12: where it stands",
+  "template": "decision",
+  "intro": "Where the accounts screen stands before its review, then one choice.",
+  "sections": [
+    {
+      "title": "Where it stands",
+      "blocks": [
+        { "type": "stats", "items": [
+          { "label": "Checks", "value": "12 of 14", "tone": "warn", "note": "Two screen checks drift" },
+          { "label": "Tests", "value": "391", "tone": "ok", "note": "All pass" },
+          { "label": "Open questions", "value": "3", "tone": "info" },
+          { "label": "Findings", "value": "1 Medium", "tone": "bad", "note": "SEC-014, open" }
+        ] },
+        { "type": "text", "text": "## What changed\nThe accounts list now has **tabs per provider**, and a long name no longer pushes the tags off the row.\n\n- The narrow screen still clips the tags on the Projects row.\n- `wf screens --deep` passes on every other screen." },
+        { "type": "part", "name": "release-checks", "with": { "version": "0.3.0" } }
+      ]
+    },
+    {
+      "title": "From the logs",
+      "blocks": [
+        { "type": "table", "title": "Open questions", "source": "open-questions" },
+        { "type": "table", "title": "Review findings still open", "source": "ledger" }
+      ]
+    },
+    {
+      "title": "The button's words",
+      "blocks": [
+        { "type": "diff", "title": "Accounts screen copy", "by": "word", "before": "Add account to start syncing your mail.", "after": "Connect an account to start syncing your mail." },
+        { "type": "diff", "title": "The empty state", "labels": ["Frame", "App"], "before": "No accounts yet.\nConnect one to start.\nYour mail stays on this computer.", "after": "No accounts yet.\nConnect an account to start.\nYour mail stays on this computer." },
+        { "type": "questions" }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "button",
+      "text": "Which words go on the add button?",
+      "type": "one",
+      "options": [
+        { "id": "add", "label": "Add account", "why": "Short and familiar; says nothing of what happens next." },
+        { "id": "connect", "label": "Connect an account", "why": "Says the app links an account the person already has." }
+      ],
+      "recommended": "connect",
+      "why": "It matches the empty state and says what happens."
+    }
+  ]
+}
