@@ -87,6 +87,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.57.0: ask pages group their questions
+
+- **The rule.** `AGENTS.md` now asks the agent to group what it asks: one page for what blocks the same piece of work, related questions together under what they decide, and questions of the same shape as one. The `ask-page` skill has a Grouping section on how.
+- **The advice.** `wf ask page` prints Grouping advice, and still builds the page:
+  - more than eight questions with no groups or sections;
+  - three or more written-out questions with the same options, which could be one grid;
+  - more than about fifteen answers, which could go step by step or on a second page.
+- **The skill.** A project's own templates and many sessions moved to the skill's `reference/`.
+- Run `npx wf docs sync` to bring the new `AGENTS.md` line in.
+
 ### v0.56.0: ask pages move smoothly
 
 - **What glides.** Rank items, bucket cards, sorted or filtered table rows, and inbox rows glide to their new place instead of jumping.

@@ -7,6 +7,7 @@ On this machine, decide what you can from the repo, these rules, and the chat. W
 - **How.** Ask at the fork. Recommend one option and say why. Stop only the work that depends on the answer. Their answer in a later message, or on an ask page, is the decision. An unstated assumption is not.
   - Up to four quick questions with no picture go to the structured question tool when it is available, or in the message.
   - More than four, or any visual question, go on an ask page, with the kit's `ask-page` skill: `npx wf ask page <spec>`, opened in the browser pane, then `npx wf ask wait <id>` in the background.
+  - Group them: one page for what blocks the same piece of work, related questions together under what they decide, and questions of the same shape as one. The skill says how.
 - **Show what a visual question is about.** A question about a frame, a screen, or an image comes with its picture. So does a picture sent for review, such as a new or redrawn frame.
   - Send the picture just before the question, so it stays in view while the question is open.
   - A comparison is one labelled picture, such as the frame on the left and the app on the right. Several questions share one labelled sheet.
