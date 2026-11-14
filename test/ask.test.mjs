@@ -112,6 +112,33 @@ test("a wide picture, table, or diff scrolls in its own box, never the page; pic
   assert.match(html, /base\.onzoom = \(\) => \{ over\.style\.width = base\.style\.getPropertyValue\("--w"\); \}/, "the swipe overlay is as wide as its picture, so the line and the cut agree past Fit");
 });
 
+test("short options sit in one row, shared ones are described once, and a picture and a table leave room", () => {
+  const S = answerSteps();
+  // A plan's verdicts describe nothing, so each question's options are one row.
+  const { spec: plan } = normalize(example("plan"));
+  assert.equal(S.sharedOptions(plan.questions), null, "the plan's last question has its own options");
+  assert.ok(plan.questions.every((q) => S.optionsInRow(q, null)));
+  // A decision's options each say what they mean, so they stay stacked.
+  const { spec: decision } = normalize(example("decision"));
+  assert.equal(S.optionsInRow(decision.questions[0], null), false);
+  // Three or more questions with the same described options: described once, then one row each.
+  const raw = example("triage");
+  assert.equal(S.sharedOptions(normalize(raw).spec.questions), null, "two questions describe their own");
+  raw.items.push({ ...raw.items[1], id: "Q-040" });
+  const { spec: triage } = normalize(raw);
+  const shared = S.sharedOptions(triage.questions);
+  assert.deepEqual(shared.map((o) => o.id), ["answer", "defer", "drop"]);
+  assert.equal(S.optionsInRow(triage.questions[0], shared), true);
+  // "Something else" brings its own description, so the options stay stacked.
+  assert.equal(S.optionsInRow({ ...plan.questions[0], other: true }, null), false);
+  const { root, view } = project(raw);
+  const html = readFileSync(buildPage(root, view, raw, KIT_KINDS).page, "utf8");
+  assert.match(html, /\.opts\.row \{ display: flex; flex-wrap: wrap;/);
+  assert.match(html, /:root:not\(\[data-layout="pages"\]\) \.viewer:not\(\.expanded\) \{ --fit-h: max\(36vh, 260px\); \}/, "a picture beside an answer leaves the answer on the screen");
+  assert.match(html, /:root\[data-layout="table"\] main\.content \{ max-width: 1240px; \}/, "a table page takes the window's width");
+  assert.match(html, /:root\[data-layout="table"\] nav\.rail \{ display: none; \}/, "with no rail of row ids beside it");
+});
+
 test("a page copies its pictures, hashes them, and keeps answers to the same page", () => {
   const raw = example("frame-review");
   const { root, view } = project(raw);

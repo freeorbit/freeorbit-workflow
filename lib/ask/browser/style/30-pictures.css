@@ -6,6 +6,8 @@
 .vbar .size.diff { color: var(--warn); }
 .vbar input[type="range"] { width: 160px; accent-color: var(--accent); }
 .stage-wrap { background: var(--backdrop); padding: 14px; overflow: auto; max-height: 76vh; overscroll-behavior: contain; }
+/* Beside a question's answer a picture fits about a third of the window, so the answer is on the same screen; a review's pages and Expand keep their room. */
+:root:not([data-layout="pages"]) .viewer:not(.expanded) { --fit-h: max(36vh, 260px); }
 .stage-wrap.pannable { cursor: grab; }
 .stage-wrap.panning { cursor: grabbing; user-select: none; }
 /* Expanded: the viewer fills a modal dialog over the whole window, and Fit uses its height. */
