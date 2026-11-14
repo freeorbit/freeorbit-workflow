@@ -58,7 +58,7 @@ An area's test data is the `test-data/` folder in its docs folder, one flow area
 - **Areas follow the flows**, which change less than the stories. A story in two flows reaches two files. Dataset ids, fixtures, and states are unique across the folder, so one file can name another's.
 - **An area stays reviewable.** The refresh that touches an area proposes the split or the merge that `npx wf doc:check` warns for:
   - a file past `testdata.limits.lines`, or a flow area past `testdata.limits.areaKB`;
-  - a folder that would fit in one file (`folder`), or a file too small to stand alone (`small`);
+  - a folder that would fit in one file (`folder`), or a file too small to stand alone (`small`), each with the `wf testdata merge` or `fold` command that does it;
   - fixtures past `testdata.limits.fixtures`.
 
   A file not yet split goes on `testdata.limits.loose` until it is.

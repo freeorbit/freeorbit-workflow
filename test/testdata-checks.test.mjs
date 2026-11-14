@@ -60,10 +60,11 @@ test("warnings: a file past a page, a flow area past its size, a folder too smal
   };
   const found = testdataWarnings(context(config({ testdata: { limits: { loose: [`${DIR}/old.md`] } } }), texts)).filter((w) => !/area-qualified/.test(w));
   assert.deepEqual(found, [
-    `${DIR}/thin/: 2 files, 65 lines in all, under 150; make it one file`,
-    `${DIR}/split/c.md: 8 lines, under 15; fold it into a sibling file`,
+    `${DIR}/thin/: 2 files, 65 lines in all; npx wf testdata merge ${DIR}/thin/ makes it one file of 66 lines`,
+    `${DIR}/split/c.md: 8 lines, under 15; npx wf testdata fold ${DIR}/split/c.md ${DIR}/split/b.md`,
     `${DIR}/big/: 41 KB, over 40; split it by dataset group, or into a folder of page-sized files`,
-    `${DIR}/big/: 2 files, 2 lines in all, under 150; make it one file`,
+    `${DIR}/big/a.md: 1 line, under 15; npx wf testdata fold ${DIR}/big/a.md ${DIR}/big/b.md`,
+    `${DIR}/big/b.md: 1 line, under 15; npx wf testdata fold ${DIR}/big/b.md ${DIR}/big/a.md`,
     `${DIR}/long.md: 101 lines, over 100, about a page; move a topic into a file of its own`,
     `${DIR}/rules.md:3: category "Stand-ins" (2 rules) is not the kit's or in testdata.categories`,
   ]);
@@ -186,3 +187,13 @@ test("check IDs: filled in file order from the area's last, never renumbered; a 
     `${DIR}/d.md:4: check ID "X-1" is not C-GM-<number>`,
   ]);
 });
+
+test("a folder is advised to become one file only when that file fits a page", () => {
+  const n = (count) => Array.from({ length: count }, (_, i) => `l${i}`).join("\n");
+  const sizes = { "a/README.md": 10, "a/x.md": 80, "b/README.md": 10, "b/x.md": 120 };
+  const texts = Object.fromEntries(Object.entries(sizes).map(([path, count]) => [`docs/plugins/uplink/test-data/${path}`, n(count)]));
+  const found = testdataWarnings(context(config(), texts));
+  assert.ok(found.some((w) => w === "docs/plugins/uplink/test-data/a/: 2 files, 90 lines in all; npx wf testdata merge docs/plugins/uplink/test-data/a/ makes it one file of 91 lines"), found.join("\n"));
+  assert.ok(!found.some((w) => w.startsWith("docs/plugins/uplink/test-data/b/: 2 files")));
+});
+

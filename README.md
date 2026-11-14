@@ -56,7 +56,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf scan full \| diff <since> [--light]` | The review's scans, from `review.scans` in the config, into `.cache/review-scan`, with the scope list and the diff |
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
-| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]` (spec rows no code names, and tests that name no row or story) `ids <area>` (an ID for every check without one), and `rename-ids [area] [--write]` (old IDs qualified with the area's prefix) |
+| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]` (spec rows no code names, and tests that name no row or story) `ids <area>` (an ID for every check without one), and `rename-ids [area] [--write]` (old IDs qualified with the area's prefix), and `merge <folder>` / `fold <file> <sibling>` (fewer files, every row kept) |
 | `wf id <ID> [--all]` | What an ID is, where it is defined, and each line that cites it, in docs and code; the patterns are in `docs/workflow/ids.md` |
 | `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import \| live \| reply \| history` | Ask pages: any number of questions on one page in the browser pane, from twelve templates or the project's own in `.workflow/ask-templates/`, with pictures, boxes, pins, compare views, paging, bulk answers, and colour themes. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file; `live` updates a status page while a step runs, `reply` answers under a question, and `history` lists every round sent. The `ask-page` skill has the spec |
 | `wf view serve \| stop \| setup` | The shared `question-pictures` server: one per machine on 127.0.0.1, serving each project's `.cache/view` at its own key, with an inbox of every ask at `/`, and taking answers with a per-run token. `serve` starts or joins it, `stop` ends it, `setup` writes it into `.claude/launch.json` |
@@ -87,6 +87,22 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.65.0: `wf testdata merge` and `fold`, from Freeorbit's scripts
+
+- **`npx wf testdata merge <folder> [--write]`** makes a flow area's folder one file, `<folder>.md`.
+  - Each table goes to the section its header names, in the formats doc's order, and tables with the same header in one section become one.
+  - A datasets file, or a file named for one part (`rules.md`, `data.md`, `states.md`, `gaps.md`, `checks.md`), goes whole, so a dataset keeps its own table.
+  - A topic file's lead stays, under an italic label of its topic. The README's file table goes.
+- **`npx wf testdata fold <file> <sibling> [--write]`** puts a small file into a sibling in its folder. The folder README's row for it joins the sibling's.
+- **Links.** A link inside the moved text is rewritten for its new place. A link to a sibling points at the section its text went to, labelled with that file's topic when the label was only its name. Every other doc's link to a file now gone points at the new one, and the docs index keeps one row for it.
+- **Safe by default.**
+  - Both are a dry run without `--write`. Nothing is written unless the data rows before and after are the same, and a merge never overwrites a file, ignored ones included.
+  - They work only on an area's test-data flow areas, and refuse a symbolic link. Links inside code are left as written.
+  - In the docs index, only a row the move made repeat another is dropped.
+- **doc:check** names the command. "Make it one file" comes only when the merge itself fits `testdata.limits.lines`. A fold names a sibling with room, a topic file before a named one.
+- **Measured on Freeorbit**, from before its own merges: 14 merges and 31 folds took the spec from 230 files to 128 (App 66 to 15, Uplink 90 to 69, Downlink 74 to 44), with every row kept and doc:check passing. Its own scripts reached 141.
+- **What changes in a project.** Run `npx wf docs sync`. Then run each command doc:check names, a dry run first, and commit per area.
 
 ### v0.64.1: rename-ids fixed from Freeorbit's first run, and a deep review
 

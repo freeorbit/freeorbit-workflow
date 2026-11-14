@@ -15,6 +15,8 @@
 //   wf testdata trace [area] [--all]   spec rows no code names, and tests that name no row or story
 //   wf testdata ids <area>             give every check without an ID its own, C-<prefix>-NN
 //   wf testdata rename-ids [area] [--write] [--all]   qualify old IDs with their area: R-12 to R-GM-12
+//   wf testdata merge <folder> [--write]           a flow area's folder as one file, every row kept
+//   wf testdata fold <file> <sibling> [--write]    a small file into a sibling in its folder
 //   wf ask <templates | example | page | wait | answers | record | export | import | live | reply | history> ...   ask a person on a page beside the chat
 //   wf view <serve | setup>   the question-pictures server, which serves .cache/view and takes an ask page's answers
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
@@ -163,10 +165,41 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
       return 2;
     }
     const root = projectRoot();
+    if (name === "merge" || name === "fold") {
+      // The kit's own steps: a dry run unless --write, and never a write that loses a row.
+      const { foldFile, mergeFolder, mergeLines } = await import("../lib/testdata-merge.mjs");
+      const { existsSync, mkdirSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } = await import("node:fs");
+      const { dirname, join } = await import("node:path");
+      const [first, second] = args.filter((a) => !a.startsWith("--"));
+      if (!first || (name === "fold" && !second)) {
+        console.log(name === "merge" ? "Usage: wf testdata merge <flow area folder> [--write]" : "Usage: wf testdata fold <small file> <sibling> [--write]");
+        return 2;
+      }
+      // An ignored file is not listed, so a merge asks the disk whether its file is there.
+      const ctx = { ...project(), exists: (path) => existsSync(join(root, path)) };
+      const found = name === "merge" ? mergeFolder(ctx, first) : foldFile(ctx, first, second);
+      const asked = args.includes("--write");
+      const write = asked && found.before === found.after;
+      let kept = [];
+      if (write) {
+        for (const [path, text] of found.writes) {
+          mkdirSync(dirname(join(root, path)), { recursive: true });
+          writeFileSync(join(root, path), text);
+        }
+        for (const path of found.removes) unlinkSync(join(root, path));
+        if (name === "merge") {
+          const folder = join(root, first.replace(/\/+$/, ""));
+          kept = readdirSync(folder);
+          if (!kept.length) rmdirSync(folder);
+        }
+      }
+      for (const line of mergeLines(found, { from: first, asked, write, limit: ctx.config.testdata.limits.lines, kept })) console.log(line);
+      return found.before === found.after ? 0 : 1;
+    }
     if (name === "rename-ids") {
       // The kit's own step: a dry run unless --write.
       const { renameIds, renameLines } = await import("../lib/testdata-rename.mjs");
