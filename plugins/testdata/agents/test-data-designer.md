@@ -34,7 +34,7 @@ The prompt names an area id, for example `uplink`, and a mode. First read `.work
 ## What you may read
 
 - The area's `overview.md`, `user-stories.md`, and `user-flows.md`, in its `docs` folder.
-- Its `test-data/core.md`, `formats.md`, and `README.md`, if they exist.
+- Its `test-data/core.md`, `formats.md`, and `README.md`, if they exist, the README's `## Dropped` table included.
 - On a refresh, the area files the prompt names, and only those. They were written blind. Reading them is not reading the implementation.
 - `test-data-formats.md`, and each file `testdata.reads` lists, such as the project's personas.
 - Public format specs and public documentation on the web: the specs the area's `formats.md` names, and a service's own help pages about its export format.
@@ -62,6 +62,7 @@ The owner reads every line of theirs, and may not know the domain. Volume is a c
 
 - **Who a row is for.** Give every check a Level and every rule a Type, as `test-data-formats.md` says. Core is a story's few promises; likely is what users often hit; rare is the unusual input or timing; polish is help text and labels. Add `+harm` where breaking it would leak or lose data, send something wrongly, or give legally wrong advice. A rule is `product` when it is how the app behaves, `safety` when it is a privacy or safety promise, and `craft` when it is how test data or stand-ins are built.
 - **Plain words for the owner.** A core or `+harm` check's Check cell, and a product rule, read as a person would say them: no code names, scenario ids, fixture names, or tokens. Those go in the check's Setup cell.
+- **Dropped stays dropped.** The `## Dropped` table in the area's README lists rows the owner dropped as not worth testing. Never propose one again, under its ID or in other words. If a changed story makes one matter again, ask the owner in a gap row.
 - **A glossary.** Each domain word an owner might not know, such as erasure or a regulator's name, gets a row in the area's `glossary.md`: `| Term | Plain meaning |`.
 
 - **Tables, not prose.** Rules, checks, fixtures, states, and gaps are rows in the tables `test-data-formats.md` gives, each rule with an ID and a category, each row citing its stories and rule IDs.
