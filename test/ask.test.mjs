@@ -106,6 +106,9 @@ test("a wide picture, table, or diff scrolls in its own box, never the page; pic
   assert.match(html, /dialog\.viewer-room/, "expanded pictures sit in a modal dialog, above the header and footer");
   assert.match(html, /calc\(var\(--fit-h, 72vh\)/, "Fit uses the expanded viewer's height");
   assert.match(html, /f: \(\) => ui\.toggleExpand/);
+  assert.match(html, /\.table-wrap \{ overflow: auto; max-height: 70vh;/, "a long table scrolls in its own box, both ways");
+  assert.match(html, /\.table-wrap thead th \{ position: sticky; top: 0;/, "with its header in view");
+  assert.doesNotMatch(html, /table\.rows td:not\(:nth-child\(2\)\):not\(\.note-cell\) \{ white-space: nowrap; \}/, "text columns wrap");
   assert.match(html, /base\.onzoom = \(\) => \{ over\.style\.width = base\.style\.getPropertyValue\("--w"\); \}/, "the swipe overlay is as wide as its picture, so the line and the cut agree past Fit");
 });
 

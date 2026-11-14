@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.67.3: long tables scroll in their own box
+
+- **A long or wide table** on an ask page (a test-data review, a grid question, a table block) now scrolls inside a box at most 70% of the window tall, both ways, with its header kept in view. Before, its sideways scroll bar sat at the table's foot, a page or more below.
+- **Every text column wraps.** Only the select box, the verdict, and the note keep to one line, so a review row with two text columns no longer runs off to the right.
+- **The review page's moved table** shows "Reworded as" only when the tags reworded the row, in place of repeating it.
+- **What changes in a project.** Rebuild open ask pages, or reload them after `npx wf view stop`.
+
 ### v0.67.2: a Glob may name its folder in the pattern
 
 - A blind agent's Glob that names its folder in the pattern, such as `docs/app/test-data/**/*.md` with no path, was judged as a search of the whole project and refused. The guard now reads the folder from the pattern's start, or the one file when it has no wildcard, and checks that. A pattern naming a folder off the agent's list is still refused.
