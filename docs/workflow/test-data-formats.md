@@ -18,7 +18,7 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 - **Not too many files.** A folder under about 150 lines (`testdata.limits.folder`) whose one file, without the README, would fit `testdata.limits.lines` is one file, and a file in a folder under about 15 lines (`testdata.limits.small`) folds into a sibling. `wf doc:check` advises both, naming the command: each file is a read and a link.
 - **Merging and folding.** `npx wf testdata merge <folder>` makes a folder one file, and `npx wf testdata fold <file> <sibling>` puts a small file into a sibling. Each table goes to the section its header names, and links to a file now gone are moved. Nothing is written without `--write`, nor unless every row is kept.
 - **One index row.** The docs index lists the area's `README.md`, or a folder's `README.md`, which links each file in it.
-- **Unique across the app.** Rule, check, gap, and dataset IDs carry the area's prefix, such as `R-GM-09`, so no two areas share one. Fixtures, states, and inputs are named once in the whole app. [ids.md](ids.md) has every pattern, and `npx wf id <ID>` finds where one is defined and cited.
+- **Unique across the app.** Rule, gap, and dataset IDs carry the area's prefix, such as `R-GM-09`, so no two areas share one. Fixtures, states, and inputs are named once in the whole app. [ids.md](ids.md) has every pattern, and `npx wf id <ID>` finds where one is defined and cited.
 
 ## A flow area's folder
 
@@ -29,9 +29,9 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 | `data.md` | Its datasets: seed, counts, stand-ins, and markers |
 | `states.md` | Its journey states |
 | `gaps.md` | Its gaps table |
-| `<topic>.md` | One part of the flow, such as `review.md`: its checks, input classes, and edge cases side by side |
+| `<topic>.md` | One part of the flow, such as `review.md`: its input classes and edge cases side by side |
 
-A one-file flow area has the same parts as `##` sections: `## Rules`, `## Datasets`, `## Checks`, `## Input classes`, `## Edge-case fixtures`, `## Journey states`, `## Gaps`, `## Proposed rules`, each only when it has something.
+A one-file flow area has the same parts as `##` sections: `## Rules`, `## Datasets`, `## Input classes`, `## Edge-case fixtures`, `## Journey states`, `## Gaps`, `## Proposed rules`, each only when it has something.
 
 ## Rules
 
@@ -65,51 +65,61 @@ A project adds its own in `testdata.categories`, such as Stand-ins or Data marke
 
 ## Who a row is for
 
-The owner reviews only the rows that are theirs; the team handles the rest. Each check has a Level and each rule a Type, and `npx wf testdata review <area>` builds the owner's page and the team's from them.
+The owner reviews only the rules that are theirs; the team handles the rest. Each rule has a Type, and `npx wf testdata review <area>` builds the owner's page and the team's from it. A solo project gets one page, with the craft rules as a single row.
 
-| | The owner's, one by one | The owner's, one yes/no list | The team's |
-| --- | --- | --- | --- |
-| Checks, by Level | `core`, and any `+harm` | | `likely`, `rare`, `polish` |
-| Rules, by Type | `product` | `safety` | `craft` |
+| The owner's, one by one | The owner's, one yes/no list | The team's |
+| --- | --- | --- |
+| `product` | `safety` | `craft` |
 
-- **Level.** `core`: the story's promise, which a user would notice broken in normal use. `likely`: a situation users often hit, such as a second try, a restart, or a common mistake. `rare`: an unusual input, size, or timing. `polish`: help text, wording, and labels.
-- **+harm** on any Level, such as `likely+harm`, when breaking it would leak or lose data, send something wrongly, or give legally wrong advice. It makes the row the owner's.
 - **Type.** `product`: how the app behaves, a decision the owner owns. `safety`: a privacy or safety promise. `craft`: how test data and stand-ins are built, such as fake domains, a fixed today, or canary tokens.
-- **Plain words.** The owner reads a core or `+harm` check's Check cell and a product rule as written, so they hold no code names, scenario ids, or tokens; those go in the check's Setup cell. `wf doc:check` fails a core or `+harm` check with them, and warns for a product rule.
-- **Dropped.** A review page offers Drop beside Fine, A gap, and Wrong, for a row not worth testing at all, with its reason in the note.
+- **From the category.** A rule with no Type takes it from its category where it can: Stand-ins and Data markers are `craft`, Never sent or stored is `safety`. Any other is the owner's until typed, and `testdata.untagged` warns for it, or fails.
+- **The designer's.** It writes `craft` and `safety` rules. What would be a `product` rule it proposes as an acceptance line, since how the app behaves is the stories' to say.
+- **Plain words.** The owner reads a product rule as written, so it holds no code names, scenario ids, or tokens. `wf doc:check` warns for one.
+- **Dropped.** A review page offers Drop beside Fine, A gap, and Wrong, for a rule not worth keeping at all, with its reason in the note.
   - `npx wf testdata drop <area> --from <ask id> --write` takes each such row out of the spec and lists it in the README's `| ID | What | Why | Dropped |` table.
   - Its ID is never reused, the designer never proposes it again, and `wf doc:check` fails a row that brings it back or cites it.
-- **Untagged.** A row with no Level or Type is the owner's, and gated at chunk end, until it is tagged. `testdata.untagged` warns for it while a project tags its spec, then fails. The designer's tag mode adds them.
 
 ## Risk tiers
 
-A story's owner tags it with a line before Acceptance: `Risk: high (money, outside input)`, or `Risk: low`. No line is low.
+An acceptance line that is high-risk ends with its tag: `- My details are kept for the next letter. Risk: high (privacy)`. No tag is low.
 
 - **High** is for money, privacy, irreversible steps, outside input, evidence, or workspaces.
-- **Low** gets its checks and its rules: `core`, `likely`, and `polish` checks. **High** also gets `rare` checks, the input classes of what it reads, and edge-case fixtures for what only its flow can show. `wf doc:check` warns for a rare check on a story with no `Risk: high` line.
+- **Tag the line.** A story whose every line is high takes one line before Acceptance, `Risk: high (money, outside input)`, in place of a tag on each.
+- **What it buys.** A high-risk line gets the input classes of what it reads, and up to `testdata.limits.fixtures.line` edge-case fixtures; a story tagged whole gets up to `testdata.limits.fixtures.story`. A low-risk story gets neither.
+- **Rationed.** `wf doc:check` warns when more than `testdata.limits.highShare` of an area's acceptance lines are high.
 
-## Checks, input classes, and edge cases
+## Acceptance lines, and what proves them
 
-A topic file, or a one-file area, holds up to three tables: what a run shows, the classes of each input, and the few cases only a flow can show.
+A story's acceptance lines are its checks. The test-data spec holds no checks of its own.
+
+- **ID.** A line's ID is its story and its place in the Acceptance list, counted from 1: `GM-07.3`. A new line goes last, and a line taken out stays as `- Removed (<date>).`, so no other line's ID moves.
+- **Proven.** A test or a scenario that shows the line cites it, such as `// GM-07.3`. `npx wf testdata trace --chunk <id>` lists the chunk's lines nothing proves, and `wf done chunk` waits on them (`testdata.chunkChecks`).
+- **Proposed.** The designer may propose a line a story forgot, at most `testdata.limits.propose` a story. Its table is `| Story | Proposed line | Why |`, and the story's owner accepts each or not.
+
+A line no test can prove has a row in the area's proof table, in any of its test-data files:
 
 ```markdown
-| ID | Check | Setup | Stories | Rules | Level | By |
+| Line | By |
+| --- | --- |
+| GM-07.6 | walk |
+| GM-07.2 | CH-14 |
+```
+
+- `walk`: only the walk through the app by hand proves it, so it goes on the chunk's sign-off page.
+- `walked <chunk>`, such as `walked 37d`: the owner signed it off there, so a later chunk sharing its story never asks again.
+- A later chunk's id, such as `CH-14`, when that chunk's code is what can prove it. The main agent sets that, with the reviewer's yes.
+- `wf doc:check` fails a row that names no acceptance line.
+
+A rule that holds everywhere, such as nothing reaching a log, gets one test across every state, citing the rule's ID.
+
+## Input classes and edge cases
+
+A topic file, or a one-file area, holds up to two tables: the classes of each input, and the few cases only a flow can show.
+
+```markdown
 | Input | Class | Values | Expect | Stories | Rules |
 | Fixture | Varies | Expect | Stories | Rules | Reach |
 ```
-
-- **ID.** `C-<prefix>-NN`, such as `C-GM-41`, the next free number in the area, never reused or renumbered, as rule IDs are. A test or a scenario that proves the check cites it, such as `// C-GM-41`, so `npx wf testdata trace` can say which checks nothing proves. `npx wf testdata ids <area>` gives every check without one its ID.
-- **By.** Who proves the check:
-  - empty: a test or a scenario;
-  - `walk`: only the walk through the app by hand, so it goes on the chunk's sign-off page, and the trace does not list it as unproven. A `polish` check goes there too, unless a test shows it;
-  - `walked <chunk>`, such as `walked 37d`: the owner signed it off there, so a later chunk sharing its story counts it as proven and never asks again;
-  - a later chunk's id, such as `CH-14`, when that chunk's code is what can prove it. The main agent sets that, with the reviewer's yes.
-- **Check.** What a passing run shows for this flow, in one line of plain words, that no rule already says.
-  - A rule that holds everywhere, such as nothing reaching a log or every step working with AI off, is not restated as a check in each flow: it gets one test across every state, and the flow's rules name it.
-- **Setup.** The scenario, journey state, fixture, input class, and token names the check runs with, such as `` `downlink-gb-in-flight` ``. The team reads it; the owner's page leaves it out.
-- **How many.** About three core and five likely checks a story, and thirty in a flow area (`testdata.limits.checks`); rare checks only on a high-risk story.
-  - An untagged check counts against the old budget of eight a story.
-  - `wf doc:check` warns past them, and for the same check written in three or more files.
 
 ### Input classes
 
@@ -125,7 +135,7 @@ One row for each class of one input: a field, a file format, a header, a request
 - **Input.** The input's id, in backticks. A format's input lives in `formats.md`, shared by every flow that reads it; a field only one flow has lives in that flow's file.
 - **Class.** One class, or one boundary where the outcome changes: at the limit and one past it, not every value between.
 - **Values.** The representatives, several in one cell. They are data, not fixtures: the project tests the input once, where its rule lives, with one test that walks the rows or a property test, and stores no file and no journey state for them.
-- **Which classes.** Each input gets the unhappy classes it implies, once: empty, at and past its limit, malformed, duplicated, mixed encodings, and dates or time zones at the edges. A flow that reads the input does not list them again; it names the input's classes it relies on in its checks.
+- **Which classes.** Each input gets the unhappy classes it implies, once: empty, at and past its limit, malformed, duplicated, mixed encodings, and dates or time zones at the edges. A flow that reads the input does not list them again.
 
 ### Edge-case fixtures
 
@@ -133,7 +143,13 @@ A fixture is for what only a flow can show: a state, an order of steps, an inter
 
 - **Varies.** What the fixture sets, against which state. Where axes combine, name them in one row, and the generator expands them, pairwise when every combination is too many.
 - **Reach.** ``typed at `state` ``, ``date at `state` ``, or ``stored in `state` ``, then a step after a comma. A case no person can reach is an input class.
-- **How many.** About five a story and fifteen a flow area (`testdata.limits.fixtures`), and four on one rule. `wf doc:check` warns past them: merge rows into one with axes, move the one-input cases to input classes, or keep them and say why in the reviewer's question.
+- **How many.** `testdata.limits.fixtures`: five for a story tagged high as a whole, two for each high-risk line, none for a low-risk story, fifteen in a flow area, and four on one rule.
+  - `wf doc:check` warns past them, by the same count as `npx wf testdata budget <area> --check`, and `refresh-close` refuses a refresh that adds to one already over.
+  - Merge rows into one with axes, or move the one-input cases to input classes. An exception is the owner's, in `testdata.limits.allow`.
+
+### Check rows from before v0.69.0
+
+A `| ID | Check | Setup | Stories | Rules | Level | By |` table is from when the designer wrote checks. It is still read, and a test citing `C-GM-41` still names it, but nothing gates or budgets it and none is added. `npx wf testdata prune <area>` takes out the rows no code cites.
 
 ## Datasets
 
@@ -154,10 +170,11 @@ A state is kebab-case and names its fixed today when anything depends on a date.
 | G-GM-03 | gap | Time | Does the same calendar day 12 months back count as stale? | GM-39 |
 ```
 
-- **Kind.** `gap`: the stories leave it open. `contradiction`: two lines say different things. `dispute`: building or testing showed a check or a rule is wrong, such as two that cannot both hold, or one no screen can show; its Question names the ID.
-- **A dispute** is the one row the main agent writes, since it comes from the code side. `wf doc:check` fails one that names an ID no spec defines. It says what the test found, not how the code works, and keeps the check out of the chunk end's unproven list.
-  - The next refresh reads it, with the check's file, and edits, drops, or keeps the check, and the row leaves the table.
-  - A check is never edited by hand to make a test pass.
+- **Kind.** `gap`: the stories leave it open. `contradiction`: two lines say different things. `dispute`: building or testing showed an acceptance line or a rule is wrong, such as two that cannot both hold, or one no screen can show; its Question names the ID.
+- **A dispute** is the one row the main agent writes, since it comes from the code side. `wf doc:check` fails one that names an ID no spec defines. It says what the test found, not how the code works, and keeps the line or rule out of the chunk end's unproven list.
+  - The next refresh reads it and proposes the line's or the rule's new wording, or keeps it and says why, and the row leaves the table.
+  - A line or a rule is never edited by hand to make a test pass.
 - **Category.** A rule category where one fits, else the topic.
 - **Question.** One the story's owner can answer. An answered row leaves the table, and its answer goes to the decisions log.
-- A story check adds a second table for stories that look high-risk with no Risk line: `| Story | Risk | Why |`.
+- A story check asks at most `testdata.limits.questions` questions, the most important first, under its `## Questions` heading, and `npx wf testdata delta` cuts the rest.
+- It adds a table for the lines that look high-risk with no tag: `| Story or line | Risk | Why |`.

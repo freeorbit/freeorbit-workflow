@@ -54,17 +54,18 @@ If a story is dropped, leave the ID in place with a one-line "Removed" note and 
 
 As a first-time user, I want a short privacy promise, so that I know my mail never leaves this machine unless I send it.
 
-Risk: high (privacy)
-
 Acceptance:
 
-- Given I launch the app for the first time, the promise is shown before the plugin catalog.
+- Given I launch the app for the first time, the promise is shown before the plugin catalog. Risk: high (privacy)
 - The step finishes with AI off.
 ```
 
 - Role, want, and reason, in that order.
 - Acceptance is testable. "Given / when / then" or a plain checklist both work.
-- `Risk: high (<why>)` marks a story about money, privacy, irreversible steps, outside input, evidence, or workspaces, so its test data gets edge cases. `Risk: low`, or no line, is low.
+- Each acceptance line is a check with an ID by its place: the story's ID, a dot, and the line's number in the list. A test cites the line it proves.
+  - Add a new line last, and leave one taken out as `- Removed (<date>).`, so no other line's ID moves.
+- `Risk: high (<why>)` at the end of a line marks one about money, privacy, irreversible steps, outside input, evidence, or workspaces, so its test data gets edge cases.
+  - A story whose every line is high takes the tag once, on a line of its own before Acceptance. No tag is low.
 <!-- wf:local story-rules -->
 
 

@@ -8,11 +8,12 @@ How the project's synthetic test data is designed, made, and kept in step with t
 
 Test data has two authors who never share context.
 
-- **The blind side decides what to test.** A data-design agent, the kit's `test-data-designer`, writes the spec.
+- **The stories say what to test.** A story's acceptance lines are its checks, each with an ID by its place, such as `GM-07.3`. A test or a scenario cites the line it proves.
+- **The blind side designs the data.** A data-design agent, the kit's `test-data-designer`, writes the spec: what data a run needs to show those lines. It writes no checks.
   - It reads the area's `overview.md`, `user-stories.md`, `user-flows.md`, its test-data rules, and public format specs.
   - It never reads code or architecture, so the data does not copy the implementation's assumptions.
-  - A story check reads changed stories and returns only gaps and contradictions, as questions for the story's owner. It is cheap, so it runs whenever stories change.
-  - A first draft writes the area's `test-data/` folder: personas, datasets, rules, checks, and edge cases, as tables tied to story IDs and rule IDs, one flow area per file or folder.
+  - A story check reads changed stories and returns a few ranked questions, and at most two acceptance lines a story that it thinks the story forgot, for the story's owner. It is cheap, so it runs whenever stories change.
+  - A first draft writes the area's `test-data/` folder: personas, datasets, rules, journey states, input classes, and edge cases, as tables tied to story IDs and rule IDs, one flow area per file or folder.
   - It covers the stories of this chunk and the next. A later chunk's flow areas are written when it starts, so no spec is refreshed for code not yet begun.
   - A refresh reads the changed stories, `core.md`, and only the area files those stories reach. It returns only the rows to add or edit, each naming its file, or says the spec already covers the change.
 - **The code side makes it.** The project's seeded generator implements that spec, including the edge fixtures. The same seed gives the same bytes, so a failing test fails the same way every time. Development and tests use that output.
@@ -24,8 +25,9 @@ flowchart LR
   docs["Stories, flows, overview"] --> agent[BlindDataAgent]
   specs["Public format specs"] --> agent
   core["test-data/core.md and formats.md"] --> agent
-  agent --> areas["test-data/&lt;flow&gt;: rules, datasets, checks, fixtures, states, as tables"]
-  agent -.->|"story check: questions"| docs
+  agent --> areas["test-data/&lt;flow&gt;: rules, datasets, input classes, fixtures, states, as tables"]
+  agent -.->|"story check: questions, proposed lines"| docs
+  docs -->|"acceptance lines, cited by ID"| tests
   areas -.->|"accepted proposed rules"| areas
   areas --> gen["Seeded generator"]
   gen --> fix["Fixtures the generator writes"]
@@ -33,6 +35,16 @@ flowchart LR
   fix --> tests
   gen --> scen["Seeded app states"]
 ```
+
+## Budgets
+
+The designer's volume is counted by the tool, not left to its judgement. Freeorbit's spec grew to 560 checks and 308 rules for 105 stories, half of them cited by no code, while every limit was a warning.
+
+- **Before a run**, `npx wf testdata budget <area> <ids>` prints each story's fixtures against its cap, and the skill pastes that block into the designer's prompt.
+- **After it**, `npx wf testdata delta <area> <file>` fails a return over `testdata.limits.questions` questions, over `testdata.limits.propose` proposed lines a story, or with any check row.
+  - What is over is cut from the end, and the designer is not run again for it.
+- **At the close**, `refresh-close` refuses when the refresh took a story over its fixture cap. An overage from before it only warns.
+- **An exception is the owner's**, named in `testdata.limits.allow`.
 
 An AI does not write the data files itself. Data written by a model cannot be reproduced, goes wrong at scale, and costs a model call every run. The agent writes the spec. Code writes the data.
 
@@ -42,7 +54,13 @@ Blindness is kept by the agent's instructions, and checked at review: the spec c
 
 Each area touches different personal data, so the generic guardrails below are not enough. A photos area would need generated images with no faces. A password area would need secrets that cannot be mistaken for real ones.
 
-Those rules live in the area's `test-data/` folder, each with an ID, a category from the kit's list or `testdata.categories`, and a Type. The owner accepts `product` rules one by one and `safety` rules as one list; the team accepts `craft` rules a category at a time.
+Those rules live in the area's `test-data/` folder, each with an ID, a category from the kit's list or `testdata.categories`, and a Type.
+
+- The owner accepts `product` rules one by one and `safety` rules as one list.
+- The team accepts `craft` rules a category at a time.
+- In a solo project that is one page, with the craft rules as one row.
+
+The designer writes `craft` and `safety` rules. How the app behaves is the stories' to say, so it proposes that as an acceptance line.
 
 They are not passed in the agent's prompt, because the agent running the skill has seen the code and could leak it.
 
@@ -54,9 +72,11 @@ An area's test data is the `test-data/` folder in its docs folder, one flow area
 
 - **About a page a file.** A flow area that fits in about 100 lines is one file. One past it becomes a folder of files of up to about 100 lines: rules, data, states, gaps, and a topic file per part of the flow with its checks and edge cases. The index takes one row, for the folder's README.
 - **Rules sit beside their data.** A rule about one flow area is in its rules table, and a rule two need is in `core.md`. Each row has an ID, a category, its stories, and the day the reviewer accepted it.
-- **Risk decides depth.** Every story gets its rules, and `core`, `likely`, and `polish` checks for what it shows that no rule already says. Only a story with a `Risk: high` line gets `rare` checks, input classes, and edge-case fixtures, so a low-risk story costs a few rows.
-- **The owner reviews what is theirs.** Core and `+harm` checks, product rules, and safety rules, in plain words, with the area's `glossary.md`. The team reviews the rest. `npx wf testdata review <area>` builds each page.
-- **Classes once, fixtures few.** The classes of an input, such as a pasted address or an imported file, are listed once, for the input, and tested once, where its rule lives. Edge-case fixtures are only for what a flow alone can show, about five a story.
+- **Risk decides depth.** Every story gets its datasets and states. Input classes and edge-case fixtures are only for what is high-risk: an acceptance line that ends `Risk: high (<why>)`, or a story whose own Risk line says high.
+- **Risk is rationed.** Tag the line, not the story. `npx wf doc:check` warns when more than `testdata.limits.highShare` of an area's acceptance lines are high, since a tier most stories have says nothing.
+- **The owner reviews what is theirs.** Product rules and safety rules, in plain words, with the area's `glossary.md`. The team reviews the craft rules. `npx wf testdata review <area>` builds each page.
+- **Classes once.** The classes of an input, such as a pasted address or an imported file, are listed once, for the input, and tested once, where its rule lives.
+- **Fixtures few.** Edge-case fixtures are only for what a flow alone can show: five for a high-risk story, two for each high-risk line, none for a low-risk story.
 - **A story reaches the files that name it.** `npx wf testdata route <area> <ids>` lists them, from their `Covers` lines, rule tags, and other mentions. A refresh reads `core.md`, `formats.md`, and only those.
 - **Areas follow the flows**, which change less than the stories. A story in two flows reaches two files. Dataset ids, fixtures, and states are unique across the folder, so one file can name another's.
 - **An area stays reviewable.** The refresh that touches an area proposes the split or the merge that `npx wf doc:check` warns for:
@@ -65,7 +85,7 @@ An area's test data is the `test-data/` folder in its docs folder, one flow area
   - fixtures past `testdata.limits.fixtures`.
 
   A file not yet split goes on `testdata.limits.loose` until it is.
-- **Spec and code point at each other.** Every check has an ID, such as `C-GM-41`, unique across the app ([ids.md](ids.md)). A test cites the check it proves. `npx wf testdata trace [area]` lists the spec rows no code names, and the tests that name no row and no story.
+- **Spec and code point at each other.** A test cites the acceptance line or the rule it proves, such as `// GM-07.3` ([ids.md](ids.md)). `npx wf testdata trace [area]` lists the spec rows no code names, and the tests that name no row and no story.
   - A row may wait for its chunk, and a test of plain code needs no row; each is judged, nothing fails.
 
 <!-- wf:local folder-checks -->
@@ -74,7 +94,7 @@ The rules are never written from scratch by hand:
 
 1. The data designer drafts `core.md` and `formats.md` once, in rules mode, from the overview and stories. The owner reviews the product and safety rules, and the team the craft rules, a category at a time.
 2. When the data designer writes or refreshes the spec, any rule it had to assume goes in the area's `## Proposed rules`. At review, the owner accepts or drops the product and safety ones, and the team the craft ones. Accepted rows move into that file's rules table, or `core.md`.
-3. The owner can drop a check or rule at any review, as not worth testing: the Drop verdict, applied with `npx wf testdata drop`. It needs no proposal, since the owner decides it.
+3. The owner can drop a rule at any review, as not worth testing: the Drop verdict, applied with `npx wf testdata drop`. It needs no proposal, since the owner decides it.
    - It goes in the area's `## Dropped` table.
    - The code that cited it loses the citation, or the test when proving that row was all it did.
 4. A change to an accepted rule is proposed too, with Accepted `edit` and the rule's own ID, and never made in place. Accepting it replaces the row and sets Accepted to that day, so the date always covers the words. A test that shows a rule is wrong gets a `dispute` row, as a check does.
@@ -99,14 +119,14 @@ Input classes are not fixtures: a test reads their values from the spec's table,
 
 ## Per area
 
-1. **When stories change**, at any step, the blind agent's story check returns its questions, and the story's owner answers them and sets each story's Risk line.
+1. **When stories change**, at any step, the blind agent's story check returns its questions and proposed lines. The story's owner answers them, and tags each high-risk acceptance line.
 2. **At Step 3**, run the blind agent for the area, as the `design-test-data` skill says: first in rules mode for `core.md` and `formats.md`, then in spec mode for the rest. The reviewer reviews both like a story file, and the same day `npx wf testdata covered` records every story's acceptance hash.
    - A later story edit does not start the agent. It makes the story stale: its acceptance no longer has the hash the coverage file holds.
    - **When.** Stale stories are refreshed in one run, at the start of the chunk that builds them or the chunk before. A change to a story the current chunk builds is refreshed before the work that depends on it. The reviewer can ask for a refresh at any time.
    - **How.** `route` names the area files those stories reach. The agent reads `core.md`, `formats.md`, and those files, and returns a delta. The main agent applies it and runs `refresh-close`.
    - **Review.** The refresh is reviewed in the chunk-start question in [four-steps.md](four-steps.md#chunk-start), not in a separate round: the owner sees only their rows and one line for the rest.
 3. **In each chunk of Step 4**, teach the generator the data that chunk needs, before or with the code: a scenario for each new journey point, support for each dataset and profile the spec gives that chunk, and a writer for each edge fixture. Then develop and test against what it writes.
-4. **When a test shows a check is wrong**, add a `dispute` row to the area's gaps table naming the check, with what the test found and no code. Do not edit the check. The next refresh answers it, and the reviewer reviews that edit like any other.
+4. **When a test shows an acceptance line or a rule is wrong**, add a `dispute` row to the area's gaps table naming it, with what the test found and no code. Do not edit it to make a test pass. The next refresh answers it, and its owner reviews that edit like any other.
 5. **When the spec or the rules change**, update the generator in the same change, regenerate the fixtures, and point the tests and the scenarios at that output. A test that still expects the old bytes is updated to the new output.
 
 The spec lists data by story. A story's data is due in the chunk that builds the story. Data for a later chunk can wait.
@@ -129,5 +149,11 @@ A refresh that says no change does not start this list.
 4. Run the tests and the app from that output. Add a scenario when the chunk needs to open the app on that data.
 
 <!-- wf:local change-steps -->
+
+## Check rows from before v0.69.0
+
+Until v0.69.0 the designer also wrote checks, `C-GM-41`, in tables beside the data. Those tables are still read, and a test that cites one still names it. Nothing gates, budgets, or reviews them, and none is added.
+
+`npx wf testdata prune <area>` takes out the check rows no code cites, for stories already built. It is a dry run until `--write`, and never touches a rule, a fixture, or an input class.
 
 <!-- wf:local building -->

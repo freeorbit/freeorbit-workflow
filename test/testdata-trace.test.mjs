@@ -7,7 +7,7 @@ import { specIds } from "../lib/testdata.mjs";
 import { testsIn, trace, traceLines } from "../lib/testdata-trace.mjs";
 
 const DIR = "docs/plugins/uplink/test-data";
-const config = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }] });
+const config = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], stories: { files: ["docs/plugins/*/user-stories.md"] } });
 const SPEC = [
   "### D27. Assess archives",
   "| ID | Category | Rule | Stories | Accepted |", "| --- | --- | --- | --- | --- |",
@@ -59,48 +59,56 @@ test("the trace: spec rows no code names, and tests that name no row and no stor
   assert.throws(() => trace(context, "nope"), /no area nope/);
 });
 
-test("a chunk's checks: proven, walk, left to a later chunk, disputed, or proven by nothing; a story range counts each story", async () => {
+const STORIES = "docs/plugins/uplink/user-stories.md";
+const story = (id, lines) => `### ${id}. A story\n\nAs a user, I want it.\n\nAcceptance:\n\n${lines.map((l) => `- ${l}`).join("\n")}\n`;
+
+test("a chunk's acceptance lines and rules: proven, walk, left to a later chunk, disputed, or proven by nothing; check rows are counted, never gated", async () => {
   const { chunkChecks, chunkLines } = await import("../lib/testdata-trace.mjs");
   const texts = {
+    [STORIES]: [story("GM-06", ["Shown", "Needs CH-14's code", "Nothing proves it", "Removed (2026-11-14).", "Walked before"]), story("GM-07", ["Looks right"]), story("GM-08", ["Cannot hold"]), story("GM-30", ["Another chunk's"])].join("\n"),
     [`${DIR}/flow.md`]: [
-      "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |",
-      "| C-GM-01 | Shown | GM-06 | | |", "| C-GM-02 | Looks right | GM-07 | | walk |", "| C-GM-03 | Needs CH-14's code | GM-06 | | CH-14 |",
-      "| C-GM-04 | Cannot hold | GM-08 | | |", "", "| ID | Category | Rule | Stories | Accepted | By |", "| --- | --- | --- | --- | --- | --- |",
-      "| R-GM-01 | State | Kept on restart | GM-06 | 2026-11-14 | |", "| R-GM-02 | Time | Parked | GM-06 | 2026-11-13 | CH-37a |", "| R-GM-03 | Time | Proposed | GM-06 | new | |", "", "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |", "| C-GM-05 | Nothing proves it | GM-06 | | |", "| C-GM-06 | Another chunk's | GM-30 | | |", "| C-GM-07 | Left to this one | GM-30 | | 37d |", "| C-GM-08 | Walked before | GM-07 | | walked 19j |",
-      "", "| ID | Kind | Question |", "| --- | --- | --- |", "| G-GM-01 | dispute | C-GM-04 and C-GM-01 cannot both hold on one screen |",
+      "| Line | By |", "| --- | --- |", "| GM-07.1 | walk |", "| GM-06.2 | CH-14 |", "| GM-06.5 | walked 19j |", "",
+      "| ID | Category | Rule | Stories | Accepted | By |", "| --- | --- | --- | --- | --- | --- |",
+      "| R-GM-01 | State | Kept on restart | GM-06 | 2026-11-14 | |", "| R-GM-02 | Time | Parked | GM-06 | 2026-11-13 | CH-37a |", "| R-GM-03 | Time | Proposed | GM-06 | new | |", "| R-GM-04 | Data markers | Fake domains | GM-06 | 2026-11-13 | |", "| R-GM-05 | Time | Left to this one | GM-30 | 2026-11-13 | 37d |", "",
+      "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |", "| C-GM-01 | An old row, cited | GM-06 | | |", "| C-GM-05 | An old row, cited by nothing | GM-06 | | |", "| C-GM-06 | Another chunk's | GM-30 | | |",
+      "", "| ID | Kind | Question |", "| --- | --- | --- |", "| G-GM-01 | dispute | GM-08.1 and GM-06.1 cannot both hold on one screen |",
     ].join("\n"),
-    "crates/a/src/lib.rs": "#[test]\n// C-GM-01\nfn shown() {}\n",
+    "crates/a/src/lib.rs": "#[test]\n// GM-06.1, C-GM-01\nfn shown() {}\n",
   };
   const found = chunkChecks({ config, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" }, "37d", ["GM-06", "GM-07", "GM-08"], { open: ["37d", "CH-14", "CH-37a"], done: ["19j"] });
   const ids = (list) => list.map((each) => each.id);
-  assert.deepEqual(ids(found.proven), ["C-GM-01", "C-GM-08"], "a walk signed off in an earlier chunk is not asked again");
-  assert.deepEqual(ids(found.walk), ["C-GM-02"]);
-  assert.deepEqual(ids(found.later), ["R-GM-02", "C-GM-03"], "a parked rule waits for its chunk");
-  assert.deepEqual(found.disputed.map((each) => `${each.id} ${each.gap}`), ["C-GM-04 G-GM-01"], "a proven check that a dispute names stays proven");
-  assert.deepEqual(ids(found.unproven), ["R-GM-01", "C-GM-05", "C-GM-07"], "another chunk's story is not this chunk's, unless its By names this chunk; a proposed rule waits for the reviewer");
-  assert.match(chunkLines(found).join("\n"), /for the sign-off page, a walk by hand each \(walk and polish\): C-GM-02/);
+  assert.deepEqual(ids(found.proven), ["GM-06.1", "GM-06.5"], "a walk signed off in an earlier chunk is not asked again; a removed line is no line");
+  assert.deepEqual(ids(found.walk), ["GM-07.1"]);
+  assert.deepEqual(ids(found.later), ["GM-06.2", "R-GM-02"], "a parked rule waits for its chunk");
+  assert.deepEqual(found.disputed.map((each) => `${each.id} ${each.gap}`), ["GM-08.1 G-GM-01"], "a proven line that a dispute names stays proven");
+  assert.deepEqual(ids(found.unproven), ["GM-06.3", "R-GM-01", "R-GM-05"], "another chunk's story is not this chunk's, unless a rule's By names this chunk; a proposed rule waits for the reviewer");
+  assert.deepEqual(ids(found.ungated), ["R-GM-04"], "a Data markers rule is craft by its category");
+  assert.deepEqual(found.legacy, { checks: 2, cited: 1 });
+  const lines = chunkLines(found).join("\n");
+  assert.match(lines, /37d: 6 acceptance lines and 4 rules/);
+  assert.match(lines, /for the sign-off page, a walk by hand each: GM-07.1/);
+  assert.match(lines, /check rows from before acceptance lines were the checks, not gated: 2, 1 cited by a test/);
+  assert.match(lines, /GM-06\.3 {2}Nothing proves it/);
 });
 
 test("a By that names no open chunk, or walked a chunk not done, proves nothing; a lane can be named; only a test or a scenario proves", async () => {
   const { chunkChecks, chunkTrace } = await import("../lib/testdata-trace.mjs");
   const texts = {
-    [`${DIR}/flow.md`]: [
-      "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |",
-      "| C-GM-01 | Typo | GM-06 | | CH-99 |", "| C-GM-02 | Not walked yet | GM-06 | | walked 37d |", "| C-GM-03 | A lane's | GM-06 | | CH-01-fe |", "| C-GM-04 | Named in app code | GM-06 | | |", "| C-GM-05 | Named in a fixture | GM-06 | | |", "| C-GM-06 | In a test file | GM-06 | | |",
-    ].join("\n"),
-    "src/app.ts": "// C-GM-04 is shown here\n",
-    "tools/testdata/fixtures/a.json": '{"proves": "C-GM-05"}',
-    "tests/flow.spec.ts": "test('x', () => {}) // C-GM-06\n",
+    [STORIES]: story("GM-06", ["Typo", "Not walked yet", "A lane's", "Named in app code", "Named in a fixture", "In a test file"]),
+    [`${DIR}/flow.md`]: ["| Line | By |", "| --- | --- |", "| GM-06.1 | CH-99 |", "| GM-06.2 | walked 37d |", "| GM-06.3 | CH-01-fe |"].join("\n"),
+    "src/app.ts": "// GM-06.4 is shown here\n",
+    "tools/testdata/fixtures/a.json": '{"proves": "GM-06.5"}',
+    "tests/flow.spec.ts": "test('x', () => {}) // GM-06.6\n",
   };
   const ctx = { config, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" };
   const found = chunkChecks(ctx, "37d", ["GM-06"], { open: ["37d", "CH-01-fe"], done: ["19j"] });
-  assert.deepEqual(found.proven.map((each) => each.id), ["C-GM-06"]);
-  assert.deepEqual(found.later.map((each) => each.id), ["C-GM-03"]);
+  assert.deepEqual(found.proven.map((each) => each.id), ["GM-06.6"]);
+  assert.deepEqual(found.later.map((each) => each.id), ["GM-06.3"]);
   assert.deepEqual(found.unproven.map((each) => [each.id, each.bad ?? ""]), [
-    ["C-GM-01", "By names CH-99, which is not an open chunk"],
-    ["C-GM-02", "By says walked 37d, which is not a done chunk"],
-    ["C-GM-04", ""],
-    ["C-GM-05", ""],
+    ["GM-06.1", "By names CH-99, which is not an open chunk"],
+    ["GM-06.2", "By says walked 37d, which is not a done chunk"],
+    ["GM-06.4", ""],
+    ["GM-06.5", ""],
   ]);
   const order = "## Chunks\n\n| Chunk | Status | Stories |\n| --- | --- | --- |\n| 37d. Catalog | In progress | GM-06 |\n";
   const read = (p) => (p === config.buildOrder.file ? order : "");

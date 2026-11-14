@@ -19,6 +19,9 @@
 //   wf testdata tag <area> <tags.md> [--write]          the designer's tags applied: Level, Type, Setup
 //   wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]
 //   wf testdata drop <area> <ID>... --why "<why>" | --from <ask id> [--write]   rows the owner dropped   an ask page of the owner's rows, or the team's
+//   wf testdata budget <area> [story ids] [--check]     each story's fixtures against its cap, for the designer's prompt
+//   wf testdata delta <area> <file>                 the designer's return, held to its caps before it is applied
+//   wf testdata prune <area> [--owner] [--all] [--write]   check rows no code cites, out of the spec
 //   wf testdata merge <folder> [--write]           a flow area's folder as one file, every row kept
 //   wf testdata fold <file> <sibling> [--write]    a small file into a sibling in its folder
 //   wf ask <templates | example | page | wait | answers | record | export | import | live | reply | history> ...   ask a person on a page beside the chat
@@ -169,14 +172,27 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata tag <area> <tags.md> [--write]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata drop <area> <ID>... --why "<why>" | --from <ask id> [--write]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata tag <area> <tags.md> [--write]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata drop <area> <ID>... --why "<why>" | --from <ask id> [--write]\n       wf testdata budget <area> [story ids] [--check]\n       wf testdata delta <area> <file>\n       wf testdata prune <area> [--owner] [--all] [--write]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
       return 2;
     }
     const root = projectRoot();
-    if (name === "tag" || name === "review" || name === "drop") {
-      // The kit's own steps on an area's spec as a whole: the designer's tags applied, the owner's or team's review page, or the owner's drops.
-      const { runDrop, runReview, runTag } = await import("../lib/testdata-cli.mjs");
-      return { tag: runTag, review: runReview, drop: runDrop }[name](root, project(), args);
+    if (["tag", "review", "drop", "budget", "delta", "prune"].includes(name)) {
+      // The kit's own steps on an area's spec as a whole: the review page, the owner's drops, the budgets, and the prune.
+      const { runBudget, runDelta, runDrop, runPrune, runReview, runTag } = await import("../lib/testdata-cli.mjs");
+      return { tag: runTag, review: runReview, drop: runDrop, budget: runBudget, delta: runDelta, prune: runPrune }[name](root, project(), args);
+    }
+    if (name === "refresh-close") {
+      // A refresh that took a story over its budget does not close: the stories stay stale until the spec is back within it.
+      const { runCloseGate } = await import("../lib/testdata-cli.mjs");
+      const { execFileSync } = await import("node:child_process");
+      const atHead = (path) => {
+        try {
+          return execFileSync("git", ["show", `HEAD:${path}`], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
+        } catch {
+          return "";
+        }
+      };
+      if (runCloseGate(project(), atHead, args) === 1) return 1;
     }
     if (name === "merge" || name === "fold") {
       // The kit's own steps: a dry run unless --write, and never a write that loses a row.

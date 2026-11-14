@@ -58,7 +58,7 @@ test("warnings: a file past a page, a flow area past its size, a folder too smal
     [`${DIR}/big/b.md`]: "x".repeat(11 * 1024),
     [`${DIR}/rules.md`]: "| ID | Category | Rule |\n| --- | --- | --- |\n| R-01 | Stand-ins | A |\n| R-02 | Stand-ins | B |\n| R-03 | Time | C |\n",
   };
-  const found = testdataWarnings(context(config({ testdata: { limits: { loose: [`${DIR}/old.md`] } } }), texts)).filter((w) => !/area-qualified|no Level or Type/.test(w));
+  const found = testdataWarnings(context(config({ testdata: { limits: { loose: [`${DIR}/old.md`] } } }), texts)).filter((w) => !/area-qualified|has no Type/.test(w));
   assert.deepEqual(found, [
     `${DIR}/thin/: 2 files, 65 lines in all; npx wf testdata merge ${DIR}/thin/ makes it one file of 66 lines`,
     `${DIR}/split/c.md: 8 lines, under 15; npx wf testdata fold ${DIR}/split/c.md ${DIR}/split/b.md`,
@@ -69,7 +69,7 @@ test("warnings: a file past a page, a flow area past its size, a folder too smal
     `${DIR}/rules.md:3: category "Stand-ins" (2 rules) is not the kit's or in testdata.categories`,
   ]);
   const extended = config({ testdata: { categories: [{ name: "Stand-ins", use: "Fakes" }], limits: { lines: 200, areaKB: 50, small: 0, folder: 0 } } });
-  assert.deepEqual(testdataWarnings(context(extended, texts)).filter((w) => !/area-qualified|no Level or Type/.test(w)), []);
+  assert.deepEqual(testdataWarnings(context(extended, texts)).filter((w) => !/area-qualified|has no Type/.test(w)), []);
 });
 
 test("a table's rows are read by their header, and only from tables that have the columns asked for", () => {
@@ -90,15 +90,18 @@ test("warnings: an input class listed twice, a fixture that reaches unit, and fi
       fixtures([row("a1", "GM-06", "R-12"), row("a2", "GM-06", "R-12"), row("a3", "GM-06, GM-07", "R-12"), row("a4", "GM-06", "R-12"), row("a5", "GM-06", "R-12"), row("a6", "GM-06", "R-13", "`unit`")]),
     ].join("\n"),
   };
-  const found = testdataWarnings(context(config(), texts));
+  // The fixture counts are the budget's own, by each story's risk: GM-06 is high as a whole, GM-07 is low.
+  texts["docs/plugins/uplink/user-stories.md"] = "### GM-06. Sweep\n\nRisk: high (outside input)\n\nAcceptance:\n\n- a\n\n### GM-07. Move\n\nAcceptance:\n\n- b\n";
+  const found = testdataWarnings(context(config(), texts)).filter((w) => !/Risk: high, over/.test(w));
   assert.deepEqual(found, [
     `${DIR}/setup.md:3: input \`addr\` class "blanks at the edges" is listed already, at ${DIR}/formats.md:3; list an input's classes once, and name them from other flows`,
     `${DIR}/setup.md:12: \`a6\` reaches unit, which no person can; make it a class of its input`,
-    `${DIR}/setup.md:7: story GM-06 has 6 edge-case fixtures, over 5; keep the ones only its flow shows, and ask the reviewer about any kept past it`,
-    `${DIR}/setup.md:7: rule R-12 has 5 edge-case fixtures, over 4; most are likely classes of one input; list them as its input classes`,
+    `${DIR}/: GM-06: 6 edge-case fixtures, over its 5`,
+    `${DIR}/: GM-07: 1 edge-case fixtures, over its 0 (a low-risk story gets none: its cases are classes of an input)`,
+    `${DIR}/: R-12: 5 edge-case fixtures cite it, over a rule's 4`,
   ]);
-  const roomy = config({ testdata: { limits: { fixtures: { story: 10, area: 3, rule: 10 } } } });
-  assert.deepEqual(testdataWarnings(context(roomy, texts)).filter((w) => /fixtures, over/.test(w)), [`${DIR}/setup.md: 6 edge-case fixtures, over 3; merge rows into one with axes, or move the cases that vary one input into its input classes`]);
+  const roomy = config({ testdata: { limits: { fixtures: { story: 10, area: 3, rule: 10 }, allow: { "GM-07": 1 } } } });
+  assert.deepEqual(testdataWarnings(context(roomy, texts)).filter((w) => /fixtures, over/.test(w)), [`${DIR}/setup.md: 6 edge-case fixtures, over the flow area's 3`]);
 });
 
 test("a story's Risk line reads as high or low, and anything else is a problem", () => {
@@ -146,24 +149,18 @@ test("a kind the kit does not know is a problem, for the project or an area", ()
   ]);
 });
 
-test("warnings: a check written in many files is a rule restated, and checks past a story's or a flow area's budget", () => {
+test("a checks table is from before acceptance lines were the checks: nothing budgets it or warns for it", () => {
   const checks = (rows) => ["| Check | Stories | Rules |", "| --- | --- | --- |", ...rows].join("\n");
   const ai = "| All of the above with *AI off* and no model | GM-06 | R-29 |";
   const texts = {
-    [`${DIR}/a.md`]: checks([ai, ...Array.from({ length: 8 }, (_, i) => `| Step ${i} shows its own result | GM-06 | R-1 |`)]),
-    [`${DIR}/b.md`]: checks(["| all of the above with AI off and no model. | GM-07 | R-29 |"]),
+    [`${DIR}/a.md`]: checks([ai, ...Array.from({ length: 40 }, (_, i) => `| Step ${i} shows its own result | GM-06 | R-1 |`)]),
+    [`${DIR}/b.md`]: checks([ai]),
     [`${DIR}/c/one.md`]: checks([ai]),
   };
-  const found = testdataWarnings(context(config(), texts)).filter((w) => /check/.test(w) && !/no ID/.test(w));
-  assert.deepEqual(found, [
-    `${DIR}/a.md:3: the check "All of the above with *AI off* and no model" is in 3 files; make it a rule in core.md with one test across every state, and drop it from the flows`,
-    `${DIR}/a.md:3: story GM-06 has 10 checks, over 8; keep what only it shows, and leave what a rule says to the rule`,
-  ]);
-  const tight = config({ testdata: { limits: { checks: { story: 20, area: 5, repeated: 9 } } } });
-  assert.deepEqual(testdataWarnings(context(tight, texts)).filter((w) => /check/.test(w) && !/no ID/.test(w)), [`${DIR}/a.md: 9 checks, over 5; keep what this flow shows that no rule says`]);
+  assert.deepEqual(testdataWarnings(context(config(), texts)).filter((w) => /check/.test(w)), []);
 });
 
-test("check IDs: filled in file order from the area's last, never renumbered; a repeat fails, a missing one warns", async () => {
+test("check IDs: filled in file order from the area's last, never renumbered; a repeat fails", async () => {
   const { fillCheckIds } = await import("../lib/testdata.mjs");
   const texts = {
     [`${DIR}/a.md`]: "# A\n\n| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |\n| C-07 | Kept as it is | GM-06 | R-1 | |\n|  | Has none | GM-06 | R-1 | walk |\n",
@@ -178,9 +175,6 @@ test("check IDs: filled in file order from the area's last, never renumbered; a 
   assert.equal(out.get(`${DIR}/b.md`), "| ID | Check | Stories | Rules |\n| --- | --- | --- | --- |\n| C-09 | First | GM-07 | |\n| C-10 | Second | GM-07 | R-2 |\n\nText after.\n");
   const done = { ...texts, ...Object.fromEntries(out) };
   assert.equal(fillCheckIds(Object.keys(done), (p) => done[p]).added, 0, "a second run changes nothing");
-  // Before: one warning that checks have no ID; after: none.
-  assert.ok(testdataWarnings(context(config(), texts)).includes(`${DIR}/: 3 checks have no ID; npx wf testdata ids uplink gives each its own`));
-  assert.ok(!testdataWarnings(context(config(), done)).some((w) => /no ID/.test(w)));
   const twice = { ...done, [`${DIR}/d.md`]: "| ID | Check | Stories |\n| --- | --- | --- |\n| C-07 | Again | GM-06 |\n| X-1 | Odd | GM-06 |\n" };
   assert.deepEqual(testdataProblems(context(config(), twice)).filter((p) => /check/.test(p)), [
     `${DIR}/d.md:3: check C-07 is defined already, at ${DIR}/a.md:5`,
