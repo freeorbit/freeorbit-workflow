@@ -139,6 +139,57 @@ test("short options sit in one row, shared ones are described once, and a pictur
   assert.match(html, /:root\[data-layout="table"\] nav\.rail \{ display: none; \}/, "with no rail of row ids beside it");
 });
 
+test("a field the kit does not know stops the build, with the nearest name", () => {
+  const raw = example("decision");
+  raw.intro2 = "x";
+  raw.questions[0].typ = "one";
+  raw.questions[0].options[0].preveiw = "x";
+  raw.questions[0].pictures[0].caption = "x";
+  const { problems } = normalize(raw);
+  assert.deepEqual(problems.filter((p) => p.includes("no field")), [
+    "the spec: no field intro2; did you mean intro?",
+    "questions 1 (layout): no field typ; did you mean type?",
+    "questions 1 (layout) option 1: no field preveiw; did you mean preview?",
+    "questions 1 (layout) picture 1: no field caption",
+  ]);
+  const triage = example("triage");
+  triage.items[0].contxt = "x";
+  assert.match(normalize(triage).problems.join("\n"), /items 1 \(Q-031\): no field contxt; did you mean context\?/);
+  const rows = example("testdata");
+  rows.tables[0].rows[0].recomended = "ok";
+  assert.match(normalize(rows).problems.join("\n"), /tables 1 \(R-ACC\) row 1: no field recomended; did you mean recommended\?/);
+  // Every example, block example, and answer example carries only fields the kit knows.
+  for (const dir of ["examples", "blocks", "answers"]) {
+    for (const file of readdirSync(join(EXAMPLES, "..", dir)).filter((f) => f.endsWith(".json"))) {
+      const each = JSON.parse(readFileSync(join(EXAMPLES, "..", dir, file), "utf8"));
+      if (!each.title) continue;
+      assert.deepEqual((normalize(each, {}, { parts: { "release-checks": [] } }).problems ?? []).filter((p) => p.includes("no field")), [], file);
+    }
+  }
+});
+
+test("the agent's answers are brief: a count, then only the answers that are not plain agreements", () => {
+  const raw = example("testdata");
+  raw.tables[0].rows = Array.from({ length: 12 }, (_, i) => ({ id: `R-${i + 1}`, cells: [`Rule ${i + 1}`, "limit", "none"], recommended: "ok" }));
+  const { spec } = normalize(raw);
+  const answers = Object.fromEntries(spec.questions.map((q) => [q.id, { choice: "ok" }]));
+  answers["R-ACC.R-3"] = { choice: "wrong" };
+  answers["R-ACC.R-5"] = { choice: "ok", note: "but see the fixture" };
+  delete answers["R-ACC.R-7"];
+  const record = { id: spec.id, hash: spec.hash, submitted: "2026-11-15T10:03:00.000Z", answers };
+  const brief = answersMarkdown(spec, record, {}, { brief: true });
+  assert.match(brief, /11 of 12 answered: 9 as recommended with nothing added, 2 other, 1 open\./);
+  assert.match(brief, /Only the 3 that are not as recommended are listed; npx wf ask answers accounts-rules --all lists every one\./);
+  assert.deepEqual(brief.split("\n").filter((l) => l.startsWith("- ")).map((l) => l.match(/R-\d+/)[0]), ["R-3", "R-5", "R-7"]);
+  assert.match(brief, /but see the fixture/);
+  // In full, and for a page with few agreements, every answer is listed.
+  assert.equal(answersMarkdown(spec, record).split("\n").filter((l) => l.startsWith("- ")).length, 12);
+  const { spec: small } = normalize(example("batch"));
+  const few = answersMarkdown(small, { id: small.id, hash: small.hash, submitted: "2026-11-15T10:03:00.000Z", answers: Object.fromEntries(small.questions.map((q) => [q.id, { choice: q.type === "many" ? [].concat(q.recommended) : q.recommended }])) }, {}, { brief: true });
+  assert.equal(few.split("\n").filter((l) => l.startsWith("- ")).length, small.questions.length);
+  assert.match(few, /3 of 3 answered: 3 as recommended with nothing added, 0 other, 0 open\./);
+});
+
 test("a page copies its pictures, hashes them, and keeps answers to the same page", () => {
   const raw = example("frame-review");
   const { root, view } = project(raw);
