@@ -14,14 +14,12 @@
 //   wf id <ID> [--all]                 where an ID is defined, and every place that cites it
 //   wf testdata trace [area] [--all]   spec rows no code names, and tests that name no row or story
 //   wf testdata trace --chunk <id>     a chunk's checks: proven, walk, later, disputed, or proven by nothing
-//   wf testdata ids <area>             give every check without an ID its own, C-<prefix>-NN
 //   wf testdata rename-ids [area] [--write] [--all]   qualify old IDs with their area: R-12 to R-GM-12
-//   wf testdata tag <area> <tags.md> [--write]          the designer's tags applied: Level, Type, Setup
 //   wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]
 //   wf testdata drop <area> <ID>... --why "<why>" | --from <ask id> [--write]   rows the owner dropped   an ask page of the owner's rows, or the team's
 //   wf testdata budget <area> [story ids] [--check]     each story's fixtures against its cap, for the designer's prompt
 //   wf testdata delta <area> <file>                 the designer's return, held to its caps before it is applied
-//   wf testdata prune <area> [--owner] [--all] [--write]   check rows no code cites, out of the spec
+//   wf testdata prune <area> [--all] [--write]   check rows no code cites, out of the spec
 //   wf testdata merge <folder> [--write]           a flow area's folder as one file, every row kept
 //   wf testdata fold <file> <sibling> [--write]    a small file into a sibling in its folder
 //   wf ask <templates | example | page | wait | answers | record | export | import | live | reply | history> ...   ask a person on a page beside the chat
@@ -172,14 +170,14 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata tag <area> <tags.md> [--write]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata drop <area> <ID>... --why "<why>" | --from <ask id> [--write]\n       wf testdata budget <area> [story ids] [--check]\n       wf testdata delta <area> <file>\n       wf testdata prune <area> [--owner] [--all] [--write]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata drop <area> <ID>... --why \"<why>\" | --from <ask id> [--write]\n       wf testdata budget <area> [story ids] [--check]\n       wf testdata delta <area> <file>\n       wf testdata prune <area> [--all] [--write]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
       return 2;
     }
     const root = projectRoot();
-    if (["tag", "review", "drop", "budget", "delta", "prune"].includes(name)) {
+    if (["review", "drop", "budget", "delta", "prune"].includes(name)) {
       // The kit's own steps on an area's spec as a whole: the review page, the owner's drops, the budgets, and the prune.
-      const { runBudget, runDelta, runDrop, runPrune, runReview, runTag } = await import("../lib/testdata-cli.mjs");
-      return { tag: runTag, review: runReview, drop: runDrop, budget: runBudget, delta: runDelta, prune: runPrune }[name](root, project(), args);
+      const { runBudget, runDelta, runDrop, runPrune, runReview } = await import("../lib/testdata-cli.mjs");
+      return { review: runReview, drop: runDrop, budget: runBudget, delta: runDelta, prune: runPrune }[name](root, project(), args);
     }
     if (name === "refresh-close") {
       // A refresh that took a story over its budget does not close: the stories stay stale until the spec is back within it.
@@ -237,25 +235,6 @@ const commands = {
       found.links = [...links];
       if (write) for (const [path, text] of found.texts) writeFileSync(join(root, path), text);
       for (const line of renameLines(found, { write, all: args.includes("--all") })) console.log(line);
-      return 0;
-    }
-    if (name === "ids") {
-      // The kit's own step: number the area's checks that have no ID, in file order, never renumbering one.
-      const { fillCheckIds } = await import("../lib/testdata.mjs");
-      const { execFileSync } = await import("node:child_process");
-      const { readFileSync, writeFileSync } = await import("node:fs");
-      const { join } = await import("node:path");
-      const config = loadConfig(root);
-      const area = config.areas.find((each) => each.id === args[0] && each.docs);
-      if (!area) {
-        console.log(`Usage: wf testdata ids <area>; areas with a docs folder: ${config.areas.filter((each) => each.docs).map((each) => each.id).join(", ") || "none"}`);
-        return 2;
-      }
-      const dir = `${area.docs}/test-data/`;
-      const tracked = execFileSync("git", ["ls-files", "--", dir], { cwd: root, encoding: "utf8" }).trim().split("\n").filter((p) => p.endsWith(".md"));
-      const { texts, added } = fillCheckIds(tracked, (path) => readFileSync(join(root, path), "utf8"), area.prefix ?? "");
-      for (const [path, text] of texts) writeFileSync(join(root, path), text);
-      console.log(added ? `${area.id}: ${added} ${added === 1 ? "check" : "checks"} got an ID, in ${texts.size} ${texts.size === 1 ? "file" : "files"}.` : `${area.id}: every check has an ID.`);
       return 0;
     }
     if (name === "trace") {

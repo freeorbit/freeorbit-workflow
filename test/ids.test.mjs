@@ -10,7 +10,7 @@ import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { storyIds } from "../lib/docs/shape.mjs";
 import { findId, idLines } from "../lib/idfind.mjs";
 import { idKinds, kindOf, qualify, within } from "../lib/ids.mjs";
-import { fillCheckIds, testdataProblems, testdataWarnings } from "../lib/testdata.mjs";
+import { testdataProblems, testdataWarnings } from "../lib/testdata.mjs";
 import { areaOfPath, renameIds, textSpans } from "../lib/testdata-rename.mjs";
 import { rootOf } from "../plugins/core/hooks/guard.mjs";
 
@@ -147,12 +147,6 @@ test("doc:check warns for old IDs with an example, and for a name two areas defi
   }));
   assert.ok(found.includes("docs/plugins/uplink/test-data/: 1 ID is not area-qualified (R-12); npx wf testdata rename-ids qualifies them, such as R-GM-12"), found.join("\n"));
   assert.ok(found.includes("docs/plugins/downlink/test-data/states.md:3: state ready is also defined at docs/plugins/uplink/test-data/states.md:3; a name is unique across the app"), found.join("\n"));
-});
-
-test("a check ID carries the area's prefix, numbered on from old and new IDs alike", () => {
-  const text = "| ID | Check | Stories |\n| --- | --- | --- |\n| C-04 | a | GM-01 |\n| C-GM-07 | b | GM-01 |\n|  | c | GM-01 |";
-  const { texts } = fillCheckIds(["x.md"], () => text, "GM");
-  assert.match(texts.get("x.md"), /\| C-GM-08 \| c \|/);
 });
 
 test("wf id's lines: a second definition is flagged, citations past 15 are counted, and terminal escapes are shown, not run", () => {

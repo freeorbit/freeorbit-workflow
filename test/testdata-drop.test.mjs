@@ -6,7 +6,7 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { areaSpec, fillCheckIds, testdataProblems } from "../lib/testdata.mjs";
+import { areaSpec, testdataProblems } from "../lib/testdata.mjs";
 import { runDrop } from "../lib/testdata-cli.mjs";
 import { dropRows, dropsFromAnswers } from "../lib/testdata-drop.mjs";
 
@@ -42,7 +42,7 @@ test("a review page's Drops, with each note as why", () => {
   assert.deepEqual([...dropsFromAnswers({ answers: { "GM-07.C-GM-02": { choice: "drop", note: "Help text" }, "GM-07.C-GM-01": { choice: "ok" }, "product.R-GM-01": { choice: "drop" } } })], [["C-GM-02", "Help text"], ["R-GM-01", "dropped on review"]]);
 });
 
-test("doc:check fails a dropped ID brought back or cited, and a new check never takes a dropped number", () => {
+test("doc:check fails a dropped ID brought back or cited", () => {
   const texts = {
     [`${DIR}/README.md`]: "| ID | What | Why | Dropped |\n| --- | --- | --- | --- |\n| C-GM-07 | Old | Not worth it | 2026-11-15 |\n| R-GM-03 | Old rule | Not ours | 2026-11-15 |",
     [`${DIR}/flow.md`]: "| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |\n| C-GM-07 | Back again | GM-07 | R-GM-03 | |\n|  | New | GM-07 | | |",
@@ -50,8 +50,6 @@ test("doc:check fails a dropped ID brought back or cited, and a new check never 
   const problems = testdataProblems({ config, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" });
   assert.ok(problems.some((p) => /check C-GM-07 was dropped on 2026-11-15; a row it is needed for again gets a new ID/.test(p)), problems.join("\n"));
   assert.ok(problems.some((p) => /R-GM-03 was dropped on 2026-11-15; cite the rule or check that holds instead/.test(p)), problems.join("\n"));
-  const { texts: out } = fillCheckIds(Object.keys(texts), (p) => texts[p], "GM");
-  assert.match(out.get(`${DIR}/flow.md`), /\| C-GM-08 \| New \|/);
 });
 
 test("wf testdata drop: a dry run, then --write from a page's answers, naming the code that cites the rows", () => {
