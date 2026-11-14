@@ -8,7 +8,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { runInNewContext, Script } from "node:vm";
 
-import { answered, answersMarkdown, askState, checkAnswers, recordAnswers } from "../lib/ask/answers.mjs";
+import { answered, answersMarkdown, askState, checkAnswers, localTime, recordAnswers } from "../lib/ask/answers.mjs";
 import { answersFromText, EXAMPLES, projectTemplates, runAsk, runView } from "../lib/ask/index.mjs";
 import { buildPage, exportHtml, imageSize, pageScript, pictureFile } from "../lib/ask/page.mjs";
 import { answersPath, readSpec, serve, servedFile } from "../lib/view/serve.mjs";
@@ -190,6 +190,25 @@ test("the agent's answers are brief: a count, then only the answers that are not
   assert.match(few, /3 of 3 answered: 3 as recommended with nothing added, 0 other, 0 open\./);
 });
 
+test("fixes from the page review: the wheel, the keys in Expand, R on a row, and local time", () => {
+  const raw = example("testdata");
+  raw.tables[0].rows[0].recommended = "ok";
+  const { root, view } = project(raw);
+  const { page, spec } = buildPage(root, view, raw, KIT_KINDS);
+  const html = readFileSync(page, "utf8");
+  assert.doesNotMatch(html, /overscroll-behavior: contain/, "a box with nothing more to show lets the wheel scroll the page");
+  assert.match(html, /dialog\[open\]:not\(\.viewer-room\)/, "the keys work while the pictures are expanded");
+  assert.match(html, /uis\.get\(wide\.id\)\.toggleExpand\(false\); uis\.get\(q\.id\)\.toggleExpand\?\.\(true\)/, "and Expand goes with the frame");
+  assert.match(html, /const tr = h\("tr"[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n\s*ui\.takeRec = \(\) => \{ if \(!recs\(q\)\.length\) return false;/, "R takes a table row's recommendation");
+  // The agent reads the time the person's clock showed.
+  const sent = "2026-11-14T23:02:41.017Z";
+  const d = new Date(sent);
+  const two = (n) => String(n).padStart(2, "0");
+  assert.equal(localTime(sent), `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`);
+  assert.match(answersMarkdown(spec, { id: spec.id, hash: spec.hash, submitted: sent, answers: {} }), new RegExp(`answered ${localTime(sent)}`));
+  assert.equal(localTime("not a time"), "not a time");
+});
+
 test("a page copies its pictures, hashes them, and keeps answers to the same page", () => {
   const raw = example("frame-review");
   const { root, view } = project(raw);
@@ -246,7 +265,7 @@ test("the answers read as Markdown, and the page's copied text reads back", () =
   const { spec } = normalize(example("compare"));
   const record = checkAnswers(spec, { id: spec.id, hash: spec.hash, submitted: "2026-11-13T09:30:00Z", answers: { "accounts-wide": { choice: "drift", pins: [{ picture: 1, x: 640, y: 380, kind: "drift", text: "tags clipped", box: 1 }] }, "accounts-narrow": { decide: "agent" } } }, KIT_KINDS).answers;
   const md = answersMarkdown(spec, record);
-  assert.match(md, /^# Accounts: frame against the app \(accounts-drift\), answered 2026-11-13 09:30\n/);
+  assert.ok(md.startsWith(`# Accounts: frame against the app (accounts-drift), answered ${localTime("2026-11-13T09:30:00Z")}\n`));
   assert.match(md, /- \*\*accounts-wide\*\* Accounts, wide: do these match\?: \*\*drift\*\* Drifts from the frame\.\n  - Pin 1 on App at 640, 380 \(drift\), in box 1: tags clipped/);
   assert.match(md, /- \*\*accounts-narrow\*\* .*: you decide\./);
   const { spec: grouped } = normalize(example("batch"));

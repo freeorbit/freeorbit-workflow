@@ -5,7 +5,7 @@
 @media (max-width: 860px) { .vbar .size:not(.diff) { display: none; } }
 .vbar .size.diff { color: var(--warn); }
 .vbar input[type="range"] { width: 160px; accent-color: var(--accent); }
-.stage-wrap { background: var(--backdrop); padding: 14px; overflow: auto; max-height: 76vh; overscroll-behavior: contain; }
+.stage-wrap { background: var(--backdrop); padding: 14px; overflow: auto; max-height: 76vh; }
 /* Beside a question's answer a picture fits about a third of the window, so the answer is on the same screen; a review's pages and Expand keep their room. */
 :root:not([data-layout="pages"]) .viewer:not(.expanded) { --fit-h: max(36vh, 260px); }
 .stage-wrap.pannable { cursor: grab; }
@@ -67,7 +67,7 @@ figure.pic figcaption b { color: var(--text); }
 
 /* Rows (testdata) */
 /* A long or wide table scrolls in its own box, both ways, with its header in view, so no scroll bar sits a page below. */
-.table-wrap { overflow: auto; max-height: 70vh; overscroll-behavior: contain; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); margin: 0 0 20px; }
+.table-wrap { overflow: auto; max-height: 70vh; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); margin: 0 0 20px; }
 .table-wrap thead th { position: sticky; top: 0; z-index: 1; }
 table.rows { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.rows th, table.rows td { border-bottom: 1px solid var(--line); padding: 8px 10px; vertical-align: middle; text-align: left; }

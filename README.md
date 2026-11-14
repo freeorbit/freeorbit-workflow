@@ -88,6 +88,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.71.1: ask page fixes from the review
+
+- **The wheel scrolls the page** over a picture, or over a table that fits its box. Before, a box with nothing more to show still kept the wheel, so the page stood still under the mouse.
+- **The keys work in Expand.** A verdict's key, the arrows, C, Z, and F did nothing while the pictures filled the window. Now they work, the next frame opens expanded too, and the bar says which frame it is, such as 2 of 3.
+- **R takes a table row's recommendation.** It said the row had none.
+- **The agent's answers carry local time**, as the page shows it. They carried UTC with no mark, so an evening send read as the day before.
+- **Wording.** "1 question", "Send it as", and "Leave it open" where there is one. After a status page with no questions is built, the next step printed is `wf ask live`, not `wait`.
+- **What changes in a project.** Rebuild open ask pages, or reload them after `npx wf view stop`.
+
 ### v0.71.0: ask pages answer in brief, and name a field they do not know
 
 - **Brief answers.** `wf ask wait`, `answers`, and `import` now start with a count: how many were answered, how many as recommended with nothing added, and how many are open. Past eight plain agreements, only the other answers are listed. A 117-row review comes back in about 10 lines in place of 145.
