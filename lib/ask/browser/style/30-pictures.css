@@ -64,7 +64,9 @@ figure.pic figcaption b { color: var(--text); }
 .dialog-img { max-width: 92vw; max-height: 86vh; display: block; }
 
 /* Rows (testdata) */
-.table-wrap { overflow-x: auto; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); margin: 0 0 20px; }
+/* A long or wide table scrolls in its own box, both ways, with its header in view, so no scroll bar sits a page below. */
+.table-wrap { overflow: auto; max-height: 70vh; overscroll-behavior: contain; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); margin: 0 0 20px; }
+.table-wrap thead th { position: sticky; top: 0; z-index: 1; }
 table.rows { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.rows th, table.rows td { border-bottom: 1px solid var(--line); padding: 8px 10px; vertical-align: middle; text-align: left; }
 table.rows tr:last-child td { border-bottom: 0; }
@@ -72,10 +74,11 @@ table.rows th { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-t
 table.rows tr.cur td { background: var(--accent-soft); }
 table.rows tr.ok-row td:not(.verdict-cell) { opacity: .62; }
 table.rows .note-cell input { min-width: 80px; padding: 4px 8px; font-size: 13px; }
-table.rows td:nth-child(2) { min-width: 150px; }
+/* Every text column wraps; only the box, the verdict, and the note keep to one line. */
+table.rows td:not(:first-child):not(.verdict-cell):not(.note-cell) { min-width: 110px; overflow-wrap: anywhere; }
 table.rows .seg button { padding: 0 8px; }
 table.rows .seg kbd { display: none; }
-table.rows td:not(:nth-child(2)):not(.note-cell) { white-space: nowrap; }
+table.rows td:first-child, table.rows td.verdict-cell { white-space: nowrap; }
 table.rows th:first-child, table.rows td:first-child { width: 1%; padding-right: 0; }
 
 /* Rank */
@@ -86,3 +89,4 @@ ol.rank li.dragging { opacity: .5; }
 ol.rank .n { font-weight: 600; width: 22px; color: var(--muted); font-variant-numeric: tabular-nums; }
 ol.rank .handle { cursor: grab; color: var(--muted); padding: 0 4px; }
 
+.table-wrap table.grid-q thead th { background: var(--panel); }
