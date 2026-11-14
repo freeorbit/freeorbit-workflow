@@ -102,11 +102,11 @@ Before the commit proposal, run the project's full check once. Then run the `cod
 - It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one.
 - The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
 
-With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the checks of the chunk's stories. `wf done chunk` waits until none is proven by nothing (`testdata.chunkChecks`). Each check is one of these:
+With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the checks and accepted rules of the chunk's stories. `wf done chunk` waits until none is proven by nothing (`testdata.chunkChecks`). Each check is one of these:
 
 - proven: a test or a scenario cites its ID;
 - walk: only a walk by hand proves it, so it goes on the sign-off page; once done there, its By becomes `walked <chunk>`;
-- later: its By names a later chunk;
+- later: its By names a later chunk, as a parked rule's does;
 - disputed: a `dispute` row in its gaps table says it is wrong, for the next refresh.
 
 With the design plugin's screen review, a chunk that changed UI files or frames also checks its screens:

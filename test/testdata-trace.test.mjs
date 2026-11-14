@@ -66,7 +66,8 @@ test("a chunk's checks: proven, walk, left to a later chunk, disputed, or proven
     [`${DIR}/flow.md`]: [
       "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |",
       "| C-GM-01 | Shown | GM-06 | | |", "| C-GM-02 | Looks right | GM-07 | | walk |", "| C-GM-03 | Needs CH-14's code | GM-06 | | CH-14 |",
-      "| C-GM-04 | Cannot hold | GM-08 | | |", "| C-GM-05 | Nothing proves it | GM-06 | | |", "| C-GM-06 | Another chunk's | GM-30 | | |", "| C-GM-07 | Left to this one | GM-30 | | 37d |", "| C-GM-08 | Walked before | GM-07 | | walked 19j |",
+      "| C-GM-04 | Cannot hold | GM-08 | | |", "", "| ID | Category | Rule | Stories | Accepted | By |", "| --- | --- | --- | --- | --- | --- |",
+      "| R-GM-01 | State | Kept on restart | GM-06 | 2026-11-14 | |", "| R-GM-02 | Time | Parked | GM-06 | 2026-11-13 | CH-37a |", "| R-GM-03 | Time | Proposed | GM-06 | new | |", "", "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |", "| C-GM-05 | Nothing proves it | GM-06 | | |", "| C-GM-06 | Another chunk's | GM-30 | | |", "| C-GM-07 | Left to this one | GM-30 | | 37d |", "| C-GM-08 | Walked before | GM-07 | | walked 19j |",
       "", "| ID | Kind | Question |", "| --- | --- | --- |", "| G-GM-01 | dispute | C-GM-04 and C-GM-01 cannot both hold on one screen |",
     ].join("\n"),
     "crates/a/src/lib.rs": "#[test]\n// C-GM-01\nfn shown() {}\n",
@@ -75,8 +76,8 @@ test("a chunk's checks: proven, walk, left to a later chunk, disputed, or proven
   const ids = (list) => list.map((each) => each.id);
   assert.deepEqual(ids(found.proven), ["C-GM-01", "C-GM-08"], "a walk signed off in an earlier chunk is not asked again");
   assert.deepEqual(ids(found.walk), ["C-GM-02"]);
-  assert.deepEqual(ids(found.later), ["C-GM-03"]);
+  assert.deepEqual(ids(found.later), ["R-GM-02", "C-GM-03"], "a parked rule waits for its chunk");
   assert.deepEqual(found.disputed.map((each) => `${each.id} ${each.gap}`), ["C-GM-04 G-GM-01"], "a proven check that a dispute names stays proven");
-  assert.deepEqual(ids(found.unproven), ["C-GM-05", "C-GM-07"], "another chunk's story is not this chunk's, unless its By names this chunk");
+  assert.deepEqual(ids(found.unproven), ["R-GM-01", "C-GM-05", "C-GM-07"], "another chunk's story is not this chunk's, unless its By names this chunk; a proposed rule waits for the reviewer");
   assert.match(chunkLines(found).join("\n"), /for the sign-off page, a walk by hand each: C-GM-02/);
 });

@@ -173,7 +173,7 @@ test("a chunk ends only when its checks are proven, walked, left to a later chun
   const run = (mode, status) => {
     const cfg = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], testdata: { chunkChecks: mode } });
     const io = { read: (p) => (p === "docs/plugins/uplink/test-data/README.md" ? "# Spec" : ""), wf: (args) => ({ status: args.join(" ") === "testdata trace --chunk 37d" ? status : 0 }) };
-    const step = steps("/nowhere", cfg, "chunk", "done", "37d", io).find((s) => Array.isArray(s) && s[0].startsWith("every check of the chunk"));
+    const step = steps("/nowhere", cfg, "chunk", "done", "37d", io).find((s) => Array.isArray(s) && s[0].startsWith("every check and rule of the chunk"));
     return step[1]();
   };
   assert.equal(run("fail", 0).status, "OK");

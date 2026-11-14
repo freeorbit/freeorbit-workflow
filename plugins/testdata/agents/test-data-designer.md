@@ -108,6 +108,8 @@ A first draft returns the files for the stories the prompt names, each ready to 
 - Group the flow sections of `user-flows.md` into flow areas. Name each in one lowercase word, or two joined by a hyphen.
 - The README's index between `<!-- areas -->` and `<!-- /areas -->`, and its refresh history, are kept by the main agent. Leave them empty.
 - New rules go under `## Proposed rules`, with Accepted `new`.
+- **An accepted rule is never edited in place.** A change to one goes under `## Proposed rules` with the same ID and Accepted `edit`, the new wording in full, so the reviewer sees what they are accepting. Its removal is the same row with `Rule: Remove: <why>`.
+- A `dispute` row may name a rule, as one may a check: answer it the same way, by proposing the edit, proposing the removal, or keeping it and saying why.
 - Write in short, plain sentences. Do not invent features the stories do not have.
 
 ## Refresh

@@ -35,14 +35,17 @@ A one-file flow area has the same parts as `##` sections: `## Rules`, `## Datase
 ## Rules
 
 ```markdown
-| ID | Category | Rule | Stories | Accepted |
-| --- | --- | --- | --- | --- |
-| R-GM-09 | Money and limits | Estimates are asserted only by how they relate, never by a price | GM-36, GM-37 | 2026-11-13 |
+| ID | Category | Rule | Stories | Accepted | By |
+| --- | --- | --- | --- | --- | --- |
+| R-GM-09 | Money and limits | Estimates are asserted only by how they relate, never by a price | GM-36, GM-37 | 2026-11-13 | |
 ```
 
 - **ID.** `R-<prefix>-NN`, such as `R-GM-09`: the area's prefix and the next free number in the area, never reused.
 - **Rule.** One line a reader takes in at once. A rule two flow areas need goes in `core.md`.
-- **Accepted.** The day the reviewer accepted it. A proposed rule sits under `## Proposed rules` in the same table shape, with `new`, and the reviewer accepts a category's rows together.
+- **Accepted.** The day the reviewer accepted these words. A proposed rule sits under `## Proposed rules` in the same table shape, with `new`, and the reviewer accepts a category's rows together.
+- **A change to an accepted rule** is proposed the same way: its own ID, Accepted `edit`, and the new wording in full, or `Remove: <why>`. Accepting it replaces the row and sets a new date. A rule is never edited in place, so its date always covers its words.
+- **By.** Optional. Empty when a test proves the rule where it lives, citing its ID. A later chunk's id, such as `CH-37a`, parks it until that chunk, as `wf testdata trace --chunk` reads it. Never write the parking in the Accepted cell.
+- **Where it lives.** A rule only one flow area cites stays in that area's file; once two cite it, it moves to `core.md`, and `wf doc:check` warns until it does.
 
 ## Categories
 
@@ -128,8 +131,8 @@ A state is kebab-case and names its fixed today when anything depends on a date.
 | G-GM-03 | gap | Time | Does the same calendar day 12 months back count as stale? | GM-39 |
 ```
 
-- **Kind.** `gap`: the stories leave it open. `contradiction`: two lines say different things. `dispute`: building or testing showed a check is wrong, such as two checks that cannot both hold, or one no screen can show; its Question names the check's ID.
-- **A dispute** is the one row the main agent writes, since it comes from the code side. It says what the test found, not how the code works, and keeps the check out of the chunk end's unproven list.
+- **Kind.** `gap`: the stories leave it open. `contradiction`: two lines say different things. `dispute`: building or testing showed a check or a rule is wrong, such as two that cannot both hold, or one no screen can show; its Question names the ID.
+- **A dispute** is the one row the main agent writes, since it comes from the code side. `wf doc:check` fails one that names an ID no spec defines. It says what the test found, not how the code works, and keeps the check out of the chunk end's unproven list.
   - The next refresh reads it, with the check's file, and edits, drops, or keeps the check, and the row leaves the table.
   - A check is never edited by hand to make a test pass.
 - **Category.** A rule category where one fits, else the topic.
