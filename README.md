@@ -88,6 +88,20 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.66.0: every check is proven, walked, left to a named chunk, or disputed
+
+- **A chunk's checks.** `npx wf testdata trace --chunk <id>` sorts the checks of the chunk's stories, read from its build-order row (a range such as `DR-01 to DR-20` counts each story):
+  - proven: a test or a scenario cites its ID, or By says `walked <chunk>`;
+  - walk: for the owner's sign-off page;
+  - later: By names a later chunk;
+  - disputed: a `dispute` row in its gaps table;
+  - proven by nothing.
+- **Chunk end** (`wf done chunk`) fails while any is proven by nothing. `testdata.chunkChecks` is `fail` by default, or `warn` or `off` for a project whose tests do not cite check IDs yet. On Freeorbit, chunk 38f has 191 checks: 13 to walk, and 178 that no test cites yet.
+- **Walk checks reach the sign-off page**, one row each by ID. Once signed off, By becomes `walked <chunk>`, so a later chunk sharing the story never asks again. Proof is a citation, never a rerun, so a check proven once stays proven.
+- **The e2e tester** reads the Checks table for a journey's stories, cites a check's ID in a finding, and finds datasets by `### DS-<prefix>-<n>.` as well as the old `### D<n>.`. It looked only for the old heading, which v0.64.0's rename removed.
+- **A disputed check.** When a test shows a check is wrong, the main agent adds a `dispute` row to the area's gaps table, naming the check, and never edits the check by hand. The next refresh answers it.
+- **What changes in a project.** Run `npx wf docs sync`. Set `testdata.chunkChecks` to `warn` until tests cite check IDs, if that is far off.
+
 ### v0.65.3: pictures expand to the window, and nothing scrolls the page sideways
 
 - **The page no longer scrolls sideways.** A question's column took its content's width, so a picture at 100%, or a wide table or diff, made the whole page wider with its own scroll bar. Now each scrolls in its own box.

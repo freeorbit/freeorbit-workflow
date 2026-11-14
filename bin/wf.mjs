@@ -13,6 +13,7 @@
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf id <ID> [--all]                 where an ID is defined, and every place that cites it
 //   wf testdata trace [area] [--all]   spec rows no code names, and tests that name no row or story
+//   wf testdata trace --chunk <id>     a chunk's checks: proven, walk, later, disputed, or proven by nothing
 //   wf testdata ids <area>             give every check without an ID its own, C-<prefix>-NN
 //   wf testdata rename-ids [area] [--write] [--all]   qualify old IDs with their area: R-12 to R-GM-12
 //   wf testdata merge <folder> [--write]           a flow area's folder as one file, every row kept
@@ -235,7 +236,25 @@ const commands = {
     }
     if (name === "trace") {
       // The kit's own step: it reads the spec and the code, and runs no project command.
-      const { trace, traceLines } = await import("../lib/testdata-trace.mjs");
+      const { chunkChecks, chunkLines, storiesIn, trace, traceLines } = await import("../lib/testdata-trace.mjs");
+      const at = args.indexOf("--chunk");
+      if (at >= 0) {
+        // A chunk's checks: its end waits until none is proven by nothing.
+        const chunk = args[at + 1] ?? "";
+        const ctx = project();
+        const { findChunk } = await import("../lib/docs/shape.mjs");
+        const { readFileSync, existsSync } = await import("node:fs");
+        const { join } = await import("node:path");
+        const read = (p) => (p && existsSync(join(root, p)) ? readFileSync(join(root, p), "utf8") : "");
+        const row = findChunk([read(ctx.config.buildOrder.file), read(ctx.config.buildOrder.done)], chunk);
+        if (!row) {
+          console.log(`No row for ${chunk || "a chunk"} in the build order; say it as CH-12.`);
+          return 2;
+        }
+        const found = chunkChecks(ctx, chunk, storiesIn(row.stories, ctx.config.areas.map((a) => a.prefix).filter(Boolean)));
+        for (const line of chunkLines(found)) console.log(line);
+        return found.unproven.length ? 1 : 0;
+      }
       const area = args.find((a) => !a.startsWith("--")) ?? null;
       for (const line of traceLines(trace(project(), area), { all: args.includes("--all") })) console.log(line);
       return 0;

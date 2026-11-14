@@ -165,3 +165,20 @@ test("a test-data spec or a story file is not a quick change, though it is under
   const config = merge(DEFAULTS, { stories: { files: ["docs/app/user-stories.md"] } });
   assert.deepEqual(outsideQuick(["docs/workflow/x.md", "docs/plugins/downlink/test-data/prepare.md", "docs/app/user-stories.md", "README.md"], config), ["docs/plugins/downlink/test-data/prepare.md", "docs/app/user-stories.md"]);
 });
+
+test("a chunk ends only when its checks are proven, walked, left to a later chunk, or disputed; warn and off ease a project in", async () => {
+  const { steps } = await import("../lib/tracks.mjs");
+  const { merge } = await import("../lib/config/config.mjs");
+  const { DEFAULTS } = await import("../lib/config/defaults.mjs");
+  const run = (mode, status) => {
+    const cfg = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], testdata: { chunkChecks: mode } });
+    const io = { read: (p) => (p === "docs/plugins/uplink/test-data/README.md" ? "# Spec" : ""), wf: (args) => ({ status: args.join(" ") === "testdata trace --chunk 37d" ? status : 0 }) };
+    const step = steps("/nowhere", cfg, "chunk", "done", "37d", io).find((s) => Array.isArray(s) && s[0].startsWith("every check of the chunk"));
+    return step[1]();
+  };
+  assert.equal(run("fail", 0).status, "OK");
+  assert.equal(run("fail", 1).status, "FAIL");
+  assert.match(run("warn", 1).note, /is warn/);
+  assert.equal(run("warn", 1).status, "OK");
+  assert.equal(run("off", 1).status, "SKIP");
+});

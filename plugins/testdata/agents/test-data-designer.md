@@ -119,9 +119,10 @@ The folder exists and the prompt names the stories that changed and the files th
 - **Spec.** A check, fixture, gap, or state is missing or wrong. Edit it in the file that holds it.
 - **A new story** goes in the flow area whose `Flows:` line holds its flow. A flow no area holds gets a new file, named in the delta.
 - **A new edge case** joins the input class that already gets its outcome, or the input gets a new class. Only what the flow alone shows becomes a fixture.
+- **A dispute.** A `dispute` row in a gaps table says building or testing showed a check is wrong. Read it as a question about the stories, never as news of the code: edit the check, drop it, or keep it and say why, then drop the row. Every open dispute in the files you read gets one of the three.
 - **A file past about a page**, a folder that would fit in one file, or a flow area past `testdata.limits.areaKB`, after the edits: propose the split, naming each new file and what moves to it.
 
-If every story is no change, return `Need: none` and nothing else. Otherwise:
+If every story is no change and no dispute is open, return `Need: none` and nothing else. Otherwise:
 
 ```markdown
 # Test data delta
