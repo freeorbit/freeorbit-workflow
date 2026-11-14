@@ -59,6 +59,7 @@ Every template, question type, and block is made for one kind of question. Pick 
 
 ## The spec
 
+- **Fields.** A field the kit does not know fails the check, with the nearest name.
 - **Top.** `id` (lowercase, dashes), `title`, `template`, `intro`; `chunk` and `from` (a role) for the record.
 - **A question.** `id`, `text`, `type` (`one`, `many`, `text`, `rank`, or a richer one below), `options` of `id`, `label`, `why`, `preview` (a text sketch), `kind` (a colour), and `recommended` with `why`.
   - **Recommend.** In `decision`, `batch`, `naming`, and `triage`, every option says what it means in its own `why`, and every choice names `recommended` and says `why`; `rank` lists its items in the suggested order and says `why` at the top. The page check fails without them.
@@ -98,7 +99,7 @@ Every template shares one layout: a header with the title, who asked, the draft 
 
 Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, or `decide` (`agent` or `later`), with an optional `note`, `other`, `owner`, `reply`, and `pins` (picture, x, y, `w` and `h` for a box, kind, text).
 
-- `npx wf ask answers <id>` prints them again; `--json` gives the file. They are in `.cache/view/answers/<id>.json`.
+- `wait` prints a count, then every answer; past eight plain agreements with the recommendation, only the others. `npx wf ask answers <id>` prints them again, `--all` lists every one, and `--json` gives the file. They are in `.cache/view/answers/<id>.json`.
 - `npx wf ask export <id>` writes one `.html` with the pictures inside, and the answers as `.md` and `.json`. Offline, the page saves an answers file for `wf ask import`.
 - Building the page again asks again: `wait` waits for a send after the build. Answers to the same page, pictures and all, stay filled in.
 - The server takes answers only from its own pages, on this machine: it listens on 127.0.0.1, refuses other host names, and needs the token it puts in each page it serves.

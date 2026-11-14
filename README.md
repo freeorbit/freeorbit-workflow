@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.71.0: ask pages answer in brief, and name a field they do not know
+
+- **Brief answers.** `wf ask wait`, `answers`, and `import` now start with a count: how many were answered, how many as recommended with nothing added, and how many are open. Past eight plain agreements, only the other answers are listed. A 117-row review comes back in about 10 lines in place of 145.
+- **`npx wf ask answers <id> --all`** lists every answer, as before. The JSON file, the export, and the history do not change.
+- **An unknown field stops the build.** A field the kit does not know, on the spec, an item, an option, or a picture, is a problem that names the nearest field, such as "no field typ; did you mean type?". Before, a misspelt field was dropped and the page built without it.
+- **What changes in a project.** A spec that carried an extra field now fails once and says which; take the field out. A project's own template names its items' fields itself, so its items are not checked.
+
 ### v0.70.0: ask pages leave room for the answer
 
 From a review of the ask pages on every template and a 117-row test-data page.
