@@ -74,7 +74,9 @@ Changed stories: <ids>
 Files: <area files>
 ```
 
-A first draft returns the whole folder: save each file, then run `index`. A refresh returns a delta naming each edit's file: apply only the rows it names, never a rewritten dataset or section.
+**Just in time.** A first draft is for the stories of this chunk and the next only: name them as its changed stories. A later chunk's flow areas wait, as a line in the README index, until its chunk starts; then `stale` lists their stories, which were never covered, and that refresh writes them. The area's rules in `core.md` and `formats.md` are drafted whole at Step 3, since every chunk relies on them.
+
+A first draft returns the folder for those stories: save each file, then run `index`. A refresh returns a delta naming each edit's file: apply only the rows it names, never a rewritten dataset or section.
 
 - `Need: none`. Stop. Change nothing, not even the `Updated` line.
 - **Proposed rules.** Leave each under `## Proposed rules` until the reviewer accepts it, then move its row into that file's rules table, or `core.md` when two flow areas need it, with `new` replaced by the day.
@@ -96,6 +98,8 @@ Send it back, or fix the line, when any of these is true in a file it touched:
 - A rule has no ID, category, stories, or Accepted cell, or a rule about one flow area sits in `core.md`.
 - A low-risk story got input classes or edge-case fixtures, or prose stands where `test-data-formats.md` gives a table.
 - A fixture varies only one input's value, or reaches `unit`: it belongs in that input's classes. An input's classes are listed again for another flow.
+- A check restates a rule, or one that holds everywhere is written in each flow.
+- `npx wf testdata trace <area>` names a row this chunk builds that no code names yet: it is not built, or its test cites another id.
 - `npx wf doc:check` warns for a file it wrote: past one screen, a flow area past its size, a category on no list, an input class listed twice, or fixtures past `testdata.limits.fixtures`. Over a budget, the designer merges rows or asks the reviewer whether a row's risk is worth it.
 
 Then ask the reviewer. A first draft gets its own review, rules one category at a time. A refresh is reviewed with the chunk-start questions: the spec edits in a line each, and the proposed rules by category, to accept or drop. Update the area's row in the build order's Areas table, and add a line to its History.

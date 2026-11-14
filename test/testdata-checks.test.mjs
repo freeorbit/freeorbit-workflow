@@ -135,3 +135,20 @@ test("a kind the kit does not know is a problem, for the project or an area", ()
     ".workflow/config.json: a testdata.categories entry has no name",
   ]);
 });
+
+test("warnings: a check written in many files is a rule restated, and checks past a story's or a flow area's budget", () => {
+  const checks = (rows) => ["| Check | Stories | Rules |", "| --- | --- | --- |", ...rows].join("\n");
+  const ai = "| All of the above with *AI off* and no model | GM-06 | R-29 |";
+  const texts = {
+    [`${DIR}/a.md`]: checks([ai, ...Array.from({ length: 8 }, (_, i) => `| Step ${i} shows its own result | GM-06 | R-1 |`)]),
+    [`${DIR}/b.md`]: checks(["| all of the above with AI off and no model. | GM-07 | R-29 |"]),
+    [`${DIR}/c/one.md`]: checks([ai]),
+  };
+  const found = testdataWarnings(context(config(), texts)).filter((w) => /check/.test(w));
+  assert.deepEqual(found, [
+    `${DIR}/a.md:3: the check "All of the above with *AI off* and no model" is in 3 files; make it a rule in core.md with one test across every state, and drop it from the flows`,
+    `${DIR}/a.md:3: story GM-06 has 10 checks, over 8; keep what only it shows, and leave what a rule says to the rule`,
+  ]);
+  const tight = config({ testdata: { limits: { checks: { story: 20, area: 5, repeated: 9 } } } });
+  assert.deepEqual(testdataWarnings(context(tight, texts)).filter((w) => /check/.test(w)), [`${DIR}/a.md: 9 checks, over 5; keep what this flow shows that no rule says`]);
+});

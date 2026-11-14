@@ -74,7 +74,8 @@ A topic file, or a one-file area, holds up to three tables: what a run shows, th
 | Fixture | Varies | Expect | Stories | Rules | Reach |
 ```
 
-- **Check.** What a passing run shows, in one line.
+- **Check.** What a passing run shows for this flow, in one line, that no rule already says. A rule that holds everywhere, such as nothing reaching a log or every step working with AI off, is not restated as a check in each flow: it gets one test across every state, and the flow's rules name it.
+- **How many.** About eight checks a story and thirty a flow area (`testdata.limits.checks`). `wf doc:check` warns past them, and for the same check written in three or more files.
 
 ### Input classes
 

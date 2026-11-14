@@ -56,7 +56,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf scan full \| diff <since> [--light]` | The review's scans, from `review.scans` in the config, into `.cache/review-scan`, with the scope list and the diff |
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
-| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands` |
+| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]`: spec rows no code names, and tests that name no row or story |
 | `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import \| live \| reply \| history` | Ask pages: any number of questions on one page in the browser pane, from twelve templates or the project's own in `.workflow/ask-templates/`, with pictures, boxes, pins, compare views, paging, bulk answers, and colour themes. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file; `live` updates a status page while a step runs, `reply` answers under a question, and `history` lists every round sent. The `ask-page` skill has the spec |
 | `wf view serve \| stop \| setup` | The shared `question-pictures` server: one per machine on 127.0.0.1, serving each project's `.cache/view` at its own key, with an inbox of every ask at `/`, and taking answers with a per-run token. `serve` starts or joins it, `stop` ends it, `setup` writes it into `.claude/launch.json` |
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
@@ -86,6 +86,21 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.62.0: checks say what rules do not, the spec comes just in time, and a trace
+
+- **Checks.** A check now says what a flow shows that no rule already says.
+  - A rule that holds everywhere (nothing in a log, AI off, a restart) lives once in `core.md`, with one test across every state.
+  - `testdata.limits.checks` allows about 8 checks a story and 30 a flow area.
+  - doc:check warns past those, and when one check is written in 3 or more files.
+- **Just in time.** A first draft covers the stories of this chunk and the next. A later chunk's flow areas are written when it starts, so no spec is refreshed for code not yet begun.
+- **`npx wf testdata trace [area] [--all]`** lists the spec rows no code names (rules, fixtures, inputs, states, datasets), and the tests that name no row and no story. It reports facts, and nothing fails.
+- **CS-TEST** adds three lines:
+  - a test reads the spec's values, never retypes them, and cites what it proves;
+  - a skip for a missing tool is a failure in the full check;
+  - the tests a change touches run first, and changed-line coverage may report what a change left untested.
+- **On Freeorbit.** doc:check now warns for 7 flow areas over 30 checks, and for "all of the above with AI off and no model" in 14 files. The trace finds 78 spec ids no code names (the Guides tab is not built yet), and tests that still cite retired ids, such as `asst-page-injection`.
+- Run `npx wf docs sync`.
 
 ### v0.61.0: every template has its moment
 
