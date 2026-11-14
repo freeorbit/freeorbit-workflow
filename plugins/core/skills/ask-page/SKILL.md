@@ -14,7 +14,9 @@ An ask page is one HTML page built from a JSON spec. The person answers in the b
 
 ## Steps
 
-1. Pick a template: `npx wf ask templates`. Start from its example: `npx wf ask example <template> > .cache/view/<id>.json`, then edit it.
+1. Pick a template: `npx wf ask templates`. Start from its example: `npx wf ask example <template> > .cache/view/<id>.json`, then edit it. The example builds as it is, with stand-in pictures.
+   - `npx wf ask fields <part>` prints one template's, question type's, or block's fields and limits.
+   - `npx wf ask page <spec> --check` checks a spec and builds nothing, so the open page stays.
 2. Build the page: `npx wf ask page .cache/view/<id>.json`. It checks the spec, copies the pictures, starts the shared server if none runs, and prints the address.
 3. Open the address in the browser pane. Where the pane's preview start is needed, start `question-pictures` from `.claude/launch.json`: it joins the shared server.
 4. Run `npx wf ask wait <id>` in the background. Say in one line that the page is open and what it asks; do not repeat the questions in the chat.

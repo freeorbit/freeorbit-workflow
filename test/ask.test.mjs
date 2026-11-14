@@ -9,11 +9,14 @@ import { fileURLToPath } from "node:url";
 import { runInNewContext, Script } from "node:vm";
 
 import { answered, answersMarkdown, askState, checkAnswers, localTime, recordAnswers } from "../lib/ask/answers.mjs";
-import { answersFromText, EXAMPLES, projectTemplates, runAsk, runView } from "../lib/ask/index.mjs";
-import { buildPage, exportHtml, imageSize, pageScript, pictureFile } from "../lib/ask/page.mjs";
+import { answersFromText, EXAMPLE_PICTURES, EXAMPLES, projectTemplates, runAsk, runView } from "../lib/ask/index.mjs";
+import { BLOCK_FIELDS, fieldsOf, TYPE_FIELDS } from "../lib/ask/fields.mjs";
+import { placeholderPng } from "../lib/ask/placeholder.mjs";
+import { BLOCK_KINDS } from "../lib/ask/blocks.mjs";
+import { buildPage, checkPage, exportHtml, imageSize, pageScript, pictureFile } from "../lib/ask/page.mjs";
 import { answersPath, readSpec, serve, servedFile } from "../lib/view/serve.mjs";
 import { asker, ensureHub, hubUp, projects, register } from "../lib/view/hub.mjs";
-import { checkTemplate, normalize, TEMPLATES } from "../lib/ask/spec.mjs";
+import { checkTemplate, normalize, QUESTION_FIELDS, TEMPLATES, TYPES } from "../lib/ask/spec.mjs";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
@@ -253,6 +256,60 @@ test("pictures: one row of controls, and a review's verdicts stay in view on a p
   assert.match(html, /:root\[data-layout="pages"\] main\.content \{ max-width: 1240px; \}/);
   assert.match(html, /:root\[data-layout="pages"\] \.viewer:not\(\.expanded\) > \.verdicts \{ position: sticky; bottom: var\(--foot\);/, "the verdicts stay above the footer");
   assert.match(html, /@media \(max-width: 700px\) \{ :root\[data-layout="pages"\] \.viewer:not\(\.expanded\) > \.verdicts \{ position: static;/, "but never cover a narrow picture");
+});
+
+test("the agent's side: every example builds as printed, fields lists a part, and --check builds nothing", async () => {
+  // A stand-in picture is a real PNG of the size its name asks for.
+  assert.deepEqual(imageSize(placeholderPng("accounts-wide.png")), [960, 600]);
+  assert.deepEqual(imageSize(placeholderPng("accounts-narrow.png", 1)), [390, 700]);
+  const root = mkdtempSync(join(tmpdir(), "wf-ask-agent-"));
+  spawnSync("git", ["init", "-q", root]);
+  mkdirSync(join(root, ".workflow"), { recursive: true });
+  writeFileSync(join(root, ".workflow/config.json"), "{}");
+  const cwd = process.cwd();
+  const before = { no: process.env.WF_ASK_NO_SERVER, state: process.env.WF_STATE_DIR };
+  process.chdir(root);
+  process.env.WF_ASK_NO_SERVER = "1";
+  process.env.WF_STATE_DIR = join(root, ".state");
+  try {
+    for (const name of Object.keys(TEMPLATES)) {
+      const out = [];
+      assert.equal(await runAsk(["example", name], (line) => out.push(line)), 0);
+      const raw = JSON.parse(out.join("\n"));
+      // Printed in a project, the example names pictures the kit wrote, so it checks and builds as it is.
+      const { spec } = checkPage(root, raw);
+      assert.equal(spec.template, name);
+      for (const image of out.join("\n").matchAll(/"image":\s*"([^"]+)"/g)) assert.ok(image[1].startsWith(`${EXAMPLE_PICTURES}/`) && existsSync(join(root, image[1])), image[1]);
+    }
+    // --check says the spec is right and writes no page; with a field it does not know, it fails like a build.
+    const spec = join(root, "plan.json");
+    writeFileSync(spec, JSON.stringify(example("plan")));
+    const said = [];
+    assert.equal(await runAsk(["page", spec, "--check"], (line) => said.push(line)), 0);
+    assert.match(said.join("\n"), /chunk-14-plan: the spec is right, 4 questions \(plan\)\. Nothing was built\./);
+    assert.equal(existsSync(join(root, ".cache/view/ask/chunk-14-plan")), false);
+    writeFileSync(spec, JSON.stringify({ ...example("plan"), stepz: [] }));
+    await assert.rejects(() => runAsk(["page", spec, "--check"], () => {}), /no field stepz; did you mean steps\?/);
+  } finally {
+    process.chdir(cwd);
+    for (const [key, value] of [["WF_ASK_NO_SERVER", before.no], ["WF_STATE_DIR", before.state]]) { if (value == null) delete process.env[key]; else process.env[key] = value; }
+    rmSync(root, { recursive: true, force: true });
+  }
+  // fields knows every template, question type, and block, and names only fields the check takes.
+  for (const part of [...Object.keys(TEMPLATES), ...TYPES, ...BLOCK_KINDS]) assert.ok(fieldsOf(part)?.length, part);
+  assert.equal(fieldsOf("nope"), null);
+  assert.deepEqual(Object.keys(TYPE_FIELDS).sort(), [...TYPES].sort());
+  assert.deepEqual(Object.keys(BLOCK_FIELDS).sort(), [...BLOCK_KINDS].sort());
+  for (const t of Object.values(TYPE_FIELDS)) for (const f of t.fields) assert.ok(QUESTION_FIELDS.includes(f), f);
+  assert.match(fieldsOf("triage").join("\n"), /Each of items: id, text, context, needs, role, chunk, recommended, why, noPick/);
+  // Every block in the kit's examples carries only the fields its line lists.
+  for (const dir of ["examples", "blocks", "answers"]) {
+    for (const file of readdirSync(join(EXAMPLES, "..", dir)).filter((f) => f.endsWith(".json"))) {
+      const data = JSON.parse(readFileSync(join(EXAMPLES, "..", dir, file), "utf8"));
+      const blocks = Array.isArray(data) ? data : [...(data.blocks ?? []), ...(data.sections ?? []).flatMap((sec) => sec.blocks ?? [])];
+      for (const block of blocks) for (const key of Object.keys(block)) assert.ok(["type", "title", "note", ...(BLOCK_FIELDS[block.type] ?? [])].includes(key), `${file}: ${block.type}.${key}`);
+    }
+  }
 });
 
 test("a page copies its pictures, hashes them, and keeps answers to the same page", () => {

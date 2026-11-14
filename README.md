@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.74.0: ask page examples build as printed, with `fields` and `--check`
+
+- **Every example builds as it is.** In a project, `npx wf ask example <template>` writes a stand-in picture for each screen the example names, under `.cache/view/example-pictures/`, and prints the spec with those paths. Before, 5 of the 12 examples failed on pictures a project does not have.
+- **`npx wf ask fields <part>`** prints one template's, question type's, or block's fields and limits, from the lists the spec check uses. With no part it lists them all. An agent reads a few lines in place of the skill and its references.
+- **`npx wf ask page <spec> --check`** checks a spec, finds its pictures, and prints the advice, and builds nothing: the page that is open stays, and nobody is told.
+- **What changes in a project.** Nothing. `.cache/view` is already out of the repository.
+
 ### v0.73.0: a review's verdicts stay in view, and pictures have one row of controls
 
 - **A paged review takes the window's width**, up to 1240 px, with no rail beside it: the strip already lists the frames. This covers `compare`, `frame-review`, and `storyboard`.
