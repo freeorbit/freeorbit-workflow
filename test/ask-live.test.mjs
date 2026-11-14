@@ -236,7 +236,7 @@ test("a new waiting ask is told once, across tabs, and the ones waiting when it 
   const stored = new Map();
   const sandbox = {
     window: {},
-    document: { hidden: true },
+    document: { hidden: true, hasFocus: () => false },
     localStorage: { getItem: (k) => stored.get(k) ?? null, setItem: (k, v) => stored.set(k, v), removeItem: (k) => stored.delete(k) },
     location: { assign() {} },
   };
@@ -255,9 +255,57 @@ test("a new waiting ask is told once, across tabs, and the ones waiting when it 
   notifier.tell("Done", "", "t");
   assert.equal(told.length, 2);
   sandbox.document.hidden = false;
+  sandbox.document.hasFocus = () => true;
   notifier.tell("Done", "", "t2");
   assert.equal(told.length, 2, "a page the person is looking at tells nothing");
   notifier.disable();
   notifier.check([ask("newer")]);
   assert.equal(told.length, 2);
+});
+
+test("where the server has desktop notifications, the page asks it to show one, with the page's token, in place of the browser's", async () => {
+  const posted = [];
+  const stored = new Map();
+  const sandbox = {
+    window: {},
+    document: { hidden: false, hasFocus: () => false },
+    localStorage: { getItem: (k) => stored.get(k) ?? null, setItem: (k, v) => stored.set(k, v), removeItem: (k) => stored.delete(k) },
+    location: { assign() {} },
+    fetch: async (url, opts) => {
+      if (url === "/__hub") return { json: async () => ({ notify: true }) };
+      posted.push([url, opts.headers["X-WF-Token"], JSON.parse(opts.body)]);
+      return { json: async () => ({ ok: true }) };
+    },
+  };
+  runInNewContext(readFileSync(join(here, "../lib/ask/browser/shared.js"), "utf8"), sandbox);
+  const { notifier } = sandbox.window.wfAskShared;
+  notifier.configure({ key: "k", id: "a", token: "t0k" });
+  await notifier.init();
+  assert.ok(notifier.supported() && notifier.desktop, "no browser Notification is needed");
+  assert.equal(await notifier.enable(), "granted");
+  notifier.tell("Chunk 12: done", "All steps", "x");
+  assert.deepEqual(posted, [["/__hub/notify", "t0k", { key: "k", id: "a", title: "Chunk 12: done", body: "All steps" }]], "told while the chat, not the page, has the keys");
+});
+
+test("the desktop notifier passes the text as arguments, keeps it short and plain, and will not flood", async () => {
+  const { desktopCommand, desktopNotifier } = await import("../lib/view/desktop.mjs");
+  const bin = mkdtempSync(join(tmpdir(), "wf-notify-"));
+  writeFileSync(join(bin, "notify-send"), "");
+  const linux = desktopCommand({ platform: "linux", env: { PATH: bin } });
+  assert.deepEqual(linux.args("T", "B"), ["--app-name=Workflow asks", "--", "T", "B"]);
+  assert.equal(desktopCommand({ platform: "linux", env: { PATH: "/nowhere" } }), null);
+  assert.equal(desktopCommand({ platform: "win32", env: {} }), null);
+  const mac = desktopCommand({ platform: "darwin", env: { PATH: bin } });
+  if (mac) assert.deepEqual(mac.args('a "quote"', "b").slice(-2), ['a "quote"', "b"], "the text never enters the script");
+  const runs = [];
+  let clock = 0;
+  const show = desktopNotifier({ command: linux, run: (file, args) => runs.push(args.slice(-2)), now: () => clock });
+  assert.equal(show("Asks\u001b[2J", "x".repeat(400)), true);
+  assert.deepEqual(runs[0], ["Asks [2J", "x".repeat(240)]);
+  clock = 500;
+  assert.equal(show("Other", ""), false, "one a second at most");
+  clock = 2000;
+  assert.equal(show("Asks\u001b[2J", "x".repeat(400)), false, "the same one once a minute");
+  assert.equal(show("Other", ""), true);
+  assert.equal(desktopNotifier({ command: null }), null);
 });

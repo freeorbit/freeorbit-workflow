@@ -193,7 +193,7 @@ test("the server serves each project at its key, swaps in its token, and takes a
   const { port, token, pageToken, close } = await serve({ resolve: find, list: () => [{ key, view, name: "demo" }], check: checkAnswers, stateOf: askState, port: 0, version: "x", log: (line) => logs.push(line) });
   const base = `http://127.0.0.1:${port}`;
   try {
-    assert.deepEqual(await (await fetch(`${base}/__hub`)).json(), { hub: "freeorbit-workflow", version: "x", pid: process.pid, port });
+    assert.deepEqual(await (await fetch(`${base}/__hub`)).json(), { hub: "freeorbit-workflow", version: "x", pid: process.pid, port, notify: false });
     const served = await fetch(`${base}/${key}/ask/${spec.id}/`);
     const page = await served.text();
     const mine = pageToken(key, spec.id);
@@ -237,6 +237,30 @@ test("the server serves each project at its key, swaps in its token, and takes a
     const other = await new Promise((done) => request({ host: "127.0.0.1", port, path: `/${key}/ask/${spec.id}/`, headers: { Host: "evil.test" } }, (res) => { res.resume(); done(res.statusCode); }).end());
     assert.equal(other, 403);
     assert.match(logs.join("\n"), new RegExp(`answers for ${key}/chunk-12-layout: 1 of 2 still open`));
+  } finally {
+    await close();
+  }
+});
+
+test("a page asks the server for a desktop notification with its own token; the inbox has one too, and no other origin may", async () => {
+  const raw = example("decision");
+  const { root, view } = project(raw);
+  const { spec } = buildPage(root, view, raw, KIT_KINDS, {}, {});
+  const key = projectKey(root);
+  const shown = [];
+  const find = (k) => (k === key ? { key, view, name: "demo", kinds: KIT_KINDS } : null);
+  const { port, pageToken, close } = await serve({ resolve: find, list: () => [], check: checkAnswers, stateOf: askState, port: 0, log: () => {}, desktop: (title, body) => { shown.push([title, body]); return true; } });
+  const base = `http://127.0.0.1:${port}`;
+  const post = (body, tok, headers = {}) => fetch(`${base}/__hub/notify`, { method: "POST", headers: { "Content-Type": "application/json", "X-WF-Token": tok, ...headers }, body: JSON.stringify(body) });
+  try {
+    assert.equal((await (await fetch(`${base}/__hub`)).json()).notify, true);
+    assert.equal((await post({ key, id: spec.id, title: "T", body: "B" }, pageToken(key, spec.id))).status, 200);
+    assert.equal((await post({ key, id: spec.id, title: "T2" }, "wrong")).status, 403);
+    assert.equal((await post({ key, id: "no-such-page", title: "T3" }, pageToken(key, "no-such-page"))).status, 403);
+    assert.equal((await post({ key: "__hub", id: "inbox", title: "T4", body: "" }, pageToken("__hub", "inbox"))).status, 200);
+    assert.equal((await post({ key, id: spec.id, title: "T5" }, pageToken(key, spec.id), { Origin: "http://evil.test" })).status, 403);
+    assert.match(await (await fetch(`${base}/`)).text(), new RegExp(`<meta name="wf-token" content="${pageToken("__hub", "inbox")}">`));
+    assert.deepEqual(shown, [["T", "B"], ["T4", ""]]);
   } finally {
     await close();
   }
