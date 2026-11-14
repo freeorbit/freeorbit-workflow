@@ -65,7 +65,7 @@ Save the two files it returns, `core.md` and `formats.md`, and ask the reviewer 
 
 A story edit does not start the designer. Each story's acceptance is hashed, and a story whose hash differs from what the spec last covered is stale. Refresh at these points only:
 
-- **Chunk start.** `stale <area> --chunks <this>,<next>`. If it lists stories, run one refresh for exactly those.
+- **Chunk start.** `stale <area> --chunks <this>,<next>`. If it lists stories, run one refresh for exactly those. A `dispute` row in a gaps table joins it: name the disputed check's stories, and its file.
 - **During a chunk**, when a story this chunk builds changes, before building the part that depends on it.
 - **When asked**: refresh every story `stale` lists.
 

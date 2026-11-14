@@ -58,3 +58,52 @@ test("the trace: spec rows no code names, and tests that name no row and no stor
   assert.ok(lines.includes("tests: 2 of 5 name no spec row and no story, most in:"));
   assert.throws(() => trace(context, "nope"), /no area nope/);
 });
+
+test("a chunk's checks: proven, walk, left to a later chunk, disputed, or proven by nothing; a story range counts each story", async () => {
+  const { chunkChecks, chunkLines } = await import("../lib/testdata-trace.mjs");
+  const texts = {
+    [`${DIR}/flow.md`]: [
+      "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |",
+      "| C-GM-01 | Shown | GM-06 | | |", "| C-GM-02 | Looks right | GM-07 | | walk |", "| C-GM-03 | Needs CH-14's code | GM-06 | | CH-14 |",
+      "| C-GM-04 | Cannot hold | GM-08 | | |", "", "| ID | Category | Rule | Stories | Accepted | By |", "| --- | --- | --- | --- | --- | --- |",
+      "| R-GM-01 | State | Kept on restart | GM-06 | 2026-11-14 | |", "| R-GM-02 | Time | Parked | GM-06 | 2026-11-13 | CH-37a |", "| R-GM-03 | Time | Proposed | GM-06 | new | |", "", "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |", "| C-GM-05 | Nothing proves it | GM-06 | | |", "| C-GM-06 | Another chunk's | GM-30 | | |", "| C-GM-07 | Left to this one | GM-30 | | 37d |", "| C-GM-08 | Walked before | GM-07 | | walked 19j |",
+      "", "| ID | Kind | Question |", "| --- | --- | --- |", "| G-GM-01 | dispute | C-GM-04 and C-GM-01 cannot both hold on one screen |",
+    ].join("\n"),
+    "crates/a/src/lib.rs": "#[test]\n// C-GM-01\nfn shown() {}\n",
+  };
+  const found = chunkChecks({ config, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" }, "37d", ["GM-06", "GM-07", "GM-08"], { open: ["37d", "CH-14", "CH-37a"], done: ["19j"] });
+  const ids = (list) => list.map((each) => each.id);
+  assert.deepEqual(ids(found.proven), ["C-GM-01", "C-GM-08"], "a walk signed off in an earlier chunk is not asked again");
+  assert.deepEqual(ids(found.walk), ["C-GM-02"]);
+  assert.deepEqual(ids(found.later), ["R-GM-02", "C-GM-03"], "a parked rule waits for its chunk");
+  assert.deepEqual(found.disputed.map((each) => `${each.id} ${each.gap}`), ["C-GM-04 G-GM-01"], "a proven check that a dispute names stays proven");
+  assert.deepEqual(ids(found.unproven), ["R-GM-01", "C-GM-05", "C-GM-07"], "another chunk's story is not this chunk's, unless its By names this chunk; a proposed rule waits for the reviewer");
+  assert.match(chunkLines(found).join("\n"), /for the sign-off page, a walk by hand each: C-GM-02/);
+});
+
+test("a By that names no open chunk, or walked a chunk not done, proves nothing; a lane can be named; only a test or a scenario proves", async () => {
+  const { chunkChecks, chunkTrace } = await import("../lib/testdata-trace.mjs");
+  const texts = {
+    [`${DIR}/flow.md`]: [
+      "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |",
+      "| C-GM-01 | Typo | GM-06 | | CH-99 |", "| C-GM-02 | Not walked yet | GM-06 | | walked 37d |", "| C-GM-03 | A lane's | GM-06 | | CH-01-fe |", "| C-GM-04 | Named in app code | GM-06 | | |", "| C-GM-05 | Named in a fixture | GM-06 | | |", "| C-GM-06 | In a test file | GM-06 | | |",
+    ].join("\n"),
+    "src/app.ts": "// C-GM-04 is shown here\n",
+    "tools/testdata/fixtures/a.json": '{"proves": "C-GM-05"}',
+    "tests/flow.spec.ts": "test('x', () => {}) // C-GM-06\n",
+  };
+  const ctx = { config, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" };
+  const found = chunkChecks(ctx, "37d", ["GM-06"], { open: ["37d", "CH-01-fe"], done: ["19j"] });
+  assert.deepEqual(found.proven.map((each) => each.id), ["C-GM-06"]);
+  assert.deepEqual(found.later.map((each) => each.id), ["C-GM-03"]);
+  assert.deepEqual(found.unproven.map((each) => [each.id, each.bad ?? ""]), [
+    ["C-GM-01", "By names CH-99, which is not an open chunk"],
+    ["C-GM-02", "By says walked 37d, which is not a done chunk"],
+    ["C-GM-04", ""],
+    ["C-GM-05", ""],
+  ]);
+  const order = "## Chunks\n\n| Chunk | Status | Stories |\n| --- | --- | --- |\n| 37d. Catalog | In progress | GM-06 |\n";
+  const read = (p) => (p === config.buildOrder.file ? order : "");
+  assert.equal(chunkTrace(ctx, "37d", read).found.chunk, "37d");
+  assert.deepEqual(chunkTrace(ctx, "99z", read), { noRow: true });
+});

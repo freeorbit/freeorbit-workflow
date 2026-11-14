@@ -168,7 +168,7 @@ test("check IDs: filled in file order from the area's last, never renumbered; a 
   const texts = {
     [`${DIR}/a.md`]: "# A\n\n| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |\n| C-07 | Kept as it is | GM-06 | R-1 | |\n|  | Has none | GM-06 | R-1 | walk |\n",
     [`${DIR}/b.md`]: "| Check | Stories | Rules |\n| --- | --- | --- |\n| First | GM-07 | |\n| Second | GM-07 | R-2 |\n\nText after.\n",
-    [`${DIR}/c.md`]: "| ID | Category | Rule | Stories | Accepted |\n| --- | --- | --- | --- | --- |\n| R-01 | Time | Today is fixed | GM-06 | 2026-11-13 |\n",
+    [`${DIR}/c.md`]: "| ID | Category | Rule | Stories | Accepted |\n| --- | --- | --- | --- | --- |\n| R-01 | Time | Today is fixed | GM-06 | 2026-11-13 |\n| R-1 | Time | Cited by a.md | GM-06 | 2026-11-13 |\n| R-2 | Time | Cited by b.md | GM-07 | 2026-11-13 |\n",
   };
   const files = (p) => texts[p] ?? "";
   const { texts: out, added } = fillCheckIds(Object.keys(texts), files);
@@ -197,3 +197,36 @@ test("a folder is advised to become one file only when that file fits a page", (
   assert.ok(!found.some((w) => w.startsWith("docs/plugins/uplink/test-data/b/: 2 files")));
 });
 
+
+test("doc:check fails a table a blank line cuts from its header, and a rule or check cited but defined nowhere; an edit proposal is not a second definition", () => {
+  const rulesTable = (...rows) => ["| ID | Category | Rule | Stories | Accepted |", "| --- | --- | --- | --- | --- |", ...rows].join("\n");
+  const texts = {
+    [`${DIR}/core.md`]: rulesTable("| R-GM-01 | Time | Today is fixed | GM-01 | 2026-11-13 |"),
+    [`${DIR}/cut.md`]: ["| ID | Category | Rule | Stories | Accepted |", "| --- | --- | --- | --- | --- |", "", "| R-GM-02 | Time | Lost | GM-01 | 2026-11-13 |"].join("\n"),
+    [`${DIR}/flow.md`]: [
+      "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |", "| C-GM-01 | Shown | GM-01 | R-GM-01, R-GM-09 | |", "",
+      "| ID | Kind | Question |", "| --- | --- | --- |", "| G-GM-01 | dispute | C-GM-07 cannot hold |", "",
+      "## Proposed rules", "", rulesTable("| R-GM-01 | Time | Today is fixed, in UTC | GM-01 | edit |"),
+    ].join("\n"),
+  };
+  const found = testdataProblems(context(config(), texts));
+  assert.deepEqual(found.sort(), [
+    `${DIR}/cut.md:3: a blank line cuts the table's rows from its header, so no tool reads them; remove it`,
+    `${DIR}/flow.md:3: R-GM-09 is cited but defined nowhere in the spec; cite the rule or check that holds, or restore it`,
+    `${DIR}/flow.md:7: C-GM-07 is cited but defined nowhere in the spec; cite the rule or check that holds, or restore it`,
+  ].sort(), "R-GM-01 under Proposed rules with edit is not defined twice");
+});
+
+test("doc:check warns for rules waiting on the reviewer, and for a rule two flow areas cite outside core.md", () => {
+  const rulesTable = (...rows) => ["| ID | Category | Rule | Stories | Accepted |", "| --- | --- | --- | --- | --- |", ...rows].join("\n");
+  const texts = {
+    [`${DIR}/core.md`]: rulesTable("| R-GM-01 | Time | Shared | GM-01 | 2026-11-13 |"),
+    [`${DIR}/move.md`]: `${rulesTable("| R-GM-02 | State | Move's own | GM-01 | 2026-11-13 |", "| R-GM-03 | State | Proposed | GM-01 | new |")}\n\n| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |\n| C-GM-01 | x | GM-01 | R-GM-01, R-GM-02 | |`,
+    [`${DIR}/assess.md`]: "| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |\n| C-GM-02 | y | GM-02 | R-GM-01, R-GM-02 | |",
+  };
+  const found = testdataWarnings(context(config(), texts)).filter((w) => /reviewer|core\.md/.test(w));
+  assert.deepEqual(found, [
+    `${DIR}/: 1 proposed rule waits for the reviewer (Accepted new or edit); accept or drop them by category`,
+    `${DIR}/move.md:3: rule R-GM-02 is cited by 2 flow areas (assess, move); a rule two flow areas need goes in core.md`,
+  ]);
+});

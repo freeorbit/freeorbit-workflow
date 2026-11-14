@@ -13,6 +13,7 @@
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf id <ID> [--all]                 where an ID is defined, and every place that cites it
 //   wf testdata trace [area] [--all]   spec rows no code names, and tests that name no row or story
+//   wf testdata trace --chunk <id>     a chunk's checks: proven, walk, later, disputed, or proven by nothing
 //   wf testdata ids <area>             give every check without an ID its own, C-<prefix>-NN
 //   wf testdata rename-ids [area] [--write] [--all]   qualify old IDs with their area: R-12 to R-GM-12
 //   wf testdata merge <folder> [--write]           a flow area's folder as one file, every row kept
@@ -38,7 +39,7 @@
 //   wf doctor         whether the project's set-up is whole
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { KIT_ROOT, reconcile } from "../lib/setup/ai.mjs";
@@ -165,7 +166,7 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
       return 2;
     }
     const root = projectRoot();
@@ -235,7 +236,20 @@ const commands = {
     }
     if (name === "trace") {
       // The kit's own step: it reads the spec and the code, and runs no project command.
-      const { trace, traceLines } = await import("../lib/testdata-trace.mjs");
+      const { chunkLines, chunkTrace, trace, traceLines } = await import("../lib/testdata-trace.mjs");
+      const at = args.indexOf("--chunk");
+      if (at >= 0) {
+        // A chunk's checks and rules: 1 while any is proven by nothing, 2 when the chunk has no row.
+        const chunk = args[at + 1] ?? "";
+        const read = (path) => (path && existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "");
+        const { found, noRow } = chunkTrace(project(), chunk, read);
+        if (noRow) {
+          console.log(`No row for ${chunk || "a chunk"} in the build order or the done list; name it as the row does, such as CH-12 or 37d.`);
+          return 2;
+        }
+        for (const line of chunkLines(found)) console.log(line);
+        return found.unproven.length ? 1 : 0;
+      }
       const area = args.find((a) => !a.startsWith("--")) ?? null;
       for (const line of traceLines(trace(project(), area), { all: args.includes("--all") })) console.log(line);
       return 0;

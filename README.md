@@ -88,6 +88,26 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.66.0: every check and rule is proven, walked, left to a named chunk, or disputed
+
+- **A chunk's checks.** `npx wf testdata trace --chunk <id>` sorts the checks of the chunk's stories, read from its build-order row (a range such as `DR-01 to DR-20` counts each story):
+  - proven: a test or a scenario cites its ID (a test's body or the comments above it, or a file under tests, e2e, or scenarios; a mention in app code, or in a fixture the generator writes, proves nothing), or By says `walked <a done chunk>`;
+  - walk: for the owner's sign-off page;
+  - later: By names another open chunk, a lane such as `CH-01-fe` included; a By naming no open chunk is unproven, and says so;
+  - disputed: a `dispute` row in its gaps table;
+  - proven by nothing.
+- **Chunk end** (`wf done chunk`) fails while any is proven by nothing, and fails whenever the trace cannot run, in warn mode too. `testdata.chunkChecks` is `fail` by default, or `warn` or `off` for a project whose tests do not cite check IDs yet. On Freeorbit, chunk 38f has 191 checks: 13 to walk, and 178 that no test cites yet.
+- **Walk checks reach the sign-off page**, one row each by ID. Once signed off, By becomes `walked <chunk>`, so a later chunk sharing the story never asks again. Proof is a citation, never a rerun, so a check proven once stays proven.
+- **The e2e tester** reads the Checks table for a journey's stories, cites a check's ID in a finding, and finds datasets by `### DS-<prefix>-<n>.` as well as the old `### D<n>.`. It looked only for the old heading, which v0.64.0's rename removed.
+- **A disputed check.** When a test shows a check is wrong, the main agent adds a `dispute` row to the area's gaps table, naming the check, and never edits the check by hand. The next refresh answers it.
+- **Rules too.**
+  - The chunk view and its gate include the accepted rules of the chunk's stories. On Freeorbit, chunk 38f has 105 rules beside its 191 checks, and 23 of the 296 are proven by a test today.
+  - A rules table may have a `By` column: a later chunk's id parks a rule until then, in place of "Parked until" in the Accepted cell.
+  - An accepted rule is never edited in place. A change is proposed under Proposed rules with its own ID and Accepted `edit`, and accepting it sets a new date, so the date always covers the words. A dispute row may name a rule.
+- **doc:check fails** a table whose rows a blank line cuts from its header, since no tool reads them. It also fails a rule or check that a check, fixture, input class, or dispute cites but no spec defines. On Freeorbit it finds one cut table, in `downlink/test-data/prepare/README.md`, which hides R-DR-64, 86, and 88.
+- **doc:check warns** for proposed rules waiting on the reviewer, and for a rule two flow areas cite that is not in `core.md`, the 10 on Freeorbit.
+- **What changes in a project.** Run `npx wf docs sync`. Remove the blank line doc:check names. Set `testdata.chunkChecks` to `warn` until tests cite check and rule IDs, if that is far off. Move "Parked until" out of an Accepted cell into `By`.
+
 ### v0.65.3: pictures expand to the window, and nothing scrolls the page sideways
 
 - **The page no longer scrolls sideways.** A question's column took its content's width, so a picture at 100%, or a wide table or diff, made the whole page wider with its own scroll bar. Now each scrolls in its own box.

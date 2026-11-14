@@ -102,6 +102,13 @@ Before the commit proposal, run the project's full check once. Then run the `cod
 - It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one.
 - The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
 
+With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the checks and accepted rules of the chunk's stories. `wf done chunk` waits until none is proven by nothing (`testdata.chunkChecks`). Each check is one of these:
+
+- proven: a test or a scenario cites its ID;
+- walk: only a walk by hand proves it, so it goes on the sign-off page; once done there, its By becomes `walked <chunk>`;
+- later: its By names a later chunk, as a parked rule's does;
+- disputed: a `dispute` row in its gaps table says it is wrong, for the next refresh.
+
 With the design plugin's screen review, a chunk that changed UI files or frames also checks its screens:
 
 - Before the code review, `npx wf screens --gate <chunk>` passes: every frame showing the chunk's stories is reached, or waits on a later chunk the designer agreed to. A frame shared by two chunks is reached by the first to end, or handed to the later one.
@@ -113,7 +120,7 @@ With the design plugin's screen review, a chunk that changed UI files or frames 
 Then move the chunk's row in [build-order.md](../log/build-order.md#chunks): to Waiting if something about the chunk is left to check, or to [chunks-done.md](../log/chunks-done.md) if not.
 
 - A row moved to the done list gets its "For the client" sentence: what the client can now do, in plain words, with no ids, such as "You can sign in with your work email and password." The client's board posts it when the chunk's stories are built.
-- When the owner checks what is left by hand, ask on a `signoff` page, one check an acceptance line, so each is done or objected to with a note.
+- When the owner checks what is left by hand, ask on a `signoff` page, one check an acceptance line and one for each `walk` check the trace lists, by its ID, so each is done or objected to with a note.
 
 After the commit, propose the chunk's pull request with the `pull-request` skill. It is squash-merged on the owner's yes, as in [branches.md](branches.md).
 

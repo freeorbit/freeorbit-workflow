@@ -24,7 +24,7 @@ The prompt names the area, the journeys to walk, the scenario and fixtures for e
 
 First run `npx wf config`, which prints the project's settings over the kit's defaults (the file `.workflow/config.json` holds only the project's own, so do not read it instead). The area's entry in `areas` gives its `docs` folder, `e2e.reads` the docs that hold the app commands, the stubs, and the project's own app steps, and `screens.narrow` the narrow window size. Then read only:
 
-- In the area's `docs` folder: `overview.md`, `user-stories.md`, `user-flows.md`, `design/screens.md`, and in `test-data/`, `core.md` and the area files that hold the prompt's journeys (search the folder for `### D<n>.`).
+- In the area's `docs` folder: `overview.md`, `user-stories.md`, `user-flows.md`, `design/screens.md`, and in `test-data/`, `core.md` and the area files that hold the prompt's journeys (search the folder for the dataset's heading, `### DS-<prefix>-<n>.`, or `### D<n>.` in a spec not yet renamed, and for its stories' IDs in the `Checks` tables).
 - Each doc in `e2e.reads`, for the commands, the scenarios, the stubs, and the app steps.
 - The files the app writes during your run, under the folder the prompt names.
 
@@ -61,10 +61,11 @@ A journey that needs time to pass, or another step a person takes outside the pa
 For each journey in the prompt:
 
 1. Read its section in its area file under `test-data/`: the scenario or set-up, and every "A passing run shows" line. Read the stories it covers. Their acceptance lines are what the user was promised.
+   - Find the checks for the journey's stories: each row of a `| ID | Check | Stories | ... |` table whose Stories name one of them. Each is one thing a passing run shows, by its ID, such as `C-GM-41`.
 2. Plan the steps a person would take, from the flows and the screens. Start from the scenario the prompt names for the journey: it holds the journey's `Starts from:` state, which the prompt names beside it, though its name may differ. If it names none, start from the closest one, and say so.
 3. Add each typed and date fixture the prompt names, from the `Edge-case fixtures` table in that area file, or in `core.md`. Enter it where a person would, and check what the screen does with it.
 4. Walk it with `run`, a few steps at a time. Read the page text after each move. Take a screenshot only when the text does not tell you enough, or a step fails.
-5. Check each "A passing run shows" line, and each acceptance line the journey covers. Also check what a person notices:
+5. Check each check of the journey's stories, each "A passing run shows" line, and each acceptance line the journey covers. Also check what a person notices:
    - The words on screen say what the story says.
    - A step that the stories say works without an optional feature, such as an assistant, works with it off.
    - The narrow window shows everything, with nothing cut off.
@@ -88,7 +89,7 @@ Area: <area>. Journeys walked: <ids>. Deferred: <ids or none>.
 
 ```json
 [{"prefix": "E2E", "title": "...", "severity": "High|Medium|Low|Info", "confidence": "High|Medium|Low",
-  "rule": "<story ID and acceptance line, or the journey line>", "where": "<frame or screen name>",
+  "rule": "<the check's ID, such as C-GM-41, else the story ID and acceptance line, or the journey line>", "where": "<frame or screen name>",
   "evidence": "<what you saw, quoted from the page>", "why": "<what the user loses>",
   "suggestion": "<what the user would expect instead>",
   "note": "Replay: `<scenario> › <step> › <step>`"}]
@@ -96,7 +97,7 @@ Area: <area>. Journeys walked: <ids>. Deferred: <ids or none>.
 
 ## Walked
 
-- <journey id>: each line checked, pass or the draft title.
+- <journey id>: each check by its ID, and each other line checked, pass or the draft title. A check marked `walk` you walked says so: the owner's sign-off still has the last word on it.
 
 ## Not checked
 

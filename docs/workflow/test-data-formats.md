@@ -35,14 +35,17 @@ A one-file flow area has the same parts as `##` sections: `## Rules`, `## Datase
 ## Rules
 
 ```markdown
-| ID | Category | Rule | Stories | Accepted |
-| --- | --- | --- | --- | --- |
-| R-GM-09 | Money and limits | Estimates are asserted only by how they relate, never by a price | GM-36, GM-37 | 2026-11-13 |
+| ID | Category | Rule | Stories | Accepted | By |
+| --- | --- | --- | --- | --- | --- |
+| R-GM-09 | Money and limits | Estimates are asserted only by how they relate, never by a price | GM-36, GM-37 | 2026-11-13 | |
 ```
 
 - **ID.** `R-<prefix>-NN`, such as `R-GM-09`: the area's prefix and the next free number in the area, never reused.
 - **Rule.** One line a reader takes in at once. A rule two flow areas need goes in `core.md`.
-- **Accepted.** The day the reviewer accepted it. A proposed rule sits under `## Proposed rules` in the same table shape, with `new`, and the reviewer accepts a category's rows together.
+- **Accepted.** The day the reviewer accepted these words. A proposed rule sits under `## Proposed rules` in the same table shape, with `new`, and the reviewer accepts a category's rows together.
+- **A change to an accepted rule** is proposed the same way: its own ID, Accepted `edit`, and the new wording in full, or `Remove: <why>`. Accepting it replaces the row and sets a new date. A rule is never edited in place, so its date always covers its words.
+- **By.** Optional. Empty when a test proves the rule where it lives, citing its ID. A later chunk's id, such as `CH-37a`, parks it until that chunk, as `wf testdata trace --chunk` reads it. Never write the parking in the Accepted cell.
+- **Where it lives.** A rule only one flow area cites stays in that area's file; once two cite it, it moves to `core.md`, and `wf doc:check` warns until it does.
 
 ## Categories
 
@@ -77,7 +80,11 @@ A topic file, or a one-file area, holds up to three tables: what a run shows, th
 ```
 
 - **ID.** `C-<prefix>-NN`, such as `C-GM-41`, the next free number in the area, never reused or renumbered, as rule IDs are. A test or a scenario that proves the check cites it, such as `// C-GM-41`, so `npx wf testdata trace` can say which checks nothing proves. `npx wf testdata ids <area>` gives every check without one its ID.
-- **By.** Empty when a test or a scenario proves it. `walk` when only the walk through the app by hand can, so the trace does not list it as unproven.
+- **By.** Who proves the check:
+  - empty: a test or a scenario;
+  - `walk`: only the walk through the app by hand, so it goes on the chunk's sign-off page, and the trace does not list it as unproven;
+  - `walked <chunk>`, such as `walked 37d`: the owner signed it off there, so a later chunk sharing its story counts it as proven and never asks again;
+  - a later chunk's id, such as `CH-14`, when that chunk's code is what can prove it. The main agent sets that, with the reviewer's yes.
 - **Check.** What a passing run shows for this flow, in one line, that no rule already says. A rule that holds everywhere, such as nothing reaching a log or every step working with AI off, is not restated as a check in each flow: it gets one test across every state, and the flow's rules name it.
 - **How many.** About eight checks a story and thirty a flow area (`testdata.limits.checks`). `wf doc:check` warns past them, and for the same check written in three or more files.
 
@@ -124,7 +131,10 @@ A state is kebab-case and names its fixed today when anything depends on a date.
 | G-GM-03 | gap | Time | Does the same calendar day 12 months back count as stale? | GM-39 |
 ```
 
-- **Kind.** `gap`: the stories leave it open. `contradiction`: two lines say different things.
+- **Kind.** `gap`: the stories leave it open. `contradiction`: two lines say different things. `dispute`: building or testing showed a check or a rule is wrong, such as two that cannot both hold, or one no screen can show; its Question names the ID.
+- **A dispute** is the one row the main agent writes, since it comes from the code side. `wf doc:check` fails one that names an ID no spec defines. It says what the test found, not how the code works, and keeps the check out of the chunk end's unproven list.
+  - The next refresh reads it, with the check's file, and edits, drops, or keeps the check, and the row leaves the table.
+  - A check is never edited by hand to make a test pass.
 - **Category.** A rule category where one fits, else the topic.
 - **Question.** One the story's owner can answer. An answered row leaves the table, and its answer goes to the decisions log.
 - A story check adds a second table for stories that look high-risk with no Risk line: `| Story | Risk | Why |`.

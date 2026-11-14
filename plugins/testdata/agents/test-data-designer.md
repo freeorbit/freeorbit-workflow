@@ -108,6 +108,8 @@ A first draft returns the files for the stories the prompt names, each ready to 
 - Group the flow sections of `user-flows.md` into flow areas. Name each in one lowercase word, or two joined by a hyphen.
 - The README's index between `<!-- areas -->` and `<!-- /areas -->`, and its refresh history, are kept by the main agent. Leave them empty.
 - New rules go under `## Proposed rules`, with Accepted `new`.
+- **An accepted rule is never edited in place.** A change to one goes under `## Proposed rules` with the same ID and Accepted `edit`, the new wording in full, so the reviewer sees what they are accepting. Its removal is the same row with `Rule: Remove: <why>`.
+- A `dispute` row may name a rule, as one may a check: answer it the same way, by proposing the edit, proposing the removal, or keeping it and saying why.
 - Write in short, plain sentences. Do not invent features the stories do not have.
 
 ## Refresh
@@ -119,9 +121,10 @@ The folder exists and the prompt names the stories that changed and the files th
 - **Spec.** A check, fixture, gap, or state is missing or wrong. Edit it in the file that holds it.
 - **A new story** goes in the flow area whose `Flows:` line holds its flow. A flow no area holds gets a new file, named in the delta.
 - **A new edge case** joins the input class that already gets its outcome, or the input gets a new class. Only what the flow alone shows becomes a fixture.
+- **A dispute.** A `dispute` row in a gaps table says building or testing showed a check or a rule is wrong. Read it as a question about the stories, never as news of the code. For a check, edit it, drop it, or keep it and say why. For an accepted rule, propose the edit or the removal under Proposed rules with Accepted `edit`, never in place, or keep it and say why. Then drop the row. Every open dispute in the files you read gets one of these.
 - **A file past about a page**, a folder that would fit in one file, or a flow area past `testdata.limits.areaKB`, after the edits: propose the split, naming each new file and what moves to it.
 
-If every story is no change, return `Need: none` and nothing else. Otherwise:
+If every story is no change and no dispute is open, return `Need: none` and nothing else. Otherwise:
 
 ```markdown
 # Test data delta
