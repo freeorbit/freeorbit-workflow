@@ -97,6 +97,18 @@ test("templates expand into plain questions", () => {
   assert.equal(pairs.questions[0].pins, true);
 });
 
+test("a wide picture, table, or diff scrolls in its own box, never the page; pictures expand to the window and pan when zoomed", () => {
+  const raw = example("compare");
+  const { root, view } = project(raw);
+  const html = readFileSync(buildPage(root, view, raw, KIT_KINDS).page, "utf8");
+  assert.match(html, /\.fold-line, \.fold-body \{ display: grid; grid-template-columns: minmax\(0, 1fr\)/, "a question's column never takes its content's width");
+  assert.match(html, /\.fold-body > div \{ min-height: 0; min-width: 0;/);
+  assert.match(html, /dialog\.viewer-room/, "expanded pictures sit in a modal dialog, above the header and footer");
+  assert.match(html, /calc\(var\(--fit-h, 72vh\)/, "Fit uses the expanded viewer's height");
+  assert.match(html, /f: \(\) => ui\.toggleExpand/);
+  assert.match(html, /base\.onzoom = \(\) => \{ over\.style\.width = base\.style\.getPropertyValue\("--w"\); \}/, "the swipe overlay is as wide as its picture, so the line and the cut agree past Fit");
+});
+
 test("a page copies its pictures, hashes them, and keeps answers to the same page", () => {
   const raw = example("frame-review");
   const { root, view } = project(raw);
