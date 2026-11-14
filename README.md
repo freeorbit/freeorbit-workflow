@@ -88,6 +88,21 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.64.1: rename-ids fixed from Freeorbit's first run, and a deep review
+
+- **rename-ids.**
+  - In an area's docs folder, an old ID is that area's, defined now or retired. Before, `D10` in Uplink's history became the App's `DS-APP-10`, and a retired `D16` was left as it was.
+  - In code only comments and string literals change, so `const D23` and `D27::Tiny` still compile. A JS template's `${…}` counts as code.
+  - Left alone: product data files (JSON, TOML, YAML outside tests and fixtures), symbolic links, and the kit's own docs.
+  - Where the path names no area, a story or decision ID on the same line can name it. An ID the path's area does not know, which another area defines, is listed for a person.
+- **doc:check.**
+  - `C-GM-49` no longer reads as story `GM-49`.
+  - A deleted file that is not yet staged no longer crashes it.
+  - "Make it one file" comes only when that file, without its README, fits `testdata.limits.lines`.
+- **The blind agents' guard** takes a chunk worktree as its root, so the test-data designer can read there. Only the project, or a git worktree of the same repository, can be the root: a parent folder's config, or a fixture's, never sets the policy.
+- **One pattern source.** doc:check, the story checks, `wf id`, and `rename-ids` build their ID patterns from `lib/ids.mjs`. A story is two digits everywhere. A project with no area prefixes has no area kinds. `wf id` shows a line's terminal escapes as `�`.
+- **What changes in a project.** Run `npx wf docs sync`, then follow v0.64.0's steps. On Freeorbit the dry run renames 4,626 mentions in 363 files, and lists 212 for a person. Its generator must read `### DS-<prefix>-NN.` headings, since tests holding sample spec text are renamed too.
+
 ### v0.64.0: every ID is unique across the app, and `wf id` finds one
 
 - **Area-qualified IDs.** A rule, check, gap, or dataset ID now carries its area's prefix: `R-GM-119`, `C-GM-41`, `G-GM-03`, and `### DS-GM-27.`. The letter says the kind (Rule, Check, Gap, DataSet); the prefix says the area.

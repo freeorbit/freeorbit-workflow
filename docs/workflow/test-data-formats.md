@@ -14,7 +14,7 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 | `coverage.toml` | Each story's acceptance hash when the spec last covered it, written by the project's tool |
 
 - **About a page.** A file holds up to about 100 lines (`testdata.limits.lines`). `wf doc:check` warns past it, and past `testdata.limits.areaKB` for one flow area.
-- **Not too many files.** A flow area under about 150 lines (`testdata.limits.folder`) is one file, and a file in a folder under about 15 lines (`testdata.limits.small`) folds into a sibling. `wf doc:check` advises both: each file is a read and a link.
+- **Not too many files.** A folder under about 150 lines (`testdata.limits.folder`) whose one file, without the README, would fit `testdata.limits.lines` is one file, and a file in a folder under about 15 lines (`testdata.limits.small`) folds into a sibling. `wf doc:check` advises both: each file is a read and a link.
 - **One index row.** The docs index lists the area's `README.md`, or a folder's `README.md`, which links each file in it.
 - **Unique across the app.** Rule, check, gap, and dataset IDs carry the area's prefix, such as `R-GM-09`, so no two areas share one. Fixtures, states, and inputs are named once in the whole app. [ids.md](ids.md) has every pattern, and `npx wf id <ID>` finds where one is defined and cited.
 

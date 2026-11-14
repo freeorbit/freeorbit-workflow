@@ -170,13 +170,13 @@ const commands = {
     if (name === "rename-ids") {
       // The kit's own step: a dry run unless --write.
       const { renameIds, renameLines } = await import("../lib/testdata-rename.mjs");
-      const { execFileSync } = await import("node:child_process");
-      const { readFileSync, writeFileSync } = await import("node:fs");
+      const { writeFileSync } = await import("node:fs");
       const { join } = await import("node:path");
-      const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split("\n");
-      const files = (path) => { try { return readFileSync(join(root, path), "utf8"); } catch { return ""; } };
+      const { config, tracked, files, links } = project();
       const write = args.includes("--write");
-      const found = renameIds({ config: loadConfig(root), tracked, files }, args.find((a) => !a.startsWith("--")) ?? null);
+      // A link can point outside the project, so it is never read or written.
+      const found = renameIds({ config, tracked: tracked.filter((path) => !links.has(path)), files }, args.find((a) => !a.startsWith("--")) ?? null);
+      found.links = [...links];
       if (write) for (const [path, text] of found.texts) writeFileSync(join(root, path), text);
       for (const line of renameLines(found, { write, all: args.includes("--all") })) console.log(line);
       return 0;
@@ -203,13 +203,8 @@ const commands = {
     if (name === "trace") {
       // The kit's own step: it reads the spec and the code, and runs no project command.
       const { trace, traceLines } = await import("../lib/testdata-trace.mjs");
-      const { execFileSync } = await import("node:child_process");
-      const { readFileSync } = await import("node:fs");
-      const { join } = await import("node:path");
-      const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split("\n");
-      const files = (path) => { try { return readFileSync(join(root, path), "utf8"); } catch { return ""; } };
       const area = args.find((a) => !a.startsWith("--")) ?? null;
-      for (const line of traceLines(trace({ config: loadConfig(root), tracked, files }, area), { all: args.includes("--all") })) console.log(line);
+      for (const line of traceLines(trace(project(), area), { all: args.includes("--all") })) console.log(line);
       return 0;
     }
     return runTestdata(root, loadConfig(root), name, args);
@@ -222,14 +217,9 @@ const commands = {
       console.log("Usage: wf id <ID> [--all]   such as R-GM-119, C-GM-41, GM-07, D-GM-101, Q-113, or a fixture's name; the patterns are in docs/workflow/ids.md");
       return 2;
     }
-    const root = projectRoot();
     const { findId, idLines } = await import("../lib/idfind.mjs");
-    const { execFileSync } = await import("node:child_process");
-    const { readFileSync } = await import("node:fs");
-    const { join } = await import("node:path");
-    const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split("\n");
-    const files = (path) => { try { return readFileSync(join(root, path), "utf8"); } catch { return ""; } };
-    const found = findId({ config: loadConfig(root), tracked, files }, target);
+    const { config, tracked, files, links } = project();
+    const found = findId({ config, tracked: tracked.filter((path) => !links.has(path)), files }, target);
     for (const line of idLines(found, { all: args.includes("--all") })) console.log(line);
     return found.defined.length || found.cited.length ? 0 : 1;
   },
