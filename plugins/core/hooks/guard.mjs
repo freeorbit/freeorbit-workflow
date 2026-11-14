@@ -299,9 +299,21 @@ export function decide(input, root, config) {
     const pattern = patternProblem(tool === "Glob" ? args.pattern : args.glob);
     if (pattern) return deny(pattern);
     // Searching one file it may read shows nothing reading it would not, such as the Risk lines in user-stories.md.
-    const readable = policy.read.some((pattern) => glob(pattern).test(path));
-    const ok = readable || policy.search.some((dir) => dir === "**" || path === dir || path.startsWith(`${dir}/`));
-    return ok ? null : deny(`search only in ${policy.search.join(", ") || "nothing"}, or in one file it may read, with that as the path`);
+    const check = (at) => {
+      const readable = policy.read.some((each) => glob(each).test(at));
+      const ok = readable || policy.search.some((dir) => dir === "**" || at === dir || at.startsWith(`${dir}/`));
+      return ok ? null : deny(`search only in ${policy.search.join(", ") || "nothing"}, or in one file it may read, with that as the path`);
+    };
+    // A Glob may name its folder in the pattern, docs/app/test-data/**/*.md with no path: it searches that
+    // folder, or the one file when the pattern has no wildcard. The pattern has passed the checks above.
+    if (tool === "Glob" && args.pattern) {
+      const parts = String(args.pattern).split("/");
+      const wild = parts.findIndex((part) => /[*?[{]/.test(part));
+      const lead = (wild < 0 ? parts : parts.slice(0, wild)).join("/");
+      const narrowed = lead ? where(root, join(args.path ?? root, lead)) : null;
+      if (narrowed !== null && narrowed !== path && (path === "" || narrowed.startsWith(`${path}/`))) return check(narrowed);
+    }
+    return check(path);
   }
   if (tool === "Bash") {
     if (policy.bash !== "e2e") return deny("it runs no commands");

@@ -144,6 +144,12 @@ test("the designer, the screen reader, and the reviewer each keep to their own",
   assert.equal(call("test-data-designer", "Grep", { pattern: "^Risk:", path: "/p/docs/plugins/uplink/user-stories.md" }), null);
   assert.match(call("test-data-designer", "Grep", { pattern: "Risk", path: "/p/docs/plugins/uplink" }), /search only in/);
   assert.match(call("test-data-designer", "Grep", { pattern: "fn", path: "/p/tools/testdata/src/lib.rs" }), /search only in/);
+  // A Glob that names its folder in the pattern searches that folder, or that one file.
+  assert.equal(call("test-data-designer", "Glob", { pattern: "docs/plugins/uplink/test-data/**/*.md" }), null);
+  assert.equal(call("test-data-designer", "Glob", { pattern: "docs/plugins/uplink/user-stories.md" }), null);
+  assert.match(call("test-data-designer", "Glob", { pattern: "docs/plugins/uplink/**/*.md" }), /search only in/);
+  assert.match(call("test-data-designer", "Glob", { pattern: "**/*.md" }), /search only in/);
+  assert.match(call("test-data-designer", "Glob", { pattern: "tools/**/*.rs" }), /search only in/);
   assert.equal(call("test-data-designer", "WebFetch", { url: "https://www.rfc-editor.org/rfc/rfc5322" }), null);
   assert.match(call("test-data-designer", "Bash", { command: "ls" }), /runs no commands/);
   assert.equal(call("design:screen-reader", "Read", { file_path: "/p/.cache/screens/briefs/brief-1.md" }), null);
