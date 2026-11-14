@@ -57,6 +57,9 @@ table.grid-q tbody tr:hover { background: var(--sunk); }
 .check-label input { accent-color: var(--accent); width: 16px; height: 16px; }
 .req { color: var(--accent); }
 .form input[type="text"], .form input[type="number"], .form input[type="date"], .form textarea { width: 100%; }
+/* Number, date, and select fields take the theme like the text fields, not the browser's own look. */
+.form input[type="number"], .form input[type="date"], .form select { border: 1px solid var(--line-2); border-radius: var(--r-ctl); background: var(--panel); color: var(--text); padding: 7px 10px; font-size: 14px; line-height: 20px; min-height: 36px; transition: border-color 120ms var(--ease); }
+.form input[type="number"]:focus, .form input[type="date"]:focus, .form select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .form [aria-invalid="true"] { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
 .field-err { font-size: 12px; color: var(--bad); min-height: 0; }
 .field-err:empty { display: none; }
