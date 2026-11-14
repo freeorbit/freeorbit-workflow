@@ -25,6 +25,7 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 | `journeys <area> [--chunks ...]` | Each journey's starting states, and the scenario that holds each |
 | `refresh-close <area> <ids>` | `covered`, then `index`, after a refresh is applied |
 | `ids <area>` | The kit's own: give each check without an ID its `C-<prefix>-NN` |
+| `merge <folder> [--write]`, `fold <file> <sibling> [--write]` | The kit's own: a flow area's folder as one file, or a small file into a sibling, every row kept and links moved; a dry run without `--write` |
 | `rename-ids [area] [--write]` | The kit's own: qualify old `R-12`, `C-41`, `G-03`, and `D27` IDs with the area's prefix, everywhere they are cited; a dry run without `--write` |
 | `trace [area]` | The kit's own: spec ids no code names, and tests that name none |
 
