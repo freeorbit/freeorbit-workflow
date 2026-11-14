@@ -74,7 +74,7 @@ The structure scan files in the scanner output folder measure size, function len
    - Duplication and shared pieces (CS-MOD), and boilerplate (CS-BOIL).
    - Errors: how a failure gets to the user, and whether a job can leave its failed state (CS-ERR).
    - State: who owns it, what is reset where, and what a lock is held across (CS-STATE).
-   - Tests: a fix, a limit, or an acceptance line with no test, and a test that repeats another (CS-TEST).
+   - Tests: a fix, a limit, or an acceptance line with no test, a test that repeats another, and a test written only to carry a check's or rule's ID that an existing test could cite (CS-TEST).
    - The UI against the design system, and statuses against the state they name (CS-UI, CS-STATUS).
    - Names against the word list, and comments that no longer hold (CS-NAME, CS-CMT).
    - Unused code and dependencies (CS-DEAD), and work that grows faster than the data (CS-LIST).
