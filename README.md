@@ -56,7 +56,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf scan full \| diff <since> [--light]` | The review's scans, from `review.scans` in the config, into `.cache/review-scan`, with the scope list and the diff |
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
-| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]` (spec rows no code names, and tests that name no row or story) `ids <area>` (an ID for every check without one), and `rename-ids [area] [--write]` (old IDs qualified with the area's prefix), and `merge <folder>` / `fold <file> <sibling>` (fewer files, every row kept) |
+| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]` (spec rows no code names, and tests that name no row or story) `budget <area> [ids] [--check]` and `delta <area> <file>` (the designer's budgets, held by the tool), `prune <area> [--write]` (check rows no code cites, out of the spec), `rename-ids [area] [--write]` (old IDs qualified with the area's prefix), and `merge <folder>` / `fold <file> <sibling>` (fewer files, every row kept) |
 | `wf id <ID> [--all]` | What an ID is, where it is defined, and each line that cites it, in docs and code; the patterns are in `docs/workflow/ids.md` |
 | `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import \| live \| reply \| history` | Ask pages: any number of questions on one page in the browser pane, from twelve templates or the project's own in `.workflow/ask-templates/`, with pictures, boxes, pins, compare views, paging, bulk answers, and colour themes. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file; `live` updates a status page while a step runs, `reply` answers under a question, and `history` lists every round sent. The `ask-page` skill has the spec |
 | `wf view serve \| stop \| setup` | The shared `question-pictures` server: one per machine on 127.0.0.1, serving each project's `.cache/view` at its own key, with an inbox of every ask at `/`, and taking answers with a per-run token. `serve` starts or joins it, `stop` ends it, `setup` writes it into `.claude/launch.json` |
@@ -87,6 +87,33 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.69.0: acceptance lines are the checks, and the designer designs data within a budget
+
+Freeorbit's spec had grown to 560 checks and 308 rules for 105 stories. Half were cited by no code, one story's 7 acceptance lines were named in 61 spec rows, and every limit was a warning.
+
+- **Acceptance lines are the checks.** Each has an ID by its place in its story, such as `GM-07.3`, and a test or a scenario cites the line it proves. `npx wf id GM-07.3` finds it.
+  - A new line goes last, and a line taken out stays as `- Removed (<date>).`, so no other line's ID moves.
+  - A line no test can prove has a row in the area's proof table, `| Line | By |`, with `walk`, `walked <chunk>`, or a later chunk.
+- **The chunk gate** is on the acceptance lines of the chunk's stories, and their product and safety rules. `wf done chunk` no longer reads check rows.
+- **The designer designs data**: datasets, journey states, input classes, and edge-case fixtures. It writes no checks, no Levels, and no product rules, and its tag mode is gone.
+  - What it thinks a story forgot it proposes as an acceptance line, at most two a story, for the story's owner.
+- **Budgets are held by the tool.**
+  - `npx wf testdata budget <area> [ids]` prints each story's fixtures against its cap, as the `Budget:` block the skill pastes into the designer's prompt.
+  - `npx wf testdata delta <area> <file>` fails a return with more than 5 questions, more than 2 proposed lines a story, or any check row. What is over is cut, and the designer is not run again.
+  - `refresh-close` refuses when a refresh took a story over its fixture cap; an overage from before it only warns, in doc:check. `testdata.limits.allow` names the owner's exceptions.
+- **Risk goes on the line.** An acceptance line ends `Risk: high (<why>)`; a story's own Risk line still marks every line.
+  - Fixtures: five for a story tagged whole, two for each high-risk line, none for a low-risk story.
+  - doc:check warns when more than a third of an area's acceptance lines are high (`testdata.limits.highShare`).
+- **Solo review is one page.** With `team: "solo"`, `npx wf testdata review <area>` puts the craft rules on the owner's page as one row. Review pages hold rules only.
+- **A rule's Type comes from its category** where it can: Stand-ins and Data markers are craft, Never sent or stored is safety. Only the rest warn as untyped.
+- **Check rows stay readable.** A test that cites `C-GM-41` still names it. Nothing gates, budgets, or reviews them. `npx wf testdata prune <area> [--write]` takes out those no code cites, for built stories.
+- **Gone:** `testdata.limits.checks`, the check budgets and their warnings, and the "no ID" and "rare check" warnings. `npx wf testdata tag` and `ids` remain for a spec that still uses them.
+- **What changes in a project.**
+  1. Run `npx wf docs sync`. A config that still sets `testdata.limits.checks` keeps working; the key does nothing, so take it out when convenient.
+  2. Set `testdata.chunkChecks` to `"warn"` for chunks in flight, whose tests cite check IDs. From the next chunk, tests cite acceptance lines.
+  3. Run `npx wf testdata prune <area>` for each area, read the list, then `--write`.
+  4. As stories come up, move `Risk: high` from the story to the lines that are.
 
 ### v0.68.0: the owner can drop a check or rule at any review
 

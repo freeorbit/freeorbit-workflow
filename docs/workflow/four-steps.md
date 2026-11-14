@@ -10,7 +10,7 @@ The project is built in four steps, and each area goes through them on its own. 
 
 Who the user is, what they are trying to finish, and the path they take. Written as stories with acceptance criteria and as mermaid flows. No screens yet, and no tech stack.
 
-- With the testdata plugin, the blind designer's story check reads the new stories and returns their gaps and contradictions as questions, and the story's owner tags each high-risk story with a `Risk: high` line.
+- With the testdata plugin, the blind designer's story check reads the new stories and returns a few ranked questions about their gaps and contradictions. The story's owner ends each high-risk acceptance line with `Risk: high (<why>)`.
 - An area whose rules come from source documents, such as a domain product's, starts with Step 0, source analysis, as [project-kinds.md](project-kinds.md) says.
 
 ### Step 2. Design frames
@@ -93,7 +93,7 @@ Before anything in a chunk is built, run `npx wf doc:facts status` for where thi
 - Before building a guard, a check, a tool, or test data to make a check easier, say what it protects, what it costs, and what would show it is not worth keeping. Put it to the owner with the questions below.
 - Ask once, in one set of questions, each to the role that owns it: each drift with its suggested fix, each change to the build order, and each question the steps above raised. Work that depends on none of the answers can go on.
   - On an ask page, that is a `batch` page by role, with the order as a `rank` question. The open questions whose trigger holds go on a `triage` page, and a plan to approve on a `plan` page.
-  - A test-data refresh goes on its own pages: `npx wf testdata review <area> --chunk <this> | npx wf ask page -` for the owner's rows, and `--team` for the rest, which the team, or an owner who is also the developer, accepts in bulk.
+  - A test-data refresh's rules go on their own page: `npx wf testdata review <area> --chunk <this> | npx wf ask page -` for the owner's, and `--team` for the craft rules. A solo project gets one page, with the craft rules as one row.
 
 ## Chunk end
 
@@ -103,16 +103,16 @@ Before the commit proposal, run the project's full check once. Then run the `cod
 - It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one.
 - The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
 
-With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the checks and accepted rules of the chunk's stories. `wf done chunk` waits until none of the owner's (core, `+harm`, product, safety, or untagged) is proven by nothing (`testdata.chunkChecks`).
+With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the acceptance lines of the chunk's stories, and their accepted rules. `wf done chunk` waits until no line, and no product or safety rule, is proven by nothing (`testdata.chunkChecks`).
 
-A likely check proven by nothing is a warning; rare checks and craft rules are the team's and not gated. Each one is:
+Craft rules are the team's and not gated. Each line or rule is:
 
-- proven: a test or a scenario cites its ID;
-- walk: only a walk by hand proves it, or it is a `polish` check no test shows, so it goes on the sign-off page; once done there, its By becomes `walked <chunk>`;
+- proven: a test or a scenario cites its ID, such as `// GM-07.3`;
+- walk: only a walk by hand proves it, so it goes on the sign-off page; once done there, its By becomes `walked <chunk>`;
 - later: its By names a later chunk, as a parked rule's does;
 - disputed: a `dispute` row in its gaps table says it is wrong, for the next refresh.
 
-For one proven by nothing, cite it in the test that already shows it first. A new test is only for what no test shows, as CS-TEST says.
+A line's By is its row in the area's proof table, `| Line | By |`, as [test-data-formats.md](test-data-formats.md) says. For one proven by nothing, cite it in the test that already shows it first. A new test is only for what no test shows, as CS-TEST says.
 
 With the design plugin's screen review, a chunk that changed UI files or frames also checks its screens:
 
@@ -125,7 +125,7 @@ With the design plugin's screen review, a chunk that changed UI files or frames 
 Then move the chunk's row in [build-order.md](../log/build-order.md#chunks): to Waiting if something about the chunk is left to check, or to [chunks-done.md](../log/chunks-done.md) if not.
 
 - A row moved to the done list gets its "For the client" sentence: what the client can now do, in plain words, with no ids, such as "You can sign in with your work email and password." The client's board posts it when the chunk's stories are built.
-- When the owner checks what is left by hand, ask on a `signoff` page, one check an acceptance line and one for each `walk` check the trace lists, by its ID, so each is done or objected to with a note.
+- When the owner checks what is left by hand, ask on a `signoff` page, one check for each `walk` line the trace lists, by its ID, so each is done or objected to with a note.
 
 After the commit, propose the chunk's pull request with the `pull-request` skill. It is squash-merged on the owner's yes, as in [branches.md](branches.md).
 

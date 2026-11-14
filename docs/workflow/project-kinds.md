@@ -20,9 +20,9 @@ Every kind gets the [test-data process](test-data-process.md). The kit builds on
 
 | Job | Returns | When |
 | --- | --- | --- |
-| Story check | Gaps and contradictions, as questions for the story's owner | Whenever stories change, cheaply |
+| Story check | A few ranked questions for the story's owner, and acceptance lines it may have forgotten | Whenever stories change, cheaply |
 | Rules | New or changed rules, by category | At first draft, and with a refresh |
-| Edge cases | New fixture rows | At chunk start, for stories tagged `Risk: high` only |
+| Edge cases | New fixture rows, within the budget | At chunk start, for acceptance lines tagged `Risk: high` only |
 
 The formats are in [test-data-formats.md](test-data-formats.md).
 

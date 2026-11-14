@@ -29,6 +29,7 @@ const SPEC = {
   [`${DIR}/glossary.md`]: "| Term | Plain meaning |\n| --- | --- |\n| Erasure | Asking a company to delete what it holds about you |",
   "docs/plugins/uplink/user-stories.md": "### GM-07. Move mail\n\nAcceptance:\n- moved\n",
 };
+const STORY_FILES = { stories: { files: ["docs/plugins/*/user-stories.md"] } };
 
 test("a Level reads with +harm; the owner's rows are core, +harm, product, safety, and untagged", () => {
   assert.deepEqual(levelOf("core+harm"), { level: "core", harm: true });
@@ -40,47 +41,37 @@ test("a Level reads with +harm; the owner's rows are core, +harm, product, safet
   for (const [text, jargon] of [["The list stays up-to-date after a restart", false], ["A letter dated 2026-11-14 is kept", false], ["Shown in `gmail-ready`", true], ["The downlink-gb-in-flight request waits", true], ["No DLCANARY-D23-1 reaches the log", true], ["APPMARK-3 stays out", true]]) assert.equal(isJargon(text), jargon, text);
 });
 
-test("doc:check fails a Level or Type off the list, and code names in a core check; untagged rows warn, or fail when the project says so", () => {
-  const texts = { [`${DIR}/x.md`]: [CHECKS, "| C-GM-01 | Shown in `gmail-ready` | | GM-07 | | core | |", "| C-GM-02 | Plain | | GM-07 | | urgent | |", "| C-GM-03 | No level | | GM-07 | | | |", "", RULES, "| R-GM-01 | Time | odd | A rule | GM-07 | 2026-11-14 |", "| R-GM-02 | Stand-ins | product | Fake domains | GM-07 | 2026-11-14 |"].join("\n") };
-  const found = testdataProblems(context(config(), texts)).filter((p) => /Level|Type|plain words|no Level/.test(p));
-  assert.equal(found.length, 3, found.join("\n"));
-  assert.ok(found.some((p) => /C-GM-01 is the owner's to read/.test(p)) && found.some((p) => /C-GM-02 Level "urgent"/.test(p)) && found.some((p) => /R-GM-01 Type "odd"/.test(p)));
-  assert.ok(testdataProblems(context(config({ testdata: { untagged: "fail" } }), texts)).some((p) => /C-GM-03 has no Level/.test(p)));
+test("doc:check fails a Level or Type off the list; a rule's category gives its Type where it can, and the rest warn, or fail when the project says so", () => {
+  const texts = { [`${DIR}/x.md`]: [CHECKS, "| C-GM-01 | Shown in `gmail-ready` | | GM-07 | | core | |", "| C-GM-02 | Plain | | GM-07 | | urgent | |", "| C-GM-03 | No level | | GM-07 | | | |", "", RULES, "| R-GM-01 | Time | odd | A rule | GM-07 | 2026-11-14 |", "| R-GM-02 | Stand-ins | product | Fake domains | GM-07 | 2026-11-14 |", "| R-GM-03 | Data markers | | Emails on example.com | GM-07 | 2026-11-14 |", "| R-GM-04 | Never sent or stored | | No real name | GM-07 | 2026-11-14 |", "| R-GM-05 | State | | Kept on restart | GM-07 | 2026-11-14 |"].join("\n") };
+  const found = testdataProblems(context(config(), texts)).filter((p) => /Level|Type|plain words/.test(p));
+  assert.deepEqual(found.map((p) => p.replace(/^.*?: /, "").slice(0, 22)).sort(), ['C-GM-02 Level "urgent"', 'R-GM-01 Type "odd" is '], "a check row is from before acceptance lines, so only a Level off the list fails");
+  assert.deepEqual(testdataProblems(context(config({ testdata: { untagged: "fail" } }), texts)).filter((p) => /has no Type/.test(p)).map((p) => p.split(": ")[1]), ["R-GM-05 has no Type"]);
   const warned = testdataWarnings(context(config(), texts));
-  assert.ok(warned.some((w) => /1 row has no Level or Type yet/.test(w)), warned.join("\n"));
+  assert.ok(warned.some((w) => /1 rule has no Type/.test(w)), warned.join("\n"));
   assert.ok(warned.some((w) => /R-GM-02 is Stand-ins, how test data is built, so its Type is craft/.test(w)));
 });
 
-test("budgets count by Level, and a rare check on a story that is not high-risk warns", () => {
-  const rows = (level, n) => Array.from({ length: n }, (_, i) => `| C-GM-${level[0]}${i} | ${level} ${i} | | GM-07 | | ${level} | |`);
-  const texts = { [`${DIR}/x.md`]: [CHECKS, ...rows("core", 4), ...rows("likely", 5), ...rows("rare", 1)].join("\n"), "docs/plugins/uplink/user-stories.md": "### GM-07. Move\n\nAcceptance:\n- x\n" };
-  const found = testdataWarnings(context(config(), texts));
-  assert.ok(found.some((w) => /story GM-07 has 4 core checks, over 3/.test(w)), found.join("\n"));
-  assert.ok(!found.some((w) => /likely checks, over/.test(w)));
-  assert.ok(found.some((w) => /GM-07 has 1 rare check but no Risk: high line/.test(w)));
-});
-
-test("at chunk end only the owner's rows fail; likely warns; rare and craft are the team's; polish is walked", () => {
-  const found = chunkChecks(context(config(), SPEC), "37d", ["GM-07"], { open: ["37d"], done: [] });
+test("at chunk end an acceptance line and the owner's rules fail; craft rules are the team's; check rows are only counted", () => {
+  const found = chunkChecks(context(config(STORY_FILES), SPEC), "37d", ["GM-07"], { open: ["37d"], done: [] });
   const ids = (list) => list.map((each) => each.id).sort();
-  assert.deepEqual(ids(found.unproven), ["C-GM-01", "C-GM-05", "R-GM-01", "R-GM-02"]);
-  assert.deepEqual(ids(found.likely), ["C-GM-02"]);
-  assert.deepEqual(ids(found.ungated), ["C-GM-03", "R-GM-03"]);
-  assert.deepEqual(ids(found.walk), ["C-GM-04"]);
+  assert.deepEqual(ids(found.unproven), ["GM-07.1", "R-GM-01", "R-GM-02"]);
+  assert.deepEqual(ids(found.ungated), ["R-GM-03"]);
+  assert.deepEqual(found.legacy, { checks: 5, cited: 0 });
 });
 
-test("the owner's page holds their rows by story, plain, recommended Fine, with the glossary; the team's holds the rest", () => {
-  const owner = reviewSpec(context(config(), SPEC), "uplink", { chunk: "37d", stories: ["GM-07"] });
+test("the owner's page holds product and safety rules with the glossary, and the team's the craft rules; solo, the craft rules are one row on the one page", () => {
+  const team = config({ team: "team", people: [{ name: "A", roles: ["owner"] }, { name: "B", roles: ["developer"] }] });
+  const owner = reviewSpec(context(team, SPEC), "uplink", { chunk: "37d", stories: ["GM-07"] });
   assert.equal(owner.template, "testdata");
-  assert.deepEqual(owner.tables.map((t) => [t.title, t.rows.map((r) => r.id)]), [["GM-07: Move mail", ["C-GM-01", "C-GM-05"]], ["How the app behaves: product rules", ["R-GM-01"]], ["Promises about privacy and safety: one list", ["R-GM-02"]]]);
-  assert.deepEqual(owner.tables[0].rows[0], { id: "C-GM-01", cells: ["Nothing is deleted until you confirm", "core+harm"], recommended: "ok" });
-  assert.match(owner.blocks[0].text, /The team handles 4 more \(1 likely, 1 rare, 1 polish, 1 craft rules\)/);
+  assert.deepEqual(owner.tables.map((t) => [t.title, t.rows.map((r) => r.id)]), [["How the app behaves: product rules", ["R-GM-01"]], ["Promises about privacy and safety: one list", ["R-GM-02"]]], "check rows are not reviewed: acceptance lines are the checks");
+  assert.match(owner.blocks[0].text, /The team handles 1 craft rules: npx wf testdata review uplink --chunk 37d --team/);
   assert.deepEqual(owner.blocks[1].rows, [["Erasure", "Asking a company to delete what it holds about you"]]);
-  const team = reviewSpec(context(config(), SPEC), "uplink", { team: true });
-  assert.deepEqual(team.tables.map((t) => t.id), ["likely", "rare", "polish", "craft-stand-ins"], "craft rules a category at a time");
-  const moved = reviewSpec(context(config(), SPEC), "uplink", { moves: "| ID | Was | Tag | Plain |\n| --- | --- | --- | --- |\n| C-GM-02 | In `gmail-partial`, Retry … | likely | Retry goes only to the failed contacts |" });
-  assert.deepEqual(moved.tables.at(-1).rows, [{ id: "C-GM-02", cells: ["In `gmail-partial`, Retry …", "Retry goes only to the failed contacts", "likely"], recommended: "ok" }], "the owner sees each row the tags took from them, once");
-  assert.deepEqual(team.tables[0].rows[0].cells, ["Retry goes only to the contacts that failed", "`gmail-partial`", "GM-07"]);
+  const theirs = reviewSpec(context(team, SPEC), "uplink", { team: true });
+  assert.deepEqual(theirs.tables.map((t) => [t.id, t.rows.map((r) => r.id)]), [["craft-stand-ins", ["R-GM-03"]]], "craft rules a category at a time");
+  const solo = reviewSpec(context(config(), SPEC), "uplink", {});
+  assert.deepEqual(solo.tables.map((t) => t.id), ["product", "safety", "craft"]);
+  assert.deepEqual(solo.tables[2].rows, [{ id: "craft", cells: ["1 craft rule: Stand-ins 1. npx wf testdata review uplink --team lists each."], recommended: "ok" }]);
+  assert.match(solo.blocks[0].text, /The 1 craft rules are one row at the end/);
 });
 
 test("tags add Setup, Level, and Type columns, rewrite a check in plain words, and keep every row", () => {
@@ -117,7 +108,7 @@ test("the tag and review commands: no write while there are problems, a chunk's 
   assert.match(bad.out, /Nothing written: fix the tags/);
   assert.match(readFileSync(join(root, `${DIR}/flow.md`), "utf8"), /\| C-GM-05 \| An untagged check \|/, "the file is as it was");
   assert.match(run(runTag, ["uplink", "nope.md"]).out, /No tags file at nope.md/);
-  writeFileSync(join(root, "tags.md"), "| ID | Level or Type |\n| --- | --- |\n| C-GM-05 | likely |");
+  writeFileSync(join(root, "tags.md"), "| ID | Level or Type |\n| --- | --- |\n| R-GM-01 | craft |");
   assert.match(run(runTag, ["uplink", "tags.md", "--write"]).out, /1 of them move off the owner's side/);
   assert.ok(existsSync(join(root, ".cache/testdata/moved-uplink.md")));
   ctx.files = (p) => readFileSync(join(root, p), "utf8");
@@ -128,15 +119,11 @@ test("the tag and review commands: no write while there are problems, a chunk's 
   assert.match(run(runReview, ["uplink", "--chunk", "99z"]).out, /No row for 99z/);
 });
 
-test("a product rule in code words warns; the gate carries a likely warning into wf done; the trace names likely and team rows", async () => {
+test("a product rule in code words warns; the trace names what nothing proves", async () => {
   const texts = { [`${DIR}/x.md`]: `${RULES}\n| R-GM-01 | State | product | Undo in \`gmail-ready\` goes back once | GM-07 | 2026-11-14 |` };
   assert.ok(testdataWarnings(context(config(), texts)).some((w) => /R-GM-01 is the owner's to read; say it in plain words/.test(w)));
-  const { steps } = await import("../lib/tracks.mjs");
-  const io = { read: (p) => (p.endsWith("test-data/README.md") ? "# Spec" : ""), wf: () => ({ status: 0, stdout: "  likely checks proven by nothing, a warning: C-GM-02\n" }) };
-  const step = steps("/nowhere", config(), "chunk", "done", "37d", io).find((s) => Array.isArray(s) && s[0].startsWith("every check and rule"));
-  assert.deepEqual(step[1](), { status: "OK", note: "likely checks proven by nothing, a warning: C-GM-02" });
   const { chunkLines } = await import("../lib/testdata-trace.mjs");
-  const lines = chunkLines(chunkChecks(context(config(), SPEC), "37d", ["GM-07"], { open: ["37d"], done: [] })).join("\n");
-  assert.match(lines, /likely checks proven by nothing, a warning: C-GM-02/);
-  assert.match(lines, /rare checks and craft rules no test cites yet, the team's, not gated: 2/);
+  const lines = chunkLines(chunkChecks(context(config(STORY_FILES), SPEC), "37d", ["GM-07"], { open: ["37d"], done: [] })).join("\n");
+  assert.match(lines, /proven by nothing: 3/);
+  assert.match(lines, /craft rules no test cites yet, the team's, not gated: 1/);
 });
