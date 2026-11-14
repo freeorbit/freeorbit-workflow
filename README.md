@@ -88,6 +88,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.70.0: ask pages leave room for the answer
+
+From a review of the ask pages on every template and a 117-row test-data page.
+
+- **Short options sit in one row.** Options with no description, such as a plan's Approve and Change or a sign-off's Done and Object, are one row in place of a stack. A four-step plan fits one screen in place of two.
+- **Shared options are described once.** Three or more questions with the same described options, such as a triage's verdicts, say what each means once above the questions, then show one row each. The left and right arrow keys move along a row.
+- **A picture leaves room for its answer.** Beside a question's answer, Fit is about a third of the window, so the options are on the same screen. Expand (F) and the paged reviews keep their room.
+- **A table page takes the window's width**, up to 1240 px, with no rail of row ids beside it. A test-data review shows seven rules a screen in place of four.
+- **What changes in a project.** Rebuild open ask pages, or reload them after `npx wf view stop`.
+
 ### v0.69.2: acceptance lines are plain for the client
 
 - **No date or decision ID in an acceptance line.** The lines go to the client's board, so a note such as "(added 2026-11-14, D-GM-047)" moves to the area's `story-changes.md`, `| Line | Change | Date | Decision |`. doc:check warns for a line that holds one.
