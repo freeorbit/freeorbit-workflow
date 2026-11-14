@@ -34,6 +34,7 @@ A kind with an area in it carries the area's prefix from `areas` in `.workflow/c
 - **Telling them apart.** `D-GM-101` is a decision and `DS-GM-27` a dataset; `GM-07` is a story and `R-GM-07` a rule. A finding's prefix is never an area's.
 - **Citing.** A test names what it proves, such as `// GM-07.3` or `// R-GM-119`, so `npx wf testdata trace` can tell what nothing proves.
 - **Acceptance lines.** A line's ID is its story and its place in the Acceptance list. A new line goes last, and a line taken out stays as `- Removed (<date>).`, so no other line's ID moves.
+  - The decision behind a line is named in the area's `story-changes.md`, not in the line, so `wf id` on the decision still finds the line.
 - **Checks.** A `C-` ID is from before v0.69.0, when the test-data designer wrote checks beside the stories. A test that cites one still names it; nothing new gets one.
 
 ## Old IDs

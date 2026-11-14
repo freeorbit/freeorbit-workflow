@@ -64,6 +64,7 @@ Acceptance:
 - Acceptance is testable. "Given / when / then" or a plain checklist both work.
 - Each acceptance line is a check with an ID by its place: the story's ID, a dot, and the line's number in the list. A test cites the line it proves.
   - Add a new line last, and leave one taken out as `- Removed (<date>).`, so no other line's ID moves.
+  - The client reads the lines on the board, so a line holds no date and no decision ID. When a line is added or changed, the note goes in the area's `story-changes.md`.
 - `Risk: high (<why>)` at the end of a line marks one about money, privacy, irreversible steps, outside input, evidence, or workspaces, so its test data gets edge cases.
   - A story whose every line is high takes the tag once, on a line of its own before Acceptance. No tag is low.
 <!-- wf:local story-rules -->

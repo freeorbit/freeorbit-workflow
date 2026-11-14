@@ -9,6 +9,7 @@ The repo is the source of truth, and the board only shows it.
 - **One way.** `wf board sync` pushes stories to the board. Nothing on the board edits a story, a chunk, or a status.
 - **Client comments come back as questions.** A comment on an item becomes an open-questions row, `From` `client (monday)`, through `wf question add`. It never edits the story.
 - **Nothing is deleted.** A story marked Removed in its story file moves to a "Retired" group, with its item kept.
+- **A removed line is left out.** An acceptance line marked Removed keeps its place in the story file, so no line's ID moves, and the pinned comment shows only the lines still promised.
 
 ## The board
 

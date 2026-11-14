@@ -88,6 +88,14 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.69.2: acceptance lines are plain for the client
+
+- **No date or decision ID in an acceptance line.** The lines go to the client's board, so a note such as "(added 2026-11-14, D-GM-047)" moves to the area's `story-changes.md`, `| Line | Change | Date | Decision |`. doc:check warns for a line that holds one.
+- **The board leaves out a line marked Removed.** It keeps its place in the story so no ID moves, and the client is shown only what is promised.
+- **A proof row may name a rule**, such as `| GM-07.8 | R-GM-27 |`: one test of that rule covers the line in every state, so each story's "the step finishes with AI off" needs no test or walk of its own.
+- **Chunk ids like `38h2`** are accepted by `wf ready`, `wf done`, lanes, and the screen list; before, a digit after the letters was refused.
+- **What changes in a project.** Run `npx wf docs sync`, then move each line's note to `story-changes.md` as doc:check lists them. The next board sync rewrites the pinned comments without Removed lines.
+
 ### v0.69.1: the last of Levels and tags is gone
 
 - **Gone from the kit:** a check's Level and Setup columns and everything that read them, `npx wf testdata tag`, `npx wf testdata ids`, the "moved by the tags" table on a review page, and `prune --owner`. A check row is `| ID | Check | Stories | Rules | By |`, and is only read so a test that cites it still names it.
