@@ -88,6 +88,11 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.67.2: a Glob may name its folder in the pattern
+
+- A blind agent's Glob that names its folder in the pattern, such as `docs/app/test-data/**/*.md` with no path, was judged as a search of the whole project and refused. The guard now reads the folder from the pattern's start, or the one file when it has no wildcard, and checks that. A pattern naming a folder off the agent's list is still refused.
+- **What changes in a project.** Move the pin to `v0.67.2`, then restart Claude Code so the hook reloads.
+
 ### v0.67.1: a blind agent may search a file it may read
 
 - The blind agents' guard refused the test-data designer's search of `user-stories.md` for Risk lines in tag mode, since searches were allowed only in the test-data folders. A blind agent may now search any one file it may read, which shows nothing reading it would not. A folder is still searched only from its own list.
