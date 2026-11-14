@@ -155,3 +155,30 @@ test("prune leaves an empty table that is not a checks table, and the kit's own 
   assert.equal(runDrop(root, context(config(), texts), ["uplink", "--from", "page"], (line) => out.push(line)), 0);
   assert.deepEqual(out, ["The craft row stands for every craft rule: mark the ones to drop on npx wf testdata review uplink --team.", "Nothing marked Drop."]);
 });
+
+test("an acceptance line holds no date or decision ID, and the board leaves out a removed line", async () => {
+  const { commentHtml } = await import("../lib/board/index.mjs");
+  const text = story("GM-07", ["The letter is filled in.", "Kept for the next letter (added 2026-11-14, D-GM-047).", "Removed (2026-11-14).", "Offered, not filled.\n  - Changed by D-GM-051."]);
+  const warned = testdataWarnings(context(config(), { [`${DOCS}/user-stories.md`]: text })).filter((w) => /a date or a decision ID/.test(w));
+  assert.deepEqual(warned, [`${DOCS}/user-stories.md: 2 acceptance lines hold a date or a decision ID (GM-07.2, GM-07.4); the client reads these lines, so each note goes in the area's story-changes.md, | Line | Change | Date | Decision |`], "a removed line keeps its date; a sub-line counts");
+  const html = commentHtml(readStories(text, ["GM"])[0]);
+  assert.ok(html.includes("The letter is filled in.") && !html.includes("Removed"));
+});
+
+test("a proof row may name a rule: the line is proven once a test cites that rule; chunk ids may end in a digit", async () => {
+  const { chunkChecks } = await import("../lib/testdata-trace.mjs");
+  const { CHUNK_ID, laneOf } = await import("../lib/lanes.mjs");
+  const spec = (cite) => ({
+    [`${DOCS}/user-stories.md`]: story("GM-07", ["Shown", "The step finishes with AI off", "Also off"]),
+    [`${DIR}/move.md`]: ["| Line | By |", "| --- | --- |", "| GM-07.2 | R-GM-27 |", "| GM-07.3 | R-GM-99 |", "", "| ID | Category | Type | Rule | Stories | Accepted |", "| --- | --- | --- | --- | --- | --- |", "| R-GM-27 | State | craft | Every state runs with AI off | GM-01 | 2026-11-13 |"].join("\n"),
+    "crates/a/src/lib.rs": `#[test]\n// GM-07.1${cite}\nfn shown() {}\n`,
+  });
+  const ids = (list) => list.map((each) => each.id);
+  const cited = chunkChecks(context(config(), spec(", R-GM-27")), "38h2", ["GM-07"], { open: ["38h2"] });
+  assert.deepEqual(ids(cited.proven), ["GM-07.1", "GM-07.2"]);
+  assert.deepEqual(cited.unproven.map((each) => [each.id, each.bad]), [["GM-07.3", "By names R-GM-99, which no test cites"]]);
+  assert.deepEqual(chunkChecks(context(config(), spec("")), "38h2", ["GM-07"], { open: ["38h2"] }).unproven.map((each) => each.id), ["GM-07.2", "GM-07.3"]);
+  assert.ok(testdataProblems(context(config(), spec(""))).some((p) => /GM-07.3 By "R-GM-99" is not walk, walked <chunk>, a later chunk's id, or a rule the spec defines/.test(p)));
+  assert.deepEqual(["38h2", "38h3", "CH-12", "37d", "38h2-fe", "abc", "38-"].map((id) => CHUNK_ID.test(id)), [true, true, true, true, true, false, false]);
+  assert.deepEqual(laneOf("38h2-fe"), { base: "38h2", lane: "fe" });
+});

@@ -93,6 +93,9 @@ An acceptance line that is high-risk ends with its tag: `- My details are kept f
 A story's acceptance lines are its checks. The test-data spec holds no checks of its own.
 
 - **ID.** A line's ID is its story and its place in the Acceptance list, counted from 1: `GM-07.3`. A new line goes last, and a line taken out stays as `- Removed (<date>).`, so no other line's ID moves.
+- **Plain, for the client.** The lines go to the client's board, so a line holds no date and no decision ID. `wf doc:check` warns for one.
+  - A line's history is in the area's `story-changes.md`, beside its stories: `| Line | Change | Date | Decision |`, one row a change, such as `| GM-07.9 | added | 2026-11-14 | D-GM-047 |`.
+  - The board leaves out a line marked Removed.
 - **Proven.** A test or a scenario that shows the line cites it, such as `// GM-07.3`. `npx wf testdata trace --chunk <id>` lists the chunk's lines nothing proves, and `wf done chunk` waits on them (`testdata.chunkChecks`).
 - **Proposed.** The designer may propose a line a story forgot, at most `testdata.limits.propose` a story. Its table is `| Story | Proposed line | Why |`, and the story's owner accepts each or not.
 
@@ -103,11 +106,13 @@ A line no test can prove has a row in the area's proof table, in any of its test
 | --- | --- |
 | GM-07.6 | walk |
 | GM-07.2 | CH-14 |
+| GM-07.8 | R-GM-27 |
 ```
 
 - `walk`: only the walk through the app by hand proves it, so it goes on the chunk's sign-off page.
 - `walked <chunk>`, such as `walked 37d`: the owner signed it off there, so a later chunk sharing its story never asks again.
 - A later chunk's id, such as `CH-14`, when that chunk's code is what can prove it. The main agent sets that, with the reviewer's yes.
+- A rule's ID, such as `R-GM-27`, when one test of that rule covers the line in every state, as "the step finishes with AI off" is. The line is proven once a test cites the rule.
 - `wf doc:check` fails a row that names no acceptance line.
 
 A rule that holds everywhere, such as nothing reaching a log, gets one test across every state, citing the rule's ID.

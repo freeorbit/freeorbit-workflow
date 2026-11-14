@@ -110,6 +110,7 @@ Craft rules are the team's and not gated. Each line or rule is:
 - proven: a test or a scenario cites its ID, such as `// GM-07.3`;
 - walk: only a walk by hand proves it, so it goes on the sign-off page; once done there, its By becomes `walked <chunk>`;
 - later: its By names a later chunk, as a parked rule's does;
+- covered: its By names a rule whose one test covers it in every state, and a test cites that rule;
 - disputed: a `dispute` row in its gaps table says it is wrong, for the next refresh.
 
 A line's By is its row in the area's proof table, `| Line | By |`, as [test-data-formats.md](test-data-formats.md) says. For one proven by nothing, cite it in the test that already shows it first. A new test is only for what no test shows, as CS-TEST says.
