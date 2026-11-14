@@ -57,6 +57,9 @@ dialog.keys td:first-child { white-space: nowrap; width: 1%; }
 /* The receipt */
 .receipt h2 { font-size: 18px; line-height: 26px; margin: 0 0 4px; }
 .receipt .sub { color: var(--muted); margin: 0 0 16px; }
+.receipt details.agreed { margin-top: 12px; }
+.receipt details.agreed > summary { cursor: pointer; color: var(--text-2); font-weight: 500; padding: 6px 2px; }
+.receipt details.agreed[open] > summary { margin-bottom: 8px; }
 .receipt .acts { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 20px; }
 .receipt ol { padding: 0; margin: 0; list-style: none; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); }
 .receipt li { padding: 10px 14px; border-bottom: 1px solid var(--line); }
