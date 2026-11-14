@@ -106,6 +106,7 @@ test("a wide picture, table, or diff scrolls in its own box, never the page; pic
   assert.match(html, /dialog\.viewer-room/, "expanded pictures sit in a modal dialog, above the header and footer");
   assert.match(html, /calc\(var\(--fit-h, 72vh\)/, "Fit uses the expanded viewer's height");
   assert.match(html, /f: \(\) => ui\.toggleExpand/);
+  assert.match(html, /base\.onzoom = \(\) => \{ over\.style\.width = base\.style\.getPropertyValue\("--w"\); \}/, "the swipe overlay is as wide as its picture, so the line and the cut agree past Fit");
 });
 
 test("a page copies its pictures, hashes them, and keeps answers to the same page", () => {

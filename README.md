@@ -92,6 +92,7 @@ Each kit version that changes a project's own files says what to do here. After 
 
 - **The page no longer scrolls sideways.** A question's column took its content's width, so a picture at 100%, or a wide table or diff, made the whole page wider with its own scroll bar. Now each scrolls in its own box.
 - **Expand (F)** shows a question's pictures in the whole window, over the header and footer, where Fit is as big as the screen allows. The compare views, zoom, comments, and the verdicts work there; Esc or Close puts it back.
+- **Swipe past Fit.** The line and where the pictures are cut now agree at any zoom: the overlay was the box's width while the cut was the picture's.
 - **Drag to move** around a picture past Fit, with a grab cursor. On Swipe, where a drag moves the line, the scroll bars or the wheel move it.
 - **What changes in a project.** Rebuild open ask pages, or reload them after `npx wf view stop`.
 
