@@ -36,7 +36,7 @@ An ask page holds any number of questions, with their pictures, on one page in t
 
 - **Grouping.** No limit on questions is no reason to ask them all at once. One page holds what blocks the same piece of work, grouped by what the person thinks about together, and questions of the same shape become one, such as a grid. `wf ask page` prints advice where a page could be grouped better.
 - **Templates.** `npx wf ask templates` lists them: a decision, a batch by role, a compare, a frame review, a storyboard, a triage, a ranking, naming, test-data rows, a plan, and a sign-off.
-- **Recommendations.** Every option on a page says what it means, every choice names the recommended option and why, and a ranking lists its suggested order and why; `wf ask page` refuses a spec without them. A review's verdicts recommend nothing.
+- **Recommendations.** Every option on a page says what it means, every choice names the recommended option and why, and a ranking lists its suggested order and why; `wf ask page` refuses a spec without them. A review's verdicts recommend nothing, but a test-data review page recommends Fine on each row, to accept together.
 - **Answering.** Each question can take "You decide" or "Later", a note, and pins on its pictures. A partial send is fine; the agent carries on with what is answered.
 - **Many at once.** The bulk bar takes every recommendation, marks a shared verdict, or leaves questions to the agent or for later, for the selected questions or every open one. Undo puts them back.
 - **The keyboard.** J and K move, 1–9 pick, R takes the recommendation, Enter goes to the next open question, Ctrl+K lists commands, Ctrl+Z undoes, Ctrl+Enter sends, and ? lists the rest.

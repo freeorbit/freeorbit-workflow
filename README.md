@@ -102,6 +102,7 @@ Each kit version that changes a project's own files says what to do here. After 
 - **Tagging a spec written before Levels.**
   - The designer's new tag mode returns each row's Level or Type, a plain Check and its Setup where needed, and the area's `glossary.md`, changing no row's meaning.
   - `npx wf testdata tag <area> <tags.md> [--write]` applies that table, adding the columns.
+  - Each row a tag moves off the owner's side (a likely, rare, or polish check, or a craft rule) is listed in `.cache/testdata/moved-<area>.md`. The owner's review pages show those rows once, to confirm in bulk or take back, so no model judgment removes a row from them unseen.
   - `testdata.untagged` is `warn` for this release: an untagged row is the owner's and gated, as before. The next release makes it `fail`.
 - **Supersedes:**
   - the per-story check budget of eight (v0.62.0), now per Level;

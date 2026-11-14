@@ -26,7 +26,7 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 | `refresh-close <area> <ids>` | `covered`, then `index`, after a refresh is applied |
 | `ids <area>` | The kit's own: give each check without an ID its `C-<prefix>-NN` |
 | `merge <folder> [--write]`, `fold <file> <sibling> [--write]` | The kit's own: a flow area's folder as one file, or a small file into a sibling, every row kept and links moved; a dry run without `--write` |
-| `review <area> [--chunk <id>] [--team]` | The kit's own: an ask page's spec of the owner's rows, or with `--team` the team's, for `npx wf ask page -` |
+| `review <area> [--chunk <id> \| --stories <ids>] [--team]` | The kit's own: an ask page's spec of the owner's rows, or with `--team` the team's, for `npx wf ask page -` |
 | `rename-ids [area] [--write]` | The kit's own: qualify old `R-12`, `C-41`, `G-03`, and `D27` IDs with the area's prefix, everywhere they are cited; a dry run without `--write` |
 | `trace [area]` | The kit's own: spec ids no code names, and tests that name none |
 
@@ -53,7 +53,7 @@ Ask the story's owner its questions, in batches as the asking rules say, with yo
 
 ## Tagging a spec written before Levels
 
-A row with no Level or Type stays the owner's until it has one. Run the subagent in tag mode once per area, `Mode: tag` with the area's files; save its table and run `npx wf testdata tag <area> <tags.md>`, then with `--write`, and save its `glossary.md`, linked from the area's README index. It changes no row's meaning. Then review the owner's page: the first use of it is also the check that the tags are right. Retag a row there with a note.
+A row with no Level or Type stays the owner's until it has one. Run the subagent in tag mode once per area, `Mode: tag` with the area's files; save its table and run `npx wf testdata tag <area> <tags.md>`, then with `--write`, and save its `glossary.md`, linked from the area's README index. It changes no row's meaning. The owner's review pages then also list the rows the tags moved to the team. After a send, drop the confirmed ones from `.cache/testdata/moved-<area>.md`, and retag one marked Wrong as the owner's. Retag a row there with a note.
 
 ## 2. Draft the rules, once per area
 

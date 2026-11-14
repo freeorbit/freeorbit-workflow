@@ -72,8 +72,8 @@ An area's test data is the `test-data/` folder in its docs folder, one flow area
 
 The rules are never written from scratch by hand:
 
-1. The data designer drafts `core.md` and `formats.md` once, in rules mode, from the overview and stories. The reviewer reviews them, a category at a time.
-2. When the data designer writes or refreshes the spec, any rule it had to assume goes in the area's `## Proposed rules`. At review, the reviewer accepts or drops them by category. Accepted rows move into that file's rules table, or `core.md`.
+1. The data designer drafts `core.md` and `formats.md` once, in rules mode, from the overview and stories. The owner reviews the product and safety rules, and the team the craft rules, a category at a time.
+2. When the data designer writes or refreshes the spec, any rule it had to assume goes in the area's `## Proposed rules`. At review, the owner accepts or drops the product and safety ones, and the team the craft ones. Accepted rows move into that file's rules table, or `core.md`.
 3. A change to an accepted rule is proposed too, with Accepted `edit` and the rule's own ID, and never made in place. Accepting it replaces the row and sets Accepted to that day, so the date always covers the words. A test that shows a rule is wrong gets a `dispute` row, as a check does.
 
 Where an area rule is stricter or more specific than a generic one, the area rule wins.

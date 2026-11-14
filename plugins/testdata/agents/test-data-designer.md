@@ -108,6 +108,7 @@ For a spec written before Levels and Types. The prompt names the area and its fi
 # Tags
 
 | ID | Level or Type | Plain Check | Setup |
+| --- | --- | --- | --- |
 | C-DR-06 | likely | A second access to a bank whose access is still open waits for it | `downlink-gb-in-flight`, Quillon Bank |
 | R-DR-28 | safety | | |
 ```
