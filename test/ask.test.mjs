@@ -15,7 +15,7 @@ import { placeholderPng } from "../lib/ask/placeholder.mjs";
 import { BLOCK_KINDS } from "../lib/ask/blocks.mjs";
 import { buildPage, checkPage, exportHtml, imageSize, pageScript, pictureFile } from "../lib/ask/page.mjs";
 import { answersPath, readSpec, serve, servedFile } from "../lib/view/serve.mjs";
-import { asker, ensureHub, hubUp, projects, register } from "../lib/view/hub.mjs";
+import { asker, ensureHub, hubUp, keptToken, olderVersion, projects, register, stateDir } from "../lib/view/hub.mjs";
 import { checkTemplate, normalize, QUESTION_FIELDS, TEMPLATES, TYPES } from "../lib/ask/spec.mjs";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
@@ -669,6 +669,34 @@ test("a second start finds the shared server and reuses it, and stop ends it", a
   assert.match(out.join(), /stopped/);
   for (let i = 0; i < 20 && (await hubUp(port)); i++) await new Promise((done) => setTimeout(done, 100));
   assert.equal(await hubUp(port), null);
+});
+
+test("a server older than the kit is started again on the kit, with the token its open pages hold", async () => {
+  assert.equal(olderVersion("0.69.1", "0.69.2"), true);
+  assert.equal(olderVersion("0.69.2", "0.69.2"), false);
+  assert.equal(olderVersion("0.70.0", "0.69.9"), false, "a newer server is left alone");
+  assert.equal(olderVersion("0.9.0", "0.10.0"), true, "by number, not by letter");
+  assert.equal(olderVersion(undefined, "0.69.2"), false);
+  const port = 20000 + Math.floor(Math.random() * 20000);
+  const env = { ...process.env, WF_ASK_NO_SERVER: "", WF_STATE_DIR: mkdtempSync(join(tmpdir(), "wf-ask-old-")) };
+  // An old server, as an earlier kit left it: its record in the state folder, its own token.
+  const old = await serve({ resolve: () => null, list: () => [], check: checkAnswers, stateOf: askState, port, log: () => {}, version: "0.0.1", onStop: () => old.close() });
+  writeFileSync(join(stateDir(env), "view-hub.json"), JSON.stringify({ pid: process.pid, port, token: old.token, version: "0.0.1" }));
+  assert.equal(keptToken(port, env), old.token);
+  assert.equal(keptToken(port + 1, env), undefined, "another port's token is not this one's");
+  const kit = JSON.parse(readFileSync(join(here, "../package.json"), "utf8")).version;
+  try {
+    const now = await ensureHub({ port, env });
+    assert.equal(now.version, kit, "the kit's own server answers now");
+    assert.notEqual(now.pid, process.pid);
+    assert.equal(JSON.parse(readFileSync(join(stateDir(env), "view-hub.json"), "utf8")).token, old.token, "with the token before, so an open page can still send");
+    assert.equal((await ensureHub({ port, env })).pid, now.pid, "and it is not started again");
+  } finally {
+    const hub = JSON.parse(readFileSync(join(stateDir(env), "view-hub.json"), "utf8"));
+    await fetch(`http://127.0.0.1:${port}/__hub/stop`, { method: "POST", headers: { "X-WF-Token": hub.token } }).catch(() => null);
+    await old.close().catch(() => null);
+    for (let i = 0; i < 20 && (await hubUp(port)); i++) await new Promise((done) => setTimeout(done, 100));
+  }
 });
 
 // WCAG contrast of two "H S% L%" triples.

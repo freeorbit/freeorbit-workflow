@@ -122,6 +122,14 @@ Phase 4 lets a page say more between builds. Each is a file the CLI writes and t
 - **Notifications.** The person turns them on. An ask that starts waiting is told once across every tab, and the asks already waiting when they turn it on are not news. A page tells its own replies, and a live page finishing, only while the person is not looking at it.
 - **Export.** `wf ask export` adds the rounds as Markdown and the status as JSON; the live card copies its status as Markdown and saves its log.
 
+## Adding a part
+
+A template, a question type, or a block lives in several places. `test/ask-parts.test.mjs` fails and names the place a new one was left out of.
+
+- **A block.** Its check in `lib/ask/blocks.mjs`, its drawing in the page's `BLOCKS` record, its styles, its line in `lib/ask/fields.mjs`, its row in the skill's `reference/blocks.md`, and an example that uses it.
+- **A question type.** Its check in `lib/ask/spec.mjs`, its drawing and answer rule in the page, its line in `fields.mjs`, its row in `reference/answer-types.md`, and an example that asks it.
+- **A template.** Its entry in `TEMPLATES` with its items' fields, its example, its row in `reference/templates.md`, and its place in the skill's table.
+
 ## Not chosen, for later
 
 Ken left these out of the first plan, on 2026-11-13; on 2026-11-14 he moved saying a page is waiting into phase 4.

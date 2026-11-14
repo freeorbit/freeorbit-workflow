@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.75.0: the ask server restarts itself after an upgrade, and a test for new parts
+
+- **No more `npx wf view stop` after an upgrade.** `wf ask page`, `wait`, and `wf view serve` now stop a question-pictures server older than the kit and start it again on the kit. A newer server is left alone, so two projects on different kit versions never take turns.
+- **Open pages still send.** A server that starts again takes the token it ran with before, from the state folder, so a page open in the browser keeps its own token. Before, any restart made an open page's Send fail until it was reloaded.
+- **A test for new parts.** `test/ask-parts.test.mjs` fails when a block, a question type, or a template lacks its drawing, its `fields` line, its reference row, or its example. `docs/design/ask-blocks.md` lists the places under Adding a part.
+- **What changes in a project.** Nothing. The first `wf ask page` after this upgrade restarts the server by itself.
+
 ### v0.74.0: ask page examples build as printed, with `fields` and `--check`
 
 - **Every example builds as it is.** In a project, `npx wf ask example <template>` writes a stand-in picture for each screen the example names, under `.cache/view/example-pictures/`, and prints the spec with those paths. Before, 5 of the 12 examples failed on pictures a project does not have.
