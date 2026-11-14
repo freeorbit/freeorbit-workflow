@@ -109,6 +109,8 @@ With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the chec
 - later: its By names a later chunk, as a parked rule's does;
 - disputed: a `dispute` row in its gaps table says it is wrong, for the next refresh.
 
+For one proven by nothing, cite it in the test that already shows it first. A new test is only for what no test shows, as CS-TEST says.
+
 With the design plugin's screen review, a chunk that changed UI files or frames also checks its screens:
 
 - Before the code review, `npx wf screens --gate <chunk>` passes: every frame showing the chunk's stories is reached, or waits on a later chunk the designer agreed to. A frame shared by two chunks is reached by the first to end, or handed to the later one.

@@ -88,6 +88,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.66.1: cite first, then write
+
+- **CS-TEST, "Cite first, then write."** To prove a check or rule, cite it in the test that already shows it; one test, or one table's rows, may cite several. A new test is only for what no test shows, never one written only to carry a citation.
+- `wf testdata trace --chunk` and the chunk-end step say the same. The code reviewer flags a test that adds nothing but an ID.
+- **What changes in a project.** Run `npx wf docs sync`.
+
 ### v0.66.0: every check and rule is proven, walked, left to a named chunk, or disputed
 
 - **A chunk's checks.** `npx wf testdata trace --chunk <id>` sorts the checks of the chunk's stories, read from its build-order row (a range such as `DR-01 to DR-20` counts each story):
