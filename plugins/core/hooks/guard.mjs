@@ -298,8 +298,10 @@ export function decide(input, root, config) {
     if (isSecret(path) || isSecret(inside(root, args.path ?? root))) return deny(`${path} may hold a secret`);
     const pattern = patternProblem(tool === "Glob" ? args.pattern : args.glob);
     if (pattern) return deny(pattern);
-    const ok = policy.search.some((dir) => dir === "**" || path === dir || path.startsWith(`${dir}/`));
-    return ok ? null : deny(`search only in ${policy.search.join(", ") || "nothing"}, with that as the path`);
+    // Searching one file it may read shows nothing reading it would not, such as the Risk lines in user-stories.md.
+    const readable = policy.read.some((pattern) => glob(pattern).test(path));
+    const ok = readable || policy.search.some((dir) => dir === "**" || path === dir || path.startsWith(`${dir}/`));
+    return ok ? null : deny(`search only in ${policy.search.join(", ") || "nothing"}, or in one file it may read, with that as the path`);
   }
   if (tool === "Bash") {
     if (policy.bash !== "e2e") return deny("it runs no commands");

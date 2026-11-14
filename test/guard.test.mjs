@@ -140,6 +140,10 @@ test("the designer, the screen reader, and the reviewer each keep to their own",
   assert.match(call("test-data-designer", "Read", { file_path: "/p/tools/testdata/src/lib.rs" }), /not among/);
   assert.equal(call("test-data-designer", "Read", { file_path: "/p/docs/workflow/test-data-formats.md" }), null);
   assert.match(call("test-data-designer", "Read", { file_path: "/p/docs/workflow/test-data-process.md" }), /not among/);
+  // A file it may read it may also search, such as the Risk lines in the stories; a folder only from its search list.
+  assert.equal(call("test-data-designer", "Grep", { pattern: "^Risk:", path: "/p/docs/plugins/uplink/user-stories.md" }), null);
+  assert.match(call("test-data-designer", "Grep", { pattern: "Risk", path: "/p/docs/plugins/uplink" }), /search only in/);
+  assert.match(call("test-data-designer", "Grep", { pattern: "fn", path: "/p/tools/testdata/src/lib.rs" }), /search only in/);
   assert.equal(call("test-data-designer", "WebFetch", { url: "https://www.rfc-editor.org/rfc/rfc5322" }), null);
   assert.match(call("test-data-designer", "Bash", { command: "ls" }), /runs no commands/);
   assert.equal(call("design:screen-reader", "Read", { file_path: "/p/.cache/screens/briefs/brief-1.md" }), null);

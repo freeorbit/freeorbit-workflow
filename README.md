@@ -88,6 +88,11 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.67.1: a blind agent may search a file it may read
+
+- The blind agents' guard refused the test-data designer's search of `user-stories.md` for Risk lines in tag mode, since searches were allowed only in the test-data folders. A blind agent may now search any one file it may read, which shows nothing reading it would not. A folder is still searched only from its own list.
+- **What changes in a project.** Move the pin to `v0.67.1`, then restart Claude Code so the hook reloads.
+
 ### v0.67.0: the owner reviews only what is theirs, in plain words
 
 - **Who a row is for.** Each check gets a Level, and each rule a Type:
