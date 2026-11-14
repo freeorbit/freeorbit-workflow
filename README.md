@@ -88,6 +88,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.65.2: macOS notifications fall back to osascript
+
+- **terminal-notifier that macOS has not allowed** exits with "Notifications are not allowed for this application", as CI's macOS runner showed. The server now tries `osascript` next, and uses it from then on; `wf view notify` tries them in the same order.
+- **The macOS test** runs `osascript` itself, which every Mac has.
+- **What changes in a project.** `npx wf view stop`, so the server restarts on the new kit.
+
 ### v0.65.1: ask pages leave no choice in the chat, and notify in the built-in browser
 
 - **No lingering choice.** The `ask-page` skill and `AGENTS.md` now say to end the turn after `wf ask wait`, with no question, buttons, or "Sent it" choice in the chat. `wait` wakes the agent when the page is sent; a choice in the chat stayed open after the answers went.

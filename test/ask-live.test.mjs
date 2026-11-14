@@ -324,12 +324,22 @@ test("on macOS, terminal-notifier is used when it is there, else osascript, and 
   const show = desktopNotifier({ command: tn, run: (file, args, opts, done) => done(new Error("exit 1"), "", "not allowed"), log: (line) => logs.push(line) });
   show("T", "B");
   assert.match(logs[0], /did not show \(terminal-notifier: not allowed\)/, "a failure is logged, not dropped");
+
+  // terminal-notifier exits 3 when macOS has not allowed it; osascript is tried, and used from then on.
+  const ran = [];
+  const fake = { file: "/x/osascript", name: "osascript", args: (t, b) => [t, b] };
+  const both = desktopNotifier({ command: { ...tn, fallback: fake }, run: (file, args, opts, done) => { ran.push(file); done(file === tn.file ? Object.assign(new Error("exit 3"), { code: 3 }) : null, "", file === tn.file ? "Notifications are not allowed for this application" : ""); }, log: () => {}, now: (() => { let t = 0; return () => (t += 5000); })() });
+  both("A", "1");
+  both("B", "2");
+  assert.deepEqual(ran, [tn.file, "/x/osascript", "/x/osascript"]);
 });
 
-test("on a Mac, the real notifier runs and exits cleanly", { skip: process.platform !== "darwin" && "macOS only; CI's macos job runs it" }, async () => {
-  const { desktopCommand } = await import("../lib/view/desktop.mjs");
-  const command = desktopCommand();
+test("on a Mac, osascript, the notifier every Mac has, runs and exits cleanly", { skip: process.platform !== "darwin" && "macOS only; CI's macos job runs it" }, async () => {
+  const { desktopCommand, osascriptCommand } = await import("../lib/view/desktop.mjs");
+  const command = osascriptCommand();
   assert.ok(command, "osascript is always there on macOS");
+  const chosen = desktopCommand();
+  assert.ok(chosen.name === "osascript" || chosen.fallback?.name === "osascript", "terminal-notifier, where it is installed, falls back to osascript");
   const ran = spawnSync(command.file, command.args('Workflow asks: CI "quotes" and \\ backslash', "From the kit's tests."), { encoding: "utf8", timeout: 20000 });
   assert.equal(ran.status, 0, `${command.name} failed: ${ran.stderr || ran.error?.message}`);
 });
