@@ -60,9 +60,9 @@ The area's rules come first: `core.md`, `formats.md`, and the flow area's own ru
 The reviewer reads every line. Volume is a cost; the gaps are the value.
 
 - **Tables, not prose.** Rules, checks, fixtures, states, and gaps are rows in the tables `test-data-formats.md` gives, each rule with an ID and a category, each row citing its stories and rule IDs.
-- **One screen a file.** Keep each file to about `testdata.limits.lines` lines, 40 by default. A flow area that will not fit becomes a folder: `README.md`, `rules.md`, `data.md`, `states.md`, `gaps.md`, and one topic file per part of the flow, holding that part's checks and edge cases side by side.
+- **About a page a file.** Keep each file to about `testdata.limits.lines` lines, 100 by default. A flow area under about 150 lines is one file; one past it becomes a folder: `README.md`, `rules.md`, `data.md`, `states.md`, `gaps.md`, and one topic file per part of the flow, holding that part's checks and edge cases side by side. A part under about 15 lines goes in a sibling, not a file of its own.
 - **Risk decides depth.** Every story gets its rules, and checks for what only it shows. Only a story whose `Risk:` line says `high` gets input classes and edge-case fixtures. A story with no line is low; if it looks high (money, privacy, irreversible steps, outside input, evidence, or workspaces), propose its tag, and write neither for it yet.
-- **Every check has an ID**, `C-NN`, the area's next free number, never reused, as rules have `R-NN`. A check only the walk by hand can prove says `walk` in its By column.
+- **Every ID carries the area's prefix**, so it is unique across the app: rules `R-<prefix>-NN`, checks `C-<prefix>-NN`, gaps `G-<prefix>-NN`, datasets `### DS-<prefix>-NN.`, such as `R-GM-09`, each the area's next free number, never reused. A fixture, state, or input name is unique across the app too: start it with the area or flow, such as `gmail-move-`. A check only the walk by hand can prove says `walk` in its By column.
 - **A check says what a rule does not.** A rule that holds everywhere (no log holds a canary, every step works with AI off, a restart keeps the state) lives once, in `core.md`; a flow does not restate it as a check. About eight checks a story and thirty a flow area (`testdata.limits.checks`).
 - **Classes belong to the input.** The unhappy paths of an input, such as a pasted address, a header, or an imported file, are its input classes: empty, at and past its limit, malformed, duplicated, mixed encodings, and dates or time zones at the edges. List them once, for the input: a format's in `formats.md`, a field one flow alone has in that flow's file. A story that reads the input names the classes it relies on in its checks, and never lists them again.
 - **One row a class.** Values that get the same outcome share a row; a boundary gets the value at it and one past it. A new value with the same outcome joins an existing row.
@@ -91,7 +91,7 @@ Read the named stories and their flow sections, `core.md`, and the files the pro
 | Story | Risk | Why |
 ```
 
-- One row per gap or contradiction, numbered on from the area's last `G-NN`, each a question the story's owner can answer in a line.
+- One row per gap or contradiction, numbered on from the area's last `G-<prefix>-NN`, each a question the story's owner can answer in a line.
 - Leave out what the spec already settles, and what nobody would change a story for.
 - With nothing to ask, return `No questions.` and nothing else.
 
@@ -119,7 +119,7 @@ The folder exists and the prompt names the stories that changed and the files th
 - **Spec.** A check, fixture, gap, or state is missing or wrong. Edit it in the file that holds it.
 - **A new story** goes in the flow area whose `Flows:` line holds its flow. A flow no area holds gets a new file, named in the delta.
 - **A new edge case** joins the input class that already gets its outcome, or the input gets a new class. Only what the flow alone shows becomes a fixture.
-- **A file past one screen**, or a flow area past `testdata.limits.areaKB`, after the edits: propose the split, naming each new file and what moves to it.
+- **A file past about a page**, a folder that would fit in one file, or a flow area past `testdata.limits.areaKB`, after the edits: propose the split, naming each new file and what moves to it.
 
 If every story is no change, return `Need: none` and nothing else. Otherwise:
 

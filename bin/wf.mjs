@@ -11,8 +11,10 @@
 //   wf ledger <ledger.py arguments>         change the review ledger
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
+//   wf id <ID> [--all]                 where an ID is defined, and every place that cites it
 //   wf testdata trace [area] [--all]   spec rows no code names, and tests that name no row or story
-//   wf testdata ids <area>             give every check without an ID its own, C-NN
+//   wf testdata ids <area>             give every check without an ID its own, C-<prefix>-NN
+//   wf testdata rename-ids [area] [--write] [--all]   qualify old IDs with their area: R-12 to R-GM-12
 //   wf ask <templates | example | page | wait | answers | record | export | import | live | reply | history> ...   ask a person on a page beside the chat
 //   wf view <serve | setup>   the question-pictures server, which serves .cache/view and takes an ask page's answers
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
@@ -161,10 +163,24 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata ids <area>");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]");
       return 2;
     }
     const root = projectRoot();
+    if (name === "rename-ids") {
+      // The kit's own step: a dry run unless --write.
+      const { renameIds, renameLines } = await import("../lib/testdata-rename.mjs");
+      const { execFileSync } = await import("node:child_process");
+      const { readFileSync, writeFileSync } = await import("node:fs");
+      const { join } = await import("node:path");
+      const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split("\n");
+      const files = (path) => { try { return readFileSync(join(root, path), "utf8"); } catch { return ""; } };
+      const write = args.includes("--write");
+      const found = renameIds({ config: loadConfig(root), tracked, files }, args.find((a) => !a.startsWith("--")) ?? null);
+      if (write) for (const [path, text] of found.texts) writeFileSync(join(root, path), text);
+      for (const line of renameLines(found, { write, all: args.includes("--all") })) console.log(line);
+      return 0;
+    }
     if (name === "ids") {
       // The kit's own step: number the area's checks that have no ID, in file order, never renumbering one.
       const { fillCheckIds } = await import("../lib/testdata.mjs");
@@ -179,7 +195,7 @@ const commands = {
       }
       const dir = `${area.docs}/test-data/`;
       const tracked = execFileSync("git", ["ls-files", "--", dir], { cwd: root, encoding: "utf8" }).trim().split("\n").filter((p) => p.endsWith(".md"));
-      const { texts, added } = fillCheckIds(tracked, (path) => readFileSync(join(root, path), "utf8"));
+      const { texts, added } = fillCheckIds(tracked, (path) => readFileSync(join(root, path), "utf8"), area.prefix ?? "");
       for (const [path, text] of texts) writeFileSync(join(root, path), text);
       console.log(added ? `${area.id}: ${added} ${added === 1 ? "check" : "checks"} got an ID, in ${texts.size} ${texts.size === 1 ? "file" : "files"}.` : `${area.id}: every check has an ID.`);
       return 0;
@@ -197,6 +213,25 @@ const commands = {
       return 0;
     }
     return runTestdata(root, loadConfig(root), name, args);
+  },
+
+  /** `wf id <ID> [--all]`: where an ID is defined, and every place that cites it. */
+  async id(args) {
+    const target = args.find((a) => !a.startsWith("--"));
+    if (!target) {
+      console.log("Usage: wf id <ID> [--all]   such as R-GM-119, C-GM-41, GM-07, D-GM-101, Q-113, or a fixture's name; the patterns are in docs/workflow/ids.md");
+      return 2;
+    }
+    const root = projectRoot();
+    const { findId, idLines } = await import("../lib/idfind.mjs");
+    const { execFileSync } = await import("node:child_process");
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split("\n");
+    const files = (path) => { try { return readFileSync(join(root, path), "utf8"); } catch { return ""; } };
+    const found = findId({ config: loadConfig(root), tracked, files }, target);
+    for (const line of idLines(found, { all: args.includes("--all") })) console.log(line);
+    return found.defined.length || found.cited.length ? 0 : 1;
   },
 
   design,

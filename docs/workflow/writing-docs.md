@@ -38,7 +38,7 @@ Some docs predate the limit. `docs.loose` in `.workflow/config.json` lists them,
 
 ## IDs
 
-Stories use stable IDs that are never reused.
+Stories use stable IDs that are never reused. Every kind of ID, and how to find one, is in [ids.md](ids.md).
 
 Each area's prefix is in `areas` in `.workflow/config.json`.
 

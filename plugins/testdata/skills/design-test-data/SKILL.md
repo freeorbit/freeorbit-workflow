@@ -3,7 +3,7 @@ name: design-test-data
 description: >-
   Designs synthetic test data so development never uses real personal data:
   runs the blind test-data-designer agent to check stories for gaps, write an
-  area's test-data spec as one-screen tables, and refresh only what stale
+  area's test-data spec as page-sized tables, and refresh only what stale
   stories reach; checks the spec stayed blind and short; and keeps the
   project's seeded generator in step. Use when an area reaches Step 3, at chunk
   start, when stories change, when a chunk needs data or a journey state, or
@@ -24,7 +24,8 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 | `index <area>` | Rewrite the area index in the folder's README |
 | `journeys <area> [--chunks ...]` | Each journey's starting states, and the scenario that holds each |
 | `refresh-close <area> <ids>` | `covered`, then `index`, after a refresh is applied |
-| `ids <area>` | The kit's own: give each check without an ID its `C-NN` |
+| `ids <area>` | The kit's own: give each check without an ID its `C-<prefix>-NN` |
+| `rename-ids [area] [--write]` | The kit's own: qualify old `R-12`, `C-41`, `G-03`, and `D27` IDs with the area's prefix, everywhere they are cited; a dry run without `--write` |
 | `trace [area]` | The kit's own: spec ids no code names, and tests that name none |
 
 ## The designer's three jobs
@@ -97,12 +98,12 @@ Send it back, or fix the line, when any of these is true in a file it touched:
 - A story the area builds has no dataset, or a path `testdata.mustCover` names is missing.
 - A dataset has no seed or no counts.
 - It breaks a rule in `core.md`, `formats.md`, or the flow area's own rules.
-- A rule has no ID, category, stories, or Accepted cell, or a rule about one flow area sits in `core.md`. A check has no `C-NN`: run `ids`.
+- A rule has no ID, category, stories, or Accepted cell, or a rule about one flow area sits in `core.md`. A check has no ID: run `ids`. An ID has no area prefix: run `rename-ids`.
 - A low-risk story got input classes or edge-case fixtures, or prose stands where `test-data-formats.md` gives a table.
 - A fixture varies only one input's value, or reaches `unit`: it belongs in that input's classes. An input's classes are listed again for another flow.
 - A check restates a rule, or one that holds everywhere is written in each flow.
 - `npx wf testdata trace <area>` names a row this chunk builds that no code names yet: it is not built, or its test cites another id.
-- `npx wf doc:check` warns for a file it wrote: past one screen, a flow area past its size, a category on no list, an input class listed twice, or fixtures past `testdata.limits.fixtures`. Over a budget, the designer merges rows or asks the reviewer whether a row's risk is worth it.
+- `npx wf doc:check` warns for a file it wrote: past about a page, too small to stand alone, a flow area past its size, a category on no list, an input class listed twice, or fixtures past `testdata.limits.fixtures`. Over a budget, the designer merges rows or asks the reviewer whether a row's risk is worth it.
 
 Then ask the reviewer. A first draft gets its own review, rules one category at a time. A refresh is reviewed with the chunk-start questions: the spec edits in a line each, and the proposed rules by category, to accept or drop. Update the area's row in the build order's Areas table, and add a line to its History.
 

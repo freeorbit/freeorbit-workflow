@@ -58,6 +58,7 @@ Efficiency that leads to our outcome is how we work, in every chat and every tas
   - missing it costs someone's time or a wrong choice.
   - The asking rules above pass. A rule that a skill or a check brings in at the right moment can live in its doc.
 - **Search before you read.** Find the entry, then read only that.
+  - `npx wf id <ID>` says what an ID is, where it is defined, and every line that cites it, in docs and code. The patterns are in [ids.md]({{docs.workflow}}/ids.md).
   - `npx wf doc:find <ID, date, or heading> [path]` prints each section, row, or bullet that starts with it. Grep for a word inside an entry.
   - A log in `docs/log/`: never read one whole. The one exception is the efficiency log, read whole at its check.
   - Any other doc: read it whole when you need how it fits together (a review, a design change, a debug that crosses sections), or you would search it three or more times. Above about 50 KB, read by section.
@@ -77,6 +78,6 @@ Efficiency that leads to our outcome is how we work, in every chat and every tas
 | Raw research | a new file under `docs/research/` |
 | An issue we hit, with its cause and fix | `{{logs.troubleshooting}}` |
 | Real wasted effort, and the change it led to | `{{logs.efficiencyLog}}` |
-| Synthetic test data for an area | the area's `test-data/` folder, one-screen files by flow area, with its rules beside its datasets, process in `{{docs.workflow}}/test-data-process.md` |
+| Synthetic test data for an area | the area's `test-data/` folder, page-sized files by flow area, with its rules beside its datasets, process in `{{docs.workflow}}/test-data-process.md` |
 
 <!-- wf:local notes -->
