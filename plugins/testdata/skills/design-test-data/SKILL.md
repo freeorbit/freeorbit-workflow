@@ -27,6 +27,7 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 | `ids <area>` | The kit's own: give each check without an ID its `C-<prefix>-NN` |
 | `merge <folder> [--write]`, `fold <file> <sibling> [--write]` | The kit's own: a flow area's folder as one file, or a small file into a sibling, every row kept and links moved; a dry run without `--write` |
 | `review <area> [--chunk <id> \| --stories <ids>] [--team]` | The kit's own: an ask page's spec of the owner's rows, or with `--team` the team's, for `npx wf ask page -` |
+| `drop <area> --from <ask id> [--write]` | The kit's own: the rows a review page marked Drop, out of the spec and into the README's Dropped table |
 | `rename-ids [area] [--write]` | The kit's own: qualify old `R-12`, `C-41`, `G-03`, and `D27` IDs with the area's prefix, everywhere they are cited; a dry run without `--write` |
 | `trace [area]` | The kit's own: spec ids no code names, and tests that name none |
 
@@ -53,7 +54,7 @@ Ask the story's owner its questions, in batches as the asking rules say, with yo
 
 ## Tagging a spec written before Levels
 
-A row with no Level or Type stays the owner's until it has one. Run the subagent in tag mode once per area, `Mode: tag` with the area's files; save its table and run `npx wf testdata tag <area> <tags.md>`, then with `--write`, and save its `glossary.md`, linked from the area's README index. It changes no row's meaning. The owner's review pages then also list the rows the tags moved to the team. After a send, drop the confirmed ones from `.cache/testdata/moved-<area>.md`, and retag one marked Wrong as the owner's. Retag a row there with a note.
+An untagged row is the owner's. Run tag mode once per area (`Mode: tag`, the area's files); apply its table with `npx wf testdata tag <area> <tags.md>`, then `--write`, and save its `glossary.md`, linked from the README index. The owner's pages then list the rows the tags moved to the team: after a send, drop the confirmed ones from `.cache/testdata/moved-<area>.md`, and retag one marked Wrong as the owner's.
 
 ## 2. Draft the rules, once per area
 
@@ -111,7 +112,7 @@ Send it back, or fix the line, when any of these is true in a file it touched:
 - `npx wf testdata trace <area>` names a row this chunk builds that no code names yet: it is not built, or its test cites another id.
 - `npx wf doc:check` warns for a file it wrote: past about a page, too small to stand alone, a flow area past its size, a category on no list, an input class listed twice, or fixtures past `testdata.limits.fixtures`. Over a budget, the designer merges rows or asks the reviewer whether a row's risk is worth it.
 
-Then ask for the review, by who each row is for: `npx wf testdata review <area> [--chunk <this>] | npx wf ask page -` for the owner's rows (core and `+harm` checks, product and safety rules, with the glossary), and `--team` for the rest, which the team, or an owner who is also the developer, accepts in bulk. A first draft gets its own review; a refresh goes with the chunk-start questions. Update the area's row in the build order's Areas table, and add a line to its History.
+Then ask for the review by who each row is for: `npx wf testdata review <area> [--chunk <this>] | npx wf ask page -` for the owner's rows, `--team` for the rest, accepted in bulk. A first draft gets its own review; a refresh goes with the chunk-start questions. After a send, `npx wf testdata drop <area> --from <ask id> --write` applies each Drop. Update the area's row in the build order's Areas table, and add a line to its History.
 
 ## 5. Build and use it
 

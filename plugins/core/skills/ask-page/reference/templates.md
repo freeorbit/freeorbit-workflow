@@ -12,7 +12,7 @@ Each template's items field, and what each item becomes, for the `ask-page` skil
 | `triage` | `items`: `id`, `text`, `context`, `needs` | Answer now, keep open, or drop |
 | `rank` | `items`: `id`, `label`, `why`, and `prompt` | One ordering of every item |
 | `naming` | `items`: `where`, `current`, `options`, `picture` | A pick, or the person's own words |
-| `testdata` | `tables`: `columns`, `rows` of `id` and `cells` | Fine, a gap, or wrong, per row |
+| `testdata` | `tables`: `columns`, `rows` of `id`, `cells`, and `recommended` | Fine, a gap, wrong, or drop, per row |
 | `plan` | `steps`, and `prompt` | Approve or change, per step, then the plan as a whole |
 | `signoff` | `checks` | Done or object, per check |
 | `status` | `questions`, which may be none | A live page: where a step stands while it runs, with any questions as written |

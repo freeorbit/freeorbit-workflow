@@ -6,7 +6,7 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 
 | File | Holds |
 | --- | --- |
-| `README.md` | The `Updated:` line, a one-sentence status, the area index, and `## Refresh history`, newest first |
+| `README.md` | The `Updated:` line, a one-sentence status, the area index, `## Refresh history` newest first, and `## Dropped` |
 | `core.md` | The rules and spec every flow area shares: personal data, placeholders, generation, real names, never, sources, personas, size profiles |
 | `formats.md` | The input and output formats, the public spec for each, and each format's input classes |
 | `<flow>.md` | One flow area, the `user-flows.md` sections on its `Flows:` line, while it fits on about a page |
@@ -76,6 +76,9 @@ The owner reviews only the rows that are theirs; the team handles the rest. Each
 - **+harm** on any Level, such as `likely+harm`, when breaking it would leak or lose data, send something wrongly, or give legally wrong advice. It makes the row the owner's.
 - **Type.** `product`: how the app behaves, a decision the owner owns. `safety`: a privacy or safety promise. `craft`: how test data and stand-ins are built, such as fake domains, a fixed today, or canary tokens.
 - **Plain words.** The owner reads a core or `+harm` check's Check cell and a product rule as written, so they hold no code names, scenario ids, or tokens; those go in the check's Setup cell. `wf doc:check` fails a core or `+harm` check with them, and warns for a product rule.
+- **Dropped.** A review page offers Drop beside Fine, A gap, and Wrong, for a row not worth testing at all, with its reason in the note.
+  - `npx wf testdata drop <area> --from <ask id> --write` takes each such row out of the spec and lists it in the README's `| ID | What | Why | Dropped |` table.
+  - Its ID is never reused, the designer never proposes it again, and `wf doc:check` fails a row that brings it back or cites it.
 - **Untagged.** A row with no Level or Type is the owner's, and gated at chunk end, until it is tagged. `testdata.untagged` warns for it while a project tags its spec, then fails. The designer's tag mode adds them.
 
 ## Risk tiers

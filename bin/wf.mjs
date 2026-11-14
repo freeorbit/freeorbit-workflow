@@ -17,7 +17,8 @@
 //   wf testdata ids <area>             give every check without an ID its own, C-<prefix>-NN
 //   wf testdata rename-ids [area] [--write] [--all]   qualify old IDs with their area: R-12 to R-GM-12
 //   wf testdata tag <area> <tags.md> [--write]          the designer's tags applied: Level, Type, Setup
-//   wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]   an ask page of the owner's rows, or the team's
+//   wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]
+//   wf testdata drop <area> <ID>... --why "<why>" | --from <ask id> [--write]   rows the owner dropped   an ask page of the owner's rows, or the team's
 //   wf testdata merge <folder> [--write]           a flow area's folder as one file, every row kept
 //   wf testdata fold <file> <sibling> [--write]    a small file into a sibling in its folder
 //   wf ask <templates | example | page | wait | answers | record | export | import | live | reply | history> ...   ask a person on a page beside the chat
@@ -168,14 +169,14 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata tag <area> <tags.md> [--write]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata tag <area> <tags.md> [--write]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata drop <area> <ID>... --why "<why>" | --from <ask id> [--write]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
       return 2;
     }
     const root = projectRoot();
-    if (name === "tag" || name === "review") {
-      // The kit's own steps on an area's spec as a whole: the designer's tags applied, or the owner's or team's review page.
-      const { runReview, runTag } = await import("../lib/testdata-cli.mjs");
-      return (name === "tag" ? runTag : runReview)(root, project(), args);
+    if (name === "tag" || name === "review" || name === "drop") {
+      // The kit's own steps on an area's spec as a whole: the designer's tags applied, the owner's or team's review page, or the owner's drops.
+      const { runDrop, runReview, runTag } = await import("../lib/testdata-cli.mjs");
+      return { tag: runTag, review: runReview, drop: runDrop }[name](root, project(), args);
     }
     if (name === "merge" || name === "fold") {
       // The kit's own steps: a dry run unless --write, and never a write that loses a row.

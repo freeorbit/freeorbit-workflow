@@ -88,6 +88,17 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.68.0: the owner can drop a check or rule at any review
+
+- **Drop**, beside Fine, A gap, and Wrong on a test-data review page, is for a row not worth testing at all. The note says why. Before, a row could be turned down only while it was proposed.
+- **`npx wf testdata drop <area> --from <ask id> [--write]`** applies a page's Drops. `drop <area> <ID>... --why "<why>"` drops rows by ID. It is a dry run without `--write`.
+  - Each row leaves the spec, its proposed edits too, with no designer round trip, since the owner decides it.
+  - It joins a `## Dropped` table in the area's README, `| ID | What | Why | Dropped |`.
+  - It names the code that cites each row, for the citation to come out, or the test when proving that row was all it did.
+- **Dropped stays dropped.** The designer reads the Dropped table and never proposes those rows again. A dropped ID is never reused; `wf testdata ids` numbers past it. doc:check fails a row that brings one back, and says "was dropped" for a cited one.
+- A review page's option may carry its own `glyph`, where its kind's would mislead: Drop shows ✕.
+- **What changes in a project.** Run `npx wf docs sync`. After a review page is sent, run `npx wf testdata drop <area> --from <its id> --write`.
+
 ### v0.67.3: long tables scroll in their own box
 
 - **A long or wide table** on an ask page (a test-data review, a grid question, a table block) now scrolls inside a box at most 70% of the window tall, both ways, with its header kept in view. Before, its sideways scroll bar sat at the table's foot, a page or more below.
