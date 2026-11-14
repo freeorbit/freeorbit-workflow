@@ -222,6 +222,26 @@ test("small page changes from the review: the fold bar, the first Tab, what a cl
   assert.match(html, /ins\.d-add \{ background: color-mix\(in srgb, var\(--ok\) 24%, transparent\); color: var\(--text\);/, "added words read as text");
 });
 
+test("long pages: a table counts its rows, a filter shows what is left, and the receipt leads with what differs", () => {
+  const S = answerSteps();
+  const raw = example("testdata");
+  raw.tables[0].rows = Array.from({ length: 12 }, (_, i) => ({ id: `R-${i + 1}`, cells: [`Rule ${i + 1}`, "limit", "none"], recommended: "ok" }));
+  const { spec } = normalize(raw);
+  const [a, b, c, d] = spec.questions;
+  const answers = { [a.id]: { choice: "ok" }, [b.id]: { choice: "wrong" }, [c.id]: { choice: "ok", note: "see the fixture" } };
+  // A plain agreement is the recommendation with nothing added; the agent's Markdown and the receipt read this one rule.
+  assert.deepEqual([a, b, c, d].map((q) => S.asRecommended(q, answers[q.id])), [true, false, false, false]);
+  assert.deepEqual([a, b, c, d].map((q) => S.rowShows("open", q, answers[q.id])), [false, false, false, true]);
+  assert.deepEqual([a, b, c, d].map((q) => S.rowShows("other", q, answers[q.id])), [false, true, true, true]);
+  assert.deepEqual([a, b, c, d].map((q) => S.rowShows("all", q, answers[q.id])), [true, true, true, true]);
+  const { root, view } = project(raw);
+  const html = readFileSync(buildPage(root, view, raw, KIT_KINDS).page, "utf8");
+  assert.match(html, /\["all", "All"\], \["open", "Open"\], \["other", "Not as recommended"\]/);
+  assert.match(html, /t\.count\.textContent = `\$\{t\.rows\.filter/);
+  assert.match(html, /const RECEIPT_FOLD = 8;/);
+  assert.match(html, /details", \{ class: "agreed" \}/, "the receipt folds the plain agreements away");
+});
+
 test("a page copies its pictures, hashes them, and keeps answers to the same page", () => {
   const raw = example("frame-review");
   const { root, view } = project(raw);

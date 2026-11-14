@@ -88,6 +88,14 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.72.0: long ask pages show how far you are
+
+- **Each table counts its rows**, such as 18 of 20, beside its heading.
+- **A filter on a table page** shows All, Open, or Not as recommended. It is applied when you pick it, so a row does not leave as you answer it; a table with no row to show leaves with its heading.
+- **The receipt leads with what differs.** Past eight answers that are plainly the recommendation, the receipt counts them, lists the other answers first, and folds the agreements under one line. A table's row is named by its first cell as well as its ID.
+- **One rule.** What counts as a plain agreement is the same for the receipt and the agent's brief answers: the recommended choice with no note, text, owner, pin, or reply.
+- **What changes in a project.** Rebuild open ask pages, or reload them after `npx wf view stop`.
+
 ### v0.71.2: small ask page changes from the review
 
 - **The fold bar shows from four questions up.** Select all, Expand all, Fold answered, and Collapse all no longer sit above a page of one to three questions. Their keys still work.
