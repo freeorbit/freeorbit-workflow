@@ -11,6 +11,7 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 | `formats.md` | The input and output formats, the public spec for each, and each format's input classes |
 | `<flow>.md` | One flow area, the `user-flows.md` sections on its `Flows:` line, while it fits on about a page |
 | `<flow>/` | One flow area past a page and a half, as a folder of page-sized files |
+| `glossary.md` | The area's domain words in plain terms, `\| Term \| Plain meaning \|`, for an owner new to the domain; the README's index links it |
 | `coverage.toml` | Each story's acceptance hash when the spec last covered it, written by the project's tool |
 
 - **About a page.** A file holds up to about 100 lines (`testdata.limits.lines`). `wf doc:check` warns past it, and past `testdata.limits.areaKB` for one flow area.
@@ -35,9 +36,9 @@ A one-file flow area has the same parts as `##` sections: `## Rules`, `## Datase
 ## Rules
 
 ```markdown
-| ID | Category | Rule | Stories | Accepted | By |
-| --- | --- | --- | --- | --- | --- |
-| R-GM-09 | Money and limits | Estimates are asserted only by how they relate, never by a price | GM-36, GM-37 | 2026-11-13 | |
+| ID | Category | Type | Rule | Stories | Accepted | By |
+| --- | --- | --- | --- | --- | --- | --- |
+| R-GM-09 | Money and limits | product | Estimates are asserted only by how they relate, never by a price | GM-36, GM-37 | 2026-11-13 | |
 ```
 
 - **ID.** `R-<prefix>-NN`, such as `R-GM-09`: the area's prefix and the next free number in the area, never reused.
@@ -60,21 +61,36 @@ A one-file flow area has the same parts as `##` sections: `## Rules`, `## Datase
 | Evidence and citations | A judgement or extracted field and the passage it rests on |
 | Workspaces | One client, tenant, or account never seeing another's data |
 
-A project adds its own in `testdata.categories`, such as Stand-ins or Data markers. `wf doc:check` warns for a rules table's category on neither list.
+A project adds its own in `testdata.categories`, such as Stand-ins or Data markers. `wf doc:check` warns for a rules table's category on neither list. A Stand-ins or Data markers rule is `craft`, and `wf doc:check` warns when one is typed otherwise; a Never sent or stored rule is usually `safety`.
+
+## Who a row is for
+
+The owner reviews only the rows that are theirs; the team handles the rest. Each check has a Level and each rule a Type, and `npx wf testdata review <area>` builds the owner's page and the team's from them.
+
+| | The owner's, one by one | The owner's, one yes/no list | The team's |
+| --- | --- | --- | --- |
+| Checks, by Level | `core`, and any `+harm` | | `likely`, `rare`, `polish` |
+| Rules, by Type | `product` | `safety` | `craft` |
+
+- **Level.** `core`: the story's promise, which a user would notice broken in normal use. `likely`: a situation users often hit, such as a second try, a restart, or a common mistake. `rare`: an unusual input, size, or timing. `polish`: help text, wording, and labels.
+- **+harm** on any Level, such as `likely+harm`, when breaking it would leak or lose data, send something wrongly, or give legally wrong advice. It makes the row the owner's.
+- **Type.** `product`: how the app behaves, a decision the owner owns. `safety`: a privacy or safety promise. `craft`: how test data and stand-ins are built, such as fake domains, a fixed today, or canary tokens.
+- **Plain words.** The owner reads a core or `+harm` check's Check cell and a product rule as written, so they hold no code names, scenario ids, or tokens; those go in the check's Setup cell. `wf doc:check` fails a core or `+harm` check with them, and warns for a product rule.
+- **Untagged.** A row with no Level or Type is the owner's, and gated at chunk end, until it is tagged. `testdata.untagged` warns for it while a project tags its spec, then fails. The designer's tag mode adds them.
 
 ## Risk tiers
 
 A story's owner tags it with a line before Acceptance: `Risk: high (money, outside input)`, or `Risk: low`. No line is low.
 
 - **High** is for money, privacy, irreversible steps, outside input, evidence, or workspaces.
-- **Low** gets its checks and its rules. **High** also gets the input classes of what it reads, and edge-case fixtures for what only its flow can show.
+- **Low** gets its checks and its rules: `core`, `likely`, and `polish` checks. **High** also gets `rare` checks, the input classes of what it reads, and edge-case fixtures for what only its flow can show. `wf doc:check` warns for a rare check on a story with no `Risk: high` line.
 
 ## Checks, input classes, and edge cases
 
 A topic file, or a one-file area, holds up to three tables: what a run shows, the classes of each input, and the few cases only a flow can show.
 
 ```markdown
-| ID | Check | Stories | Rules | By |
+| ID | Check | Setup | Stories | Rules | Level | By |
 | Input | Class | Values | Expect | Stories | Rules |
 | Fixture | Varies | Expect | Stories | Rules | Reach |
 ```
@@ -82,11 +98,15 @@ A topic file, or a one-file area, holds up to three tables: what a run shows, th
 - **ID.** `C-<prefix>-NN`, such as `C-GM-41`, the next free number in the area, never reused or renumbered, as rule IDs are. A test or a scenario that proves the check cites it, such as `// C-GM-41`, so `npx wf testdata trace` can say which checks nothing proves. `npx wf testdata ids <area>` gives every check without one its ID.
 - **By.** Who proves the check:
   - empty: a test or a scenario;
-  - `walk`: only the walk through the app by hand, so it goes on the chunk's sign-off page, and the trace does not list it as unproven;
+  - `walk`: only the walk through the app by hand, so it goes on the chunk's sign-off page, and the trace does not list it as unproven. A `polish` check goes there too, unless a test shows it;
   - `walked <chunk>`, such as `walked 37d`: the owner signed it off there, so a later chunk sharing its story counts it as proven and never asks again;
   - a later chunk's id, such as `CH-14`, when that chunk's code is what can prove it. The main agent sets that, with the reviewer's yes.
-- **Check.** What a passing run shows for this flow, in one line, that no rule already says. A rule that holds everywhere, such as nothing reaching a log or every step working with AI off, is not restated as a check in each flow: it gets one test across every state, and the flow's rules name it.
-- **How many.** About eight checks a story and thirty a flow area (`testdata.limits.checks`). `wf doc:check` warns past them, and for the same check written in three or more files.
+- **Check.** What a passing run shows for this flow, in one line of plain words, that no rule already says.
+  - A rule that holds everywhere, such as nothing reaching a log or every step working with AI off, is not restated as a check in each flow: it gets one test across every state, and the flow's rules name it.
+- **Setup.** The scenario, journey state, fixture, input class, and token names the check runs with, such as `` `downlink-gb-in-flight` ``. The team reads it; the owner's page leaves it out.
+- **How many.** About three core and five likely checks a story, and thirty in a flow area (`testdata.limits.checks`); rare checks only on a high-risk story.
+  - An untagged check counts against the old budget of eight a story.
+  - `wf doc:check` warns past them, and for the same check written in three or more files.
 
 ### Input classes
 

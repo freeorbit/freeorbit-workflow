@@ -42,7 +42,9 @@ Blindness is kept by the agent's instructions, and checked at review: the spec c
 
 Each area touches different personal data, so the generic guardrails below are not enough. A photos area would need generated images with no faces. A password area would need secrets that cannot be mistaken for real ones.
 
-Those rules live in the area's `test-data/` folder, each with an ID and a category from the kit's list or `testdata.categories`, so the reviewer accepts a category's rules together. They are not passed in the agent's prompt, because the agent running the skill has seen the code and could leak it.
+Those rules live in the area's `test-data/` folder, each with an ID, a category from the kit's list or `testdata.categories`, and a Type. The owner accepts `product` rules one by one and `safety` rules as one list; the team accepts `craft` rules a category at a time.
+
+They are not passed in the agent's prompt, because the agent running the skill has seen the code and could leak it.
 
 Where the rules come from depends on the project's kind, as [project-kinds.md](project-kinds.md) says. A domain product's rules about its domain come from its sources and an outside owner, through Step 0, not from the designer.
 
@@ -52,7 +54,8 @@ An area's test data is the `test-data/` folder in its docs folder, one flow area
 
 - **About a page a file.** A flow area that fits in about 100 lines is one file. One past it becomes a folder of files of up to about 100 lines: rules, data, states, gaps, and a topic file per part of the flow with its checks and edge cases. The index takes one row, for the folder's README.
 - **Rules sit beside their data.** A rule about one flow area is in its rules table, and a rule two need is in `core.md`. Each row has an ID, a category, its stories, and the day the reviewer accepted it.
-- **Risk decides depth.** Every story gets its rules, and checks for what it shows that no rule already says. Only a story with a `Risk: high` line gets input classes and edge-case fixtures, so a low-risk story costs a few rows.
+- **Risk decides depth.** Every story gets its rules, and `core`, `likely`, and `polish` checks for what it shows that no rule already says. Only a story with a `Risk: high` line gets `rare` checks, input classes, and edge-case fixtures, so a low-risk story costs a few rows.
+- **The owner reviews what is theirs.** Core and `+harm` checks, product rules, and safety rules, in plain words, with the area's `glossary.md`. The team reviews the rest. `npx wf testdata review <area>` builds each page.
 - **Classes once, fixtures few.** The classes of an input, such as a pasted address or an imported file, are listed once, for the input, and tested once, where its rule lives. Edge-case fixtures are only for what a flow alone can show, about five a story.
 - **A story reaches the files that name it.** `npx wf testdata route <area> <ids>` lists them, from their `Covers` lines, rule tags, and other mentions. A refresh reads `core.md`, `formats.md`, and only those.
 - **Areas follow the flows**, which change less than the stories. A story in two flows reaches two files. Dataset ids, fixtures, and states are unique across the folder, so one file can name another's.
@@ -69,8 +72,8 @@ An area's test data is the `test-data/` folder in its docs folder, one flow area
 
 The rules are never written from scratch by hand:
 
-1. The data designer drafts `core.md` and `formats.md` once, in rules mode, from the overview and stories. The reviewer reviews them, a category at a time.
-2. When the data designer writes or refreshes the spec, any rule it had to assume goes in the area's `## Proposed rules`. At review, the reviewer accepts or drops them by category. Accepted rows move into that file's rules table, or `core.md`.
+1. The data designer drafts `core.md` and `formats.md` once, in rules mode, from the overview and stories. The owner reviews the product and safety rules, and the team the craft rules, a category at a time.
+2. When the data designer writes or refreshes the spec, any rule it had to assume goes in the area's `## Proposed rules`. At review, the owner accepts or drops the product and safety ones, and the team the craft ones. Accepted rows move into that file's rules table, or `core.md`.
 3. A change to an accepted rule is proposed too, with Accepted `edit` and the rule's own ID, and never made in place. Accepting it replaces the row and sets Accepted to that day, so the date always covers the words. A test that shows a rule is wrong gets a `dispute` row, as a check does.
 
 Where an area rule is stricter or more specific than a generic one, the area rule wins.
@@ -98,7 +101,7 @@ Input classes are not fixtures: a test reads their values from the spec's table,
    - A later story edit does not start the agent. It makes the story stale: its acceptance no longer has the hash the coverage file holds.
    - **When.** Stale stories are refreshed in one run, at the start of the chunk that builds them or the chunk before. A change to a story the current chunk builds is refreshed before the work that depends on it. The reviewer can ask for a refresh at any time.
    - **How.** `route` names the area files those stories reach. The agent reads `core.md`, `formats.md`, and those files, and returns a delta. The main agent applies it and runs `refresh-close`.
-   - **Review.** The refresh is reviewed in the chunk-start question in [four-steps.md](four-steps.md#chunk-start), not in a separate round.
+   - **Review.** The refresh is reviewed in the chunk-start question in [four-steps.md](four-steps.md#chunk-start), not in a separate round: the owner sees only their rows and one line for the rest.
 3. **In each chunk of Step 4**, teach the generator the data that chunk needs, before or with the code: a scenario for each new journey point, support for each dataset and profile the spec gives that chunk, and a writer for each edge fixture. Then develop and test against what it writes.
 4. **When a test shows a check is wrong**, add a `dispute` row to the area's gaps table naming the check, with what the test found and no code. Do not edit the check. The next refresh answers it, and the reviewer reviews that edit like any other.
 5. **When the spec or the rules change**, update the generator in the same change, regenerate the fixtures, and point the tests and the scenarios at that output. A test that still expects the old bytes is updated to the new output.
@@ -119,7 +122,7 @@ A refresh that says no change does not start this list.
 
 1. If the spec changed, set its `Updated:` line to that day.
 2. Update the generator so the dataset or fixture matches. A format change with no spec edit still starts here.
-3. Regenerate the committed fixtures.
+3. Regenerate the committed fixtures. A project whose generator fingerprints the spec leaves out `## Rules` and `## Gaps`: an accepted rule or a gap or dispute row is a question for the next refresh, not a change the generator must follow.
 4. Run the tests and the app from that output. Add a scenario when the chunk needs to open the app on that data.
 
 <!-- wf:local change-steps -->

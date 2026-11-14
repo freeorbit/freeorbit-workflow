@@ -61,6 +61,7 @@ A journey that needs time to pass, or another step a person takes outside the pa
 For each journey in the prompt:
 
 1. Read its section in its area file under `test-data/`: the scenario or set-up, and every "A passing run shows" line. Read the stories it covers. Their acceptance lines are what the user was promised.
+   - Read the area's `glossary.md` for its domain words, when there is one. Walk core and likely checks first.
    - Find the checks for the journey's stories: each row of a `| ID | Check | Stories | ... |` table whose Stories name one of them. Each is one thing a passing run shows, by its ID, such as `C-GM-41`.
 2. Plan the steps a person would take, from the flows and the screens. Start from the scenario the prompt names for the journey: it holds the journey's `Starts from:` state, which the prompt names beside it, though its name may differ. If it names none, start from the closest one, and say so.
 3. Add each typed and date fixture the prompt names, from the `Edge-case fixtures` table in that area file, or in `core.md`. Enter it where a person would, and check what the screen does with it.

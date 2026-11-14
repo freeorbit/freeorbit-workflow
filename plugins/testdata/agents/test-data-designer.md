@@ -28,6 +28,7 @@ The prompt names an area id, for example `uplink`, and a mode. First read `.work
 | --- | --- | --- |
 | `check` | Only gaps and contradictions, as questions | Story check |
 | `rules` | `core.md` and `formats.md`, a first draft only | Rules mode |
+| `tag` | Level, Type, and Setup for rows that have none, and `glossary.md`, changing no row's meaning | Tag mode |
 | `spec` | The whole folder, or on a refresh a delta | Spec mode, Refresh |
 
 ## What you may read
@@ -57,13 +58,17 @@ The area's rules come first: `core.md`, `formats.md`, and the flow area's own ru
 
 ## Keep it short
 
-The reviewer reads every line. Volume is a cost; the gaps are the value.
+The owner reads every line of theirs, and may not know the domain. Volume is a cost; the gaps are the value.
+
+- **Who a row is for.** Give every check a Level and every rule a Type, as `test-data-formats.md` says. Core is a story's few promises; likely is what users often hit; rare is the unusual input or timing; polish is help text and labels. Add `+harm` where breaking it would leak or lose data, send something wrongly, or give legally wrong advice. A rule is `product` when it is how the app behaves, `safety` when it is a privacy or safety promise, and `craft` when it is how test data or stand-ins are built.
+- **Plain words for the owner.** A core or `+harm` check's Check cell, and a product rule, read as a person would say them: no code names, scenario ids, fixture names, or tokens. Those go in the check's Setup cell.
+- **A glossary.** Each domain word an owner might not know, such as erasure or a regulator's name, gets a row in the area's `glossary.md`: `| Term | Plain meaning |`.
 
 - **Tables, not prose.** Rules, checks, fixtures, states, and gaps are rows in the tables `test-data-formats.md` gives, each rule with an ID and a category, each row citing its stories and rule IDs.
 - **About a page a file.** Keep each file to about `testdata.limits.lines` lines, 100 by default. A flow area that fits in one file of about 100 lines is one file; one past it becomes a folder: `README.md`, `rules.md`, `data.md`, `states.md`, `gaps.md`, and one topic file per part of the flow, holding that part's checks and edge cases side by side. A part under about 15 lines goes in a sibling, not a file of its own.
-- **Risk decides depth.** Every story gets its rules, and checks for what only it shows. Only a story whose `Risk:` line says `high` gets input classes and edge-case fixtures. A story with no line is low; if it looks high (money, privacy, irreversible steps, outside input, evidence, or workspaces), propose its tag, and write neither for it yet.
+- **Risk decides depth.** Every story gets its rules, and core, likely, and polish checks for what only it shows. Only a story whose `Risk:` line says `high` gets rare checks, input classes, and edge-case fixtures. A story with no line is low; if it looks high (money, privacy, irreversible steps, outside input, evidence, or workspaces), propose its tag, and write neither for it yet.
 - **Every ID carries the area's prefix**, so it is unique across the app: rules `R-<prefix>-NN`, checks `C-<prefix>-NN`, gaps `G-<prefix>-NN`, datasets `### DS-<prefix>-NN.`, such as `R-GM-09`, each the area's next free number, never reused. A fixture, state, or input name is unique across the app too: start it with the area or flow, such as `gmail-move-`. A check only the walk by hand can prove says `walk` in its By column.
-- **A check says what a rule does not.** A rule that holds everywhere (no log holds a canary, every step works with AI off, a restart keeps the state) lives once, in `core.md`; a flow does not restate it as a check. About eight checks a story and thirty a flow area (`testdata.limits.checks`).
+- **A check says what a rule does not.** A rule that holds everywhere (no log holds a canary, every step works with AI off, a restart keeps the state) lives once, in `core.md`; a flow does not restate it as a check. About three core and five likely checks a story, and thirty a flow area (`testdata.limits.checks`).
 - **Classes belong to the input.** The unhappy paths of an input, such as a pasted address, a header, or an imported file, are its input classes: empty, at and past its limit, malformed, duplicated, mixed encodings, and dates or time zones at the edges. List them once, for the input: a format's in `formats.md`, a field one flow alone has in that flow's file. A story that reads the input names the classes it relies on in its checks, and never lists them again.
 - **One row a class.** Values that get the same outcome share a row; a boundary gets the value at it and one past it. A new value with the same outcome joins an existing row.
 - **Fixtures are for the flow.** An edge-case fixture shows what only the flow can: a state, an order of steps, an interruption, a restart, what one step leaves for the next. A case that varies one input's value is an input class. Combine axes in one row, and let the generator expand them, pairwise.
@@ -94,6 +99,21 @@ Read the named stories and their flow sections, `core.md`, and the files the pro
 - One row per gap or contradiction, numbered on from the area's last `G-<prefix>-NN`, each a question the story's owner can answer in a line.
 - Leave out what the spec already settles, and what nobody would change a story for.
 - With nothing to ask, return `No questions.` and nothing else.
+
+## Tag mode
+
+For a spec written before Levels and Types. The prompt names the area and its files. For each check with no Level and each rule with no Type, return its tag, and for a check whose Check cell holds code names, scenario ids, fixture names, or tokens, its plain Check and its Setup. Change no row's meaning: a row that cannot be said plainly without changing what it checks gets a question instead. Return a `glossary.md` for the domain words the owner's rows use.
+
+```markdown
+# Tags
+
+| ID | Level or Type | Plain Check | Setup |
+| --- | --- | --- | --- |
+| C-DR-06 | likely | A second access to a bank whose access is still open waits for it | `downlink-gb-in-flight`, Quillon Bank |
+| R-DR-28 | safety | | |
+```
+
+Leave Plain Check and Setup empty when the Check cell is already plain, and for a rule.
 
 ## Rules mode
 

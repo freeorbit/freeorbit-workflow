@@ -58,7 +58,7 @@ test("warnings: a file past a page, a flow area past its size, a folder too smal
     [`${DIR}/big/b.md`]: "x".repeat(11 * 1024),
     [`${DIR}/rules.md`]: "| ID | Category | Rule |\n| --- | --- | --- |\n| R-01 | Stand-ins | A |\n| R-02 | Stand-ins | B |\n| R-03 | Time | C |\n",
   };
-  const found = testdataWarnings(context(config({ testdata: { limits: { loose: [`${DIR}/old.md`] } } }), texts)).filter((w) => !/area-qualified/.test(w));
+  const found = testdataWarnings(context(config({ testdata: { limits: { loose: [`${DIR}/old.md`] } } }), texts)).filter((w) => !/area-qualified|no Level or Type/.test(w));
   assert.deepEqual(found, [
     `${DIR}/thin/: 2 files, 65 lines in all; npx wf testdata merge ${DIR}/thin/ makes it one file of 66 lines`,
     `${DIR}/split/c.md: 8 lines, under 15; npx wf testdata fold ${DIR}/split/c.md ${DIR}/split/b.md`,
@@ -69,7 +69,7 @@ test("warnings: a file past a page, a flow area past its size, a folder too smal
     `${DIR}/rules.md:3: category "Stand-ins" (2 rules) is not the kit's or in testdata.categories`,
   ]);
   const extended = config({ testdata: { categories: [{ name: "Stand-ins", use: "Fakes" }], limits: { lines: 200, areaKB: 50, small: 0, folder: 0 } } });
-  assert.deepEqual(testdataWarnings(context(extended, texts)).filter((w) => !/area-qualified/.test(w)), []);
+  assert.deepEqual(testdataWarnings(context(extended, texts)).filter((w) => !/area-qualified|no Level or Type/.test(w)), []);
 });
 
 test("a table's rows are read by their header, and only from tables that have the columns asked for", () => {

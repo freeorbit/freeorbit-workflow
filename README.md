@@ -88,6 +88,32 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.67.0: the owner reviews only what is theirs, in plain words
+
+- **Who a row is for.** Each check gets a Level, and each rule a Type:
+  - Levels are `core` (the story's promise), `likely` (what users often hit), `rare` (unusual input or timing), and `polish` (help text and labels). Any Level takes `+harm` where breaking it would leak or lose data, send something wrongly, or give legally wrong advice.
+  - Types are `product` (how the app behaves), `safety` (a privacy or safety promise), and `craft` (how test data and stand-ins are built).
+  - A sample of Freeorbit's spec read 28% core, 39% likely, 12% rare, and 21% polish; its rules read 10% product, 25% safety, and 65% craft.
+- **The owner's rows** are core and `+harm` checks, product rules, and safety rules (one yes/no list), with the area's new `glossary.md` of domain words in plain terms. **The team's** are the rest; when the owner is also the developer, they accept those in bulk.
+- **Plain words.** A checks table gains a `Setup` column for scenario, fixture, and token names, so the Check cell reads as a person would say it. doc:check fails code names in a core or `+harm` check, and warns in a product rule.
+- **`npx wf testdata review <area> [--chunk <id>] [--team]`** prints the ask page of the owner's rows, by story and plain, or the team's. Pipe it to `npx wf ask page -`. Every row is recommended Fine, so Take all recommendations accepts a table, and only a doubted row needs a mark. A `testdata` page's rows may now carry `recommended` and `why`.
+- **Budgets by Level.** `testdata.limits.checks` gains `core: 3` and `likely: 5` a story. Rare checks go only on a story with `Risk: high`, and doc:check warns otherwise. An untagged check counts against the old `story: 8`.
+- **The chunk gate by Level.** `wf done chunk` fails on the owner's rows proven by nothing. A likely check warns. Rare checks and craft rules are the team's and not gated: a craft rule is proven by one sweep test in the generator, a rare check by its input class's test (CS-TEST). A polish check is walked at sign-off.
+- **Tagging a spec written before Levels.**
+  - The designer's new tag mode returns each row's Level or Type, a plain Check and its Setup where needed, and the area's `glossary.md`, changing no row's meaning.
+  - `npx wf testdata tag <area> <tags.md> [--write]` applies that table, adding the columns.
+  - Each row a tag moves off the owner's side (a likely, rare, or polish check, or a craft rule) is listed in `.cache/testdata/moved-<area>.md`. The owner's review pages show those rows once, to confirm in bulk or take back, so no model judgment removes a row from them unseen.
+  - `testdata.untagged` is `warn` for this release: an untagged row is the owner's and gated, as before. The next release makes it `fail`.
+- **Supersedes:**
+  - the per-story check budget of eight (v0.62.0), now per Level;
+  - the review of rules "a category at a time" (v0.48.0), now product and safety rules for the owner and craft rules for the team;
+  - "every check is gated" (v0.66.0), now the owner's rows only.
+- **What changes in a project.**
+  1. Run `npx wf docs sync`.
+  2. For each area, run the designer in tag mode, then `npx wf testdata tag <area> <tags.md> --write`, and save its glossary.
+  3. Review the owner's page once with `npx wf testdata review <area> | npx wf ask page -`. That first use is also the check that the tags are right.
+  4. A generator that fingerprints the spec leaves out `## Rules` and `## Gaps`.
+
 ### v0.66.1: cite first, then write
 
 - **CS-TEST, "Cite first, then write."** To prove a check or rule, cite it in the test that already shows it; one test, or one table's rows, may cite several. A new test is only for what no test shows, never one written only to carry a citation.
