@@ -11,6 +11,7 @@
 //   wf ledger <ledger.py arguments>         change the review ledger
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
+//   wf testdata trace [area] [--all]   spec rows no code names, and tests that name no row or story
 //   wf ask <templates | example | page | wait | answers | record | export | import | live | reply | history> ...   ask a person on a page beside the chat
 //   wf view <serve | setup>   the question-pictures server, which serves .cache/view and takes an ask page's answers
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
@@ -159,10 +160,22 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]");
       return 2;
     }
     const root = projectRoot();
+    if (name === "trace") {
+      // The kit's own step: it reads the spec and the code, and runs no project command.
+      const { trace, traceLines } = await import("../lib/testdata-trace.mjs");
+      const { execFileSync } = await import("node:child_process");
+      const { readFileSync } = await import("node:fs");
+      const { join } = await import("node:path");
+      const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).trim().split("\n");
+      const files = (path) => { try { return readFileSync(join(root, path), "utf8"); } catch { return ""; } };
+      const area = args.find((a) => !a.startsWith("--")) ?? null;
+      for (const line of traceLines(trace({ config: loadConfig(root), tracked, files }, area), { all: args.includes("--all") })) console.log(line);
+      return 0;
+    }
     return runTestdata(root, loadConfig(root), name, args);
   },
 

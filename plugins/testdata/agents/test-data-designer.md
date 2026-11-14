@@ -61,7 +61,8 @@ The reviewer reads every line. Volume is a cost; the gaps are the value.
 
 - **Tables, not prose.** Rules, checks, fixtures, states, and gaps are rows in the tables `test-data-formats.md` gives, each rule with an ID and a category, each row citing its stories and rule IDs.
 - **One screen a file.** Keep each file to about `testdata.limits.lines` lines, 40 by default. A flow area that will not fit becomes a folder: `README.md`, `rules.md`, `data.md`, `states.md`, `gaps.md`, and one topic file per part of the flow, holding that part's checks and edge cases side by side.
-- **Risk decides depth.** Every story gets its checks and rules. Only a story whose `Risk:` line says `high` gets input classes and edge-case fixtures. A story with no line is low; if it looks high (money, privacy, irreversible steps, outside input, evidence, or workspaces), propose its tag, and write neither for it yet.
+- **Risk decides depth.** Every story gets its rules, and checks for what only it shows. Only a story whose `Risk:` line says `high` gets input classes and edge-case fixtures. A story with no line is low; if it looks high (money, privacy, irreversible steps, outside input, evidence, or workspaces), propose its tag, and write neither for it yet.
+- **A check says what a rule does not.** A rule that holds everywhere (no log holds a canary, every step works with AI off, a restart keeps the state) lives once, in `core.md`; a flow does not restate it as a check. About eight checks a story and thirty a flow area (`testdata.limits.checks`).
 - **Classes belong to the input.** The unhappy paths of an input, such as a pasted address, a header, or an imported file, are its input classes: empty, at and past its limit, malformed, duplicated, mixed encodings, and dates or time zones at the edges. List them once, for the input: a format's in `formats.md`, a field one flow alone has in that flow's file. A story that reads the input names the classes it relies on in its checks, and never lists them again.
 - **One row a class.** Values that get the same outcome share a row; a boundary gets the value at it and one past it. A new value with the same outcome joins an existing row.
 - **Fixtures are for the flow.** An edge-case fixture shows what only the flow can: a state, an order of steps, an interruption, a restart, what one step leaves for the next. A case that varies one input's value is an input class. Combine axes in one row, and let the generator expand them, pairwise.
@@ -101,7 +102,7 @@ A first draft from the overview and stories only. Return `core.md` and `formats.
 
 ## Spec mode
 
-A first draft returns every file of the folder, each ready to save, with its path above it: `README.md`, the sections `core.md` gains (sources, personas, size profiles), and each flow area as a file or a folder.
+A first draft returns the files for the stories the prompt names, each ready to save, with its path above it: `README.md`, the sections `core.md` gains (sources, personas, size profiles), and the flow areas those stories reach, as a file or a folder. Write no flow area for a story the prompt does not name: it is drafted when its chunk starts.
 
 - Group the flow sections of `user-flows.md` into flow areas. Name each in one lowercase word, or two joined by a hyphen.
 - The README's index between `<!-- areas -->` and `<!-- /areas -->`, and its refresh history, are kept by the main agent. Leave them empty.
