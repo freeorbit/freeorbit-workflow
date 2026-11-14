@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.65.3: pictures expand to the window, and nothing scrolls the page sideways
+
+- **The page no longer scrolls sideways.** A question's column took its content's width, so a picture at 100%, or a wide table or diff, made the whole page wider with its own scroll bar. Now each scrolls in its own box.
+- **Expand (F)** shows a question's pictures in the whole window, over the header and footer, where Fit is as big as the screen allows. The compare views, zoom, comments, and the verdicts work there; Esc or Close puts it back.
+- **Drag to move** around a picture past Fit, with a grab cursor. On Swipe, where a drag moves the line, the scroll bars or the wheel move it.
+- **What changes in a project.** Rebuild open ask pages, or reload them after `npx wf view stop`.
+
 ### v0.65.2: macOS notifications fall back to osascript
 
 - **terminal-notifier that macOS has not allowed** exits with "Notifications are not allowed for this application", as CI's macOS runner showed. The server now tries `osascript` next, and uses it from then on; `wf view notify` tries them in the same order.

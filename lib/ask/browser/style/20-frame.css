@@ -173,13 +173,14 @@ input.other-text { margin: 6px 0 0 28px; width: calc(100% - 28px); }
 :root[data-sep="lines"] .section > .q.cur { box-shadow: -16px 0 0 -13px var(--accent); }
 
 /* Folding: the line and the body each animate their height */
-.fold-line, .fold-body { display: grid; transition: grid-template-rows 280ms var(--ease), opacity 220ms var(--ease), margin 280ms var(--ease); }
+/* One column no wider than the question: a wide picture, table, or diff scrolls in its own box, never the page. */
+.fold-line, .fold-body { display: grid; grid-template-columns: minmax(0, 1fr); transition: grid-template-rows 280ms var(--ease), opacity 220ms var(--ease), margin 280ms var(--ease); }
 .fold-body { grid-template-rows: 1fr; opacity: 1; }
 .fold-line { grid-template-rows: 0fr; opacity: 0; }
 .q.is-folded .fold-body { grid-template-rows: 0fr; opacity: 0; }
 .q.is-folded .fold-line { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
 /* clip, not hidden: a clipped box can never be scrolled, so focusing something inside it cannot shift it sideways. */
-.fold-line > div, .fold-body > div { min-height: 0; overflow: clip; overflow-clip-margin: 6px; }
+.fold-line > div, .fold-body > div { min-height: 0; min-width: 0; overflow: clip; overflow-clip-margin: 6px; }
 .q.is-folded { margin-bottom: 14px; }
 .q { transition: margin 280ms var(--ease); }
 .tick.open { background: transparent; border: 1.5px solid var(--line-3); }
