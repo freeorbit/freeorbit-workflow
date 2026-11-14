@@ -93,6 +93,7 @@ Before anything in a chunk is built, run `npx wf doc:facts status` for where thi
 - Before building a guard, a check, a tool, or test data to make a check easier, say what it protects, what it costs, and what would show it is not worth keeping. Put it to the owner with the questions below.
 - Ask once, in one set of questions, each to the role that owns it: each drift with its suggested fix, each change to the build order, and each question the steps above raised. Work that depends on none of the answers can go on.
   - On an ask page, that is a `batch` page by role, with the order as a `rank` question. The open questions whose trigger holds go on a `triage` page, and a plan to approve on a `plan` page.
+  - A test-data refresh goes on its own pages: `npx wf testdata review <area> --chunk <this> | npx wf ask page -` for the owner's rows, and `--team` for the rest, which the team, or an owner who is also the developer, accepts in bulk.
 
 ## Chunk end
 
@@ -102,10 +103,12 @@ Before the commit proposal, run the project's full check once. Then run the `cod
 - It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one.
 - The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
 
-With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the checks and accepted rules of the chunk's stories. `wf done chunk` waits until none is proven by nothing (`testdata.chunkChecks`). Each check is one of these:
+With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the checks and accepted rules of the chunk's stories. `wf done chunk` waits until none of the owner's (core, `+harm`, product, safety, or untagged) is proven by nothing (`testdata.chunkChecks`).
+
+A likely check proven by nothing is a warning; rare checks and craft rules are the team's and not gated. Each one is:
 
 - proven: a test or a scenario cites its ID;
-- walk: only a walk by hand proves it, so it goes on the sign-off page; once done there, its By becomes `walked <chunk>`;
+- walk: only a walk by hand proves it, or it is a `polish` check no test shows, so it goes on the sign-off page; once done there, its By becomes `walked <chunk>`;
 - later: its By names a later chunk, as a parked rule's does;
 - disputed: a `dispute` row in its gaps table says it is wrong, for the next refresh.
 

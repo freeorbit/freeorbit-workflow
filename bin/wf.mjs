@@ -16,6 +16,8 @@
 //   wf testdata trace --chunk <id>     a chunk's checks: proven, walk, later, disputed, or proven by nothing
 //   wf testdata ids <area>             give every check without an ID its own, C-<prefix>-NN
 //   wf testdata rename-ids [area] [--write] [--all]   qualify old IDs with their area: R-12 to R-GM-12
+//   wf testdata tag <area> <tags.md> [--write]          the designer's tags applied: Level, Type, Setup
+//   wf testdata review <area> [--chunk <id>] [--team]   an ask page of the owner's rows, or the team's
 //   wf testdata merge <folder> [--write]           a flow area's folder as one file, every row kept
 //   wf testdata fold <file> <sibling> [--write]    a small file into a sibling in its folder
 //   wf ask <templates | example | page | wait | answers | record | export | import | live | reply | history> ...   ask a person on a page beside the chat
@@ -166,10 +168,51 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata tag <area> <tags.md> [--write]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
       return 2;
     }
     const root = projectRoot();
+    if (name === "tag") {
+      // The kit's own step: the designer's tag-mode table applied to an area, a dry run unless --write.
+      const { applyTags } = await import("../lib/testdata-tag.mjs");
+      const { writeFileSync } = await import("node:fs");
+      const [area, file] = args.filter((a) => !a.startsWith("--"));
+      if (!area || !file) {
+        console.log("Usage: wf testdata tag <area> <tags.md> [--write]   the designer's tag-mode table, applied");
+        return 2;
+      }
+      const ctx = project();
+      const found = applyTags(ctx, area, readFileSync(join(root, file), "utf8"));
+      for (const problem of found.problems) console.log(problem);
+      if (args.includes("--write") && !found.problems.length) for (const [path, text] of found.texts) writeFileSync(join(root, path), text);
+      console.log(`${found.tagged} rows tagged in ${found.texts.size} ${found.texts.size === 1 ? "file" : "files"}${args.includes("--write") && !found.problems.length ? "" : " (a dry run; --write applies it)"}.`);
+      if (found.unknown.length) console.log(`No row has ${found.unknown.length} of the tags' IDs: ${found.unknown.slice(0, 10).join(", ")}`);
+      return found.problems.length ? 1 : 0;
+    }
+    if (name === "review") {
+      // The kit's own step: an ask page's spec, the owner's rows or the team's, for `npx wf ask page -`.
+      const { reviewSpec } = await import("../lib/testdata-review.mjs");
+      const { chunkStories } = await import("../lib/docs/shape.mjs");
+      const area = args.find((a) => !a.startsWith("--") && args[args.indexOf(a) - 1] !== "--chunk" && args[args.indexOf(a) - 1] !== "--stories");
+      if (!area) {
+        console.log("Usage: wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]   prints an ask page's spec; pipe it to npx wf ask page -");
+        return 2;
+      }
+      const ctx = project();
+      const flag = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] ?? "" : null);
+      const chunk = flag("--chunk");
+      let stories = flag("--stories") ? flag("--stories").split(/[\s,]+/).filter(Boolean) : null;
+      if (chunk) {
+        const read = (path) => (path && existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "");
+        stories = chunkStories(chunk, [read(ctx.config.buildOrder.file), read(ctx.config.buildOrder.done)]);
+        if (!stories) {
+          console.log(`No row for ${chunk} in the build order or the done list.`);
+          return 2;
+        }
+      }
+      console.log(JSON.stringify(reviewSpec(ctx, area, { stories, team: args.includes("--team"), chunk: chunk ?? "" }), null, 2));
+      return 0;
+    }
     if (name === "merge" || name === "fold") {
       // The kit's own steps: a dry run unless --write, and never a write that loses a row.
       const { foldFile, mergeFolder, mergeLines } = await import("../lib/testdata-merge.mjs");

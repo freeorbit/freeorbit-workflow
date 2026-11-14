@@ -78,7 +78,7 @@ test("a chunk's checks: proven, walk, left to a later chunk, disputed, or proven
   assert.deepEqual(ids(found.later), ["R-GM-02", "C-GM-03"], "a parked rule waits for its chunk");
   assert.deepEqual(found.disputed.map((each) => `${each.id} ${each.gap}`), ["C-GM-04 G-GM-01"], "a proven check that a dispute names stays proven");
   assert.deepEqual(ids(found.unproven), ["R-GM-01", "C-GM-05", "C-GM-07"], "another chunk's story is not this chunk's, unless its By names this chunk; a proposed rule waits for the reviewer");
-  assert.match(chunkLines(found).join("\n"), /for the sign-off page, a walk by hand each: C-GM-02/);
+  assert.match(chunkLines(found).join("\n"), /for the sign-off page, a walk by hand each \(walk and polish\): C-GM-02/);
 });
 
 test("a By that names no open chunk, or walked a chunk not done, proves nothing; a lane can be named; only a test or a scenario proves", async () => {
