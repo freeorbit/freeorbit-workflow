@@ -172,25 +172,32 @@ const commands = {
     if (name === "merge" || name === "fold") {
       // The kit's own steps: a dry run unless --write, and never a write that loses a row.
       const { foldFile, mergeFolder, mergeLines } = await import("../lib/testdata-merge.mjs");
-      const { mkdirSync, rmdirSync, unlinkSync, writeFileSync } = await import("node:fs");
+      const { existsSync, mkdirSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } = await import("node:fs");
       const { dirname, join } = await import("node:path");
       const [first, second] = args.filter((a) => !a.startsWith("--"));
       if (!first || (name === "fold" && !second)) {
         console.log(name === "merge" ? "Usage: wf testdata merge <flow area folder> [--write]" : "Usage: wf testdata fold <small file> <sibling> [--write]");
         return 2;
       }
-      const ctx = project();
+      // An ignored file is not listed, so a merge asks the disk whether its file is there.
+      const ctx = { ...project(), exists: (path) => existsSync(join(root, path)) };
       const found = name === "merge" ? mergeFolder(ctx, first) : foldFile(ctx, first, second);
-      const write = args.includes("--write") && found.before === found.after;
+      const asked = args.includes("--write");
+      const write = asked && found.before === found.after;
+      let kept = [];
       if (write) {
         for (const [path, text] of found.writes) {
           mkdirSync(dirname(join(root, path)), { recursive: true });
           writeFileSync(join(root, path), text);
         }
         for (const path of found.removes) unlinkSync(join(root, path));
-        if (name === "merge") try { rmdirSync(join(root, first.replace(/\/+$/, ""))); } catch {}
+        if (name === "merge") {
+          const folder = join(root, first.replace(/\/+$/, ""));
+          kept = readdirSync(folder);
+          if (!kept.length) rmdirSync(folder);
+        }
       }
-      for (const line of mergeLines(found, { from: first, write, limit: ctx.config.testdata.limits.lines })) console.log(line);
+      for (const line of mergeLines(found, { from: first, asked, write, limit: ctx.config.testdata.limits.lines, kept })) console.log(line);
       return found.before === found.after ? 0 : 1;
     }
     if (name === "rename-ids") {

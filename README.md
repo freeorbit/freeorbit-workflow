@@ -96,7 +96,10 @@ Each kit version that changes a project's own files says what to do here. After 
   - A topic file's lead stays, under an italic label of its topic. The README's file table goes.
 - **`npx wf testdata fold <file> <sibling> [--write]`** puts a small file into a sibling in its folder. The folder README's row for it joins the sibling's.
 - **Links.** A link inside the moved text is rewritten for its new place. A link to a sibling points at the section its text went to, labelled with that file's topic when the label was only its name. Every other doc's link to a file now gone points at the new one, and the docs index keeps one row for it.
-- **Safe by default.** Both are a dry run without `--write`. Nothing is written unless the data rows before and after are the same, and a merge never overwrites a file.
+- **Safe by default.**
+  - Both are a dry run without `--write`. Nothing is written unless the data rows before and after are the same, and a merge never overwrites a file, ignored ones included.
+  - They work only on an area's test-data flow areas, and refuse a symbolic link. Links inside code are left as written.
+  - In the docs index, only a row the move made repeat another is dropped.
 - **doc:check** names the command. "Make it one file" comes only when the merge itself fits `testdata.limits.lines`. A fold names a sibling with room, a topic file before a named one.
 - **Measured on Freeorbit**, from before its own merges: 14 merges and 31 folds took the spec from 230 files to 128 (App 66 to 15, Uplink 90 to 69, Downlink 74 to 44), with every row kept and doc:check passing. Its own scripts reached 141.
 - **What changes in a project.** Run `npx wf docs sync`. Then run each command doc:check names, a dry run first, and commit per area.

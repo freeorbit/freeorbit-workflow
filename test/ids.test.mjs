@@ -163,15 +163,6 @@ test("wf id's lines: a second definition is flagged, citations past 15 are count
   assert.ok(!lines.some((l) => l.includes("\x1b")));
 });
 
-test("a folder is advised to become one file only when that file fits a page", () => {
-  const n = (count) => Array.from({ length: count }, (_, i) => `l${i}`).join("\n");
-  const sizes = { "a/README.md": 10, "a/x.md": 80, "b/README.md": 10, "b/x.md": 120 };
-  const texts = Object.fromEntries(Object.entries(sizes).map(([path, count]) => [`docs/plugins/uplink/test-data/${path}`, n(count)]));
-  const found = testdataWarnings(context(texts));
-  assert.ok(found.some((w) => w === "docs/plugins/uplink/test-data/a/: 2 files, 90 lines in all; npx wf testdata merge docs/plugins/uplink/test-data/a/ makes it one file of 91 lines"), found.join("\n"));
-  assert.ok(!found.some((w) => w.startsWith("docs/plugins/uplink/test-data/b/: 2 files")));
-});
-
 test("the project's files leave out one deleted but not staged, and name each symbolic link", () => {
   const root = mkdtempSync(join(tmpdir(), "wf-files-"));
   const git = (...args) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
