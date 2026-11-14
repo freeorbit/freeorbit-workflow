@@ -12,6 +12,7 @@
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf testdata trace [area] [--all]   spec rows no code names, and tests that name no row or story
+//   wf testdata ids <area>             give every check without an ID its own, C-NN
 //   wf ask <templates | example | page | wait | answers | record | export | import | live | reply | history> ...   ask a person on a page beside the chat
 //   wf view <serve | setup>   the question-pictures server, which serves .cache/view and takes an ask page's answers
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
@@ -160,10 +161,29 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata ids <area>");
       return 2;
     }
     const root = projectRoot();
+    if (name === "ids") {
+      // The kit's own step: number the area's checks that have no ID, in file order, never renumbering one.
+      const { fillCheckIds } = await import("../lib/testdata.mjs");
+      const { execFileSync } = await import("node:child_process");
+      const { readFileSync, writeFileSync } = await import("node:fs");
+      const { join } = await import("node:path");
+      const config = loadConfig(root);
+      const area = config.areas.find((each) => each.id === args[0] && each.docs);
+      if (!area) {
+        console.log(`Usage: wf testdata ids <area>; areas with a docs folder: ${config.areas.filter((each) => each.docs).map((each) => each.id).join(", ") || "none"}`);
+        return 2;
+      }
+      const dir = `${area.docs}/test-data/`;
+      const tracked = execFileSync("git", ["ls-files", "--", dir], { cwd: root, encoding: "utf8" }).trim().split("\n").filter((p) => p.endsWith(".md"));
+      const { texts, added } = fillCheckIds(tracked, (path) => readFileSync(join(root, path), "utf8"));
+      for (const [path, text] of texts) writeFileSync(join(root, path), text);
+      console.log(added ? `${area.id}: ${added} ${added === 1 ? "check" : "checks"} got an ID, in ${texts.size} ${texts.size === 1 ? "file" : "files"}.` : `${area.id}: every check has an ID.`);
+      return 0;
+    }
     if (name === "trace") {
       // The kit's own step: it reads the spec and the code, and runs no project command.
       const { trace, traceLines } = await import("../lib/testdata-trace.mjs");

@@ -24,6 +24,8 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 | `index <area>` | Rewrite the area index in the folder's README |
 | `journeys <area> [--chunks ...]` | Each journey's starting states, and the scenario that holds each |
 | `refresh-close <area> <ids>` | `covered`, then `index`, after a refresh is applied |
+| `ids <area>` | The kit's own: give each check without an ID its `C-NN` |
+| `trace [area]` | The kit's own: spec ids no code names, and tests that name none |
 
 ## The designer's three jobs
 
@@ -95,7 +97,7 @@ Send it back, or fix the line, when any of these is true in a file it touched:
 - A story the area builds has no dataset, or a path `testdata.mustCover` names is missing.
 - A dataset has no seed or no counts.
 - It breaks a rule in `core.md`, `formats.md`, or the flow area's own rules.
-- A rule has no ID, category, stories, or Accepted cell, or a rule about one flow area sits in `core.md`.
+- A rule has no ID, category, stories, or Accepted cell, or a rule about one flow area sits in `core.md`. A check has no `C-NN`: run `ids`.
 - A low-risk story got input classes or edge-case fixtures, or prose stands where `test-data-formats.md` gives a table.
 - A fixture varies only one input's value, or reaches `unit`: it belongs in that input's classes. An input's classes are listed again for another flow.
 - A check restates a rule, or one that holds everywhere is written in each flow.

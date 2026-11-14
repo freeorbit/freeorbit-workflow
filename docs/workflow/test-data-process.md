@@ -57,7 +57,8 @@ An area's test data is the `test-data/` folder in its docs folder, one flow area
 - **A story reaches the files that name it.** `npx wf testdata route <area> <ids>` lists them, from their `Covers` lines, rule tags, and other mentions. A refresh reads `core.md`, `formats.md`, and only those.
 - **Areas follow the flows**, which change less than the stories. A story in two flows reaches two files. Dataset ids, fixtures, and states are unique across the folder, so one file can name another's.
 - **An area stays reviewable.** `npx wf doc:check` warns for a file past `testdata.limits.lines`, a flow area past `testdata.limits.areaKB`, and fixtures past `testdata.limits.fixtures`, and the refresh that touches it proposes the split or the merge. A file not yet split goes on `testdata.limits.loose` until it is.
-- **Spec and code point at each other.** `npx wf testdata trace [area]` lists the spec rows no code names, and the tests that name no row and no story. A row may wait for its chunk, and a test of plain code needs no row; each is judged, nothing fails.
+- **Spec and code point at each other.** Every check has an ID, `C-NN`, and a test cites the check it proves. `npx wf testdata trace [area]` lists the spec rows no code names, and the tests that name no row and no story.
+  - A row may wait for its chunk, and a test of plain code needs no row; each is judged, nothing fails.
 
 <!-- wf:local folder-checks -->
 
