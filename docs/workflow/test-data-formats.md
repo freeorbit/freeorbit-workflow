@@ -15,7 +15,7 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 
 - **One screen.** A file holds about 40 lines (`testdata.limits.lines`). `wf doc:check` warns past it, and past `testdata.limits.areaKB` for one flow area. A small flow area stays one file.
 - **One index row.** The docs index lists the area's `README.md`, or a folder's `README.md`, which links each file in it.
-- **Unique names.** Rule IDs, dataset ids, fixtures, states, and inputs are unique across the area's folder, so one file can name another's.
+- **Unique names.** Rule and check IDs, dataset ids, fixtures, states, and inputs are unique across the area's folder, so one file can name another's.
 
 ## A flow area's folder
 
@@ -69,11 +69,13 @@ A story's owner tags it with a line before Acceptance: `Risk: high (money, outsi
 A topic file, or a one-file area, holds up to three tables: what a run shows, the classes of each input, and the few cases only a flow can show.
 
 ```markdown
-| Check | Stories | Rules |
+| ID | Check | Stories | Rules | By |
 | Input | Class | Values | Expect | Stories | Rules |
 | Fixture | Varies | Expect | Stories | Rules | Reach |
 ```
 
+- **ID.** `C-NN`, the next free number in the area, never reused or renumbered, as rule IDs are. A test or a scenario that proves the check cites it, such as `// C-41`, so `npx wf testdata trace` can say which checks nothing proves. `npx wf testdata ids <area>` gives every check without one its ID.
+- **By.** Empty when a test or a scenario proves it. `walk` when only the walk through the app by hand can, so the trace does not list it as unproven.
 - **Check.** What a passing run shows for this flow, in one line, that no rule already says. A rule that holds everywhere, such as nothing reaching a log or every step working with AI off, is not restated as a check in each flow: it gets one test across every state, and the flow's rules name it.
 - **How many.** About eight checks a story and thirty a flow area (`testdata.limits.checks`). `wf doc:check` warns past them, and for the same check written in three or more files.
 

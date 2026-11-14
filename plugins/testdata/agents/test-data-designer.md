@@ -62,6 +62,7 @@ The reviewer reads every line. Volume is a cost; the gaps are the value.
 - **Tables, not prose.** Rules, checks, fixtures, states, and gaps are rows in the tables `test-data-formats.md` gives, each rule with an ID and a category, each row citing its stories and rule IDs.
 - **One screen a file.** Keep each file to about `testdata.limits.lines` lines, 40 by default. A flow area that will not fit becomes a folder: `README.md`, `rules.md`, `data.md`, `states.md`, `gaps.md`, and one topic file per part of the flow, holding that part's checks and edge cases side by side.
 - **Risk decides depth.** Every story gets its rules, and checks for what only it shows. Only a story whose `Risk:` line says `high` gets input classes and edge-case fixtures. A story with no line is low; if it looks high (money, privacy, irreversible steps, outside input, evidence, or workspaces), propose its tag, and write neither for it yet.
+- **Every check has an ID**, `C-NN`, the area's next free number, never reused, as rules have `R-NN`. A check only the walk by hand can prove says `walk` in its By column.
 - **A check says what a rule does not.** A rule that holds everywhere (no log holds a canary, every step works with AI off, a restart keeps the state) lives once, in `core.md`; a flow does not restate it as a check. About eight checks a story and thirty a flow area (`testdata.limits.checks`).
 - **Classes belong to the input.** The unhappy paths of an input, such as a pasted address, a header, or an imported file, are its input classes: empty, at and past its limit, malformed, duplicated, mixed encodings, and dates or time zones at the edges. List them once, for the input: a format's in `formats.md`, a field one flow alone has in that flow's file. A story that reads the input names the classes it relies on in its checks, and never lists them again.
 - **One row a class.** Values that get the same outcome share a row; a boundary gets the value at it and one past it. A new value with the same outcome joins an existing row.
@@ -132,6 +133,8 @@ One line per changed story.
 
 ## Spec edits
 | File | Edit | Stories |
+
+(An edit names the check, rule, fixture, or input it changes by its ID.)
 
 ## Proposed rules
 | ID | Category | Rule | Stories | Accepted |

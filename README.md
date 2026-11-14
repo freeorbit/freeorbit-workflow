@@ -56,7 +56,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf scan full \| diff <since> [--light]` | The review's scans, from `review.scans` in the config, into `.cache/review-scan`, with the scope list and the diff |
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
-| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]`: spec rows no code names, and tests that name no row or story |
+| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]` (spec rows no code names, and tests that name no row or story) and `ids <area>` (a `C-NN` for every check without one) |
 | `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import \| live \| reply \| history` | Ask pages: any number of questions on one page in the browser pane, from twelve templates or the project's own in `.workflow/ask-templates/`, with pictures, boxes, pins, compare views, paging, bulk answers, and colour themes. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file; `live` updates a status page while a step runs, `reply` answers under a question, and `history` lists every round sent. The `ask-page` skill has the spec |
 | `wf view serve \| stop \| setup` | The shared `question-pictures` server: one per machine on 127.0.0.1, serving each project's `.cache/view` at its own key, with an inbox of every ask at `/`, and taking answers with a per-run token. `serve` starts or joins it, `stop` ends it, `setup` writes it into `.claude/launch.json` |
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
@@ -86,6 +86,19 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.63.0: every check has an ID
+
+- **Check IDs.** A checks table is now `| ID | Check | Stories | Rules | By |`.
+  - Each check has `C-NN`, the area's next free number, never reused or renumbered, as rules have `R-NN`.
+  - A test cites the check it proves, such as `// C-41`, so `npx wf testdata trace` lists the checks nothing proves.
+  - `By: walk` marks a check only the walk through the app by hand can prove; the trace leaves it out.
+- **`npx wf testdata ids <area>`** gives every check without an ID its own, in file order, and adds the ID column where a table has none. A second run changes nothing.
+- **doc:check.** It fails a check ID used twice in an area. It warns, once per area, for checks with no ID.
+- **The designer and deltas** name checks by ID.
+- **What else is indexed.** Every other thing a test or a delta points at already has an ID: stories, rules, datasets, decisions, gaps, open questions, and named fixtures, states, and inputs.
+  - Acceptance lines and input classes keep none. A check is the testable form of an acceptance, and a test reads an input's classes as data.
+- **What changes in a project.** Run `npx wf docs sync`, then `npx wf testdata ids <area>` for each area. On Freeorbit that numbers 527 checks in 61 files. Until tests cite them, the trace lists every check as unproven; that list is the gap to close as tests are touched.
 
 ### v0.62.0: checks say what rules do not, the spec comes just in time, and a trace
 

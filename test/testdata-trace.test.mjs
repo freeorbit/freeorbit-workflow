@@ -15,14 +15,15 @@ const SPEC = [
   "| `sweep-bad-dates` | dates | refused | GM-06 | R-12 | stored in `ready` |", "",
   "| Input | Class | Values | Expect | Stories | Rules |", "| --- | --- | --- | --- | --- | --- |",
   "| `new-address` | Blanks | two spaces | trimmed | GM-06 | R-12 |", "| `new-address` | IP domain | x@1.2.3.4 | refused | GM-06 | R-12 |", "",
-  "| State | What is already done |", "| --- | --- |", "| `gmail-ready` | signed in |", "| `gmail-later` | not built |",
+  "| State | What is already done |", "| --- | --- |", "| `gmail-ready` | signed in |", "| `gmail-later` | not built |", "",
+  "| ID | Check | Stories | Rules | By |", "| --- | --- | --- | --- | --- |", "| C-01 | The list shows | GM-06 | R-12 | |", "| C-02 | It looks right | GM-06 | | walk |", "| C-03 | Not proven | GM-06 | | |",
 ].join("\n");
 const CODE = {
   "tools/testdata/src/fixtures.rs": "fn sweep_bad_dates() {}\nconst D: &str = \"D27\";\n",
   "tools/testdata/fixtures/gmail-ready.json": "{}",
   "plugins/x/src/lib.rs": [
     "#[cfg(test)]", "mod tests {",
-    "    // R-12: today is fixed.", "    #[test]", "    fn today_is_fixed() {", "        assert!(true);", "    }",
+    "    // R-12, C-01: today is fixed.", "    #[test]", "    fn today_is_fixed() {", "        assert!(true);", "    }",
     "    #[test]", "    fn new_address_is_trimmed() {", "        check(\"new-address\");", "    }",
     "    #[test]", "    fn adds_two_numbers() {", "        assert_eq!(1 + 1, 2);", "    }",
     "}",
@@ -34,23 +35,24 @@ const context = { config, tracked: Object.keys(texts), files: (p) => texts[p] ??
 
 test("a spec's ids are its rules, fixtures, inputs once each, states, and datasets", () => {
   const ids = specIds([`${DIR}/flow.md`], context.files).map((each) => `${each.kind}:${each.id}`);
-  assert.deepEqual(ids, ["rule:R-12", "rule:R-13", "fixture:sweep-bad-dates", "input:new-address", "state:gmail-ready", "state:gmail-later", "dataset:D27"]);
+  assert.deepEqual(ids, ["rule:R-12", "rule:R-13", "check:C-01", "check:C-03", "fixture:sweep-bad-dates", "input:new-address", "state:gmail-ready", "state:gmail-later", "dataset:D27"], "a check proven by the walk is no code's to name");
 });
 
 test("a test is its body and the comment lines above it, in Rust and in JavaScript", () => {
   const rust = testsIn("plugins/x/src/lib.rs", CODE["plugins/x/src/lib.rs"]);
   assert.deepEqual(rust.map((t) => t.name), ["today_is_fixed", "new_address_is_trimmed", "adds_two_numbers"]);
-  assert.match(rust[0].text, /R-12: today is fixed/);
+  assert.match(rust[0].text, /R-12, C-01: today is fixed/);
   assert.deepEqual(testsIn("web/view.test.ts", CODE["web/view.test.ts"]).map((t) => t.name), ["GM-06 shows the list", "a plain helper"]);
 });
 
 test("the trace: spec rows no code names, and tests that name no row and no story", () => {
   const found = trace(context);
-  assert.deepEqual(found.areas.map((a) => [a.area, a.ids, a.unnamed.map((each) => each.id)]), [["uplink", 7, ["R-13", "gmail-later"]]], "a fixture named with underscores, and a state as a file name, count");
+  assert.deepEqual(found.areas.map((a) => [a.area, a.ids, a.unnamed.map((each) => each.id)]), [["uplink", 9, ["R-13", "C-03", "gmail-later"]]], "a fixture named with underscores, and a state as a file name, count");
   assert.deepEqual(found.loose.map((t) => t.name), ["adds_two_numbers", "a plain helper"]);
   assert.equal(found.tests, 5);
   const lines = traceLines(found);
-  assert.equal(lines[0], "uplink: 2 of 7 spec ids are named in no code file:");
+  assert.equal(lines[0], "uplink: 3 of 9 spec ids are named in no code file:");
+  assert.ok(lines.includes("  checks (1): C-03"));
   assert.ok(lines.includes("  rules (1): R-13"));
   assert.ok(lines.includes("tests: 2 of 5 name no spec row and no story, most in:"));
   assert.throws(() => trace(context, "nope"), /no area nope/);

@@ -144,11 +144,36 @@ test("warnings: a check written in many files is a rule restated, and checks pas
     [`${DIR}/b.md`]: checks(["| all of the above with AI off and no model. | GM-07 | R-29 |"]),
     [`${DIR}/c/one.md`]: checks([ai]),
   };
-  const found = testdataWarnings(context(config(), texts)).filter((w) => /check/.test(w));
+  const found = testdataWarnings(context(config(), texts)).filter((w) => /check/.test(w) && !/no ID/.test(w));
   assert.deepEqual(found, [
     `${DIR}/a.md:3: the check "All of the above with *AI off* and no model" is in 3 files; make it a rule in core.md with one test across every state, and drop it from the flows`,
     `${DIR}/a.md:3: story GM-06 has 10 checks, over 8; keep what only it shows, and leave what a rule says to the rule`,
   ]);
   const tight = config({ testdata: { limits: { checks: { story: 20, area: 5, repeated: 9 } } } });
-  assert.deepEqual(testdataWarnings(context(tight, texts)).filter((w) => /check/.test(w)), [`${DIR}/a.md: 9 checks, over 5; keep what this flow shows that no rule says`]);
+  assert.deepEqual(testdataWarnings(context(tight, texts)).filter((w) => /check/.test(w) && !/no ID/.test(w)), [`${DIR}/a.md: 9 checks, over 5; keep what this flow shows that no rule says`]);
+});
+
+test("check IDs: filled in file order from the area's last, never renumbered; a repeat fails, a missing one warns", async () => {
+  const { fillCheckIds } = await import("../lib/testdata.mjs");
+  const texts = {
+    [`${DIR}/a.md`]: "# A\n\n| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |\n| C-07 | Kept as it is | GM-06 | R-1 | |\n|  | Has none | GM-06 | R-1 | walk |\n",
+    [`${DIR}/b.md`]: "| Check | Stories | Rules |\n| --- | --- | --- |\n| First | GM-07 | |\n| Second | GM-07 | R-2 |\n\nText after.\n",
+    [`${DIR}/c.md`]: "| ID | Category | Rule | Stories | Accepted |\n| --- | --- | --- | --- | --- |\n| R-01 | Time | Today is fixed | GM-06 | 2026-11-13 |\n",
+  };
+  const files = (p) => texts[p] ?? "";
+  const { texts: out, added } = fillCheckIds(Object.keys(texts), files);
+  assert.equal(added, 3);
+  assert.deepEqual([...out.keys()], [`${DIR}/a.md`, `${DIR}/b.md`], "a rules table is left alone");
+  assert.match(out.get(`${DIR}/a.md`), /\| C-07 \| Kept as it is \|[\s\S]*\| C-08 \| Has none \| GM-06 \| R-1 \| walk \|/);
+  assert.equal(out.get(`${DIR}/b.md`), "| ID | Check | Stories | Rules |\n| --- | --- | --- | --- |\n| C-09 | First | GM-07 | |\n| C-10 | Second | GM-07 | R-2 |\n\nText after.\n");
+  const done = { ...texts, ...Object.fromEntries(out) };
+  assert.equal(fillCheckIds(Object.keys(done), (p) => done[p]).added, 0, "a second run changes nothing");
+  // Before: one warning that checks have no ID; after: none.
+  assert.ok(testdataWarnings(context(config(), texts)).includes(`${DIR}/: 3 checks have no ID; npx wf testdata ids uplink gives each its own`));
+  assert.ok(!testdataWarnings(context(config(), done)).some((w) => /no ID/.test(w)));
+  const twice = { ...done, [`${DIR}/d.md`]: "| ID | Check | Stories |\n| --- | --- | --- |\n| C-07 | Again | GM-06 |\n| X-1 | Odd | GM-06 |\n" };
+  assert.deepEqual(testdataProblems(context(config(), twice)).filter((p) => /check ID/.test(p)), [
+    `${DIR}/d.md:3: check ID C-07 is used already, at ${DIR}/a.md:5; give it the next free one`,
+    `${DIR}/d.md:4: check ID "X-1" is not C- and a number`,
+  ]);
 });
