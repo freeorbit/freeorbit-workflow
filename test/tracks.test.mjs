@@ -182,3 +182,15 @@ test("a chunk ends only when its checks are proven, walked, left to a later chun
   assert.equal(run("warn", 1).status, "OK");
   assert.equal(run("off", 1).status, "SKIP");
 });
+
+test("a chunk-end trace that could not run fails, in warn mode too, and says why", async () => {
+  const { steps } = await import("../lib/tracks.mjs");
+  const { merge } = await import("../lib/config/config.mjs");
+  const { DEFAULTS } = await import("../lib/config/defaults.mjs");
+  const cfg = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], testdata: { chunkChecks: "warn" } });
+  const io = { read: (p) => (p.endsWith("test-data/README.md") ? "# Spec" : ""), wf: () => ({ status: 2, stdout: "No row for 37d in the build order or the done list.\n" }) };
+  const step = steps("/nowhere", cfg, "chunk", "done", "37d", io).find((s) => Array.isArray(s) && s[0].startsWith("every check and rule"));
+  const result = step[1]();
+  assert.equal(result.status, "FAIL");
+  assert.match(result.note, /could not run: No row for 37d/);
+});

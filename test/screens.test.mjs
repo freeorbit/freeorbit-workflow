@@ -7,7 +7,8 @@ import { join } from "node:path";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, storyRange, unreached } from "../lib/screens/list.mjs";
+import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, unreached } from "../lib/screens/list.mjs";
+import { storiesIn } from "../lib/docs/shape.mjs";
 import { briefs, migrate, reviewCovers, why } from "../lib/screens/run.mjs";
 import { jobsOf, lookStep, needsDisplay, screensHeadless, sessionSteps, shotsFor, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
@@ -216,8 +217,9 @@ test("the counts and the gate see frames only, and a later chunk passes the gate
 });
 
 test("a story range in a chunk row is each story in it", () => {
-  assert.deepEqual(storyRange("GM-19 to GM-21"), ["GM-19", "GM-20", "GM-21"]);
-  assert.deepEqual(storyRange("APP-05"), ["APP-05"]);
+  assert.deepEqual(storiesIn("GM-19 to GM-21"), ["GM-19", "GM-20", "GM-21"]);
+  assert.deepEqual(storiesIn("APP-05"), ["APP-05"]);
+  assert.deepEqual(storiesIn("DR-01–DR-03, APP-26, GM-08 to 10; C-GM-49"), ["DR-01", "DR-02", "DR-03", "APP-26", "GM-08", "GM-09", "GM-10"], "an en dash and a bare end make a range; a story inside another ID is none");
 });
 
 test("a picture path with a space or a quote stays one word of the step", () => {

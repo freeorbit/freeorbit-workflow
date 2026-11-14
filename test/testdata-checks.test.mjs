@@ -168,7 +168,7 @@ test("check IDs: filled in file order from the area's last, never renumbered; a 
   const texts = {
     [`${DIR}/a.md`]: "# A\n\n| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |\n| C-07 | Kept as it is | GM-06 | R-1 | |\n|  | Has none | GM-06 | R-1 | walk |\n",
     [`${DIR}/b.md`]: "| Check | Stories | Rules |\n| --- | --- | --- |\n| First | GM-07 | |\n| Second | GM-07 | R-2 |\n\nText after.\n",
-    [`${DIR}/c.md`]: "| ID | Category | Rule | Stories | Accepted |\n| --- | --- | --- | --- | --- |\n| R-01 | Time | Today is fixed | GM-06 | 2026-11-13 |\n",
+    [`${DIR}/c.md`]: "| ID | Category | Rule | Stories | Accepted |\n| --- | --- | --- | --- | --- |\n| R-01 | Time | Today is fixed | GM-06 | 2026-11-13 |\n| R-1 | Time | Cited by a.md | GM-06 | 2026-11-13 |\n| R-2 | Time | Cited by b.md | GM-07 | 2026-11-13 |\n",
   };
   const files = (p) => texts[p] ?? "";
   const { texts: out, added } = fillCheckIds(Object.keys(texts), files);

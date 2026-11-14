@@ -39,7 +39,7 @@
 //   wf doctor         whether the project's set-up is whole
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { KIT_ROOT, reconcile } from "../lib/setup/ai.mjs";
@@ -166,7 +166,7 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata ids <area>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
       return 2;
     }
     const root = projectRoot();
@@ -236,22 +236,17 @@ const commands = {
     }
     if (name === "trace") {
       // The kit's own step: it reads the spec and the code, and runs no project command.
-      const { chunkChecks, chunkLines, storiesIn, trace, traceLines } = await import("../lib/testdata-trace.mjs");
+      const { chunkLines, chunkTrace, trace, traceLines } = await import("../lib/testdata-trace.mjs");
       const at = args.indexOf("--chunk");
       if (at >= 0) {
-        // A chunk's checks: its end waits until none is proven by nothing.
+        // A chunk's checks and rules: 1 while any is proven by nothing, 2 when the chunk has no row.
         const chunk = args[at + 1] ?? "";
-        const ctx = project();
-        const { findChunk } = await import("../lib/docs/shape.mjs");
-        const { readFileSync, existsSync } = await import("node:fs");
-        const { join } = await import("node:path");
-        const read = (p) => (p && existsSync(join(root, p)) ? readFileSync(join(root, p), "utf8") : "");
-        const row = findChunk([read(ctx.config.buildOrder.file), read(ctx.config.buildOrder.done)], chunk);
-        if (!row) {
-          console.log(`No row for ${chunk || "a chunk"} in the build order; say it as CH-12.`);
+        const read = (path) => (path && existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "");
+        const { found, noRow } = chunkTrace(project(), chunk, read);
+        if (noRow) {
+          console.log(`No row for ${chunk || "a chunk"} in the build order or the done list; name it as the row does, such as CH-12 or 37d.`);
           return 2;
         }
-        const found = chunkChecks(ctx, chunk, storiesIn(row.stories, ctx.config.areas.map((a) => a.prefix).filter(Boolean)));
         for (const line of chunkLines(found)) console.log(line);
         return found.unproven.length ? 1 : 0;
       }
