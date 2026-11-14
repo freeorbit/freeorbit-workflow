@@ -236,7 +236,7 @@ test("a new waiting ask is told once, across tabs, and the ones waiting when it 
   const stored = new Map();
   const sandbox = {
     window: {},
-    document: { hidden: true },
+    document: { hidden: true, hasFocus: () => false },
     localStorage: { getItem: (k) => stored.get(k) ?? null, setItem: (k, v) => stored.set(k, v), removeItem: (k) => stored.delete(k) },
     location: { assign() {} },
   };
@@ -255,9 +255,81 @@ test("a new waiting ask is told once, across tabs, and the ones waiting when it 
   notifier.tell("Done", "", "t");
   assert.equal(told.length, 2);
   sandbox.document.hidden = false;
+  sandbox.document.hasFocus = () => true;
   notifier.tell("Done", "", "t2");
   assert.equal(told.length, 2, "a page the person is looking at tells nothing");
   notifier.disable();
   notifier.check([ask("newer")]);
   assert.equal(told.length, 2);
+});
+
+test("where the server has desktop notifications, the page asks it to show one, with the page's token, in place of the browser's", async () => {
+  const posted = [];
+  const stored = new Map();
+  const sandbox = {
+    window: {},
+    document: { hidden: false, hasFocus: () => false },
+    localStorage: { getItem: (k) => stored.get(k) ?? null, setItem: (k, v) => stored.set(k, v), removeItem: (k) => stored.delete(k) },
+    location: { assign() {} },
+    fetch: async (url, opts) => {
+      if (url === "/__hub") return { json: async () => ({ notify: true }) };
+      posted.push([url, opts.headers["X-WF-Token"], JSON.parse(opts.body)]);
+      return { json: async () => ({ ok: true }) };
+    },
+  };
+  runInNewContext(readFileSync(join(here, "../lib/ask/browser/shared.js"), "utf8"), sandbox);
+  const { notifier } = sandbox.window.wfAskShared;
+  notifier.configure({ key: "k", id: "a", token: "t0k" });
+  await notifier.init();
+  assert.ok(notifier.supported() && notifier.desktop, "no browser Notification is needed");
+  assert.equal(await notifier.enable(), "granted");
+  notifier.tell("Chunk 12: done", "All steps", "x");
+  assert.deepEqual(posted, [["/__hub/notify", "t0k", { key: "k", id: "a", title: "Chunk 12: done", body: "All steps" }]], "told while the chat, not the page, has the keys");
+});
+
+test("the desktop notifier passes the text as arguments, keeps it short and plain, and will not flood", async () => {
+  const { desktopCommand, desktopNotifier } = await import("../lib/view/desktop.mjs");
+  const bin = mkdtempSync(join(tmpdir(), "wf-notify-"));
+  writeFileSync(join(bin, "notify-send"), "");
+  const linux = desktopCommand({ platform: "linux", env: { PATH: bin } });
+  assert.deepEqual(linux.args("T", "B"), ["--app-name=Workflow asks", "--", "T", "B"]);
+  assert.equal(desktopCommand({ platform: "linux", env: { PATH: "/nowhere" } }), null);
+  assert.equal(desktopCommand({ platform: "win32", env: {} }), null);
+  const mac = desktopCommand({ platform: "darwin", env: { PATH: bin } });
+  if (mac) assert.deepEqual(mac.args('a "quote"', "b").slice(-2), ['a "quote"', "b"], "the text never enters the script");
+  const runs = [];
+  let clock = 0;
+  const show = desktopNotifier({ command: linux, run: (file, args) => runs.push(args.slice(-2)), now: () => clock });
+  assert.equal(show("Asks\u001b[2J", "x".repeat(400)), true);
+  assert.deepEqual(runs[0], ["Asks [2J", "x".repeat(240)]);
+  clock = 500;
+  assert.equal(show("Other", ""), false, "one a second at most");
+  clock = 2000;
+  assert.equal(show("Asks\u001b[2J", "x".repeat(400)), false, "the same one once a minute");
+  assert.equal(show("Other", ""), true);
+  assert.equal(desktopNotifier({ command: null }), null);
+});
+
+test("on macOS, terminal-notifier is used when it is there, else osascript, and each says what to check when nothing shows", async () => {
+  const { desktopCommand, desktopHelp, desktopNotifier } = await import("../lib/view/desktop.mjs");
+  const bin = mkdtempSync(join(tmpdir(), "wf-notify-mac-"));
+  writeFileSync(join(bin, "terminal-notifier"), "");
+  const tn = desktopCommand({ platform: "darwin", env: { PATH: bin } });
+  assert.equal(tn.name, "terminal-notifier");
+  assert.deepEqual(tn.args("T", ""), ["-title", "T", "-message", " ", "-group", "wf-ask"], "it needs a message, so an empty body is a space");
+  const osa = { file: "/usr/bin/osascript", name: "osascript", args: () => [] };
+  assert.match(desktopHelp(osa, "darwin").join("\n"), /Script Editor/);
+  assert.match(desktopHelp(null, "linux").join("\n"), /libnotify/);
+  const logs = [];
+  const show = desktopNotifier({ command: tn, run: (file, args, opts, done) => done(new Error("exit 1"), "", "not allowed"), log: (line) => logs.push(line) });
+  show("T", "B");
+  assert.match(logs[0], /did not show \(terminal-notifier: not allowed\)/, "a failure is logged, not dropped");
+});
+
+test("on a Mac, the real notifier runs and exits cleanly", { skip: process.platform !== "darwin" && "macOS only; CI's macos job runs it" }, async () => {
+  const { desktopCommand } = await import("../lib/view/desktop.mjs");
+  const command = desktopCommand();
+  assert.ok(command, "osascript is always there on macOS");
+  const ran = spawnSync(command.file, command.args('Workflow asks: CI "quotes" and \\ backslash', "From the kit's tests."), { encoding: "utf8", timeout: 20000 });
+  assert.equal(ran.status, 0, `${command.name} failed: ${ran.stderr || ran.error?.message}`);
 });
