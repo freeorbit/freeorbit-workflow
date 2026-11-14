@@ -29,7 +29,6 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 | `budget <area> [ids] [--check]` | The kit's own: each story's fixtures against its cap, as the `Budget:` block for the designer's prompt; `--check` fails when one is over |
 | `delta <area> <file>` | The kit's own: the designer's return, saved to a file, held to its caps before any of it is applied |
 | `prune <area> [--owner] [--all] [--write]` | The kit's own: check rows from before v0.69.0 that no code cites, out of the spec; a dry run without `--write` |
-| `ids <area>` | The kit's own: give each check without an ID its `C-<prefix>-NN` |
 | `merge <folder> [--write]`, `fold <file> <sibling> [--write]` | The kit's own: a flow area's folder as one file, or a small file into a sibling, every row kept and links moved; a dry run without `--write` |
 | `review <area> [--chunk <id> \| --stories <ids>] [--team]` | The kit's own: an ask page's spec of the owner's rules, or with `--team` the team's craft rules, for `npx wf ask page -`; a solo project gets both on the one page |
 | `drop <area> --from <ask id> [--write]` | The kit's own: the rows a review page marked Drop, out of the spec and into the README's Dropped table |
@@ -40,7 +39,7 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 
 The designer's volume is counted by the tool, never left to its judgement. On every run:
 
-1. **Before.** Run `npx wf testdata budget <area> <ids>` and paste its `Budget:` block into the prompt, as it prints it. It holds counts, not rules, so the designer stays blind.
+1. **Before.** Run `npx wf testdata budget <area> <ids>` and paste its `Budget:` block into the prompt, as it prints it. It holds counts, limits, and the next free IDs, not rules, so the designer stays blind.
 2. **After.** Save what the designer returned to `.cache/testdata/<area>-return.md` and run `npx wf testdata delta <area> <that file>`.
    - It fails when the return holds more than `testdata.limits.questions` questions, more than `testdata.limits.propose` proposed acceptance lines for a story, or any check row.
    - Apply what is within the caps and leave the rest out. Name what was held back in one line to the owner.

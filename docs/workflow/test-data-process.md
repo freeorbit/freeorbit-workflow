@@ -70,7 +70,7 @@ Where the rules come from depends on the project's kind, as [project-kinds.md](p
 
 An area's test data is the `test-data/` folder in its docs folder, one flow area per file, so a story change touches only the files that cover it. The shape of each file, table, and category is in [test-data-formats.md](test-data-formats.md).
 
-- **About a page a file.** A flow area that fits in about 100 lines is one file. One past it becomes a folder of files of up to about 100 lines: rules, data, states, gaps, and a topic file per part of the flow with its checks and edge cases. The index takes one row, for the folder's README.
+- **About a page a file.** A flow area that fits in about 100 lines is one file. One past it becomes a folder of files of up to about 100 lines: rules, data, states, gaps, and a topic file per part, with its input classes and edge cases. The index takes one row, for the folder's README.
 - **Rules sit beside their data.** A rule about one flow area is in its rules table, and a rule two need is in `core.md`. Each row has an ID, a category, its stories, and the day the reviewer accepted it.
 - **Risk decides depth.** Every story gets its datasets and states. Input classes and edge-case fixtures are only for what is high-risk: an acceptance line that ends `Risk: high (<why>)`, or a story whose own Risk line says high.
 - **Risk is rationed.** Tag the line, not the story. `npx wf doc:check` warns when more than `testdata.limits.highShare` of an area's acceptance lines are high, since a tier most stories have says nothing.

@@ -24,7 +24,7 @@ You design data, not test cases. A story's acceptance lines are its checks, each
 The prompt names an area id, for example `uplink`, a mode, and on most runs a `Budget:` block. First read `.workflow/config.json`:
 
 - The area's entry in `areas` gives its `docs` folder and maybe its `kind`; else the top-level `kind`, `app` by default.
-- `testdata` gives `reads`, `mustCover`, `categories`, and `limits`.
+- `testdata` gives `reads`, `mustCover`, and `categories`. The file holds only what the project changed, so a limit it does not give is in the `Budget:` block.
 - `docs.workflow`, `docs/workflow` by default, holds `test-data-formats.md`. Read it next: every file you write follows its shapes.
 
 | Mode | Returns | Section |
@@ -37,7 +37,7 @@ The prompt names an area id, for example `uplink`, a mode, and on most runs a `B
 
 - The area's `overview.md`, `user-stories.md`, and `user-flows.md`, in its `docs` folder.
 - Its `test-data/core.md`, `formats.md`, and `README.md`, if they exist, the README's `## Dropped` table included.
-- On a refresh, the area files the prompt names, and only those. They were written blind. Reading them is not reading the implementation.
+- The area files the prompt names, in any mode, and only those. They were written blind. Reading them is not reading the implementation.
 - `test-data-formats.md`, and each file `testdata.reads` lists, such as the project's personas.
 - Public format specs and public documentation on the web: the specs the area's `formats.md` names, and a service's own help pages about its export format.
 
@@ -51,9 +51,9 @@ Do not open, search, or list anything else in the repo: no code folder, no archi
 
 The `Budget:` block is counted by the project's tool, and it is a limit, not a guide. The tool checks what you return, and what is over is cut from the end, never asked for again.
 
-- **Fixtures.** Each story's line says how many edge-case fixtures it holds and how many it may. A story with no room gets none: merge a new case into a row with axes, or make it a class of its input.
-- **Questions.** At most `testdata.limits.questions` in one run, the most important first.
-- **Proposed acceptance lines.** At most `testdata.limits.propose` a story, the most important first.
+- **Fixtures.** Each story's line says how many edge-case fixtures it holds across the whole area, some in files you were not given, and how many it may. A story with no room gets none: merge a new case into a row with axes, or make it a class of its input. A fixture counts for every story it cites.
+- **Questions and proposed acceptance lines.** The block gives the most you may return of each, the most important first.
+- **Next free IDs.** The block gives the next rule, gap, and dataset ID. Number on from them.
 - **Rank what you return.** Put first what would cost the user most if wrong. Leave out what nobody would change a story for.
 
 Volume is a cost. A short spec that is read beats a complete one that is skimmed.
@@ -79,11 +79,14 @@ The area's rules come first: `core.md`, `formats.md`, and the flow area's own ru
 - **Risk decides depth.** Input classes and fixtures are for what is high-risk: a story whose `Risk:` line says high, or an acceptance line that ends `Risk: high (<why>)`. For a line, design only for that line. A low-risk story gets its datasets and states, and nothing more.
 - **Rules are about the data.** A rule you write is `craft`, how test data and stand-ins are built, or `safety`, a privacy or safety promise the data must keep. How the app behaves is the stories' to say: propose it as an acceptance line, or ask.
 - **Proposed acceptance lines.** When a story plainly promises something its acceptance lines do not say, propose the line, in the owner's plain words, with no code names, scenario ids, or fixture names. The story's owner accepts it or not. This is the only way you add a check.
+  - Propose nothing an accepted rule or another story's line already says.
+  - The proof table, `| Line | By |`, is the main agent's. Leave it alone.
 - **About a page a file.** Keep each file to about `testdata.limits.lines` lines. A flow area past a page becomes a folder: `README.md`, `rules.md`, `data.md`, `states.md`, `gaps.md`, and one topic file per part of the flow. A part under about 15 lines goes in a sibling.
-- **Every ID carries the area's prefix**: rules `R-<prefix>-NN`, gaps `G-<prefix>-NN`, datasets `### DS-<prefix>-NN.`, each the area's next free number, never reused. A fixture, state, or input name is unique across the app too: start it with the area or flow, such as `gmail-move-`.
+- **Every ID carries the area's prefix**: rules `R-<prefix>-NN`, gaps `G-<prefix>-NN`, datasets `### DS-<prefix>-NN.`, each the area's next free number, never reused. A fixture, state, or input name is unique across the app too: follow the pattern the area's files already use, else start it with the area or flow, such as `gmail-move-`.
 - **Dropped stays dropped.** The README's `## Dropped` table lists rows the owner dropped. Never propose one again, under its ID or in other words.
 - **A glossary.** A domain word an owner might not know gets a row in the area's `glossary.md`: `| Term | Plain meaning |`.
 - **Reuse.** A new story mostly adds its ID to existing rules, datasets, and input classes. Do not invent a new persona, mailbox, or seed when a dataset that already covers the story can take it.
+  - Adding a story's ID to an accepted rule's Stories cell is a spec edit, not a change to the rule: it needs no `edit` row.
 - **Old check rows.** A `| ID | Check |` table is from before acceptance lines were the checks. Leave its rows as they are, and add none.
 
 ## By kind
@@ -110,8 +113,9 @@ Read the named stories and their flow sections, `core.md`, and the files the pro
 ```
 
 - One row per gap or contradiction, numbered on from the area's last `G-<prefix>-NN`, each a question the story's owner can answer in a line.
-- At most `testdata.limits.questions` questions, the most important first. Leave out what the spec already settles, and what nobody would change a story for.
+- No more questions than the budget gives, the most important first. Leave out what the spec already settles, and what nobody would change a story for.
 - A risk tag names the one acceptance line that is high-risk, such as `GM-07.2`, for money, privacy, irreversible steps, outside input, evidence, or workspaces. Propose a whole story only when every line is.
+- For a story tagged high as a whole whose lines are not all high, name the lines that are, so its owner can move the tag to them.
 - Leave out an empty section. With nothing to ask or propose, return `No questions.` and nothing else.
 
 ## Rules mode
@@ -132,7 +136,7 @@ A first draft returns the files for the stories the prompt names, each ready to 
 
 ## Refresh
 
-The folder exists and the prompt names the stories that changed and the files they reach. For each story, decide:
+The folder exists and the prompt names the stories that changed and the files they reach. An edit may also go in `core.md` or `formats.md`, which you always read. For each story, decide:
 
 - **No change.** The data there already lets a run show the new acceptance.
 - **Rules only.** The data still serves, but a rule had to be assumed.

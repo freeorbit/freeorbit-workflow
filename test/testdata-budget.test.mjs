@@ -51,6 +51,9 @@ test("a fixture budget follows the risk: a high story's cap, two for each high l
   assert.equal(lines[0], "Budget:");
   assert.ok(lines.includes("- GM-02 (1 high-risk line): fixtures 2 of 2, no room"));
   assert.ok(lines.includes("- At most 2 proposed acceptance lines a story and 5 questions in all, the most important first; anything past that is cut."));
+  assert.ok(lines.includes("- A file holds about 100 lines, and a flow area about 40 KB."));
+  const numbered = { ...texts, [`${DIR}/rules.md`]: "| ID | Category | Rule | Stories | Accepted |\n| --- | --- | --- | --- | --- |\n| R-GM-07 | Time | Fixed today | GM-01 | 2026-11-13 |\n\n| ID | What | Why | Dropped |\n| --- | --- | --- | --- |\n| R-GM-12 | Old | No | 2026-11-14 |\n\n### DS-GM-03. Mail\n" };
+  assert.ok(budgetLines(budget(context(config(), numbered), "uplink"), config().testdata.limits).includes("- Next free IDs: R-GM-13 for a rule, G-GM-01 for a gap, DS-GM-04 for a dataset."), "a dropped rule's number is never given again");
   const scoped = budget(context(config(), texts), "uplink", ["GM-02"]);
   assert.deepEqual([scoped.stories.map((s) => s.id), scoped.over], [["GM-02"], []], "a refresh is held to its own stories");
   const allowed = budget(context(config({ testdata: { limits: { allow: { "GM-01": 6, "R-GM-01": 6, "GM-03": 1 } } } }), texts), "uplink");

@@ -20,7 +20,7 @@ A kind with an area in it carries the area's prefix from `areas` in `.workflow/c
 | Kind | Pattern | Example | Names | Defined in |
 | --- | --- | --- | --- | --- |
 | rule | `R-<prefix>-<n>` | `R-GM-119` | A rule the test data and the app follow | A test-data rules table |
-| check | `C-<prefix>-<n>` | `C-GM-41` | What a passing run shows in one flow | A test-data checks table |
+| check | `C-<prefix>-<n>` | `C-GM-41` | A check row from before v0.69.0, kept while a test cites it | A test-data checks table |
 | gap | `G-<prefix>-<n>` | `G-GM-03` | A question the stories leave open, or a contradiction, for the story's owner | A test-data gaps table |
 | dataset | `DS-<prefix>-<n>` | `DS-GM-27` | A named, seeded set of test data | A `### DS-GM-27. Name` heading in the test-data spec |
 | acceptance | `<prefix>-<nn>.<n>` | `GM-07.3` | One acceptance line of a story, by its place: what a test or a walk proves | The story's Acceptance list, counted from 1 |
