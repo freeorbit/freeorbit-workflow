@@ -50,14 +50,19 @@ Where the rules come from depends on the project's kind, as [project-kinds.md](p
 
 An area's test data is the `test-data/` folder in its docs folder, one flow area per file, so a story change touches only the files that cover it. The shape of each file, table, and category is in [test-data-formats.md](test-data-formats.md).
 
-- **One screen a file.** A small flow area is one file. One that will not fit on a screen becomes a folder of one-screen files: rules, data, states, gaps, and a topic file per part of the flow with its checks and edge cases side by side. The docs index takes one row for the folder's README.
+- **About a page a file.** A flow area under about 150 lines is one file. One past it becomes a folder of files of up to about 100 lines: rules, data, states, gaps, and a topic file per part of the flow with its checks and edge cases. The index takes one row, for the folder's README.
 - **Rules sit beside their data.** A rule about one flow area is in its rules table, and a rule two need is in `core.md`. Each row has an ID, a category, its stories, and the day the reviewer accepted it.
 - **Risk decides depth.** Every story gets its rules, and checks for what it shows that no rule already says. Only a story with a `Risk: high` line gets input classes and edge-case fixtures, so a low-risk story costs a few rows.
 - **Classes once, fixtures few.** The classes of an input, such as a pasted address or an imported file, are listed once, for the input, and tested once, where its rule lives. Edge-case fixtures are only for what a flow alone can show, about five a story.
 - **A story reaches the files that name it.** `npx wf testdata route <area> <ids>` lists them, from their `Covers` lines, rule tags, and other mentions. A refresh reads `core.md`, `formats.md`, and only those.
 - **Areas follow the flows**, which change less than the stories. A story in two flows reaches two files. Dataset ids, fixtures, and states are unique across the folder, so one file can name another's.
-- **An area stays reviewable.** `npx wf doc:check` warns for a file past `testdata.limits.lines`, a flow area past `testdata.limits.areaKB`, and fixtures past `testdata.limits.fixtures`, and the refresh that touches it proposes the split or the merge. A file not yet split goes on `testdata.limits.loose` until it is.
-- **Spec and code point at each other.** Every check has an ID, `C-NN`, and a test cites the check it proves. `npx wf testdata trace [area]` lists the spec rows no code names, and the tests that name no row and no story.
+- **An area stays reviewable.** The refresh that touches an area proposes the split or the merge that `npx wf doc:check` warns for:
+  - a file past `testdata.limits.lines`, or a flow area past `testdata.limits.areaKB`;
+  - a folder that would fit in one file (`folder`), or a file too small to stand alone (`small`);
+  - fixtures past `testdata.limits.fixtures`.
+
+  A file not yet split goes on `testdata.limits.loose` until it is.
+- **Spec and code point at each other.** Every check has an ID, such as `C-GM-41`, unique across the app ([ids.md](ids.md)). A test cites the check it proves. `npx wf testdata trace [area]` lists the spec rows no code names, and the tests that name no row and no story.
   - A row may wait for its chunk, and a test of plain code needs no row; each is judged, nothing fails.
 
 <!-- wf:local folder-checks -->

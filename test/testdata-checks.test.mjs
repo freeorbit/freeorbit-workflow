@@ -43,23 +43,32 @@ test("only a rules table's Category cells are read", () => {
   assert.deepEqual(categoryCells(text), [{ line: 3, category: "Time" }]);
 });
 
-test("warnings: a file past one screen, a flow area past its size, an unknown category; loose files are not counted", () => {
+test("warnings: a file past a page, a flow area past its size, a folder too small to split, a tiny file, an unknown category; loose files are not counted", () => {
   const texts = {
     [`${DIR}/README.md`]: lines(10),
-    [`${DIR}/long.md`]: lines(41),
-    [`${DIR}/old.md`]: lines(90),
+    [`${DIR}/long.md`]: lines(101),
+    [`${DIR}/old.md`]: lines(190),
+    [`${DIR}/thin/README.md`]: lines(5),
+    [`${DIR}/thin/a.md`]: lines(60),
+    [`${DIR}/split/README.md`]: lines(10),
+    [`${DIR}/split/a.md`]: lines(90),
+    [`${DIR}/split/b.md`]: lines(80),
+    [`${DIR}/split/c.md`]: lines(8),
     [`${DIR}/big/a.md`]: "x".repeat(30 * 1024),
     [`${DIR}/big/b.md`]: "x".repeat(11 * 1024),
     [`${DIR}/rules.md`]: "| ID | Category | Rule |\n| --- | --- | --- |\n| R-01 | Stand-ins | A |\n| R-02 | Stand-ins | B |\n| R-03 | Time | C |\n",
   };
-  const found = testdataWarnings(context(config({ testdata: { limits: { loose: [`${DIR}/old.md`] } } }), texts));
+  const found = testdataWarnings(context(config({ testdata: { limits: { loose: [`${DIR}/old.md`] } } }), texts)).filter((w) => !/area-qualified/.test(w));
   assert.deepEqual(found, [
-    `${DIR}/big/: 41 KB, over 40; split it by dataset group, or into a folder of one-screen files`,
-    `${DIR}/long.md: 41 lines, over 40, about one screen; move a topic into a file of its own`,
+    `${DIR}/thin/: 2 files, 65 lines in all, under 150; make it one file`,
+    `${DIR}/split/c.md: 8 lines, under 15; fold it into a sibling file`,
+    `${DIR}/big/: 41 KB, over 40; split it by dataset group, or into a folder of page-sized files`,
+    `${DIR}/big/: 2 files, 2 lines in all, under 150; make it one file`,
+    `${DIR}/long.md: 101 lines, over 100, about a page; move a topic into a file of its own`,
     `${DIR}/rules.md:3: category "Stand-ins" (2 rules) is not the kit's or in testdata.categories`,
   ]);
-  const extended = config({ testdata: { categories: [{ name: "Stand-ins", use: "Fakes" }], limits: { lines: 100, areaKB: 50 } } });
-  assert.deepEqual(testdataWarnings(context(extended, texts)), []);
+  const extended = config({ testdata: { categories: [{ name: "Stand-ins", use: "Fakes" }], limits: { lines: 200, areaKB: 50, small: 0, folder: 0 } } });
+  assert.deepEqual(testdataWarnings(context(extended, texts)).filter((w) => !/area-qualified/.test(w)), []);
 });
 
 test("a table's rows are read by their header, and only from tables that have the columns asked for", () => {
@@ -172,8 +181,8 @@ test("check IDs: filled in file order from the area's last, never renumbered; a 
   assert.ok(testdataWarnings(context(config(), texts)).includes(`${DIR}/: 3 checks have no ID; npx wf testdata ids uplink gives each its own`));
   assert.ok(!testdataWarnings(context(config(), done)).some((w) => /no ID/.test(w)));
   const twice = { ...done, [`${DIR}/d.md`]: "| ID | Check | Stories |\n| --- | --- | --- |\n| C-07 | Again | GM-06 |\n| X-1 | Odd | GM-06 |\n" };
-  assert.deepEqual(testdataProblems(context(config(), twice)).filter((p) => /check ID/.test(p)), [
-    `${DIR}/d.md:3: check ID C-07 is used already, at ${DIR}/a.md:5; give it the next free one`,
-    `${DIR}/d.md:4: check ID "X-1" is not C- and a number`,
+  assert.deepEqual(testdataProblems(context(config(), twice)).filter((p) => /check/.test(p)), [
+    `${DIR}/d.md:3: check C-07 is defined already, at ${DIR}/a.md:5`,
+    `${DIR}/d.md:4: check ID "X-1" is not C-GM-<number>`,
   ]);
 });

@@ -9,13 +9,14 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 | `README.md` | The `Updated:` line, a one-sentence status, the area index, and `## Refresh history`, newest first |
 | `core.md` | The rules and spec every flow area shares: personal data, placeholders, generation, real names, never, sources, personas, size profiles |
 | `formats.md` | The input and output formats, the public spec for each, and each format's input classes |
-| `<flow>.md` | One flow area, the `user-flows.md` sections on its `Flows:` line, while it fits on one screen |
-| `<flow>/` | One flow area too long for one screen, as a folder of one-screen files |
+| `<flow>.md` | One flow area, the `user-flows.md` sections on its `Flows:` line, while it fits on about a page |
+| `<flow>/` | One flow area past a page and a half, as a folder of page-sized files |
 | `coverage.toml` | Each story's acceptance hash when the spec last covered it, written by the project's tool |
 
-- **One screen.** A file holds about 40 lines (`testdata.limits.lines`). `wf doc:check` warns past it, and past `testdata.limits.areaKB` for one flow area. A small flow area stays one file.
+- **About a page.** A file holds up to about 100 lines (`testdata.limits.lines`). `wf doc:check` warns past it, and past `testdata.limits.areaKB` for one flow area.
+- **Not too many files.** A flow area under about 150 lines (`testdata.limits.folder`) is one file, and a file in a folder under about 15 lines (`testdata.limits.small`) folds into a sibling. `wf doc:check` advises both: each file is a read and a link.
 - **One index row.** The docs index lists the area's `README.md`, or a folder's `README.md`, which links each file in it.
-- **Unique names.** Rule and check IDs, dataset ids, fixtures, states, and inputs are unique across the area's folder, so one file can name another's.
+- **Unique across the app.** Rule, check, gap, and dataset IDs carry the area's prefix, such as `R-GM-09`, so no two areas share one. Fixtures, states, and inputs are named once in the whole app. [ids.md](ids.md) has every pattern, and `npx wf id <ID>` finds where one is defined and cited.
 
 ## A flow area's folder
 
@@ -35,10 +36,10 @@ A one-file flow area has the same parts as `##` sections: `## Rules`, `## Datase
 ```markdown
 | ID | Category | Rule | Stories | Accepted |
 | --- | --- | --- | --- | --- |
-| R-09 | Money and limits | Estimates are asserted only by how they relate, never by a price | GM-36, GM-37 | 2026-11-13 |
+| R-GM-09 | Money and limits | Estimates are asserted only by how they relate, never by a price | GM-36, GM-37 | 2026-11-13 |
 ```
 
-- **ID.** `R-NN`, the next free number in the area, never reused.
+- **ID.** `R-<prefix>-NN`, such as `R-GM-09`: the area's prefix and the next free number in the area, never reused.
 - **Rule.** One line a reader takes in at once. A rule two flow areas need goes in `core.md`.
 - **Accepted.** The day the reviewer accepted it. A proposed rule sits under `## Proposed rules` in the same table shape, with `new`, and the reviewer accepts a category's rows together.
 
@@ -74,7 +75,7 @@ A topic file, or a one-file area, holds up to three tables: what a run shows, th
 | Fixture | Varies | Expect | Stories | Rules | Reach |
 ```
 
-- **ID.** `C-NN`, the next free number in the area, never reused or renumbered, as rule IDs are. A test or a scenario that proves the check cites it, such as `// C-41`, so `npx wf testdata trace` can say which checks nothing proves. `npx wf testdata ids <area>` gives every check without one its ID.
+- **ID.** `C-<prefix>-NN`, such as `C-GM-41`, the next free number in the area, never reused or renumbered, as rule IDs are. A test or a scenario that proves the check cites it, such as `// C-GM-41`, so `npx wf testdata trace` can say which checks nothing proves. `npx wf testdata ids <area>` gives every check without one its ID.
 - **By.** Empty when a test or a scenario proves it. `walk` when only the walk through the app by hand can, so the trace does not list it as unproven.
 - **Check.** What a passing run shows for this flow, in one line, that no rule already says. A rule that holds everywhere, such as nothing reaching a log or every step working with AI off, is not restated as a check in each flow: it gets one test across every state, and the flow's rules name it.
 - **How many.** About eight checks a story and thirty a flow area (`testdata.limits.checks`). `wf doc:check` warns past them, and for the same check written in three or more files.
@@ -105,7 +106,7 @@ A fixture is for what only a flow can show: a state, an order of steps, an inter
 
 ## Datasets
 
-`### D22. Short name`, then `Covers:` with story IDs and `Starts from:` with journey states. A two-column table gives the seed, the data, and where it is checked. Short paragraphs say what it holds and what a passing run shows.
+`### DS-GM-22. Short name`, the area's prefix and the next free number, then `Covers:` with story IDs and `Starts from:` with journey states. A two-column table gives the seed, the data, and where it is checked. Short paragraphs say what it holds and what a passing run shows.
 
 ## Journey states
 
@@ -119,7 +120,7 @@ A state is kebab-case and names its fixed today when anything depends on a date.
 
 ```markdown
 | ID | Kind | Category | Question | Stories |
-| G-03 | gap | Time | Does the same calendar day 12 months back count as stale? | GM-39 |
+| G-GM-03 | gap | Time | Does the same calendar day 12 months back count as stale? | GM-39 |
 ```
 
 - **Kind.** `gap`: the stories leave it open. `contradiction`: two lines say different things.

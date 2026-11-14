@@ -50,13 +50,14 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | --- | --- |
 | `wf doc:find <ID, date, or heading> [path]` | Prints each entry that starts with the query |
 | `wf doc:facts [status \| growth]` | Where the work stands, and what the docs cost to load |
-| `wf doc:check` | Links, the index (where a folder's README row stands for the files it links), story IDs and Risk lines, chunk tables, block length, dates after today, the kinds, and the project's extensions. It warns, without failing, for a test-data file past one screen, a flow area past its size, and a rule category on no list |
+| `wf doc:check` | Links, the index (where a folder's README row stands for the files it links), story IDs and Risk lines, chunk tables, block length, dates after today, the kinds, and the project's extensions. It warns, without failing, for a test-data file past a page, a flow area past its size or small enough for one file, an ID without its area prefix, and a rule category on no list |
 | `wf config` | The project's settings over the defaults, with reasons |
 | `wf ai:sync`, `wf ai:check` | OpenCode agents and slash commands generated from the project's and the kit's, and the skill paths in `opencode.json` |
 | `wf scan full \| diff <since> [--light]` | The review's scans, from `review.scans` in the config, into `.cache/review-scan`, with the scope list and the diff |
 | `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
-| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]` (spec rows no code names, and tests that name no row or story) and `ids <area>` (a `C-NN` for every check without one) |
+| `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]` (spec rows no code names, and tests that name no row or story) `ids <area>` (an ID for every check without one), and `rename-ids [area] [--write]` (old IDs qualified with the area's prefix) |
+| `wf id <ID> [--all]` | What an ID is, where it is defined, and each line that cites it, in docs and code; the patterns are in `docs/workflow/ids.md` |
 | `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import \| live \| reply \| history` | Ask pages: any number of questions on one page in the browser pane, from twelve templates or the project's own in `.workflow/ask-templates/`, with pictures, boxes, pins, compare views, paging, bulk answers, and colour themes. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file; `live` updates a status page while a step runs, `reply` answers under a question, and `history` lists every round sent. The `ask-page` skill has the spec |
 | `wf view serve \| stop \| setup` | The shared `question-pictures` server: one per machine on 127.0.0.1, serving each project's `.cache/view` at its own key, with an inbox of every ask at `/`, and taking answers with a per-run token. `serve` starts or joins it, `stop` ends it, `setup` writes it into `.claude/launch.json` |
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
@@ -86,6 +87,28 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.64.0: every ID is unique across the app, and `wf id` finds one
+
+- **Area-qualified IDs.** A rule, check, gap, or dataset ID now carries its area's prefix: `R-GM-119`, `C-GM-41`, `G-GM-03`, and `### DS-GM-27.`. The letter says the kind (Rule, Check, Gap, DataSet); the prefix says the area.
+  - Before, two areas could both have an `R-76`: on Freeorbit, 87 rule IDs were in both plugins, datasets D23 to D34 in both, and `C-01` in every area.
+  - Fixture, state, and input names are unique across the app too.
+- **`docs/workflow/ids.md`** lists every kind of ID, its pattern, an example, and where it is defined. The patterns live in one table in the kit (`lib/ids.mjs`) that every command reads, and a kit test keeps the doc in step with it. `AGENTS.md` points at it.
+- **`npx wf id <ID> [--all]`** says what an ID is, where it is defined, and each line that cites it, as spec, docs, logs, tests, and code. It matches whole IDs only, and finds a name written with underscores too. Use it before searching by hand.
+- **`npx wf testdata rename-ids [area] [--write] [--all]`** qualifies the old IDs, in the spec and wherever they are cited.
+  - An ID one area defines is that area's anywhere.
+  - One several define is told apart by its place: the area's docs folder, a path with the area's id as a folder or file name, or its `code` paths.
+  - Anything else is listed for a person, never guessed. It is a dry run without `--write`.
+- **doc:check.** It fails an ID defined twice in the app, or with another area's prefix. It warns for old IDs, and for a name defined in two areas.
+- **Bigger files, fewer of them.** `testdata.limits.lines` goes from 40 to 100, about a page. At 40, Freeorbit had 230 spec files averaging 19 lines; at 100 its move area went from 12 files to 4 with every row kept.
+  - New `testdata.limits.folder` (150): doc:check advises making a flow area's folder one file when it is all under that.
+  - New `testdata.limits.small` (15): it advises folding a file under that into a sibling.
+  - The designer writes to the new sizes.
+- **What changes in a project.**
+  1. Run `npx wf docs sync`.
+  2. Run `npx wf testdata rename-ids` and read the dry run. On Freeorbit it renames 935 IDs across 430 files, and lists 147 mentions for a person, 69 of them in one research file.
+  3. Run it again with `--write`, settle the listed ones by hand, and commit that alone.
+  4. Then merge the folders doc:check names, one flow area at a time, as their refresh comes.
 
 ### v0.63.0: every check has an ID
 
