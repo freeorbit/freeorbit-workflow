@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.73.0: a review's verdicts stay in view, and pictures have one row of controls
+
+- **A paged review takes the window's width**, up to 1240 px, with no rail beside it: the strip already lists the frames. This covers `compare`, `frame-review`, and `storyboard`.
+- **The verdicts stay in view** above the footer while the picture scrolls under them. Before, they sat below the window. On a window narrower than 700 px they stay under the picture, so they never cover it.
+- **One row of controls.** One picture's label, name, and size sit in its bar with Fit, Comment, Full size, and Expand, in place of a bar and a caption. A compare's two sizes moved from the bar to the line above the pictures, and its comment button is always "Comment".
+- **What changes in a project.** Rebuild open ask pages, or reload them after `npx wf view stop`.
+
 ### v0.72.0: long ask pages show how far you are
 
 - **Each table counts its rows**, such as 18 of 20, beside its heading.

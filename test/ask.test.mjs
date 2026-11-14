@@ -242,6 +242,19 @@ test("long pages: a table counts its rows, a filter shows what is left, and the 
   assert.match(html, /details", \{ class: "agreed" \}/, "the receipt folds the plain agreements away");
 });
 
+test("pictures: one row of controls, and a review's verdicts stay in view on a page as wide as the window", () => {
+  const raw = example("compare");
+  const { root, view } = project(raw);
+  const html = readFileSync(buildPage(root, view, raw, KIT_KINDS).page, "utf8");
+  assert.match(html, /bar\.append\(\.\.\.\[seg, slider, h\("span", \{ class: "grow" \}\), where, zoomSelect\(\), commentBtn, expandBtn\]/, "a compare's sizes are not in its bar");
+  assert.match(html, /class: "view-line" \}, note, h\("span", \{ class: "grow" \}\), sizeNote\)/, "they sit with the view's note");
+  assert.match(html, /one \? null : h\("figcaption"/, "one picture's caption is its bar");
+  assert.doesNotMatch(html, /Comment \(side by side\)/);
+  assert.match(html, /:root\[data-layout="pages"\] main\.content \{ max-width: 1240px; \}/);
+  assert.match(html, /:root\[data-layout="pages"\] \.viewer:not\(\.expanded\) > \.verdicts \{ position: sticky; bottom: var\(--foot\);/, "the verdicts stay above the footer");
+  assert.match(html, /@media \(max-width: 700px\) \{ :root\[data-layout="pages"\] \.viewer:not\(\.expanded\) > \.verdicts \{ position: static;/, "but never cover a narrow picture");
+});
+
 test("a page copies its pictures, hashes them, and keeps answers to the same page", () => {
   const raw = example("frame-review");
   const { root, view } = project(raw);

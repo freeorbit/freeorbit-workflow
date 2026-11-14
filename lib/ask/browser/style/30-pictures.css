@@ -4,7 +4,22 @@
 .vbar .size { font-size: 12px; color: var(--muted); white-space: nowrap; }
 @media (max-width: 860px) { .vbar .size:not(.diff) { display: none; } }
 .vbar .size.diff { color: var(--warn); }
-.vbar input[type="range"] { width: 160px; accent-color: var(--accent); }
+.vbar input[type="range"] { width: 160px; flex: 0 1 160px; min-width: 70px; accent-color: var(--accent); }
+.vbar .cap-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text-2); }
+.vbar > b { font-size: 13px; }
+.view-line { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.view-line .size { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.view-line .size.diff { color: var(--warn); }
+.view-line:not(:has(> :not([hidden]):not(.grow))) { display: none; }
+/* A review's page takes the window's width: the strip lists its frames, so no rail. Its verdicts stay in view above the footer while the picture scrolls. */
+:root[data-layout="pages"] .shell { grid-template-columns: minmax(0, 1fr); }
+:root[data-layout="pages"] nav.rail { display: none; }
+:root[data-layout="pages"] main.content { max-width: 1240px; }
+:root[data-layout="pages"] .viewer:not(.expanded) { overflow: visible; --fit-h: max(240px, calc(100vh - 380px)); }
+:root[data-layout="pages"] .viewer:not(.expanded) > .vbar { border-radius: var(--r-card) var(--r-card) 0 0; }
+:root[data-layout="pages"] .viewer:not(.expanded) > .verdicts { position: sticky; bottom: var(--foot); z-index: 5; background: var(--panel); border-radius: 0 0 var(--r-card) var(--r-card); box-shadow: 0 -6px 12px -8px rgb(0 0 0 / 30%); }
+/* On a narrow window the verdicts wrap to several rows, so they stay under the picture and never cover it. */
+@media (max-width: 700px) { :root[data-layout="pages"] .viewer:not(.expanded) > .verdicts { position: static; box-shadow: none; } }
 .stage-wrap { background: var(--backdrop); padding: 14px; overflow: auto; max-height: 76vh; }
 /* Beside a question's answer a picture fits about a third of the window, so the answer is on the same screen; a review's pages and Expand keep their room. */
 :root:not([data-layout="pages"]) .viewer:not(.expanded) { --fit-h: max(36vh, 260px); }
