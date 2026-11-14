@@ -42,9 +42,10 @@ th[aria-sort="descending"] .arrow::after { content: "▼"; font-size: 9px; }
 .d-mark { width: 22px; text-align: center; color: var(--muted); flex: none; user-select: none; }
 .d-line.d-del { background: var(--bad-soft); } .d-line.d-del .d-mark { color: var(--bad); }
 .d-line.d-add { background: var(--ok-soft); } .d-line.d-add .d-mark { color: var(--ok); }
+/* Added words keep the text's own colour on a stronger ground, so they read as the new text; removed ones are struck through. */
 del.d-del { background: var(--bad-soft); color: var(--bad); text-decoration: line-through; border-radius: 3px; }
-ins.d-add { background: var(--ok-soft); color: var(--ok); text-decoration: none; border-radius: 3px; }
+ins.d-add { background: color-mix(in srgb, var(--ok) 24%, transparent); color: var(--text); text-decoration: none; border-radius: 3px; }
 /* Inline, a word taken out and the word put in sit apart, so they read as two. */
 .diff.inline.by-word del.d-del, .diff.inline.by-word ins.d-add { padding: 0 2px; }
-.diff.inline.by-word del.d-del + ins.d-add { margin-left: .3em; }
+.diff.inline.by-word del.d-del + ins.d-add { margin-left: .45em; }
 

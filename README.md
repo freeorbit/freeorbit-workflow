@@ -88,6 +88,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.71.2: small ask page changes from the review
+
+- **The fold bar shows from four questions up.** Select all, Expand all, Fold answered, and Collapse all no longer sit above a page of one to three questions. Their keys still work.
+- **The first Tab goes to the current question's answer.** Before, it went to the header's All asks link, with the first question many Tabs away.
+- **Suggested edits read more easily.** Added words keep the text's own colour on a stronger green, with more space after a removed word.
+- **Form fields take the theme.** Number, date, and select fields looked like the browser's own, white in a dark page.
+- **Small things take a click on more room.** The previous and next ask arrows are at least 28 px wide, and a select box takes a click on 30 px while looking the same.
+- **What changes in a project.** Rebuild open ask pages, or reload them after `npx wf view stop`.
+
 ### v0.71.1: ask page fixes from the review
 
 - **The wheel scrolls the page** over a picture, or over a table that fits its box. Before, a box with nothing more to show still kept the wheel, so the page stood still under the mouse.

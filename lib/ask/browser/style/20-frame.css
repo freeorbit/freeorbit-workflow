@@ -40,7 +40,7 @@ header.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srg
 .pill { height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel); font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .pill:hover { border-color: var(--line-3); }
 .asks { display: inline-flex; align-items: center; border: 1px solid var(--line-2); border-radius: 999px; background: var(--panel); height: 28px; overflow: hidden; }
-.asks button { height: 26px; border: 0; background: transparent; padding: 0 8px; cursor: pointer; font-size: 12px; color: var(--muted); }
+.asks button { height: 26px; min-width: 28px; border: 0; background: transparent; padding: 0 8px; cursor: pointer; font-size: 12px; color: var(--muted); }
 .asks button:hover:not(:disabled) { color: var(--text); background: var(--hover); }
 .asks button:disabled { opacity: .4; cursor: default; }
 .asks .count { color: var(--text); font-weight: 500; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
@@ -81,6 +81,9 @@ nav.rail { display: none; }
 .chip { font-size: 11px; line-height: 18px; font-weight: 500; color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 8px; white-space: nowrap; margin-top: 2px; }
 .sel { appearance: none; width: 16px; height: 16px; margin: 3px 0 0; border: 1.5px solid var(--line-3); border-radius: 4px; background: var(--panel); cursor: pointer; flex: none; opacity: 0; transition: opacity 120ms var(--ease); }
 .q:hover .sel, .sel:checked, .sel:focus-visible, body.selecting .sel, tr:hover .sel { opacity: 1; }
+/* The box looks 16 px and takes a click on 30. */
+.sel { position: relative; }
+.sel::after { content: ""; position: absolute; inset: -7px; }
 .sel:checked { background: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--panel); }
 .q-sub { color: var(--text-2); font-size: 13px; line-height: 19px; margin: 4px 0 0; max-width: 70ch; white-space: pre-wrap; }
 .look { color: var(--text-2); font-size: 13px; line-height: 19px; margin: 6px 0 0; }

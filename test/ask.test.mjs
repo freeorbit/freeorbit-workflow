@@ -209,6 +209,19 @@ test("fixes from the page review: the wheel, the keys in Expand, R on a row, and
   assert.equal(localTime("not a time"), "not a time");
 });
 
+test("small page changes from the review: the fold bar, the first Tab, what a click takes, and themed fields", () => {
+  const raw = example("rank");
+  const { root, view } = project(raw);
+  const html = readFileSync(buildPage(root, view, raw, KIT_KINDS).page, "utf8");
+  assert.match(html, /const FOLD_BAR = 4;/);
+  assert.match(html, /if \(qs\.length < FOLD_BAR\) toolbar\.hidden = true;/, "Select all and the fold buttons show from four questions up");
+  assert.match(html, /e\.key === "Tab" && !e\.shiftKey[^\n]*document\.activeElement === document\.body/, "the first Tab goes to the current question");
+  assert.match(html, /\.sel::after \{ content: ""; position: absolute; inset: -7px; \}/, "a select box takes a click on 30 px");
+  assert.match(html, /\.asks button \{ height: 26px; min-width: 28px;/);
+  assert.match(html, /\.form input\[type="number"\], \.form input\[type="date"\], \.form select \{ border: 1px solid var\(--line-2\);/, "form fields take the theme");
+  assert.match(html, /ins\.d-add \{ background: color-mix\(in srgb, var\(--ok\) 24%, transparent\); color: var\(--text\);/, "added words read as text");
+});
+
 test("a page copies its pictures, hashes them, and keeps answers to the same page", () => {
   const raw = example("frame-review");
   const { root, view } = project(raw);
