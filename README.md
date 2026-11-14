@@ -94,6 +94,8 @@ Each kit version that changes a project's own files says what to do here. After 
 - **Notifications in Claude's built-in browser.** The pane shows no web notification, so the question-pictures server now shows them on the desktop, with `notify-send` on Linux or `osascript` on macOS. The browser's own notifications are the fallback.
   - The server only takes a notification from its own pages, each with its token; the inbox has one too.
   - It shows at most one a second, and the same one once a minute, as short plain text.
+- **On macOS**, `terminal-notifier` is used when it is installed (`brew install terminal-notifier`), else `osascript`. macOS lists osascript's notifications as Script Editor's, so Script Editor must be allowed in System Settings, Notifications. CI's macOS job runs the real command.
+- **`npx wf view notify`** sends one notification now, through the same command, and says what to check when none appears. A failed notification is logged by the server.
 - **Told while you are away.** A reply, or a live page finishing, is told when the page lacks focus: another tab, or the chat beside the pane. Before, a visible pane never told.
 - **What changes in a project.** Run `npx wf docs sync`, and `npx wf view stop` so the server restarts on the new kit. Then turn on "Tell me when an agent asks" in a page's ⋯ menu, or Notify me on the inbox.
 

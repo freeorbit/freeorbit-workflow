@@ -309,3 +309,27 @@ test("the desktop notifier passes the text as arguments, keeps it short and plai
   assert.equal(show("Other", ""), true);
   assert.equal(desktopNotifier({ command: null }), null);
 });
+
+test("on macOS, terminal-notifier is used when it is there, else osascript, and each says what to check when nothing shows", async () => {
+  const { desktopCommand, desktopHelp, desktopNotifier } = await import("../lib/view/desktop.mjs");
+  const bin = mkdtempSync(join(tmpdir(), "wf-notify-mac-"));
+  writeFileSync(join(bin, "terminal-notifier"), "");
+  const tn = desktopCommand({ platform: "darwin", env: { PATH: bin } });
+  assert.equal(tn.name, "terminal-notifier");
+  assert.deepEqual(tn.args("T", ""), ["-title", "T", "-message", " ", "-group", "wf-ask"], "it needs a message, so an empty body is a space");
+  const osa = { file: "/usr/bin/osascript", name: "osascript", args: () => [] };
+  assert.match(desktopHelp(osa, "darwin").join("\n"), /Script Editor/);
+  assert.match(desktopHelp(null, "linux").join("\n"), /libnotify/);
+  const logs = [];
+  const show = desktopNotifier({ command: tn, run: (file, args, opts, done) => done(new Error("exit 1"), "", "not allowed"), log: (line) => logs.push(line) });
+  show("T", "B");
+  assert.match(logs[0], /did not show \(terminal-notifier: not allowed\)/, "a failure is logged, not dropped");
+});
+
+test("on a Mac, the real notifier runs and exits cleanly", { skip: process.platform !== "darwin" && "macOS only; CI's macos job runs it" }, async () => {
+  const { desktopCommand } = await import("../lib/view/desktop.mjs");
+  const command = desktopCommand();
+  assert.ok(command, "osascript is always there on macOS");
+  const ran = spawnSync(command.file, command.args('Workflow asks: CI "quotes" and \\ backslash', "From the kit's tests."), { encoding: "utf8", timeout: 20000 });
+  assert.equal(ran.status, 0, `${command.name} failed: ${ran.stderr || ran.error?.message}`);
+});

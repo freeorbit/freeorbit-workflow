@@ -18,7 +18,7 @@
 //   wf testdata merge <folder> [--write]           a flow area's folder as one file, every row kept
 //   wf testdata fold <file> <sibling> [--write]    a small file into a sibling in its folder
 //   wf ask <templates | example | page | wait | answers | record | export | import | live | reply | history> ...   ask a person on a page beside the chat
-//   wf view <serve | setup>   the question-pictures server, which serves .cache/view and takes an ask page's answers
+//   wf view <serve | stop | setup | notify>   the question-pictures server, which serves .cache/view and takes an ask page's answers
 //   wf design <render | check | storyboard | annotate> ...   design frames, their pictures, and question sheets
 //   wf app <start | run | stop | ...>   drive the project's app, Tauri or web, under a memory cap
 //   wf try [scenario] [--keep] [--dry-run] [--files]   open the app yourself at a test scenario
