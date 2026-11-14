@@ -28,7 +28,7 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 | `refresh-close <area> <ids>` | `covered`, then `index`, after a refresh is applied; refused when the refresh took one of those stories over budget |
 | `budget <area> [ids] [--check]` | The kit's own: each story's fixtures against its cap, as the `Budget:` block for the designer's prompt; `--check` fails when one is over |
 | `delta <area> <file>` | The kit's own: the designer's return, saved to a file, held to its caps before any of it is applied |
-| `prune <area> [--owner] [--all] [--write]` | The kit's own: check rows from before v0.69.0 that no code cites, out of the spec; a dry run without `--write` |
+| `prune <area> [--all] [--write]` | The kit's own: check rows from before v0.69.0 that no code cites, out of the spec; a dry run without `--write` |
 | `merge <folder> [--write]`, `fold <file> <sibling> [--write]` | The kit's own: a flow area's folder as one file, or a small file into a sibling, every row kept and links moved; a dry run without `--write` |
 | `review <area> [--chunk <id> \| --stories <ids>] [--team]` | The kit's own: an ask page's spec of the owner's rules, or with `--team` the team's craft rules, for `npx wf ask page -`; a solo project gets both on the one page |
 | `drop <area> --from <ask id> [--write]` | The kit's own: the rows a review page marked Drop, out of the spec and into the README's Dropped table |
@@ -79,7 +79,7 @@ Run `delta` on what it returns, then ask the story's owner, in one batch as the 
 
 Its `| ID | Check |` tables stay readable, and a test that cites `C-GM-41` still names it. Nothing gates, budgets, or reviews those rows, and the designer adds none.
 
-- `npx wf testdata prune <area>` lists the check rows no code cites, for stories already built; `--write` takes them out. Rows with a By, a dispute, or a core or `+harm` tag stay unless `--owner`.
+- `npx wf testdata prune <area>` lists the check rows no code cites, for stories already built; `--write` takes them out. Rows with a By or a dispute stay.
 - A rule with no Type takes it from its category where it can. Type the rest by hand as they come up; there is no tagging pass.
 
 ## 2. Draft the rules, once per area

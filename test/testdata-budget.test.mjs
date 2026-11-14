@@ -88,14 +88,14 @@ test("doc:check warns when over a third of an area's acceptance lines are high-r
   assert.deepEqual(testdataProblems(context(config(), texts)).map((p) => p.replace(/^.*?: /, "").slice(0, 38)), ["the proof table names GM-01.9, which i", 'GM-02.1 By "soon" is not walk, walked ', "GM-02.7 is disputed but is no story's "]);
 });
 
-test("prune takes out check rows nothing cites, for built stories; cited, walked, disputed, unbuilt, and the owner's tagged rows stay", () => {
-  const CHECKS = "| ID | Check | Stories | Rules | Level | By |\n| --- | --- | --- | --- | --- | --- |";
+test("prune takes out check rows nothing cites, for built stories; cited, walked, disputed, and unbuilt rows stay", () => {
+  const CHECKS = "| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |";
   const texts = {
     [`${DIR}/move.md`]: ["# Move", "", "## Checks", "", CHECKS,
-      "| C-GM-01 | Cited by a test | GM-01 | | | |", "| C-GM-02 | Cited by nothing | GM-01 | | | |", "| C-GM-03 | Walked | GM-01 | | | walk |", "| C-GM-04 | Disputed | GM-01 | | | |",
-      "| C-GM-05 | Not built yet | GM-02 | | | |", "| C-GM-06 | The owner's | GM-01 | | core+harm | |", "| C-GM-07 | Named in a screen list | GM-01 | | rare | |", "| C-GM-08 | Rare, uncited | GM-01 | | rare | |", "",
+      "| C-GM-01 | Cited by a test | GM-01 | | |", "| C-GM-02 | Cited by nothing | GM-01 | | |", "| C-GM-03 | Walked | GM-01 | | walk |", "| C-GM-04 | Disputed | GM-01 | | |",
+      "| C-GM-05 | Not built yet | GM-02 | | |", "| C-GM-07 | Named in a screen list | GM-01 | | |", "| C-GM-08 | Also uncited | GM-01 | | |", "",
       "## Gaps", "", "| ID | Kind | Question |", "| --- | --- | --- |", "| G-GM-01 | dispute | C-GM-04 cannot hold |", ""].join("\n"),
-    [`${DIR}/old.md`]: ["# Old", "", "Kept text.", "", "## Checks", "", CHECKS, "| C-GM-09 | Gone | GM-01 | | | |", "", "## Rules", "", "| ID | Category | Rule | Stories | Accepted |", "| --- | --- | --- | --- | --- |", "| R-GM-01 | Time | Today is fixed | GM-01 | 2026-11-13 |", ""].join("\n"),
+    [`${DIR}/old.md`]: ["# Old", "", "Kept text.", "", "## Checks", "", CHECKS, "| C-GM-09 | Gone | GM-01 | | |", "", "## Rules", "", "| ID | Category | Rule | Stories | Accepted |", "| --- | --- | --- | --- | --- |", "| R-GM-01 | Time | Today is fixed | GM-01 | 2026-11-13 |", ""].join("\n"),
     "docs/design/screens.md": "The Reach of this frame shows C-GM-07.\n",
     "crates/a/src/lib.rs": "#[test]\n// C-GM-01\nfn shown() {}\n",
   };
@@ -103,12 +103,12 @@ test("prune takes out check rows nothing cites, for built stories; cited, walked
   assert.deepEqual([...built], ["GM-01"]);
   const found = pruneChecks(context(config(), texts), "uplink", { built });
   assert.deepEqual(found.pruned.map((p) => p.id), ["C-GM-02", "C-GM-08", "C-GM-09"]);
-  assert.deepEqual(found.kept, { cited: 2, by: 1, disputed: 1, unbuilt: 1, owner: 1 });
+  assert.deepEqual(found.kept, { cited: 2, by: 1, disputed: 1, unbuilt: 1 });
   assert.equal(found.texts.get(`${DIR}/old.md`), ["# Old", "", "Kept text.", "", "## Rules", "", "| ID | Category | Rule | Stories | Accepted |", "| --- | --- | --- | --- | --- |", "| R-GM-01 | Time | Today is fixed | GM-01 | 2026-11-13 |", ""].join("\n"), "an emptied table goes with its heading; a rule is never touched");
   assert.ok(!/C-GM-02|C-GM-08/.test(found.texts.get(`${DIR}/move.md`)) && /C-GM-01[\s\S]*C-GM-03[\s\S]*## Gaps/.test(found.texts.get(`${DIR}/move.md`)));
   assert.match(pruneLines(found)[0], /3 check rows to prune, in 2 files \(a dry run; --write applies it\)\./);
-  const all = pruneChecks(context(config(), texts), "uplink", { built, all: true, owner: true });
-  assert.deepEqual(all.pruned.map((p) => p.id), ["C-GM-02", "C-GM-05", "C-GM-06", "C-GM-08", "C-GM-09"]);
+  const all = pruneChecks(context(config(), texts), "uplink", { built, all: true });
+  assert.deepEqual(all.pruned.map((p) => p.id), ["C-GM-02", "C-GM-05", "C-GM-08", "C-GM-09"]);
 });
 
 test("a refresh is held to what it added: an overage already there at the last commit does not stop the close, and an area the kit cannot read is the project's to report", async () => {

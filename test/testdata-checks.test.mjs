@@ -160,24 +160,13 @@ test("a checks table is from before acceptance lines were the checks: nothing bu
   assert.deepEqual(testdataWarnings(context(config(), texts)).filter((w) => /check/.test(w)), []);
 });
 
-test("check IDs: filled in file order from the area's last, never renumbered; a repeat fails", async () => {
-  const { fillCheckIds } = await import("../lib/testdata.mjs");
+test("a check row's ID is still held to its shape, and defined once", () => {
   const texts = {
-    [`${DIR}/a.md`]: "# A\n\n| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |\n| C-07 | Kept as it is | GM-06 | R-1 | |\n|  | Has none | GM-06 | R-1 | walk |\n",
-    [`${DIR}/b.md`]: "| Check | Stories | Rules |\n| --- | --- | --- |\n| First | GM-07 | |\n| Second | GM-07 | R-2 |\n\nText after.\n",
-    [`${DIR}/c.md`]: "| ID | Category | Rule | Stories | Accepted |\n| --- | --- | --- | --- | --- |\n| R-01 | Time | Today is fixed | GM-06 | 2026-11-13 |\n| R-1 | Time | Cited by a.md | GM-06 | 2026-11-13 |\n| R-2 | Time | Cited by b.md | GM-07 | 2026-11-13 |\n",
+    [`${DIR}/a.md`]: "| ID | Check | Stories | Rules | By |\n| --- | --- | --- | --- | --- |\n| C-07 | Kept as it is | GM-06 | | |\n",
+    [`${DIR}/d.md`]: "| ID | Check | Stories |\n| --- | --- | --- |\n| C-07 | Again | GM-06 |\n| X-1 | Odd | GM-06 |\n",
   };
-  const files = (p) => texts[p] ?? "";
-  const { texts: out, added } = fillCheckIds(Object.keys(texts), files);
-  assert.equal(added, 3);
-  assert.deepEqual([...out.keys()], [`${DIR}/a.md`, `${DIR}/b.md`], "a rules table is left alone");
-  assert.match(out.get(`${DIR}/a.md`), /\| C-07 \| Kept as it is \|[\s\S]*\| C-08 \| Has none \| GM-06 \| R-1 \| walk \|/);
-  assert.equal(out.get(`${DIR}/b.md`), "| ID | Check | Stories | Rules |\n| --- | --- | --- | --- |\n| C-09 | First | GM-07 | |\n| C-10 | Second | GM-07 | R-2 |\n\nText after.\n");
-  const done = { ...texts, ...Object.fromEntries(out) };
-  assert.equal(fillCheckIds(Object.keys(done), (p) => done[p]).added, 0, "a second run changes nothing");
-  const twice = { ...done, [`${DIR}/d.md`]: "| ID | Check | Stories |\n| --- | --- | --- |\n| C-07 | Again | GM-06 |\n| X-1 | Odd | GM-06 |\n" };
-  assert.deepEqual(testdataProblems(context(config(), twice)).filter((p) => /check/.test(p)), [
-    `${DIR}/d.md:3: check C-07 is defined already, at ${DIR}/a.md:5`,
+  assert.deepEqual(testdataProblems(context(config(), texts)).filter((p) => /check/.test(p)), [
+    `${DIR}/d.md:3: check C-07 is defined already, at ${DIR}/a.md:3`,
     `${DIR}/d.md:4: check ID "X-1" is not C-GM-<number>`,
   ]);
 });

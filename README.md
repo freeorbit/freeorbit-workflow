@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.69.1: the last of Levels and tags is gone
+
+- **Gone from the kit:** a check's Level and Setup columns and everything that read them, `npx wf testdata tag`, `npx wf testdata ids`, the "moved by the tags" table on a review page, and `prune --owner`. A check row is `| ID | Check | Stories | Rules | By |`, and is only read so a test that cites it still names it.
+- **`prune` takes every check row nothing cites**, for built stories. It no longer keeps a row for being tagged core or `+harm`.
+- **Fixed:** `test-data-formats.md` repeated its sections from Rules to Edge-case fixtures in v0.69.0. `npx wf testdata` with no step now prints its usage; it had thrown since v0.68.0.
+- **What changes in a project.** Run `npx wf docs sync`. Take the `Setup` and `Level` columns out of any check table that still has them; nothing reads them.
+
 ### v0.69.0: acceptance lines are the checks, and the designer designs data within a budget
 
 Freeorbit's spec had grown to 560 checks and 308 rules for 105 stories. Half were cited by no code, one story's 7 acceptance lines were named in 61 spec rows, and every limit was a warning.
