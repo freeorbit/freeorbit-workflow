@@ -13,8 +13,8 @@
 // Input: the hook's JSON on stdin. Output: a deny decision on stdout, or
 // nothing to let the call go on.
 
-import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { isAbsolute, join, normalize, relative } from "node:path";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { dirname, isAbsolute, join, normalize, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 
 /** The agents this guards, by name without the plugin prefix. */
@@ -40,7 +40,6 @@ export const WEB_DOMAINS = [
  * as deny rules for Claude Code's settings and OpenCode's agents (W-11).
  */
 export const SECRET_GLOBS = [".env", ".env.*", "*.pem", "*.key", "*.p12", "*.pfx", "id_rsa*", "id_ed25519*", "id_ecdsa*"];
-// A command that chains, pipes, redirects, or substitutes could run anything.
 // A command that chains, pipes, redirects, or substitutes could run anything.
 const SHELL_META = /[;&|`<>\n\r]|\$\(/;
 
@@ -323,6 +322,34 @@ export function decide(input, root, config) {
   return null;
 }
 
+/**
+ * The project the call works in. Claude Code's CLAUDE_PROJECT_DIR names the
+ * main checkout even in a chunk worktree, which put every worktree file
+ * outside the root. So the root is the nearest folder up from the call's cwd
+ * that is the project itself or a git worktree of the same repository, and
+ * has a .workflow/config.json. Any other folder's config, a parent's or a
+ * fixture's, never sets the guard's policy.
+ */
+export function rootOf(cwd, projectDir = "") {
+  if (!projectDir) return cwd || process.cwd();
+  const real = (p) => { try { return realpathSync(p); } catch { return normalize(p); } };
+  const project = real(projectDir);
+  const repoGit = join(project, ".git");
+  for (let dir = cwd ? real(cwd) : ""; dir; ) {
+    if (existsSync(join(dir, ".workflow", "config.json"))) {
+      if (dir === project) return dir;
+      // A worktree's .git is a file: "gitdir: <repo>/.git/worktrees/<name>".
+      const link = join(dir, ".git");
+      const gitdir = existsSync(link) && statSync(link).isFile() ? /^gitdir:\s*(.+)$/m.exec(readFileSync(link, "utf8"))?.[1]?.trim() : null;
+      if (gitdir && real(join(gitdir, "..", "..")) === real(repoGit)) return dir;
+    }
+    const up = dirname(dir);
+    if (up === dir) break;
+    dir = up;
+  }
+  return projectDir;
+}
+
 async function main() {
   let raw = "";
   for await (const chunk of process.stdin) raw += chunk;
@@ -330,7 +357,7 @@ async function main() {
   const name = agentName(input);
   // Most calls are the main session's or an unguarded agent's: decide them before anything can fail.
   if (!name || !GUARDED.includes(name)) return;
-  const root = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
+  const root = rootOf(input.cwd, process.env.CLAUDE_PROJECT_DIR);
   const file = join(root, ".workflow", "config.json");
   const config = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {};
   const why = decide(input, root, config);

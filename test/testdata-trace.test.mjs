@@ -3,7 +3,8 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { specIds, testsIn, trace, traceLines } from "../lib/testdata-trace.mjs";
+import { specIds } from "../lib/testdata.mjs";
+import { testsIn, trace, traceLines } from "../lib/testdata-trace.mjs";
 
 const DIR = "docs/plugins/uplink/test-data";
 const config = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }] });
@@ -34,7 +35,7 @@ const texts = { [`${DIR}/flow.md`]: SPEC, ...CODE };
 const context = { config, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" };
 
 test("a spec's ids are its rules, fixtures, inputs once each, states, and datasets", () => {
-  const ids = specIds([`${DIR}/flow.md`], context.files).map((each) => `${each.kind}:${each.id}`);
+  const ids = specIds([`${DIR}/flow.md`], context.files, { walk: false }).map((each) => `${each.kind}:${each.id}`);
   assert.deepEqual(ids, ["rule:R-12", "rule:R-13", "check:C-01", "check:C-03", "fixture:sweep-bad-dates", "input:new-address", "state:gmail-ready", "state:gmail-later", "dataset:D27"], "a check proven by the walk is no code's to name");
 });
 
