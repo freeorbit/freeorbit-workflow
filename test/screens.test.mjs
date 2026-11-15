@@ -11,7 +11,7 @@ import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, unreached } from "../lib/screens/list.mjs";
 import { storiesIn } from "../lib/docs/shape.mjs";
 import { areasOf, briefs, inAreas, migrate, reviewCovers, screens, why } from "../lib/screens/run.mjs";
-import { jobsOf, lookStep, needsDisplay, screensHeadless, sessionSteps, shotsFor, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
+import { jobsOf, lookStep, needsDisplay, screensHeadless, sessionSteps, shotsFor, shotsProblem, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
 import { afterDefer, afterRun, readState, recordDir, statePath, writeState } from "../lib/screens/state.mjs";
 
@@ -304,4 +304,15 @@ test("--area narrows a run to those areas' screens, and its accept does not move
   assert.match(lines.join("\n"), /covered only uplink, so the state does not move/);
   assert.ok(!existsSync(statePath(root)), "no state written");
   assert.deepEqual(JSON.parse(readFileSync(join(recordDir(root), "accepted.json"), "utf8")), { accounts: { "wide-default": "h" } });
+});
+
+test("narrow and stress are a project's own: off until set, and asking for them unset says what to set", () => {
+  const plain = merge(DEFAULTS, {});
+  assert.equal(plain.screens.narrow, "");
+  assert.deepEqual(plain.screens.stress, {});
+  assert.equal(shotsProblem(["wide-default"], plain), null, "Default needs nothing set");
+  assert.match(shotsProblem(shotsFor(["--narrow"], "deep"), plain), /set screens\.narrow/);
+  assert.match(shotsProblem(shotsFor(["--wide", "--stress"], null), plain), /set screens\.stress/);
+  const set = merge(DEFAULTS, { screens: { narrow: "800x560", stress: { appearance: "light" } } });
+  assert.equal(shotsProblem(shotsFor(["--wide", "--narrow", "--stress"], "deep"), set), null);
 });
