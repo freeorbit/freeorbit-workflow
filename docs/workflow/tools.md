@@ -59,7 +59,6 @@ The kit's commands below need Linux, or work with less elsewhere. CI runs the te
 
 - **Agent app testing.** `npx wf app` uses `systemd-run` for its memory cap where it can. On macOS, or without a user systemd, it runs each server and the browser as a process group, with the time limit and no memory cap.
 - **The screen review.** `npx wf screens` drives the app through `wf app`, so it needs the same, plus `magick` and Chromium to render frames.
-- **`chromium` by name.** `npx wf design render` and `npx wf design check` call `chromium`, so it has to be on the path under that name.
 - **The disk check.** `npx wf disk` uses `pgrep` and `systemctl` to see a running build and test app.
 
 <!-- wf:local linux -->

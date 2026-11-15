@@ -93,7 +93,7 @@ An area's test data is the `test-data/` folder in its docs folder, one flow area
 The rules are never written from scratch by hand:
 
 1. The data designer drafts `core.md` and `formats.md` once, in rules mode, from the overview and stories. The owner reviews the product and safety rules, and the team the craft rules, a category at a time.
-2. When the data designer writes or refreshes the spec, any rule it had to assume goes in the area's `## Proposed rules`. At review, the owner accepts or drops the product and safety ones, and the team the craft ones. Accepted rows move into that file's rules table, or `core.md`.
+2. When the data designer writes or refreshes the spec, any rule it had to assume goes in the area's `## Proposed rules`. At review, the owner accepts or drops the safety ones, with any product rule from an older spec, and the team the craft ones. Accepted rows move into that file's rules table, or `core.md`.
 3. The owner can drop a rule at any review, as not worth testing: the Drop verdict, applied with `npx wf testdata drop`. It needs no proposal, since the owner decides it.
    - It goes in the area's `## Dropped` table.
    - The code that cited it loses the citation, or the test when proving that row was all it did.

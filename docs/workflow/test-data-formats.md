@@ -10,7 +10,7 @@ The shapes of an area's `test-data/` folder: what the blind designer writes, the
 | `core.md` | The rules and spec every flow area shares: personal data, placeholders, generation, real names, never, sources, personas, size profiles |
 | `formats.md` | The input and output formats, the public spec for each, and each format's input classes |
 | `<flow>.md` | One flow area, the `user-flows.md` sections on its `Flows:` line, while it fits on about a page |
-| `<flow>/` | One flow area past a page and a half, as a folder of page-sized files |
+| `<flow>/` | One flow area past a page (`testdata.limits.lines`), as a folder of page-sized files |
 | `glossary.md` | The area's domain words in plain terms, `\| Term \| Plain meaning \|`, for an owner new to the domain; the README's index links it |
 | `coverage.toml` | Each story's acceptance hash when the spec last covered it, written by the project's tool |
 
@@ -134,7 +134,7 @@ One row for each class of one input: a field, a file format, a header, a request
 ```markdown
 | Input | Class | Values | Expect | Stories | Rules |
 | --- | --- | --- | --- | --- | --- |
-| `new-address` | Blanks at the edges | Two leading spaces; a trailing tab; U+00A0 and U+3000 around it | Trimmed, then accepted | GM-06 | R-112 |
+| `new-address` | Blanks at the edges | Two leading spaces; a trailing tab; U+00A0 and U+3000 around it | Trimmed, then accepted | GM-06 | R-GM-112 |
 | `new-address` | A domain no mail reaches | `mara@192.0.2.10`, `mara@localhost`, `mara@box.local` | Refused, with why | GM-06 | R-113 |
 ```
 
@@ -182,5 +182,5 @@ A state is kebab-case and names its fixed today when anything depends on a date.
   - A line or a rule is never edited by hand to make a test pass.
 - **Category.** A rule category where one fits, else the topic.
 - **Question.** One the story's owner can answer. An answered row leaves the table, and its answer goes to the decisions log.
-- A story check asks at most `testdata.limits.questions` questions, the most important first, under its `## Questions` heading, and `npx wf testdata delta` cuts the rest.
+- A story check asks at most `testdata.limits.questions` questions, the most important first, under its `## Questions` heading, and `npx wf testdata delta` names what is over, for the main agent to leave out.
 - It adds a table for the lines that look high-risk with no tag: `| Story or line | Risk | Why |`.

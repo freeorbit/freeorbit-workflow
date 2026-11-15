@@ -112,7 +112,7 @@ Read the named stories and their flow sections, `core.md`, and the files the pro
 | Story or line | Risk | Why |
 ```
 
-- One row per gap or contradiction, numbered on from the area's last `G-<prefix>-NN`, each a question the story's owner can answer in a line.
+- One row per gap or contradiction, numbered from the Budget block's next free gap ID, each a question the story's owner can answer in a line.
 - No more questions than the budget gives, the most important first. Leave out what the spec already settles, and what nobody would change a story for.
 - A risk tag names the one acceptance line that is high-risk, such as `GM-07.2`, for money, privacy, irreversible steps, outside input, evidence, or workspaces. Propose a whole story only when every line is.
 - For a story tagged high as a whole whose lines are not all high, name the lines that are, so its owner can move the tag to them.

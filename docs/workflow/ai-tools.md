@@ -9,7 +9,7 @@ Claude Code and OpenCode use the same project instructions, skills, and agent pr
 | Project instructions | `AGENTS.md` | `CLAUDE.md` imports it with `@AGENTS.md`. OpenCode discovers it directly. |
 | Skills and supporting scripts | The kit's plugins, and `.claude/skills/` for the project's own | Claude Code loads the kit as plugins and `.claude/skills/` directly. OpenCode reads both through the `skills` paths in `opencode.json`. Do not copy skills to `.opencode/skills/`. |
 | Subagents | The kit's plugins, and `.claude/agents/` for the project's own | `npx wf ai:sync` generates native OpenCode agents in `.opencode/agents/` from both. |
-| Slash commands | A skill with `disable-model-invocation: true` | `npx wf ai:sync` generates a wrapper in `.opencode/commands/` that loads it. A hand-written wrapper, such as `make-test-files.md`, stays as it is. |
+| Slash commands | A skill with `disable-model-invocation: true` | `npx wf ai:sync` generates a wrapper in `.opencode/commands/` that loads it. |
 | Settings, permissions, hooks, and model providers | Tool-specific configuration | Keep these native; their schemas and behavior are not interchangeable. |
 | Current task handoff | Written from the current conversation | `.cache/agent-handoff.md` is local and gitignored. |
 
@@ -28,12 +28,12 @@ Canonical agents use `name`, `description`, `model: inherit`, and a comma-separa
 
 ## The workflow kit
 
-The generic workflow is moving into the `freeorbit-workflow` kit, a public MIT repo installed as a dev dependency pinned to a tag.
+The workflow comes from the `freeorbit-workflow` kit, a public MIT repo installed as a dev dependency pinned to a tag.
 
 | Who | Gets the kit from |
 | --- | --- |
 | `pnpm` scripts, git hooks, CI | `node_modules/freeorbit-workflow`, through the `wf` command |
-| Claude Code | The `core` plugin, from the marketplace in the committed `.claude/settings.json`, at the same tag |
+| Claude Code | The kit's plugins, from the marketplace in the committed `.claude/settings.json`, at the same tag |
 | OpenCode | The `skills` path in the committed `opencode.json` |
 
 - **Settings.** `.workflow/config.json` holds the project's paths, areas, scopes, loose docs, scans, and extensions. `npx wf config` prints every setting with the reason for its default.
@@ -50,7 +50,6 @@ Keep skill instructions portable. Both tools load `name`, `description`, and `di
 
 Claude Code exposes a project skill as `/<skill-name>`. OpenCode can load it with `@<skill-id>`, the ID OpenCode derives from the path (the folder name for `.claude/skills/<name>/SKILL.md`). These OpenCode wrappers provide the slash commands used directly in this repo:
 
-- `/make-test-files <arguments>` forwards the exact arguments to the canonical skill.
 - `/handoff` writes a handoff.
 - `/release` makes a release. Its skill has `disable-model-invocation`, so the command is the way in.
 - `/handoff-resume` resumes one. The longer name avoids replacing either tool's built-in session-resume command.
@@ -61,7 +60,7 @@ Other skills do not need command wrappers.
 
 Canonical agents inherit the active model, so switching tools does not leave a Claude model ID in OpenCode or an OpenCode provider ID in Claude Code. When a workflow requires a particular or different model, keep that choice at the native invocation point.
 
-For a review, the models for each tool are in step 3 of the `code-review-ledger` skill.
+For a review, the models for each tool are in `review.models`, as step 2 of the `code-review-ledger` skill says.
 
 ## Switch mid-task
 

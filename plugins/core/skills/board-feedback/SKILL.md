@@ -28,7 +28,7 @@ For each pending comment, choose one:
 
 - **Log it.** A real question, a request, or an issue with what the story says or shows.
   - Write the question as one short sentence of at most 30 words, in the team's words, not a quote.
-  - **Needs.** The role from `decisions` in `.workflow/config.json` for its kind: design or wording on a screen → `design`; scope, a new feature, or a priority → `scope`; how something works → `architecture`; anything unclear → `missing-information`. Never `client`: here the client asks, and the team answers.
+  - **Needs.** The role `decisions` in `.workflow/config.json` names for its kind, such as `designer`, never the kind itself. The kinds: design or wording on a screen is `design`; scope, a new feature, or a priority is `scope`; how something works is `architecture`; anything unclear is `missing-information`. Never `client`: here the client asks, and the team answers.
   - **Chunk.** `none` by default, since a client question never blocks. Propose the story's open chunk only for a defect in work under way, and say that the row would then hold that chunk's merge (`wf signoffs`).
   - **Story.** The comment's story ID.
   - One comment can hold two questions; log each as its own row.
