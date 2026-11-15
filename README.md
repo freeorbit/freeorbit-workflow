@@ -88,6 +88,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.84.0: a screen review can accept part of a run
+
+A run where some screens wait on a fix no longer holds back the ones that are fine.
+
+- **`wf screens --accept <screen> ...`** takes only those of the last run's screens, and **`--accept --except <screen> ...`** all but those. Either takes `@<file>`, one name a line. A name the run did not shoot is an error, and accepts nothing.
+- **Left open.** After a light or deep run the marks move as for a whole accept, and the changed screens left out are kept in the state as `open`. They stay listed to read and on the deep list until an accept takes them, so `scope` counts only what is still owed.
+- **`wf screens scope --names open`** lists them, so a fix can run just those: `npx wf screens $(npx wf screens scope --names open)`.
+- **The `screen-review` skill's** accept step says when a partial accept is right, and what each screen left out needs.
+- A project's `screens.scope` module needs no change: the kit adds the open screens to the deep list itself. The state gains an `open` key; an older state file reads as none open.
+
 ### v0.83.0: a screen-reader reads up to 24 pictures
 
 - **`wf screens --brief`** fills each brief by pictures, up to 24, in place of eight screens. Eight was set when a screen had up to four pictures; a Default-only run has one, so a 244-screen review starts 11 readers in place of 31. A run with narrow and stress pictures splits about as before.

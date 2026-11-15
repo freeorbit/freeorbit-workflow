@@ -75,6 +75,7 @@ A screen is listed to read when its app pictures **or its frame** changed since 
 - **Light**: screens a changed file reaches in one place only, such as its own page, its route, or its frame. Counted from the last run, light or deep.
 - **Deep**: screens a changed file reaches in more than one place, such as a shared component, the shell, the tokens, or the shared frame styles. Counted from the last deep run, with that span's light screens too.
 - A screen on both is on the deep list only.
+- **Left open**: screens a partial accept left out. They stay on the deep list until an accept takes them. `npx wf screens scope --names open` lists them, so a fix can run just them: `npx wf screens $(npx wf screens scope --names open)`.
 - The state lives on this computer in the main checkout's `.cache/screens/state.json`, with the accepted pictures. Every worktree reads and writes that one record, so a run accepted in a worktree counts everywhere and outlives it.
 
 ## While building
@@ -116,6 +117,10 @@ After the code review and the fixes for its findings, when UI files or frames ch
 8. **Report.** Tell the designer each screen read, with a line on what you saw, which lines came from a reader only, and what you did not read at full size. Give the reached count from the run's last line, and name any frame still waiting on this chunk.
 9. **Accept** only once every flagged screen was read and its faults fixed: `npx wf screens --accept`.
    - It accepts only the last run's screens, and only the pictures taken in it.
+   - **A partial accept**, when some screens wait on a fix, such as a fix chunk: `npx wf screens --accept --except <screen> ...` leaves those out, and `npx wf screens --accept <screen> ...` takes only those. A long list goes in a file, one name a line, as `@<file>`.
+     - Accept a screen only when it was read as step 6 says and has no fault left. Leave out every screen with a reader's flag you have not read, a fault, a wrong state, or a frame difference the designer has not settled; a *frame changed* pair is read in full even when its reader said `same`.
+     - Each screen left out goes in the fix chunk or the open questions log, as step 7 says.
+     - The marks move as for a whole accept, and the changed screens left out are kept as left open: still listed to read, and on the deep list until an accept takes them. Accepting one later, from this run or a named run, closes it.
    - A light run moves the last run and adds its range. A deep run moves both and clears the light runs and any deferral. A run with a screen that did not shoot moves neither.
    - Accepted hashes stay on this computer, in the main checkout, so on a new computer every screen is new.
 10. **Stage the built pictures.** While the board shows built screens, the accept copies each screen's Default picture to `design.built`. Commit those with the chunk, so the board shows them once the story is Built.
