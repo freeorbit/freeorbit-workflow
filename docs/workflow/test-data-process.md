@@ -38,13 +38,7 @@ flowchart LR
 
 ## Budgets
 
-The designer's volume is counted by the tool, not left to its judgement. Freeorbit's spec grew to 560 checks and 308 rules for 105 stories, half of them cited by no code, while every limit was a warning.
-
-- **Before a run**, `npx wf testdata budget <area> <ids>` prints each story's fixtures against its cap, and the skill pastes that block into the designer's prompt.
-- **After it**, `npx wf testdata delta <area> <file>` fails a return over `testdata.limits.questions` questions, over `testdata.limits.propose` proposed lines a story, or with any check row.
-  - What is over is cut from the end, and the designer is not run again for it.
-- **At the close**, `refresh-close` refuses when the refresh took a story over its fixture cap. An overage from before it only warns.
-- **An exception is the owner's**, named in `testdata.limits.allow`.
+The designer's volume is counted by the tool, not left to its judgement: a budget goes into its prompt, its return is held to caps, and a refresh that takes a story over its fixture cap does not close. The `design-test-data` skill has the three commands. An exception is the owner's, named in `testdata.limits.allow`.
 
 An AI does not write the data files itself. Data written by a model cannot be reproduced, goes wrong at scale, and costs a model call every run. The agent writes the spec. Code writes the data.
 

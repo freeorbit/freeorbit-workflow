@@ -49,7 +49,7 @@ The evidence is in [efficiency-log.md](../log/efficiency-log.md), with its rules
 
 Every 5 chunks, or when the owner asks, read the log against the signals, and run `npx wf doc:facts growth` for what the instructions and docs cost to load. Mark what held, drop what did not help, and update the hypothesis or the rule. Keep the check short, because it is held to the same standard.
 
-To shrink AGENTS.md, move out only what fails the test in [writing-docs.md](writing-docs.md#what-stays-in-agentsmd). A rule moved out on 2026-11-05 to save size came back on 2026-11-06, after visual questions went out with no picture.
+To shrink AGENTS.md, move out only what fails the test in [writing-docs.md](writing-docs.md#what-stays-in-agentsmd).
 
 `npx wf doc:facts status` says when the check is due.
 
