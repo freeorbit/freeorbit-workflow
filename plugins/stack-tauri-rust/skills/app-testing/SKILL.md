@@ -45,7 +45,7 @@ Check a flow with one `run`, not one command per action. Plan the steps up front
 | `text` / `url` / `eval <js>` | Prints the whole page text, the URL, or a value. `eval` runs the rest of the step as written, quotes and all. |
 | `wait <ms>` | Waits, for a job that takes a while. |
 | `shot [file]` | Saves a screenshot. Read it with the Read tool. |
-| `page <file>` | Saves the whole page, a window of its scrolling box at a time, joined. Needs `magick`. |
+| `page <file>` | Saves the whole page, a window of its scrolling box at a time, joined. Fixed elements show once, in the first window. Needs `magick`. |
 | `fits` | Fails if anything is wider than the window. Use it with `start --size <w>x<h>`. |
 
 Put a label or script with spaces in quotes: `'click "I added it"'`. A step waits until the page has not changed for 150 ms, at most 3 s.
