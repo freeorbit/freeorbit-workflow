@@ -96,6 +96,7 @@ A story's acceptance lines are its checks. The test-data spec holds no checks of
 - **Plain, for the client.** The lines go to the client's board, so a line holds no date and no decision ID. `wf doc:check` warns for one.
   - A line's history is in the area's `story-changes.md`, beside its stories: `| Line | Change | Date | Decision |`, one row a change, such as `| GM-07.9 | added | 2026-11-14 | D-GM-047 |`.
   - The board leaves out a line marked Removed.
+- **Held by risk.** The chunk end holds a high-risk line to a proof. A low-risk line no test cites is only counted, so it is not guaranteed a test; `testdata.chunkScope: "all"` holds every line.
 - **Proven.** A test or a scenario that shows the line cites it, such as `// GM-07.3`. `npx wf testdata trace --chunk <id>` lists the chunk's lines nothing proves, and `wf done chunk` waits on them (`testdata.chunkChecks`).
 - **Proposed.** The designer may propose a line a story forgot, at most `testdata.limits.propose` a story. Its table is `| Story | Proposed line | Why |`, and the story's owner accepts each or not.
 

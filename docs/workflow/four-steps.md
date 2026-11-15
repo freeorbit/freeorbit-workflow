@@ -103,9 +103,13 @@ Before the commit proposal, run the project's full check once. Then run the `cod
 - It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one.
 - The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
 
-With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the acceptance lines of the chunk's stories, and their accepted rules. `wf done chunk` waits until no line, and no product or safety rule, is proven by nothing (`testdata.chunkChecks`).
+With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the acceptance lines of the chunk's stories, and their accepted rules. `wf done chunk` waits until no high-risk line, and no product or safety rule, is proven by nothing (`testdata.chunkChecks`).
 
-Craft rules are the team's and not gated. Each line or rule is:
+- **High-risk lines are held.** A line tagged `Risk: high`, or any line of a story tagged high as a whole, needs one of the proofs below.
+- **Low-risk lines are counted.** One no test cites is not guaranteed a test: the trace gives their count, and `--all` lists them. `testdata.chunkScope: "all"` holds every line instead.
+- **Craft rules** are the team's and not gated.
+
+Each line or rule is:
 
 - proven: a test or a scenario cites its ID, such as `// GM-07.3`;
 - walk: only a walk by hand proves it, so it goes on the sign-off page; once done there, its By becomes `walked <chunk>`;
@@ -127,6 +131,7 @@ Then move the chunk's row in [build-order.md](../log/build-order.md#chunks): to 
 
 - A row moved to the done list gets its "For the client" sentence: what the client can now do, in plain words, with no ids, such as "You can sign in with your work email and password." The client's board posts it when the chunk's stories are built.
 - When the owner checks what is left by hand, ask on a `signoff` page, one check for each `walk` line the trace lists, by its ID, so each is done or objected to with a note.
+  - A low-risk line with a `walk` row is on it too. The low-risk lines with no test and no row get one line of text with their count, and no check each.
 
 After the commit, propose the chunk's pull request with the `pull-request` skill. It is squash-merged on the owner's yes, as in [branches.md](branches.md).
 
