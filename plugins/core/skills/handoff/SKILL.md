@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Writes a local handoff so another AI coding tool can continue the current task. Use only when someone invokes /handoff or asks for a tool switch.
+description: Writes a local handoff so another AI coding tool can continue the current task. Use only when someone invokes /handoff.
 disable-model-invocation: true
 ---
 

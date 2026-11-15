@@ -97,7 +97,7 @@ Save the two files it returns, `core.md` and `formats.md`, and ask for their rev
 
 A story edit does not start the designer. Each story's acceptance is hashed, and a story whose hash differs from what the spec last covered is stale. Refresh at these points only:
 
-- **Chunk start.** `stale <area> --chunks <this>,<next>`. If it lists stories, run one refresh for exactly those. A `dispute` row in a gaps table joins it: name the disputed check's stories, and its file.
+- **Chunk start.** `stale <area> --chunks <this>,<next>`. If it lists stories, run one refresh for exactly those. A `dispute` row in a gaps table joins it: name the disputed line's stories, and its file.
 - **During a chunk**, when a story this chunk builds changes, before building the part that depends on it.
 - **When asked**: refresh every story `stale` lists.
 
@@ -138,7 +138,6 @@ Send it back, or fix the line, when any of these is true in a file it touched:
 - A rule says how the app behaves, with Type `product`: that is a proposed acceptance line, or a question.
 - A low-risk story got input classes or edge-case fixtures, or prose stands where `test-data-formats.md` gives a table.
 - A fixture varies only one input's value, or reaches `unit`: it belongs in that input's classes. An input's classes are listed again for another flow.
-- `npx wf testdata trace <area>` names a row this chunk builds that no code names yet: it is not built, or its test cites another id.
 - `npx wf doc:check` warns for a file it wrote: past about a page, too small to stand alone, a flow area past its size, a category on no list, or an input class listed twice.
 - `npx wf testdata budget <area> <ids> --check` lists a row this run added. Fix the rows by hand as the budget section says; do not send the designer back for it.
 

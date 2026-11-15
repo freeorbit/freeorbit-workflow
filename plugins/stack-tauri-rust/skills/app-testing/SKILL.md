@@ -18,7 +18,7 @@ Read the project's app-testing doc first, `app.doc` in `.workflow/config.json` (
 
 ## 1. Checks
 
-Run the project's checks while working, and the full set once before handing back, as its doc says. Fix failures before going further.
+Run `npx wf check` while working, and `npx wf check --all` once before handing back. Fix failures before going further.
 
 ## 2. Run and look
 

@@ -88,6 +88,18 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.82.1: instructions that had drifted from the kit
+
+The audit's stale and contradicting lines, each checked against the code:
+
+- **The e2e tester** checks the narrow window only when `screens.narrow` is set, saves pictures only under `.cache/e2e/`, and no longer lists `lines` as a command. The e2e skill finds `### DS-<prefix>-<n>.` journeys, and a deferred journey becomes an open question.
+- **Test data:** a gap is numbered from the Budget block, the example rule ID is `R-GM-112`, `delta` names what is over and cuts nothing, and the check on rows no code names yet, gone since v0.76.0, is out of the skill.
+- **App testing:** the web skill's `fits` follows a `size` step, and both skills name `npx wf check`.
+- **Workflow docs:** `ai-tools.md` no longer names a command the kit never had or says the kit is still moving; `overview.md` lists `ask-page`; `branches.md` gives a branch example the hooks accept; `tools.md` drops a Chromium rule the kit outgrew.
+- **Skills:** `workflow-init` shows the answers file's shape, which it could not read before the kit is installed, and three manual-only skills no longer claim to start on a request.
+
+Run `npx wf docs sync` to take the docs.
+
 ### v0.82.0: chunk start and chunk end as ordered steps
 
 The audit found the order of a chunk's end spread over six paragraphs, and `wf ready` and `wf done` named once, outside both sections.

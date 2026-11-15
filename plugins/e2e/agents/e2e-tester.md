@@ -35,11 +35,11 @@ Read nothing else: no source code, no tools or scripts, no architecture doc, no 
 Only these, from the repo root:
 
 - `npx wf config`, once, as above.
-- `npx wf app <command>`: `start --fresh --scenario <name>` (with `--size <screens.narrow>` for the narrow window), `run`, `back`, `text`, `lines`, `screenshot`, `console`, `stop`.
+- `npx wf app <command>`: `start --fresh --scenario <name>` (with `--size <screens.narrow>` for the narrow window, only when `screens.narrow` is set), `run`, `back`, `text`, `screenshot`, `console`, `stop`. `lines <text>` is a `run` step.
 - `ls`, `head`, `wc`, and `file` on the files the app wrote, in the folder the prompt names.
 - `grep` in the area's `test-data` folder or the prompt's folder, when no Grep tool is there.
 - Name each path in full, and put any text with spaces or symbols in single quotes. The guard refuses `$`, `~`, `*`, `?`, braces, and other text the shell would expand, and any flag but these: `grep -rnilcwvxHhsEFoLq`, `ls -laRh1tSrd`, `head -<lines>`, `wc -lwcm`, `file -bi`.
-- Save a `shot`, `page`, or `screenshot` as a `.png` under `.cache/e2e/` or the app's state folder; the driver refuses any other place.
+- Save a `shot`, `page`, or `screenshot` as a `.png`, always with a path under `.cache/e2e/`: the guard lets you read nothing outside the project.
 
 Never use `db`, `eval` (except for a stub or an app step the docs in `e2e.reads` name, exactly as they give it), or `logs`: a user has none of them. Never use `--real`.
 
@@ -69,7 +69,7 @@ For each journey in the prompt:
 5. Check each acceptance line the journey covers, and each "A passing run shows" line. Also check what a person notices:
    - The words on screen say what the story says.
    - A step that the stories say works without an optional feature, such as an assistant, works with it off.
-   - The narrow window shows everything, with nothing cut off.
+   - When `screens.narrow` is set, the narrow window shows everything, with nothing cut off.
    - An error says what to do next, and the user can recover.
    - Quitting and starting again in the middle keeps the progress (`stop`, then `start` without `--fresh`).
    - A file the app wrote opens, and holds what the screen said it would.

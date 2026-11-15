@@ -29,7 +29,7 @@ Nobody adds a rule here without a finding the reviewer accepted, or an owner dec
 - **CS-MOD.** A guideline, not a hard rule. Group code by what it does. Features may overlap.
   - Code that two or more features use goes into a shared module they both depend on. It is not copied, and it does not live inside one feature's folder.
   - The reviewer flags duplicated logic, and a shared piece kept inside one feature. It does not flag every overlap.
-- **CS-SIZE.** A file stays near 400 lines. Above 600 it is flagged, with a suggested split along what the parts do. Generated files, such as `packages/plugin-client/src/bindings.ts`, are exempt. A test file is flagged only above 1000.
+- **CS-SIZE.** A file stays near 400 lines. Above 600 it is flagged, with a suggested split along what the parts do. Generated files are exempt. A test file is flagged only above 1000.
 - **CS-FUNC.** A guideline, not a hard rule (added 2026-11-02). The check asks whether a reader can hold a function at once.
   - Near 60 lines it gets a look. Above 100 it is flagged, with a suggested split along its steps.
   - A long function that runs straight through one job may stay, when a split would only move lines.

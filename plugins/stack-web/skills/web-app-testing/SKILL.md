@@ -45,7 +45,7 @@ Check a flow with one `run`, not one command per action. Plan the steps up front
 | `text` / `url` / `eval <js>` | Prints the page text, the URL, or a value. `eval` runs the rest of the step as written, quotes and all. |
 | `wait <ms>` | Waits, for a job that takes a while. |
 | `shot [file]` / `page <file>` | Saves the viewport, or the whole page down to its foot, drawn at once. Read them with the Read tool. |
-| `fits` | Fails if anything is wider than the window. Use it with `start --size <w>x<h>`. |
+| `fits` | Fails if anything is wider than the window. Use it after a `size <name>` step. |
 
 | Command | What it does |
 | --- | --- |

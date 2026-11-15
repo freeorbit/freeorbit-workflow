@@ -1,6 +1,6 @@
 ---
 name: workflow-init
-description: Sets up a new project on the workflow kit. Asks the owner who is on the team, the areas, and which kit plugins to use, writes the answers, runs wf init, and checks the result with wf doctor. Use only when someone invokes /workflow-init or asks to set up a new project on the kit.
+description: Sets up a new project on the workflow kit. Asks the owner who is on the team, the areas, and which kit plugins to use, writes the answers, runs wf init, and checks the result with wf doctor. Use only when someone invokes /workflow-init.
 disable-model-invocation: true
 ---
 
@@ -28,7 +28,19 @@ Do not ask what the repo already answers, such as the project's name from its RE
 
 ## 3. Write the answers and run init
 
-Write `.cache/workflow-init.json` in the shape `lib/setup/init.mjs` documents: `project`, `team`, `people`, `scopes`, `areas`, `plugins`, `kit.tag`, and `config` for any other setting. Then run the kit once from its tag, before it is installed:
+Write `.cache/workflow-init.json` in this shape, with `config` for any other setting:
+
+```json
+{ "project": "Atlas NX", "team": "team",
+  "people": [{ "name": "Ana", "handle": "ana-gh", "email": "ana@example.com", "roles": ["owner"] }],
+  "scopes": ["app", "review", "workflow"],
+  "areas": [{ "id": "app", "prefix": "APP", "docs": "docs/app" }],
+  "plugins": ["core", "review", "testdata", "design"],
+  "kit": { "tag": "v0.21.0" },
+  "config": { "design": { "source": "png" }, "ai": { "tools": ["claude"] } } }
+```
+
+Then run the kit once from its tag, before it is installed:
 
 ```bash
 npx --yes --package "git+https://github.com/freeorbit/freeorbit-workflow.git#<tag>" wf init .cache/workflow-init.json

@@ -33,7 +33,7 @@ A chunk can be split so a front-end and a back-end developer build it at once, e
 | `CH-<nn>-be` | developer:backend | The service, against the contract | `CH-<nn>-contract` |
 | `CH-<nn>-integration` | either, or both | The screens wired to the service, the mock removed | `CH-<nn>-fe` and `CH-<nn>-be` |
 
-- **One row per lane.** Each lane is its own row, such as `CH-01-fe` titled `Sign-in screen`, with its lane's role in Who and a Waits on column. Each has its own branch, worktree, review, and pull request, and moves to the done list when its pull request merges.
+- **One row per lane.** Each lane is its own row, such as `CH-01-fe` titled `Sign-in screen`, with its lane's role in Who and a Waits on column. Each has its own branch, worktree, review, and pull request, and its row moves to the done list at chunk end, landing with its pull request.
 - **Starting.** A lane starts only once every row it waits on is in the done list. `npx wf ready chunk CH-01-fe` fails until then, and `npx wf doc:check` fails a lane In progress too early, or one that does not wait on what its lane must.
 - **Worktrees.** From the main checkout: `git worktree add ../<repo>-ch-01-fe -b app/ch-01-fe-sign-in main`. Each lane works in its own folder, so a laptop can hold several at once. Remove it after the merge with `git worktree remove ../<repo>-ch-01-fe`.
 - **The contract.** Its format and tools are the project's, chosen at Step 3, in `lanes.contract`: the file, and the commands that check it, serve its mock, and find a breaking change against the base.

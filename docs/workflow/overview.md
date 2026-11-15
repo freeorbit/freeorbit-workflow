@@ -17,7 +17,7 @@ flowchart LR
     client["Client, a guest on the board"]
   end
   subgraph sessions ["Agent sessions: Claude Code or OpenCode"]
-    skills["Skills: commit, pull-request, code-review-ledger, screen-review, design-frames, design-test-data, e2e-test, release, board-feedback"]
+    skills["Skills: ask-page, commit, pull-request, code-review-ledger, screen-review, design-frames, design-test-data, e2e-test, release, board-feedback"]
     agents["Blind agents: code-reviewer, screen-reader, test-data-designer, e2e-tester"]
     guard["Guard hook: what each blind agent may read and run"]
   end
@@ -52,7 +52,7 @@ flowchart LR
 
 | Plugin | What it adds | Detail |
 | --- | --- | --- |
-| core | The guard, the commit, pull-request, doc-find, handoff, workflow-init, workflow-doctor, and board-feedback skills | [ai-tools.md](ai-tools.md), [branches.md](branches.md) |
+| core | The guard, the ask-page, commit, pull-request, doc-find, handoff, handoff-resume, workflow-init, workflow-doctor, and board-feedback skills | [ai-tools.md](ai-tools.md), [branches.md](branches.md) |
 | review | The `code-review-ledger` skill and the read-only `code-reviewer` agent, with the findings ledger | [code-standards.md](code-standards.md) |
 | design | Frames as HTML or exported PNG, their review pictures, and the screen review with the `screen-reader` agent | [four-steps.md](four-steps.md#step-2-design-frames) |
 | testdata | The `test-data-designer` agent and a seeded generator, so development never uses real personal data | [test-data-process.md](test-data-process.md) |

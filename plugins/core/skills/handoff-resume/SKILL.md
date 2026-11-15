@@ -1,6 +1,6 @@
 ---
 name: handoff-resume
-description: Reads the local agent handoff, reconciles it with the current repository, and continues the task. Use only when someone invokes /handoff-resume or asks to resume a handoff.
+description: Reads the local agent handoff, reconciles it with the current repository, and continues the task. Use only when someone invokes /handoff-resume.
 disable-model-invocation: true
 ---
 

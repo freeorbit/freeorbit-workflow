@@ -24,10 +24,10 @@ It needs the app driver (`wf app`, from the `stack-tauri-rust` plugin or another
 
 The person asking names the area: an area id from `areas` in the config. List, without asking:
 
-- **The journeys.** Each `### D<n>.` section in the area files of `<area docs>/test-data/`, with its `Covers:` line. Leave out a journey whose stories are all in chunks not built yet.
+- **The journeys.** Each `### DS-<prefix>-<n>.` section (`### D<n>.` in a spec not yet renamed) in the area files of `<area docs>/test-data/`, with its `Covers:` line. Leave out a journey whose stories are all in chunks not built yet.
 - **Starts and fixtures.** `npx wf testdata journeys <area>` prints each journey's `Starts from:` states with the scenario that holds each, and each fixture's `Reach`. Note every state or stored fixture with "no scenario", and every "not set". Typed and date fixtures go to the tester.
 - **Uncovered lines.** Every acceptance line in the area's `user-stories.md` that no journey's `Covers:` names.
-- **Outside services.** A journey that needs a real provider, a real account, real data, a downloaded model, or a network service with no local stand-in. The open questions log lists the known ones under "Testing with real providers (deferred)". A local stand-in or a stub is not an outside service, so a journey that uses one is not deferred.
+- **Outside services.** A journey that needs a real provider, a real account, real data, a downloaded model, or a network service with no local stand-in. The open questions log lists the known ones. A local stand-in or a stub is not an outside service, so a journey that uses one is not deferred.
 
 ## 2. Ask
 
@@ -47,7 +47,7 @@ One batch, each question to the role that owns it, as the asking rules say: the 
 - **Which journeys.**
   - After building, or when nothing was missing: offer all the built journeys (recommended), or one chunk's.
   - After a defer: offer to run with what is available, the journeys whose states all have a scenario (recommended), or one chunk's of those, or to stop.
-- Each journey that needs an outside service: defer it, or say what stand-in to use. Recommend defer. A deferred journey goes under "Testing with real providers (deferred)" in the open questions log if it is not there.
+- Each journey that needs an outside service: defer it, or say what stand-in to use. Recommend defer. A deferred journey gets an open question if it has none: `npx wf question add none "<journey>: test with the real <service>" owner "<from>"`.
 - Each uncovered acceptance line: walk it from the story alone, or ask the `design-test-data` skill for a journey later. Recommend walk it.
 - "Not set" starts or reaches: ask the designer to fill them in the next refresh, and walk on the closest scenario now. Recommend that.
 
@@ -78,7 +78,7 @@ rm -rf $E && mkdir -p $E
 npx wf testdata e2e-files <area> --out $E   # the area's fixtures, and each quick profile's archives
 ```
 
-The tester cannot run the generator, so everything it picks must be in `$E` before the walk. The command's last line lists the typed fixtures with no file of their name. A typed text needs none. A fixture that is picked as a file and has none cannot be walked: leave it out, name it in the summary, and ask whether to build it.
+The tester cannot run the generator, so everything it picks must be in `$E` before the walk. The command's last line lists the typed fixtures with no file of their name. A typed text needs none. A fixture that is picked as a file and has none cannot be walked: leave it out, name it in the report at the end, and ask whether to build it.
 
 ## 4. Walk
 
@@ -106,7 +106,7 @@ npx wf app stop
 ```
 
 - **Reproduces:** keep it.
-- **Does not reproduce, or the steps fail before the fault:** drop it, and keep its title and reason for the summary.
+- **Does not reproduce, or the steps fail before the fault:** drop it, and keep its title and reason for the report at the end.
 - **An Info draft about the story itself:** keep it without a replay. It is a question for the owner, not a fault.
 
 Read each kept draft against its story before it goes on. A draft that the story does not support, such as a wish beyond its acceptance lines, becomes Info with that said in its note.
