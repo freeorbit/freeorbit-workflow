@@ -59,7 +59,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]` (spec rows no code names, and tests that name no row or story) `budget <area> [ids] [--check]` and `delta <area> <file>` (the designer's budgets, held by the tool), `prune <area> [--write]` (check rows no code cites, out of the spec), `rename-ids [area] [--write]` (old IDs qualified with the area's prefix), and `merge <folder>` / `fold <file> <sibling>` (fewer files, every row kept) |
 | `wf id <ID> [--all]` | What an ID is, where it is defined, and each line that cites it, in docs and code; the patterns are in `docs/workflow/ids.md` |
 | `wf ask templates \| example \| page \| wait \| answers \| record \| export \| import \| live \| reply \| history` | Ask pages: any number of questions on one page in the browser pane, from twelve templates or the project's own in `.workflow/ask-templates/`, with pictures, boxes, pins, compare views, paging, bulk answers, and colour themes. `wait` blocks until the answers are sent and prints them; `record` writes "Later" answers and marked decisions to the logs; `export` makes one offline HTML file; `live` updates a status page while a step runs, `reply` answers under a question, and `history` lists every round sent. The `ask-page` skill has the spec |
-| `wf view serve \| stop \| setup` | The shared `question-pictures` server: one per machine on 127.0.0.1, serving each project's `.cache/view` at its own key, with an inbox of every ask at `/`, and taking answers with a per-run token. `serve` starts or joins it, `stop` ends it, `setup` writes it into `.claude/launch.json` |
+| `wf view serve \| stop \| setup` | The shared `ask-pages` server: one per machine on 127.0.0.1, serving each project's `.cache/view` at its own key, with an inbox of every ask at `/`, and taking answers with a per-run token. `serve` starts or joins it, `stop` ends it, `setup` writes it into `.claude/launch.json` |
 | `wf design render \| check \| storyboard \| annotate` | Design frames to review PNGs (`chromium`, Python 3), the frame checker at each window size, each area's storyboard, and labelled question sheets (`magick`), from `design` in the config |
 | `wf app <start \| run \| stop \| ...>` | Drives the project's app on Linux under a memory cap, from `app` in the config, with the project's `app.hooks`: a Tauri app through WebKit's inspector (`app.kind` tauri), or a web app's servers and a headless Chromium through its debugging protocol (web) |
 | `wf disk [--dry-run] [GB]` | Free disk space, and when short, removes only the leftovers in `disk`, cheapest first |
@@ -87,6 +87,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.86.0: the launch.json server is `ask-pages`
+
+The server that shows ask pages was still called `question-pictures`, from when it only served pictures. And `npx wf view setup` looked for it by that name only, so in a project where the entry had been renamed it added a second one on the same port.
+
+- **The entry in `.claude/launch.json` is now `ask-pages`.** Run `npx wf view setup` once: it renames your entry in place and keeps its options, such as `--port`. The skills and `wf doctor` say `ask-pages`.
+- **`wf view setup`** finds the entry by what it runs, `wf view serve`, whatever its name, and removes a second one.
+- **`wf doctor`** still passes an entry under the old name in this version, with a note to run setup. It fails when the server is under any other name, or there more than once.
+- A preview server already started as `question-pictures` keeps running; the name only matters the next time it is started from `launch.json`.
 
 ### v0.85.1: a picture beside its answer stays above the footer
 

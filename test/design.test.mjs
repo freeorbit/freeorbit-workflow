@@ -277,12 +277,12 @@ test("only a real PNG header gives a size", async () => {
   assert.equal(pngSize(noIhdr), null);
 });
 
-test("the question-pictures server is added to launch.json once, and a sheet under .cache/view gets its address", async () => {
+test("the ask-pages server is added to launch.json once, and a sheet under .cache/view gets its address", async () => {
   const { SERVER, viewAddress, withViewServer } = await import("../lib/view/view.mjs");
   const fresh = JSON.parse(withViewServer(null));
   assert.deepEqual(fresh.configurations, [SERVER]);
   const theirs = JSON.parse(withViewServer(JSON.stringify({ version: "0.0.1", configurations: [{ name: "web", port: 5173 }] })));
-  assert.deepEqual(theirs.configurations.map((c) => c.name), ["web", "question-pictures"]);
+  assert.deepEqual(theirs.configurations.map((c) => c.name), ["web", "ask-pages"]);
   assert.equal(withViewServer(JSON.stringify(theirs)), `${JSON.stringify(theirs, null, 2)}\n`);
   const { projectKey } = await import("../lib/view/view.mjs");
   assert.match(projectKey("/p"), /^p-[0-9a-f]{6}$/);
