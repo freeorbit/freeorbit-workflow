@@ -138,7 +138,7 @@ test("short options sit in one row, shared ones are described once, and a pictur
   const html = readFileSync(buildPage(root, view, raw, KIT_KINDS).page, "utf8");
   assert.match(html, /\.opts\.row \{ display: flex; flex-wrap: wrap;/);
   assert.match(html, /:root:not\(\[data-layout="pages"\]\) \.viewer:not\(\.expanded\) \{ --fit-h: max\(36vh, 260px\); \}/, "a picture beside an answer leaves the answer on the screen");
-  assert.match(html, /:root\[data-layout="table"\] main\.content \{ max-width: 1240px; \}/, "a table page takes the window's width");
+  assert.match(html, /:root\[data-layout="table"\] main\.content \{ max-width: 1600px; \}/, "a table page takes the window's width");
   assert.match(html, /:root\[data-layout="table"\] nav\.rail \{ display: none; \}/, "with no rail of row ids beside it");
 });
 
@@ -253,7 +253,13 @@ test("pictures: one row of controls, and a review's verdicts stay in view on a p
   assert.match(html, /class: "view-line" \}, note, h\("span", \{ class: "grow" \}\), sizeNote\)/, "they sit with the view's note");
   assert.match(html, /one \? null : h\("figcaption"/, "one picture's caption is its bar");
   assert.doesNotMatch(html, /Comment \(side by side\)/);
-  assert.match(html, /:root\[data-layout="pages"\] main\.content \{ max-width: 1240px; \}/);
+  assert.match(html, /:root\[data-layout="pages"\] main\.content \{ max-width: 2080px; \}/);
+  // A page with a picture or a block takes the window's width, and on a wide window the picture sits beside the answer.
+  assert.match(html, /if \(wide\) document\.documentElement\.dataset\.wide = "";/);
+  assert.match(html, /:root\[data-wide\] \.shell, :root\[data-wide\] \.top \.row, :root\[data-wide\] \.commit \.row \{ max-width: 2080px; \}/);
+  assert.match(html, /:root\[data-wide\] \.q-head, :root\[data-wide\] \.q-body > :not\(\.viewer\), :root\[data-wide\] \.fold-line \{ max-width: 780px; \}/, "text keeps the reading width");
+  assert.match(html, /@media \(min-width: 1500px\) \{\s*:root\[data-wide\] \.q-body\.has-pic \{ display: grid;/, "the picture sits beside the answer");
+  assert.match(html, /class: q\.pictures\.length \|\| q\.compare \? "q-body has-pic" : "q-body"/);
   assert.match(html, /:root\[data-layout="pages"\] \.viewer:not\(\.expanded\) > \.verdicts \{ position: sticky; bottom: var\(--foot\);/, "the verdicts stay above the footer");
   assert.match(html, /@media \(max-width: 700px\) \{ :root\[data-layout="pages"\] \.viewer:not\(\.expanded\) > \.verdicts \{ position: static;/, "but never cover a narrow picture");
 });
