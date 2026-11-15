@@ -17,14 +17,19 @@ An ask page is one HTML page built from a JSON spec. The person answers in the b
 1. Pick a template: `npx wf ask templates`. Start from its example: `npx wf ask example <template> > .cache/view/<id>.json`, then edit it. The example builds as it is, with stand-in pictures.
    - `npx wf ask fields <part>` prints one template's, question type's, or block's fields and limits.
    - `npx wf ask page <spec> --check` checks a spec and builds nothing, so the open page stays.
-2. Build the page: `npx wf ask page .cache/view/<id>.json`. It checks the spec, copies the pictures, starts the shared server if none runs, and prints the address.
-3. Open the address in the browser pane. Where the pane's preview start is needed, start `question-pictures` from `.claude/launch.json`: it joins the shared server.
-4. Run `npx wf ask wait <id>` in the background. Say in one line that the page is open and what it asks; do not repeat the questions in the chat.
+2. **Pictures.** A question about a frame, a screen, or an image shows it, with boxes around what to look at. Never crop or join pictures by hand.
+   - With the design plugin, make them with `npx wf design annotate <spec> --ask`; the `design-frames` skill has its spec. It writes each picture on its own and `<out>.ask.json`: paste its pairs into a question's `compare` or the `compare` template's `pairs`, and its pictures into `pictures`.
+   - A shot from `wf screens` or `wf app` goes through it too, as an `image` with `rect` boxes. A frame against the app is one compare pair, never one joined sheet.
+3. Build the page: `npx wf ask page .cache/view/<id>.json`. It checks the spec, copies the pictures, starts the shared server if none runs, and prints the address.
+   - Read every `Grouping:`, `Pictures:`, and `Template:` line it prints. Fix the spec and build again, or say in the chat why not.
+4. Open the address in the browser pane, every time, before anything else. Where the pane's preview start is needed, start `question-pictures` from `.claude/launch.json`: it joins the shared server.
+5. Run `npx wf ask wait <id>` in the background. Say in one line that the page is open and what it asks; do not repeat the questions in the chat.
    - End the turn there, with no question, buttons, or "Sent it" choice in the chat, and none in a closing next-step box either. `wait` wakes you when the page is sent, and a choice in the chat stays open after the person has answered on the page.
-5. When `wait` prints the answers, act on them. A partial send lists the open questions; carry on with what is answered, and wait again for the rest.
-6. Run `npx wf ask record <id>` when the spec marks decisions with `record`, or any answer is "Later".
+   - A page built again asks again: open it and run `wait` again.
+6. When `wait` prints the answers, act on them. A partial send lists the open questions; carry on with what is answered, and wait again for the rest.
+7. Run `npx wf ask record <id>` when the spec marks decisions with `record`, or any answer is "Later".
 
-No browser pane: send `wf ask export <id>`'s `.html` file, or ask in the chat. The person's Copy answers text, pasted into the chat, is read with `wf ask import` from a file holding it.
+No browser pane: send `wf ask export <id>`'s `.html` file, or ask in the chat. When the person says notifications do not show, run `npx wf view notify`. The person's Copy answers text, pasted into the chat, is read with `wf ask import` from a file holding it.
 
 ## Grouping
 
@@ -71,25 +76,16 @@ Every template, question type, and block is made for one kind of question. Pick 
   - `compare`: two pictures, the frame or before first. `pins: true` lets the person pin comments on the pictures.
   - `other: true` adds "Something else" with a text box; `defer: false` hides "You decide" and "Later".
   - `record`: a decisions file id, such as an area's, for `wf ask record`.
-- **Pictures.** `npx wf design annotate <spec> --ask` gives each frame or shot as its own picture, with its boxes; a shot from `wf screens` or `wf app` works too.
+- **Pictures.** Step 2 makes them.
 
-## The page
+## Room and wording
 
-Every template shares one layout: a header with the title, who asked, the draft state, the other asks, and the progress; a column of questions; and a footer whose one primary button is Send.
-
-- **Keys.** J and K move between questions, 1–9 pick, R takes the recommendation, D and L are You decide and Later, N is a note, Enter goes to the next open question, X selects, Ctrl+K opens the command list, Ctrl+Z undoes, and ? lists them all.
-- **Reviews.** A compare opens on Swipe. A paged template shows one frame with a filmstrip; 1–4 give a verdict and move on. C is comment mode for pins, M the compare view, Z zoom, and F (Expand) shows the pictures in the whole window, where Fit is as big as the screen; Esc closes it. Past Fit, drag a picture to move around it. A wide picture, table, or diff scrolls in its own box, never the page.
-- **Many at once.** Take all recommendations, or select questions or rows and give them one answer. Every change can be undone, from the toast or Ctrl+Z.
-- **Sending.** Questions left open get one panel: send them as You decide, as Later, or open. A receipt then shows exactly what was sent, with Change answers and the next waiting ask.
-- **Look.** Themes use Claude Desktop's own colour tokens: its theme and palettes when it is installed, and the kit's six, each light and dark. Any theme takes an accent, a text size, and a density.
-- **Motion.** Things glide, open and close, and charts draw in. Motion in the ⋯ menu is System (the computer's setting for less motion), Full, Subtle, or Off; `off: ["motion"]` turns it off.
-- **Separation.** Each section is one panel by default, its questions split by hairlines; Cards, Lines, and Bands are in the settings.
-- **Folding.** Questions start expanded; Fold answered or Collapse all (⇧E) changes that, and Select all (⇧X) selects every question. Settings are kept until Reset settings.
 - **Room.** Options with no description sit in one row; three or more questions with the same described options describe them once above. A picture beside an answer fits a third of the window, and a table page takes the window's width.
 - **Wording.** A question is at most 160 characters, a label 60, a reason 200, and an option's description 160. Where the person asked for more detail, or the question opens follow-ups, `explain: true` gives its reasons and descriptions room.
 
 ## More, read when the page needs it
 
+- **[The page](reference/the-page.md).** What the person sees and uses: keys, reviews, sending, themes, motion, folding. Read it when they ask how the page works.
 - **[Blocks](reference/blocks.md).** Sections of text, tiles, tables, diffs, charts, diagrams, timelines, and boards around the questions, with their exports and what turns off.
 - **[Answer types](reference/answer-types.md).** Scale, grid, buckets, edits, and form questions; follow-ups with `showIf`, owners, and boxes on pictures.
 - **[A project's own templates](reference/project-templates.md).** A template kept as data in `.workflow/ask-templates/`, checked like the kit's.
@@ -103,6 +99,5 @@ Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, 
 
 - `wait` prints a count, then every answer; past eight plain agreements with the recommendation, only the others. `npx wf ask answers <id>` prints them again, `--all` lists every one, and `--json` gives the file. They are in `.cache/view/answers/<id>.json`.
 - `npx wf ask export <id>` writes one `.html` with the pictures inside, and the answers as `.md` and `.json`. Offline, the page saves an answers file for `wf ask import`.
-- Building the page again asks again: `wait` waits for a send after the build. Answers to the same page, pictures and all, stay filled in.
-- The server takes answers only from its own pages, on this machine: it listens on 127.0.0.1, refuses other host names, and needs the token it puts in each page it serves.
+- Answers to a page built again, pictures and all, stay filled in.
 

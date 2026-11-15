@@ -8,18 +8,18 @@ On this machine, decide what you can from the repo, these rules, and the chat. W
   - Up to four quick questions with no picture go to the structured question tool when it is available, or in the message.
   - More than four, or any visual question, go on an ask page, with the kit's `ask-page` skill: `npx wf ask page <spec>`, opened in the browser pane, then `npx wf ask wait <id>` in the background. Ask nothing more in the chat while it waits.
   - Group them: one page for what blocks the same piece of work, related questions together under what they decide, and questions of the same shape as one. The skill says how.
-- **Show what a visual question is about.** A question about a frame, a screen, or an image comes with its picture. So does a picture sent for review, such as a new or redrawn frame.
-  - Send the picture just before the question, so it stays in view while the question is open.
-  - In the chat, a comparison is one labelled picture, such as the frame on the left and the app on the right. Several questions share one labelled sheet.
-  - With the design plugin, make every picture you send with `npx wf design annotate <spec>`. Each one gets a bar with its letter and frame name, and numbered boxes around what to look at: blue to look, red for a bug, amber for drift, green for fine, purple for new or changed.
+- **Show what a visual question is about.** A question about a frame, a screen, or an image comes with its picture, with numbered boxes around what to look at. So does a picture sent for review, such as a new or redrawn frame. Never send a bare screenshot or a crop made by hand.
+  - **Make every picture with `npx wf design annotate <spec>`**, with the design plugin; its spec is in the kit's `design-frames` skill.
+    - Each picture gets its letter and frame name, and boxes: blue to look, red for a bug, amber for drift, green for fine, purple for new or changed.
     - When nothing fits, add a kind under `design.kinds` in [.workflow/config.json](.workflow/config.json), never changing an existing one.
-    - A frame's boxes come from its elements. The spec is in the kit's `design-frames` skill.
-  - Each question says where to look, such as "sheet A, box 2". Option previews hold text only, so a layout choice can add a rough text sketch.
-  - Where a browser pane is open beside the chat, ask on an ask page, so each picture sits beside its question. Without a pane, send the sheet just before the question.
-  - On an ask page, never the joined sheet: `npx wf design annotate <spec> --ask` gives each picture with its boxes as data, and a frame and the app as one compare pair.
+  - **With a browser pane, ask on an ask page.** `npx wf design annotate <spec> --ask` gives each picture with its boxes as data, and a frame and the app as one compare pair, never the joined sheet. Then follow the `ask-page` skill's steps, and open the page in the pane.
+  - **Without a pane, ask in the chat.** Send one labelled sheet just before the question, so it stays in view.
+    - A comparison is one sheet, such as the frame on the left and the app on the right, and several questions share it.
+    - Each question says where to look, such as "sheet A, box 2". Option previews hold text only, so a layout choice can add a rough text sketch.
+  - **A picture only shown, with no question:** open the address `annotate` prints in the browser pane.
 <!-- wf:local asking-pictures -->
 - The full list of when to ask and when not is in [asking.md]({{docs.workflow}}/asking.md).
-- **Missing packages.** Never install a system package. Name what is missing, give the install command, and wait for the person at this computer, or ask when it would only make the job easier. The steps are in [tools.md]({{docs.workflow}}/tools.md#missing-packages).
+- **Missing packages.** Never install a system package, and that includes sudo, a package manager, `npm -g`, `cargo install`, pip outside a project, and an install under `/tmp`. Name what is missing, give the install command, and wait for the person at this computer, or ask when it would only make the job easier. The steps are in [tools.md]({{docs.workflow}}/tools.md#missing-packages).
 
 <!-- wf:roles -->
 <!-- /wf:roles -->
@@ -49,21 +49,17 @@ Efficiency that leads to our outcome is how we work, in every chat and every tas
 <!-- wf:local data -->
 - **Code** follows [code-standards.md]({{docs.workflow}}/code-standards.md).
 <!-- wf:local design -->
-- **Branches.** Nothing is committed or pushed to `main`. Work goes on an `<area>/<slug>` branch and lands by pull request, as in [branches.md]({{docs.workflow}}/branches.md).
+- **Branches.** Nothing is committed or pushed to `main`. Work goes on a `<scope>/<slug>` branch and lands by pull request, as in [branches.md]({{docs.workflow}}/branches.md).
 - **Commits** follow the `commit` skill, and pull requests the `pull-request` skill. One yes covers a pull request and the push it needs; a merge needs its own yes.
 - **Issues.** An issue that took real debugging gets an entry in [troubleshooting.md]({{logs.troubleshooting}}) in the same change, including one fixed by a workaround or left open. Search the log before debugging a symptom that looks familiar.
-- **Always on.** A rule stays in full in this file, not behind a link, when all three hold:
-  - it applies in any chat;
-  - nothing loads its detail before the moment it applies, such as a skill or a step that reads the doc;
-  - missing it costs someone's time or a wrong choice.
-  - The asking rules above pass. A rule that a skill or a check brings in at the right moment can live in its doc.
 - **Search before you read.** Find the entry, then read only that.
   - `npx wf id <ID>` says what an ID is, where it is defined, and every line that cites it, in docs and code. The patterns are in [ids.md]({{docs.workflow}}/ids.md).
   - `npx wf doc:find <ID, date, or heading> [path]` prints each section, row, or bullet that starts with it. Grep for a word inside an entry.
   - A log in `docs/log/`: never read one whole. The one exception is the efficiency log, read whole at its check.
   - Any other doc: read it whole when you need how it fits together (a review, a design change, a debug that crosses sections), or you would search it three or more times. Above about 50 KB, read by section.
   - For where the work stands, run `npx wf doc:facts`.
-- **Docs.** One topic per file. [writing-docs.md]({{docs.workflow}}/writing-docs.md) has the formats. After adding a doc, add its row to `{{docs.index}}`. When a step starts or finishes, update the area's row in the Areas table in `build-order.md`, and add a line to the History in its file in `docs/log/build-order/`.
+- **Docs.** One topic per file. [writing-docs.md]({{docs.workflow}}/writing-docs.md) has the formats. After adding a doc, add its row to `{{docs.index}}`.
+- **Status.** When a step starts or finishes, update the area's row in the Areas table in `build-order.md`, and add a line to the History in its file in `docs/log/build-order/`.
 - **Agent configuration.** Claude Code and OpenCode share the instructions, skills, and agent prompts in this repo. Follow [ai-tools.md]({{docs.workflow}}/ai-tools.md) when changing them or switching tools mid-task.
 
 ## Where a note goes

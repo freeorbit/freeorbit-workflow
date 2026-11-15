@@ -88,6 +88,17 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.81.0: the ask page's steps carry the pictures, and the open
+
+An audit of Freeorbit's sessions found agents loading the `ask-page` skill and still building a frame-against-app page from pictures cropped by hand, with no boxes, and annotating a picture without opening it. The rule was stated, but outside the steps an agent follows.
+
+- **The `ask-page` skill's steps** now hold the pictures (`wf design annotate --ask`), reading the advice `wf ask page` prints, opening the page every time, and waiting again after a rebuild. What the person sees on the page, such as keys and themes, moved to a reference file.
+- **`wf ask page` advises** on a compare pair with no box.
+- **`AGENTS.md`** splits the picture rule into with a pane and without, and says to open a picture that is only shown. It now says `<scope>/<slug>` for a branch, lists what counts as installing a package, and gives Status its own bullet. The test for what stays in `AGENTS.md` moved to `writing-docs.md`.
+- **`asking.md`** points to the skill instead of repeating it, and the `design-frames` skill keeps only how to make a picture.
+
+Run `npx wf docs sync` to take the new `AGENTS.md` and docs.
+
 ### v0.80.0: narrow and stress pictures are a project's own
 
 - **`screens.narrow` is empty by default**, where it was `"800x560"`, and **`screens.stress` stays empty**. While either is empty, the project has no such picture: `--narrow` or `--stress` stops and names the setting, and the skill never offers it. A project without a narrow layout or a stress look, such as a web app with neither, sees only Default.
