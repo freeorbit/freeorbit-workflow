@@ -78,7 +78,7 @@ test("picture advice: a joined sheet, a box the pictures do not have, and a fram
   assert.equal(pictureAdvice(page({ look: "Sheet A, box 2", pictures: [pic(1280, 800, [{ n: 2 }])] })).length, 0, "a box the page draws is fine");
   assert.match(pictureAdvice(page({ text: "Does the app match the frame?", pictures: [pic(1280, 800)] })).join(), /compares a frame with the app in one picture; a compare pair, \[frame, app\]/);
   assert.match(pictureAdvice(page({ text: "Box 3: change the frame or the app?" })).join(), /q: names a box, but shows no picture[\s\S]*is about a frame and the app, and shows neither/);
-  assert.equal(pictureAdvice(page({ text: "Does the app match the frame?", compare: [pic(1280, 800), pic(1280, 800)] })).length, 0);
+  assert.equal(pictureAdvice(page({ text: "Does the app match the frame?", compare: [pic(1280, 800), pic(1280, 800, [{ n: 1 }])] })).length, 0);
   assert.equal(pictureAdvice(page({ pictures: [pic(1280, 800)] })).length, 0, "one screen is fine");
 });
 
@@ -97,4 +97,20 @@ test("template advice: a decision page doing another template's job is pointed a
   assert.match(page([rules], "batch").join(), /cat-time judges several rules in one question: a testdata page gives each rule its row/);
   assert.deepEqual(page([tq("a", { role: "designer" }), tq("b", { role: "owner" }), tq("c", { role: "owner" })], "batch"), [], "a batch page is grouped by role already");
   assert.deepEqual(page([tq("a"), tq("b")]), []);
+});
+
+test("the ask-page skill's numbered steps carry the pictures, the advice, and the open, and a bare compare pair is advised", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { pictureAdvice } = await import("../lib/ask/spec.mjs");
+  const skill = readFileSync(new URL("../plugins/core/skills/ask-page/SKILL.md", import.meta.url), "utf8");
+  const steps = skill.slice(skill.indexOf("## Steps"), skill.indexOf("## Grouping"));
+  // Each was missed in a real session while it sat outside the steps.
+  for (const must of ["wf design annotate <spec> --ask", "`Pictures:`", "Open the address in the browser pane", "wf ask wait <id>` in the background", "built again"]) assert.ok(steps.includes(must), `the steps say: ${must}`);
+  const agents = readFileSync(new URL("../docs/root/AGENTS.md", import.meta.url), "utf8");
+  assert.match(agents, /\*\*Make every picture with `npx wf design annotate <spec>`\*\*/);
+  assert.match(agents, /\*\*With a browser pane, ask on an ask page\.\*\*/);
+  const pic = (boxes = []) => ({ image: "a.png", label: "A", w: 1280, h: 800, boxes });
+  const page = (compare) => ({ questions: [{ id: "q", text: "Fine?", look: "", detail: "", pictures: [], compare }] });
+  assert.match(pictureAdvice(page([pic(), pic()])).join(), /q: a compare pair with no box; mark what differs or where to look with npx wf design annotate --ask/);
+  assert.equal(pictureAdvice(page([pic(), pic([{ n: 1 }])])).length, 0, "one marked side is enough");
 });

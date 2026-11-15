@@ -6,6 +6,16 @@ How to write the project's docs so later steps can rely on them.
 
 Put new material in the file that already owns that topic. The index is [docs/README.md](../README.md). Do not append notes to raw research exports under `docs/research/`. Add a new research file, or summarize into an existing one and say what you added.
 
+## What stays in AGENTS.md
+
+A rule stays in full in `AGENTS.md`, not behind a link, when all three hold:
+
+- it applies in any chat;
+- nothing loads its detail before the moment it applies, such as a skill or a step that reads the doc;
+- missing it costs someone's time or a wrong choice.
+
+The asking rules pass. A rule that a skill or a check brings in at the right moment lives in that skill, inside its numbered steps.
+
 ## At a glance
 
 A person reads a doc by skimming. An agent reads it by searching. Both need short, separate pieces.

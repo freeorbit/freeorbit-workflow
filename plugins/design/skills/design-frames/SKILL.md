@@ -4,10 +4,11 @@ description: >-
   Draw, change, render, and read design frames. A frame is one HTML file under
   <frames>/<area>/<section>/, rendered by headless Chromium to a PNG at the same
   path under <review>/, or, with design.source png, a picture exported from a
-  design tool such as Figma, filed at that path. Use when drawing or redrawing a
-  screen (Step 2), bringing in frames exported from a design tool, implementing
-  or comparing a screen that has a frame, refreshing review PNGs, adding an
-  area's frames, or sending a picture with a visual question.
+  design tool such as Figma, filed at that path. Also makes the annotated
+  pictures for a visual question, with wf design annotate. Use when drawing or
+  redrawing a screen (Step 2), bringing in frames exported from a design tool,
+  refreshing review PNGs, adding an area's frames, or sending or showing any
+  picture of a frame or screen, in the chat or on an ask page.
 ---
 
 # Design frames
@@ -42,6 +43,7 @@ Step 2 is done when every story's screens have a frame and the designer has acce
 3. Follow the skeleton and shell attributes in the project's frames doc.
 4. A frame that adds an optional panel or state to a screen draws a screen that already works without it.
 5. Give a new frame its row in the area's screen list in the same change, with a **Reach**: the scenario and run steps that open the app on the frame's state, or `none, <chunk>: <reason>` naming the chunk that will build that state. The `screen-review` skill says who fills it in and when, and `npx wf screens --check` fails a row without one.
+6. After rendering, send the new or redrawn frame for review as an annotated picture, with purple `new` boxes around what is new or changed, as Pictures for a question below says.
 
 ## Render and check
 
@@ -62,7 +64,7 @@ Render again after changing a frame or a shared style, and commit the HTML and P
 
 ## Pictures for a question
 
-A question about a frame, a screen, or an image comes with its picture, sent just before the question. Make every such picture with `npx wf design annotate <spec.json>` (or `-` for a spec on stdin). It gives each picture a bar with its letter and name, and numbered boxes around what to look at:
+`AGENTS.md` says when a picture is needed and where it goes. This is how to make one: `npx wf design annotate <spec.json>` (or `-` for a spec on stdin) gives each picture a bar with its letter and name, and numbered boxes around what to look at:
 
 ```json
 {
@@ -76,14 +78,13 @@ A question about a frame, a screen, or an image comes with its picture, sent jus
 
 - A frame's boxes come from its elements (`selector`, optional `text` and `nth`), found in Chromium at the render size. A screenshot's boxes are rects: x, y, width, height.
 - Kinds: `look` blue, `bug` red, `drift` amber, `ok` green, `new` purple for what is new or changed in a picture sent for review. When nothing fits, add a kind under `design.kinds` in `.workflow/config.json` with a `color`, `word`, and `use`. A kit kind is never changed and no two kinds share a colour; the command fails on either.
-- In the chat, a comparison is one labelled sheet, such as the frame on the left and the app on the right. Several questions share one sheet, and each question says where to look, such as "sheet A, box 2".
 - The command also writes the sheet's `.html` page and an `index.html` beside it, and prints the page's address.
 - **For an ask page, add `--ask`.** `npx wf design annotate <spec> --ask` draws no sheet: it writes each picture on its own and `<out>.ask.json`, the pictures with their boxes as data, and a frame followed by its app picture as one compare pair (or the pairs `pairs` names, such as `[["A", "B"]]`). Put a pair in a question's `compare`, or the `compare` template's `pairs`, so the page draws the boxes, zooms, and takes pins. Never put the joined sheet on an ask page; the core `ask-page` skill says which part fits each question.
-- Without a pane, send the sheet, or open the sheet's address that `wf design annotate` prints; it starts the shared `question-pictures` server when none runs.
+- **Then open it.** The command prints a `Next:` line with the address: open it in the browser pane, or without a pane send the sheet.
 
 ## Compare the app with a frame
 
-Render the frame, then screenshot the same state of the app with the project's app-testing skill. Read both images and report differences in layout, text, and color. Frames and the app share the same tokens and font, so a difference is real. Do it as soon as a screen renders, not only at chunk end: a screen built from a frame's words alone drifts from its picture.
+Use the `screen-review` skill: `npx wf screens <screen>` shoots the app on the frame's state and puts it beside the frame. Do it as soon as a screen renders, not only at chunk end.
 
 ## Do not
 

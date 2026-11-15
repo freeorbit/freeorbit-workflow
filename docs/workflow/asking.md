@@ -32,24 +32,4 @@ How to ask, and how to show a visual question, are in [AGENTS.md](../../AGENTS.m
 
 ## Ask pages
 
-An ask page holds any number of questions, with their pictures, on one page in the browser pane. The steps and the spec are in the kit's `ask-page` skill.
-
-- **Grouping.** No limit on questions is no reason to ask them all at once. One page holds what blocks the same piece of work, grouped by what the person thinks about together, and questions of the same shape become one, such as a grid. `wf ask page` prints advice where a page could be grouped better.
-- **Templates.** `npx wf ask templates` lists them: a decision, a batch by role, a compare, a frame review, a storyboard, a triage, a ranking, naming, test-data rows, a plan, and a sign-off.
-- **Recommendations.** Every option on a page says what it means, every choice names the recommended option and why, and a ranking lists its suggested order and why; `wf ask page` refuses a spec without them. A review's verdicts recommend nothing, but a test-data review page recommends Fine on each row, to accept together.
-- **Answering.** Each question can take "You decide" or "Later", a note, and pins on its pictures. A partial send is fine; the agent carries on with what is answered.
-- **Many at once.** The bulk bar takes every recommendation, marks a shared verdict, or leaves questions to the agent or for later, for the selected questions or every open one. Undo puts them back.
-- **The keyboard.** J and K move, 1–9 pick, R takes the recommendation, Enter goes to the next open question, Ctrl+K lists commands, Ctrl+Z undoes, Ctrl+Enter sends, and ? lists the rest.
-- **Moving between asks.** Each page's header shows the other waiting asks; [ and ] go to the previous and next, I opens the inbox, and the receipt after Send offers the next one.
-- **Project templates.** A question that comes back often can get a template of its own, as data in `.workflow/ask-templates/`. The agent proposes one and the owner says yes; it holds no code.
-- **Colours.** The page follows the Claude Desktop theme when Claude Desktop is installed, and offers every palette it bundles, or one of the kit's six themes, each light and dark. An accent of nine or the person's own, and a text size, sit over any theme; all are kept in the browser.
-- **Folding.** Expand all, Collapse all, and Fold answered sit above the questions with Select all.
-- **Wording.** Questions, labels, and reasons are held short; `explain: true` gives room where the person asked for more detail.
-- **Blocks.** A page can also show text, number tiles, tables from the open questions, decisions, or review ledger, before-and-after diffs, bar and line charts, diagrams, timelines, and boards, around its questions; each one exports its data.
-- **Richer answers.** A question can also ask for a rating or a number, a choice for each row of a grid, a sort into buckets, accepting or rejecting suggested edits, or a small form; a follow-up shows only when an earlier answer fits, a question can be given an owner, and a box can be drawn on a picture.
-- **Live pages.** A status page shows where a long step stands while it runs, and the agent can reply under a question; every send is kept, a page asked again marks what changed, a page can go step by step, and the tab says how many asks wait.
-- **Drafts.** The page keeps a draft in the browser, so a reload loses nothing. A newer version of the page says so at the top.
-- **Export.** `npx wf ask export <id>` writes one HTML file, pictures inside, for someone without the pane, and the answers as Markdown and JSON. Their answers file comes back through `npx wf ask import`.
-- **The record.** `npx wf ask record <id>` adds each "Later" to the open questions, and each answer the spec marks with `record` to that decisions file.
-- **The server.** One `question-pictures` server serves every project, worktree, and session on the machine, each at its own address. `wf ask page` starts it when none runs, and `.claude/launch.json`'s entry joins it.
-- **Many sessions.** Its front page is an inbox of every ask, waiting ones first, with the repository, branch or worktree, and session that asked. A page another session still waits on is never replaced without `--replace`.
+An ask page holds any number of questions, with their pictures, on one page in the browser pane. The steps, the spec, and what the page can do are in the kit's `ask-page` skill; `npx wf ask templates` lists the templates.
