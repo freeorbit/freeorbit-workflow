@@ -4,7 +4,8 @@ description: >-
   The one screen check. A run is light (screens one change reaches on its
   own), deep (also screens reached through shared code), or deferred, and
   takes Default: the app's window beside its frame, as a new install shows it.
-  It takes Narrow (the whole page) and the Stress look only when asked. A blind screen-reader
+  It takes Narrow (the whole page) and the Stress look only when asked, in a
+  project that sets them. A blind screen-reader
   agent names each difference from the frame and each fault (clipping,
   wrapping, things out of view), and the main session reads every flag. Use
   while building a screen, at chunk end after the code review when UI files or
@@ -52,7 +53,7 @@ The project's four-steps doc runs the gate at chunk start and chunk end. A Reach
 
 ## The pictures
 
-Each run takes Default, as a new install shows it. Narrow and the stress look are taken only when the designer asks.
+Each run takes Default, as a new install shows it. Narrow and the stress look are a project's own: each is off until `screens.narrow` or `screens.stress` is set, and then taken only when the designer asks. In a project that sets neither, never offer them.
 
 - **Default**: the app's own window, beside its frame.
 - **Narrow**: `screens.narrow`, the whole page scrolled and joined. Only when asked for. The flags name every viewport to take: `--wide --narrow` for both, `--narrow` alone for Narrow only.

@@ -88,6 +88,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.80.0: narrow and stress pictures are a project's own
+
+- **`screens.narrow` is empty by default**, where it was `"800x560"`, and **`screens.stress` stays empty**. While either is empty, the project has no such picture: `--narrow` or `--stress` stops and names the setting, and the skill never offers it. A project without a narrow layout or a stress look, such as a web app with neither, sees only Default.
+- **A project that takes narrow pictures sets the size** in `.workflow/config.json`:
+
+  ```json
+  { "screens": { "narrow": "800x560" } }
+  ```
+- **From the review of v0.78.0:** a project in a folder of its repository keeps its record in that folder of the main checkout, as before, and not at the repository's top; two worktrees accepting at once no longer lose one's screens; and a light run after the state fell back to `origin/main` names its range in full.
+
 ### v0.79.0: a screen review by area
 
 - **`--area <id>`** narrows any `wf screens` run to that area's screens: `--deep --area uplink`, `--chunk 38 --area app`, or `--area uplink` alone for every uplink screen. Several areas are joined by commas.
