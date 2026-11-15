@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -10,7 +10,7 @@ import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, unreached } from "../lib/screens/list.mjs";
 import { storiesIn } from "../lib/docs/shape.mjs";
-import { briefs, migrate, reviewCovers, why } from "../lib/screens/run.mjs";
+import { areasOf, briefs, inAreas, migrate, reviewCovers, screens, why } from "../lib/screens/run.mjs";
 import { jobsOf, lookStep, needsDisplay, screensHeadless, sessionSteps, shotsFor, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
 import { afterDefer, afterRun, readState, recordDir, statePath, writeState } from "../lib/screens/state.mjs";
@@ -270,4 +270,38 @@ test("the review's record is the main checkout's, shared by its worktrees, and a
   const state = readState(statePath(main), "origin/main", main);
   assert.equal(state.last, head, "a commit the repository has stays");
   assert.equal(state.deep, "origin/main", "a commit since removed counts from the base");
+});
+
+test("--area narrows a run to those areas' screens, and its accept does not move the state", async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-area-")));
+  execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+  execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "one"], { cwd: root });
+  const config = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }, { id: "uplink", prefix: "GM", docs: "docs/uplink" }] });
+  for (const [area, name] of [["app", "home"], ["uplink", "accounts"]]) {
+    mkdirSync(join(root, "docs", area, "design"), { recursive: true });
+    writeFileSync(join(root, "docs", area, "design", "screens.md"), `| Screen | Stories | Reach | Shows |\n| --- | --- | --- | --- |\n| \`${name}\` | X-1 | \`s › go #/\` | it |\n`);
+  }
+  const all = screensFiles(root, config).flatMap((file) => parseScreens(readFileSync(file, "utf8"), file));
+  assert.deepEqual(inAreas(all, areasOf(["--deep", "--area", "uplink"], config), root, config).map((s) => s.name), ["accounts"]);
+  assert.deepEqual(inAreas(all, areasOf(["--area", "app,uplink"], config), root, config).length, 2);
+  assert.equal(areasOf(["--deep"], config), null);
+  assert.throws(() => areasOf(["--area", "downlink"], config), /--area app\|uplink.*no area downlink/);
+  assert.throws(() => areasOf(["--area"], config), /usage: --area/);
+
+  // A deep run narrowed to uplink is accepted: its pictures count, the state stays.
+  const latest = join(root, ".cache/screens/latest");
+  mkdirSync(latest, { recursive: true });
+  writeFileSync(join(latest, "hashes.json"), JSON.stringify({ accounts: { "wide-default": "h" } }));
+  writeFileSync(join(latest, "run.json"), JSON.stringify({ mode: "deep", shots: ["wide-default"], failed: 0, areas: ["uplink"] }));
+  const lines = [];
+  const log = console.log;
+  console.log = (line) => lines.push(String(line));
+  try {
+    await screens(root, config, ["--accept"]);
+  } finally {
+    console.log = log;
+  }
+  assert.match(lines.join("\n"), /covered only uplink, so the state does not move/);
+  assert.ok(!existsSync(statePath(root)), "no state written");
+  assert.deepEqual(JSON.parse(readFileSync(join(recordDir(root), "accepted.json"), "utf8")), { accounts: { "wide-default": "h" } });
 });
