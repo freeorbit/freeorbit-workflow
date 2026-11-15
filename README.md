@@ -88,6 +88,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.76.2: a narrow whole-page picture shows each thing once
+
+The tauri kind's narrow pictures are shot a window at a time and joined. Freeorbit's screen readers flagged about 12 screens for three things the joining drew and the app does not:
+
+- **Fixed elements were drawn again in every window.** A fixed button at the top showed again lower down, and a dialog or a drawer two or three times. Now, after the first window, fixed elements are hidden and a modal's backdrop too, and a sticky header stays where it stands in the page.
+- **Beside the later windows was black.** It is now the colour that stood there, such as the sidebar's.
+- **A tab with its own scroller came out narrower than the window**, 767 instead of 800, so its buttons at the right looked cut off. The picture is now as wide as the window.
+
+Every narrow picture of a page longer than one window changes, so `wf screens` reports it as changed: accept the new ones with `wf screens --accept` once you have looked. The screen reader's brief says what the joining now looks like.
+
 ### v0.76.1: an ask page no longer shows the word null
 
 - **The receipt** of a page with eight or fewer agreements ended in a stray "null", from v0.72.0.

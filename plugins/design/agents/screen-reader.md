@@ -25,7 +25,7 @@ Each screen has a `##` heading with its name, then:
 - **Stories:** the user stories it shows. They are IDs only; you do not need their text.
 - **Shows:** what the screen list says the screen shows.
 - **Pictures:** each picture's path. A `-pair.png` is the design frame on the left and the app on the right, at the same size. The others are app pictures: `-wide-stress` and `-narrow-stress` in the stress look (a different theme, corners, density, and a larger text size), and `-narrow-default` a smaller window.
-- **Narrow pictures are joined.** The page's tallest scrolling box is shot a window at a time and the shots stacked. The first window shows the whole screen; below it, only that box is kept, and everything beside it, such as the sidebar's foot, is filled black. A black area beside the box, and a sidebar cut where it starts, are the joining, not a fault.
+- **Narrow pictures are joined.** The page's tallest scrolling box is shot a window at a time and the shots stacked. The first window shows the whole screen, as wide as the window; below it, only that box is kept, and beside it is the plain colour that stood there, such as the sidebar's. A sidebar that ends in plain colour is the joining, not a fault. What stays put in the window, such as a fixed button, a dialog, or a drawer, is drawn once, in the first window; a header that sticks is drawn once, where it stands in the page. Below the first window, a dialog's dimmed backdrop is gone.
 
 ## What to look for
 
