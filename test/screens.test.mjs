@@ -65,14 +65,19 @@ test("each area's screen list is found under its docs folder, in the config's or
   assert.deepEqual(readState(join(root, "none.json")), { last: "origin/main", deep: "origin/main", lightRuns: [], deferred: { count: 0, at: null } });
 });
 
-test("a brief lists each screen's reason, stories, caption, and pictures, eight to a brief", () => {
+test("a brief lists each screen's reason, stories, caption, and pictures, 24 pictures to a brief", () => {
   const rows = parseScreens(SCREENS);
-  const items = Array.from({ length: 9 }, (_, i) => ({ name: i ? `s-${i}` : "dr-overview", why: "new", framed: i === 0, pictures: [`/p/${i}-pair.png`, `/p/${i}-narrow-stress.png`] }));
+  const items = Array.from({ length: 13 }, (_, i) => ({ name: i ? `s-${i}` : "dr-overview", why: "new", framed: i === 0, pictures: [`/p/${i}-pair.png`, `/p/${i}-narrow-stress.png`] }));
   const out = briefs(items, rows);
   assert.equal(out.length, 2);
+  assert.match(out[1], /^## s-12/);
+  const one = items.map((item) => ({ ...item, pictures: item.pictures.slice(0, 1) }));
+  assert.equal(briefs(one, rows).length, 1);
+  assert.deepEqual(briefs([...one, ...one], rows).map((text) => text.match(/^## /gm).length), [24, 2]);
+  assert.deepEqual(briefs(one.slice(0, 3), rows, 2).map((text) => text.match(/^## /gm).length), [2, 1]);
+  assert.equal(briefs([{ ...items[0], pictures: ["a", "b", "c"] }, items[1]], rows, 2).length, 2);
   assert.match(out[0], /^## dr-overview\n\n- Listed: new\n- Stories: DR-01\n- Shows: The overview\.\n- Pictures:\n {2}- \/p\/0-pair\.png \(frame left, app right\)\n {2}- \/p\/0-narrow-stress\.png\n/);
   assert.match(out[0], /## s-1\n\n- Listed: new, no frame\n- Stories: none\n- Shows: \(no caption\)/);
-  assert.match(out[1], /^## s-8/);
   const split = briefs([{ name: "dr-overview", why: "new", framed: true, pictures: [] }], parseScreens(SCREENS.replace("The overview.", "Lead.<br>• One<br>• Two")));
   assert.match(split[0], /- Shows: Lead\.\n {2}- One\n {2}- Two\n/);
 });
