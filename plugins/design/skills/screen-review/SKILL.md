@@ -15,7 +15,7 @@ description: >-
 
 # Screen review
 
-This looks at screens against their frames. It does not test flows; for that, use the `app-testing` skill. It drives the app through `wf app`, and its settings are `screens` in `.workflow/config.json` (`npx wf config` prints them).
+This looks at screens against their frames. It does not test flows; for that, use the project's app-testing skill, `app-testing` or `web-app-testing`. It drives the app through `wf app`, and its settings are `screens` in `.workflow/config.json` (`npx wf config` prints them).
 
 A run shoots on one app a core, up to `screens.jobsMax`, each on its own virtual display, off the designer's screen. `--jobs 1` shoots on the user's screen instead, to watch, and so does a machine without a virtual display (`screens.display`).
 
@@ -74,7 +74,7 @@ A screen is listed to read when its app pictures **or its frame** changed since 
 
 - **Light**: screens a changed file reaches in one place only, such as its own page, its route, or its frame. Counted from the last run, light or deep.
 - **Deep**: screens a changed file reaches in more than one place, such as a shared component, the shell, the tokens, or the shared frame styles. Counted from the last deep run, with that span's light screens too.
-- A screen on both is on the deep list only. A backend change can still change words on a screen; if one did, name those screens.
+- A screen on both is on the deep list only.
 - The state lives on this computer in the main checkout's `.cache/screens/state.json`, with the accepted pictures. Every worktree reads and writes that one record, so a run accepted in a worktree counts everywhere and outlives it.
 
 ## While building
@@ -87,36 +87,38 @@ npx wf screens <screen>
 
 ## At chunk end
 
-After the code review and the fixes for its findings, when UI files or frames changed. Never start it while the code review runs, because a fix can change a screen, and rebuild the app first so the pictures are of the fixed code:
+After the code review and the fixes for its findings, when UI files or frames changed. Never start it while the code review runs, because a fix can change a screen. The gate, `npx wf screens --gate <chunk>`, has passed before the code review, as the project's four-steps doc orders it.
 
-1. **Scope.** Run `npx wf screens scope`. Both lists empty: stop here.
-2. **Ask the designer:** light, deep, or defer.
+1. **Rebuild the app**, so the pictures are of the fixed code.
+2. **Scope.** Run `npx wf screens scope`. Both lists empty: stop here, unless a backend change altered words on a screen; then run those screens by name.
+3. **Ask the designer:** light, deep, or defer.
    - Show both lists' counts and times, the light runs waiting, and any deferral.
    - Recommend light. Recommend deep when the light list is empty and the deep one is not, or when two or more light runs are waiting.
+   - Before a deep run, check how much of the usage limit is left; the times `scope` gives are estimates.
    - Defer runs `npx wf screens --defer` and shoots nothing. Both lists keep growing until a run.
-3. **Run** `npx wf screens --light` or `--deep`. Do not ask which pictures: both take Default. Only when the designer asks for other pictures, name every viewport to take, such as `--wide --narrow`, and add `--stress` for the stress look.
+4. **Run** `npx wf screens --light` or `--deep`. Do not ask which pictures: both take Default. Only when the designer asks for other pictures, name every viewport to take, such as `--wide --narrow`, and add `--stress` for the stress look.
    - `--chunk N`, `--all`, and names still check just those screens, without moving the state.
    - `--area <id>` narrows any run to that area's screens, such as `--deep --area uplink`; several are joined by commas, and `scope --area <id>` shows that part of each list. Use it when the designer asks for one area. Its accept counts the pictures but does not move the state, since the other areas were not looked at.
    - `--light` and `--deep` refuse until the code review ledger has reviewed or deferred at HEAD. `--force` is for a run the designer asks for outside chunk end.
-4. **Triage.** Run `npx wf screens --brief`. It writes one brief per eight listed screens and prints the reader's model. Start one `screen-reader` agent a brief, all at once, on that model, each with the prompt `Brief: <path>` and nothing else. Each returns one line a screen: `same`, `differs`, `fault`, or `could not read`.
-5. **Look.** Read in full every pair a reader flagged, every *frame changed* pair, and every picture a reader could not read. Enlarge a doubtful spot: crop and scale into `.cache/view/`, since the image reader caches by path.
+5. **Triage.** Run `npx wf screens --brief`. It writes one brief per eight listed screens and prints the reader's model. Start one `screen-reader` agent a brief, all at once, on that model, each with the prompt `Brief: <path>` and nothing else. Each returns one line a screen: `same`, `differs`, `fault`, or `could not read`.
+6. **Look.** Read in full every pair a reader flagged, every *frame changed* pair, and every picture a reader could not read. Enlarge a doubtful spot: crop and scale into `.cache/view/`, since the image reader caches by path.
 
    ```bash
    magick <picture> -crop 700x300+500+400 +repage -scale 300% .cache/view/crop-1.png
    ```
 
    A reader's flag that is not there in full is dropped. Name any you dropped in the report.
-6. **Fix or record.**
+7. **Fix or record.**
    - Fix a difference or fault now, and run those screens again.
    - A difference the designer accepts goes in the frame or in the decisions log, never only in the code.
    - To ask the designer about differences, use a `compare` ask page, one pair a difference, from `npx wf design annotate --ask` with an amber `drift` or red `bug` box, and the choice each needs as its question. Without a browser pane, send the annotate sheet first, and name where to look.
    - A fault you do not fix goes in the open questions log.
-7. **Report.** Tell the designer each screen read, with a line on what you saw, which lines came from a reader only, and what you did not read at full size. Give the reached count from the run's last line, and name any frame still waiting on this chunk.
-8. **Accept** only once every flagged screen was read and its faults fixed: `npx wf screens --accept`.
+8. **Report.** Tell the designer each screen read, with a line on what you saw, which lines came from a reader only, and what you did not read at full size. Give the reached count from the run's last line, and name any frame still waiting on this chunk.
+9. **Accept** only once every flagged screen was read and its faults fixed: `npx wf screens --accept`.
    - It accepts only the last run's screens, and only the pictures taken in it.
    - A light run moves the last run and adds its range. A deep run moves both and clears the light runs and any deferral. A run with a screen that did not shoot moves neither.
    - Accepted hashes stay on this computer, in the main checkout, so on a new computer every screen is new.
-   - While the board shows built screens, it also copies each screen's Default picture to `design.built`. Commit those with the chunk, so the board shows them once the story is Built.
+10. **Stage the built pictures.** While the board shows built screens, the accept copies each screen's Default picture to `design.built`. Commit those with the chunk, so the board shows them once the story is Built.
 
 The designer can also ask for a review at any time. Ask the same question, light or deep, without defer. `npx wf screens --sheets` puts the listed pictures six to a sheet, for a quick look by hand.
 

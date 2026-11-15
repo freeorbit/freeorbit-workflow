@@ -27,8 +27,9 @@ Deferred: none. | Deferred: <n> times, last at <short HEAD> on <date>.
 - **Asked for a review.** No defer prompt. Ask once whether to run deep or light, unless they named one.
 - **Chunk end**, before the commit proposal. Ask the reviewer once: a light diff run now, a deep one now, or defer.
   - **Show** the range `<Last reviewed>..HEAD` (plus uncommitted), its commit count, and the `Deferred` line when it is not `none`. When `Light runs` has rows, also show `<Deep reviewed>..HEAD` and its count.
-  - **Recommend** light, or deep when two or more light runs are waiting, or when the change is mostly in a repo the scope list does not reach (copy those files into the scan folder so the agent can read them).
-  - **Defer:** run nothing. `npx wf ledger defer --at <short HEAD>`, then go on to the commit proposal. The ledger edit is committed with the chunk, in a commit after the one it names: `wf done chunk` passes when every commit after the named one changes only the ledger and its closed file.
+  - **Recommend** light, or deep when two or more light runs are waiting, or when the change is mostly in a repo the scope list does not reach.
+  - **Before a deep run**, check how much of the usage limit is left, and call any cost or time you give an estimate.
+  - **Defer:** run nothing. `npx wf ledger defer --at <short HEAD>`, then go on to the commit proposal. The ledger edit is committed with the chunk, as step 6 says.
 
 ## 1. Scan
 
@@ -43,6 +44,7 @@ npx wf scan full                   # when asked, or when Last reviewed is none
 It empties `.cache/review-scan`, writes `scope.txt`, runs the `every` scans, the `deps` scans when a dependency file changed or in full mode, the `full` scans in full mode, then the `structure` scans. A non-zero exit means "found something" as often as "failed": read the output before treating it as a failure.
 
 - **Nothing in scope** and no dependency file changed: say "No new findings", close the run as in step 6, and stop.
+- **Code in a repo the scope list does not reach:** copy those files into `.cache/review-scan` now, after the scan has emptied it, so the agent can read them.
 - **A scanner missing:** name it, give the install command from the project's tools doc, and stop. Do not install it.
 
 ## 2. Review
@@ -57,9 +59,15 @@ Scope: full | <the lines of scope.txt>
 Diff: .cache/review-scan/changes.diff
 Scanner output: .cache/review-scan, files: <file names; structure mode: the structure scan files>
 Ledger: <logs.ledger>
+Closed: <logs.ledgerClosed>
+Decisions: <logs.decisions>
+Rubric: <review.rubric>
+Threat model: <review.threatModel>
+Reads: <review.reads>
+Web: <review.web>
 ```
 
-Leave out the `Diff` line when no diff was written.
+Take those settings from `npx wf config`, which prints the kit's defaults too; the agent has no shell, and the project's config file holds only what the project changed. Leave out the `Diff` line when no diff was written, and a setting's line when it is empty.
 
 ## 3. Verify
 
@@ -79,8 +87,8 @@ Drop what it drops and apply its downgrades. Keep each dropped draft's ID and re
 
 Change the ledger only with `npx wf ledger`; it keeps every row in step and refuses a change that would break the ledger. Never read the closed file in full. The commands and the ledger's shape are in [ledger-format.md](ledger-format.md).
 
-- A new finding: `add`, which gives it the next ID, `proposed`, and Found.
-- "Changed": edit its Evidence or Severity and add a dated Note.
+- New findings: write them to `.cache/review-scan/findings.json`, a list with the fields [ledger-format.md](ledger-format.md) names, then `npx wf ledger add .cache/review-scan/findings.json`. It gives each the next ID, `proposed`, and Found.
+- "Changed": `set <ID>` with `--severity` when it changed, and the new evidence in a dated `--note`.
 - "Now fixed": a `fixed` finding becomes `verified`. A `proposed` or `accepted` one that is gone becomes `fixed`, with the evidence in its Note, and is shown to the reviewer.
 - A `fixed` finding still there goes back to `accepted`, with a dated Note.
 

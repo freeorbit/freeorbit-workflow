@@ -23,7 +23,7 @@ Screens and interaction for the stories from Step 1, drawn as frames that the de
 
 Where code lives, how the parts talk, and the tech stack. Open questions from Step 1 get answered here, or get an explicit "still open" with a reason.
 
-- Step 3 ends by adding the area's chunks to [build-order.md](../log/build-order.md), following its checklist.
+- Step 3 ends by adding the area's chunks to [build-order.md](../log/build-order.md), following [Making or updating an area's order](build-order.md#making-or-updating-an-areas-order).
 - It lists each outside thing the stories need, such as a server, a model, a sign-in, a file picker, or another computer, and the chunk whose stand-in lets a scenario reach those screens.
 
 The first area to finish Step 3 also drafts the threat model, from the kit's `templates/threat-model.md`, into the file `review.threatModel` names.
@@ -85,6 +85,7 @@ Before anything in a chunk is built, run `npx wf doc:facts status` for where thi
 - Check the stories against the frames, below.
 - Put any story added or changed since the last chunk start into the [build order](build-order.md#making-or-updating-an-areas-order): an existing chunk or a new row. Move this chunk's row to In progress.
 - If the chunk builds on an outside service, make one real call first and read that service's rules for clients. A stand-in proves only what it was told. The chunk that first uses an outside thing also builds its stand-in, so a scenario can reach the screens behind it. A test-only stub is not enough.
+- With the testdata plugin, run `npx wf testdata stale <area> --chunks <this>,<next>`, and refresh each story it lists with the `design-test-data` skill.
 - With the design plugin's screen review, run `npx wf screens --gate <this>`. It lists each frame showing this chunk's stories that no Reach opens. Each one is reached in this chunk, or, with the designer's yes in the questions below, waits on a later chunk named in its Reach.
 - Read the status's `Revisit` lines. Each untied question whose trigger may now hold goes to its role in the questions below, and one that holds moves under this chunk's heading. Give a trigger to each question under `No revisit trigger`, or ask its role for one.
 
@@ -94,14 +95,30 @@ Before anything in a chunk is built, run `npx wf doc:facts status` for where thi
 - Ask once, in one set of questions, each to the role that owns it: each drift with its suggested fix, each change to the build order, and each question the steps above raised. Work that depends on none of the answers can go on.
   - On an ask page, that is a `batch` page by role, with the order as a `rank` question. The open questions whose trigger holds go on a `triage` page, and a plan to approve on a `plan` page.
   - A test-data refresh's rules go on their own page: `npx wf testdata review <area> --chunk <this> | npx wf ask page -` for the owner's, and `--team` for the craft rules. A solo project gets one page, with the craft rules as one row.
+- Last, run `npx wf ready chunk <this>`. Fix each FAIL and answer each ASK before anything is built.
 
 ## Chunk end
 
-Before the commit proposal, run the project's full check once. Then run the `code-review-ledger` skill in diff mode.
+Before the commit proposal, in this order. The parts below say how.
+
+1. With the design plugin, when UI files or frames changed: `npx wf screens --gate <chunk>` passes.
+2. Run the project's full check, `tracks.fullCheck`.
+3. Run the `code-review-ledger` skill in diff mode, and fix the findings the reviewer accepts.
+4. When UI files or frames changed: run the `screen-review` skill, after those fixes and never beside the review.
+5. With the testdata plugin: `npx wf testdata trace --chunk <chunk>` lists no held line or rule proven by nothing.
+6. Move the chunk's row, and put each `walk` line on the owner's `signoff` page.
+7. Run `npx wf done chunk <chunk>`. Fix each FAIL and answer each ASK. It runs the full check again, as the gate.
+8. Commit with the `commit` skill, then propose the pull request with the `pull-request` skill.
+
+### The code review
+
+The `code-review-ledger` skill runs in diff mode.
 
 - The reviewer picks a deep or light run, or defers it to a later run, which then reviews every deferred chunk at once. A light run is logged in the ledger, and the next deep run covers it.
 - It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one.
 - The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
+
+### Acceptance lines proven
 
 With the testdata plugin, `npx wf testdata trace --chunk <chunk>` sorts the acceptance lines of the chunk's stories, and their accepted rules. `wf done chunk` waits until no high-risk line, and no product or safety rule, is proven by nothing (`testdata.chunkChecks`).
 
@@ -119,6 +136,8 @@ Each line or rule is:
 
 A line's By is its row in the area's proof table, `| Line | By |`, as [test-data-formats.md](test-data-formats.md) says. For one proven by nothing, cite it in the test that already shows it first. A new test is only for what no test shows, as CS-TEST says.
 
+### Screens
+
 With the design plugin's screen review, a chunk that changed UI files or frames also checks its screens:
 
 - Before the code review, `npx wf screens --gate <chunk>` passes: every frame showing the chunk's stories is reached, or waits on a later chunk the designer agreed to. A frame shared by two chunks is reached by the first to end, or handed to the later one.
@@ -127,7 +146,9 @@ With the design plugin's screen review, a chunk that changed UI files or frames 
 
 <!-- wf:local chunk-end -->
 
-Then move the chunk's row in [build-order.md](../log/build-order.md#chunks): to Waiting if something about the chunk is left to check, or to [chunks-done.md](../log/chunks-done.md) if not.
+### The row, the sign-off, and the pull request
+
+Move the chunk's row in [build-order.md](../log/build-order.md#chunks): to Waiting if something about the chunk is left to check, or to [chunks-done.md](../log/chunks-done.md) if not.
 
 - A row moved to the done list gets its "For the client" sentence: what the client can now do, in plain words, with no ids, such as "You can sign in with your work email and password." The client's board posts it when the chunk's stories are built.
 - When the owner checks what is left by hand, ask on a `signoff` page, one check for each `walk` line the trace lists, by its ID, so each is done or objected to with a note.
