@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.76.1: an ask page no longer shows the word null
+
+- **The receipt** of a page with eight or fewer agreements ended in a stray "null", from v0.72.0.
+- **A form** with no required field showed "null" under its fields.
+
+Nothing to do; ask pages pick it up when they are next built.
+
 ### v0.76.0: the chunk end holds only high-risk lines to a proof
 
 Freeorbit's open chunks had 363 acceptance lines proven by nothing, 272 of them low-risk, and closing one chunk's 8 took 7 new tests. Gating every line made the risk tags buy nothing.
