@@ -88,6 +88,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.82.0: chunk start and chunk end as ordered steps
+
+The audit found the order of a chunk's end spread over six paragraphs, and `wf ready` and `wf done` named once, outside both sections.
+
+- **`four-steps.md`** ends chunk start with `npx wf ready chunk`, adds the test-data `stale` run to it, and opens chunk end with its eight steps in order, from the screen gate to `npx wf done chunk` and the pull request.
+- **The `screen-review` skill** starts its chunk-end steps with the rebuild, and gives the built pictures their own step.
+- **The `code-review-ledger` skill** says how a new finding is added, copies outside files after the scan empties its folder, and passes the rubric, threat model, and logs to the `code-reviewer` agent, which has no shell and could not read the kit's defaults.
+
+Run `npx wf docs sync` to take the new `four-steps.md`.
+
 ### v0.81.0: the ask page's steps carry the pictures, and the open
 
 An audit of Freeorbit's sessions found agents loading the `ask-page` skill and still building a frame-against-app page from pictures cropped by hand, with no boxes, and annotating a picture without opening it. The rule was stated, but outside the steps an agent follows.
