@@ -260,6 +260,7 @@ test("pictures: one row of controls, and a review's verdicts stay in view on a p
   assert.match(html, /:root\[data-wide\] \.q-head, :root\[data-wide\] \.q-body > :not\(\.viewer\), :root\[data-wide\] \.fold-line \{ max-width: 780px; \}/, "text keeps the reading width");
   assert.match(html, /@media \(min-width: 1500px\) \{\s*:root\[data-wide\] \.q-body\.has-pic \{ display: grid;/, "the picture sits beside the answer");
   assert.match(html, /class: q\.pictures\.length \|\| q\.compare \? "q-body has-pic" : "q-body"/);
+  assert.match(html, /:root\[data-wide\] \.q:has\(\.q-body\.has-pic\) > \.q-head \{ max-width: none; \}/, "a long question stays on one line above its picture");
   assert.match(html, /:root\[data-layout="pages"\] \.viewer:not\(\.expanded\) > \.verdicts \{ position: sticky; bottom: var\(--foot\);/, "the verdicts stay above the footer");
   assert.match(html, /@media \(max-width: 700px\) \{ :root\[data-layout="pages"\] \.viewer:not\(\.expanded\) > \.verdicts \{ position: static;/, "but never cover a narrow picture");
 });
