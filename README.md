@@ -88,6 +88,11 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.82.2: test-data instructions say each thing once
+
+- **The `design-test-data` skill** keeps its every-run commands at the top; the one-off ones (`prune`, `merge`, `fold`, `rename-ids`) moved to a Maintenance table at the end, and the section on specs from before v0.69.0 is left to the test-data doc.
+- **`test-data-process.md`** points to the skill for the budget commands instead of repeating them.
+
 ### v0.82.1: instructions that had drifted from the kit
 
 The audit's stale and contradicting lines, each checked against the code:

@@ -28,11 +28,8 @@ The project's test-data commands run through `npx wf testdata <command> <area> [
 | `refresh-close <area> <ids>` | `covered`, then `index`, after a refresh is applied; refused when the refresh took one of those stories over budget |
 | `budget <area> [ids] [--check]` | The kit's own: each story's fixtures against its cap, as the `Budget:` block for the designer's prompt; `--check` fails when one is over |
 | `delta <area> <file>` | The kit's own: the designer's return, saved to a file, held to its caps before any of it is applied |
-| `prune <area> [--all] [--write]` | The kit's own: check rows from before v0.69.0 that no code cites, out of the spec; a dry run without `--write` |
-| `merge <folder> [--write]`, `fold <file> <sibling> [--write]` | The kit's own: a flow area's folder as one file, or a small file into a sibling, every row kept and links moved; a dry run without `--write` |
 | `review <area> [--chunk <id> \| --stories <ids>] [--team]` | The kit's own: an ask page's spec of the owner's rules, or with `--team` the team's craft rules, for `npx wf ask page -`; a solo project gets both on the one page |
 | `drop <area> --from <ask id> [--write]` | The kit's own: the rows a review page marked Drop, out of the spec and into the README's Dropped table |
-| `rename-ids [area] [--write]` | The kit's own: qualify old `R-12`, `C-41`, `G-03`, and `D27` IDs with the area's prefix, everywhere they are cited; a dry run without `--write` |
 | `trace [area]` | The kit's own: spec ids no code names, and tests that name none |
 
 ## Every run has a budget
@@ -74,13 +71,6 @@ Run `delta` on what it returns, then ask the story's owner, in one batch as the 
 - **Risk tags.** A line they mark high ends with `Risk: high (<why>)`. A story gets its own `Risk: high (<why>)` line before Acceptance only when every line is high: `npx wf doc:check` warns when more than a third of an area's lines are.
 
 `No questions.` needs nothing.
-
-## A spec written before v0.69.0
-
-Its `| ID | Check |` tables stay readable, and a test that cites `C-GM-41` still names it. Nothing gates, budgets, or reviews those rows, and the designer adds none.
-
-- `npx wf testdata prune <area>` lists the check rows no code cites, for stories already built; `--write` takes them out. Rows with a By or a dispute stay.
-- A rule with no Type takes it from its category where it can. Type the rest by hand as they come up; there is no tagging pass.
 
 ## 2. Draft the rules, once per area
 
@@ -148,6 +138,16 @@ Then ask for the review of its rules: `npx wf testdata review <area> [--chunk <t
 Build the data the current chunk needs with the project's seeded generator, as its test-data doc says: scenarios, generated datasets, and fixtures. Data for a later chunk waits for that chunk. A combined fixture row is expanded by the generator, pairwise when every combination is too many. Input classes are tested once, where their rule lives: one test walks the rows of the table, or a property test covers the class; they need no fixture file and no journey state.
 
 With the design plugin's screen review, a new scenario goes on the area's screen list in the same change: as the Reach of each frame whose state it holds, replacing that frame's `none, <chunk>`, or as a row under "Screens with no frame". `npx wf screens --check` fails a scenario on no row.
+
+## Maintenance, only when asked or when `doc:check` advises it
+
+| Command | Does |
+| --- | --- |
+| `prune <area> [--all] [--write]` | The kit's own: check rows from before v0.69.0 that no code cites, out of the spec; a dry run without `--write` |
+| `merge <folder> [--write]`, `fold <file> <sibling> [--write]` | The kit's own: a flow area's folder as one file, or a small file into a sibling, every row kept and links moved; a dry run without `--write` |
+| `rename-ids [area] [--write]` | The kit's own: qualify old `R-12`, `C-41`, `G-03`, and `D27` IDs with the area's prefix, everywhere they are cited; a dry run without `--write` |
+
+A spec from before v0.69.0 keeps its check tables; the project's test-data doc says how they are read.
 
 ## Do not
 
