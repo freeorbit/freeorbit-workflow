@@ -88,6 +88,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.79.0: a screen review by area
+
+- **`--area <id>`** narrows any `wf screens` run to that area's screens: `--deep --area uplink`, `--chunk 38 --area app`, or `--area uplink` alone for every uplink screen. Several areas are joined by commas.
+- **`wf screens scope --area <id>`** shows that area's part of the light and deep lists, and how long each takes.
+- **A light or deep run narrowed to an area** is accepted like any other, but does not move the state: the other areas' screens stay listed until a whole run.
+
 ### v0.78.0: worktrees share one screen-review record
 
 - **An accept in a worktree counts everywhere.** The accepted pictures and the review's state, light and deep, were kept in each checkout's own `.cache/screens`, so a review accepted in a worktree was lost with it, and a new worktree saw every screen as new. Both now live in the main checkout's `.cache/screens`, which every worktree reads and writes. Each run's pictures stay in its own checkout.
