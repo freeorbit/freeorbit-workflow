@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -13,7 +13,7 @@ import { storiesIn } from "../lib/docs/shape.mjs";
 import { areasOf, briefs, inAreas, migrate, reviewCovers, screens, why } from "../lib/screens/run.mjs";
 import { jobsOf, lookStep, needsDisplay, screensHeadless, sessionSteps, shotsFor, shotsProblem, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
-import { afterDefer, afterRun, readState, recordDir, statePath, writeState } from "../lib/screens/state.mjs";
+import { afterDefer, afterRun, readState, recordDir, statePath, withRecordLock, writeState } from "../lib/screens/state.mjs";
 
 const STRESS = { appearance: "light", corners: "round", density: "compact", textSize: "large" };
 
@@ -315,4 +315,36 @@ test("narrow and stress are a project's own: off until set, and asking for them 
   assert.match(shotsProblem(shotsFor(["--wide", "--stress"], null), plain), /set screens\.stress/);
   const set = merge(DEFAULTS, { screens: { narrow: "800x560", stress: { appearance: "light" } } });
   assert.equal(shotsProblem(shotsFor(["--wide", "--narrow", "--stress"], "deep"), set), null);
+});
+
+test("a project in a folder of its repository keeps its record in that folder of the main checkout; the lock serialises changes", () => {
+  const main = realpathSync(mkdtempSync(join(tmpdir(), "wf-record-")));
+  const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  git(main, "init", "-q", "-b", "main");
+  mkdirSync(join(main, "packages/web"), { recursive: true });
+  writeFileSync(join(main, "packages/web/x"), "x");
+  git(main, "add", ".");
+  git(main, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "one");
+  const tree = join(mkdtempSync(join(tmpdir(), "wf-record-")), "wt");
+  git(main, "worktree", "add", "-q", tree);
+  const want = join(main, "packages/web/.cache/screens");
+  assert.equal(recordDir(join(main, "packages/web")), want, "where it was before, in the project's folder");
+  assert.equal(recordDir(join(tree, "packages/web")), want, "a worktree's project folder shares it");
+
+  const dir = recordDir(main);
+  const order = [];
+  withRecordLock(dir, () => {
+    order.push("outer");
+    assert.ok(existsSync(join(dir, "record.lock")), "held while changing");
+  });
+  assert.ok(!existsSync(join(dir, "record.lock")), "let go after");
+  mkdirSync(join(dir, "record.lock"));
+  utimesSync(join(dir, "record.lock"), new Date(Date.now() - 120_000), new Date(Date.now() - 120_000));
+  withRecordLock(dir, () => order.push("after a stale lock"));
+  assert.deepEqual(order, ["outer", "after a stale lock"]);
+});
+
+test("a light run after the state fell back to the base names its range without cutting the branch name", () => {
+  const state = afterRun({ last: "origin/main", deep: "origin/main", lightRuns: [], deferred: { count: 0, at: null } }, "light", "1234567890abcdef1234567890abcdef12345678");
+  assert.deepEqual(state.lightRuns, ["origin/main..1234567"]);
 });

@@ -96,6 +96,7 @@ Each kit version that changes a project's own files says what to do here. After 
   ```json
   { "screens": { "narrow": "800x560" } }
   ```
+- **From the review of v0.78.0:** a project in a folder of its repository keeps its record in that folder of the main checkout, as before, and not at the repository's top; two worktrees accepting at once no longer lose one's screens; and a light run after the state fell back to `origin/main` names its range in full.
 
 ### v0.79.0: a screen review by area
 
