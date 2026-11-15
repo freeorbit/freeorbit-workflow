@@ -22,7 +22,7 @@ An ask page is one HTML page built from a JSON spec. The person answers in the b
    - A shot from `wf screens` or `wf app` goes through it too, as an `image` with `rect` boxes. A frame against the app is one compare pair, never one joined sheet.
 3. Build the page: `npx wf ask page .cache/view/<id>.json`. It checks the spec, copies the pictures, starts the shared server if none runs, and prints the address.
    - Read every `Grouping:`, `Pictures:`, and `Template:` line it prints. Fix the spec and build again, or say in the chat why not.
-4. Open the address in the browser pane, every time, before anything else. Where the pane's preview start is needed, start `question-pictures` from `.claude/launch.json`: it joins the shared server.
+4. Open the address in the browser pane, every time, before anything else. Where the pane's preview start is needed, start `ask-pages` from `.claude/launch.json`: it joins the shared server.
 5. Run `npx wf ask wait <id>` in the background. Say in one line that the page is open and what it asks; do not repeat the questions in the chat.
    - End the turn there, with no question, buttons, or "Sent it" choice in the chat, and none in a closing next-step box either. `wait` wakes you when the page is sent, and a choice in the chat stays open after the person has answered on the page.
    - A page built again asks again: open it and run `wait` again.

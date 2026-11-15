@@ -624,10 +624,10 @@ test("undo keeps twenty steps back, and redo walks forward again", () => {
 });
 
 test("view setup replaces the old python server and keeps the project's own entries", () => {
-  const old = { version: "0.0.1", configurations: [{ name: "web", port: 5173 }, { name: "question-pictures", runtimeExecutable: "python3", runtimeArgs: ["-m", "http.server", "8765"], port: 8765 }] };
+  const old = { version: "0.0.1", configurations: [{ name: "web", port: 5173 }, { name: "ask-pages", runtimeExecutable: "python3", runtimeArgs: ["-m", "http.server", "8765"], port: 8765 }] };
   const now = JSON.parse(withViewServer(JSON.stringify(old)));
   assert.deepEqual(now.configurations, [{ name: "web", port: 5173 }, SERVER]);
-  const theirs = { version: "0.0.1", configurations: [{ name: "question-pictures", runtimeExecutable: "node", runtimeArgs: ["mine.js"], port: 9000 }] };
+  const theirs = { version: "0.0.1", configurations: [{ name: "ask-pages", runtimeExecutable: "node", runtimeArgs: ["mine.js"], port: 9000 }] };
   assert.deepEqual(JSON.parse(withViewServer(JSON.stringify(theirs))), theirs, "a project's own server of that name is theirs");
 });
 
@@ -872,6 +872,28 @@ test("doctor and view setup read the server entry the same way", async () => {
   assert.equal(kind({ name: SERVER.name, runtimeExecutable: "python3", runtimeArgs: ["-m", "http.server", "8765"] }), "old");
   assert.equal(kind({ name: SERVER.name, runtimeExecutable: "node", runtimeArgs: ["mine.js"] }), "own");
   assert.equal(viewEntry({ configurations: [] }).kind, "none");
+  // The kit's server under another name, or twice, is one entry to tidy, not none: setup once added a second on the same port.
+  const renamed = { ...SERVER, name: "ask-page" };
+  assert.equal(kind(renamed), "untidy");
+  assert.equal(viewEntry({ configurations: [renamed, SERVER] }).kind, "untidy");
+  const web = { name: "web", port: 5173 };
+  const tidy = (configurations) => JSON.parse(withViewServer(JSON.stringify({ version: "0.0.1", configurations }))).configurations;
+  assert.deepEqual(tidy([renamed, web]), [SERVER, web], "renamed in place");
+  assert.deepEqual(tidy([renamed, web, SERVER]), [web, SERVER], "the named one stays, the other goes");
+  assert.deepEqual(tidy([{ ...renamed, runtimeArgs: ["wf", "view", "serve", "--port", "9000"], port: 9000 }]), [{ ...SERVER, runtimeArgs: ["wf", "view", "serve", "--port", "9000"], port: 9000 }], "its options are kept");
+  assert.equal(viewEntry({ configurations: tidy([renamed, SERVER]) }).kind, "kit");
+  // The name before v0.86.0: doctor accepts it for now, and setup renames it.
+  const before = { ...SERVER, name: "question-pictures" };
+  assert.equal(SERVER.name, "ask-pages");
+  assert.deepEqual([viewEntry({ configurations: [before] }).kind, viewEntry({ configurations: [before] }).legacy], ["kit", true]);
+  assert.equal(viewEntry({ configurations: [SERVER] }).legacy, undefined);
+  assert.deepEqual(tidy([web, before]), [web, SERVER], "the old name is renamed in place");
+  assert.deepEqual(tidy([before, renamed]), [SERVER], "the old name is the one kept over another");
+  assert.deepEqual(tidy([{ name: "question-pictures", runtimeExecutable: "python3", runtimeArgs: ["-m", "http.server", "8765"], port: 8765 }]), [SERVER], "the python server under the old name is replaced");
+  const theirOld = { name: "question-pictures", runtimeExecutable: "node", runtimeArgs: ["mine.js"] };
+  assert.deepEqual(tidy([theirOld]), [theirOld, SERVER], "a project's own entry under the old name no longer stands in the way");
+  const own = { name: SERVER.name, runtimeExecutable: "node", runtimeArgs: ["mine.js"] };
+  assert.deepEqual(tidy([own, renamed]), [own, renamed], "a project's own entry of that name is still left alone");
 });
 
 test("blocks: text is parsed into nodes, never HTML", async () => {

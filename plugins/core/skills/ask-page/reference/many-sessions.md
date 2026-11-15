@@ -1,6 +1,6 @@
 # Many sessions at once
 
-How one question-pictures server serves every project and session, for the `ask-page` skill.
+How one ask-pages server serves every project and session, for the `ask-page` skill.
 
 One server serves every project, worktree, and session on the machine, so asks never clash.
 
