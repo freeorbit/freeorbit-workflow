@@ -135,9 +135,13 @@ test("the chunk end holds high-risk lines to a proof and counts the low-risk one
   assert.deepEqual(ids(found.proven), ["GM-06.4"]);
   const lines = chunkLines(found).join("\n");
   assert.match(lines, /low-risk lines no test cites, not gated: 1 \(--all lists them\)/);
-  assert.match(lines, /high-risk lines and rules proven by nothing: 3/);
+  assert.match(lines, /held by the chunk end and proven by nothing: 3/);
   assert.ok(!lines.includes("Low, no test"));
   assert.match(chunkLines(found, { all: true }).join("\n"), /not gated: 1\n {4}GM-06\.1 {2}Low, no test/);
   const all = run(merge(config, { testdata: { chunkScope: "all" } }));
   assert.deepEqual([ids(all.unproven), ids(all.low)], [["GM-06.1", "GM-06.2", "GM-06.5", "GM-07.1"], []]);
+  const typo = merge(config, { testdata: { chunkScope: "All" } });
+  assert.deepEqual(ids(run(typo).low), [], "a mistyped scope never relaxes the gate");
+  const { testdataProblems } = await import("../lib/testdata.mjs");
+  assert.ok(testdataProblems({ config: typo, tracked: [], files: () => "" }).some((p) => /testdata.chunkScope "All" is not high or all/.test(p)));
 });

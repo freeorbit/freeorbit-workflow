@@ -191,6 +191,11 @@ test("the chunk end carries the count of low-risk lines with no test into wf don
   const io = { read: (p) => (p.endsWith("test-data/README.md") ? "# Spec" : ""), wf: () => ({ status: 0, stdout: "  low-risk lines no test cites, not gated: 78 (--all lists them)\n" }) };
   const step = steps("/nowhere", cfg, "chunk", "done", "38j", io).find((s) => Array.isArray(s) && s[0].startsWith("every acceptance line"));
   assert.deepEqual(step[1](), { status: "OK", note: "78 low-risk lines have no test, not gated" });
+  const one = { ...io, wf: () => ({ status: 0, stdout: "  low-risk lines no test cites, not gated: 1\n" }) };
+  assert.equal(steps("/nowhere", cfg, "chunk", "done", "38j", one).find((s) => Array.isArray(s) && s[0].startsWith("every acceptance line"))[1]().note, "1 low-risk line has no test, not gated");
+  const warn = merge(cfg, { testdata: { chunkChecks: "warn" } });
+  const held = { ...io, wf: () => ({ status: 1, stdout: "  low-risk lines no test cites, not gated: 78 (--all lists them)\n  held by the chunk end and proven by nothing: 23\n" }) };
+  assert.match(steps("/nowhere", warn, "chunk", "done", "38j", held).find((s) => Array.isArray(s) && s[0].startsWith("every acceptance line"))[1]().note, /is warn: .*; 78 low-risk lines have no test, not gated$/);
 });
 
 test("a chunk-end trace that could not run fails, in warn mode too, and says why", async () => {
