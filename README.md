@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.78.0: worktrees share one screen-review record
+
+- **An accept in a worktree counts everywhere.** The accepted pictures and the review's state, light and deep, were kept in each checkout's own `.cache/screens`, so a review accepted in a worktree was lost with it, and a new worktree saw every screen as new. Both now live in the main checkout's `.cache/screens`, which every worktree reads and writes. Each run's pictures stay in its own checkout.
+- **A run recorded at a commit since removed**, such as a deleted worktree's branch, counts from `origin/main` instead of failing.
+
+Nothing to move: the main checkout's record is the one already there. A worktree's own old record is no longer read.
+
 ### v0.77.0: a screen review takes Default only
 
 - **Light, deep, and named screens take Default only**, the app's window as a new install shows it. Deep took four pictures a screen, Narrow and the stress look of both too; named screens took Default and the narrow picture in the stress look.

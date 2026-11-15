@@ -74,7 +74,7 @@ A screen is listed to read when its app pictures **or its frame** changed since 
 - **Light**: screens a changed file reaches in one place only, such as its own page, its route, or its frame. Counted from the last run, light or deep.
 - **Deep**: screens a changed file reaches in more than one place, such as a shared component, the shell, the tokens, or the shared frame styles. Counted from the last deep run, with that span's light screens too.
 - A screen on both is on the deep list only. A backend change can still change words on a screen; if one did, name those screens.
-- The state lives on this computer in `.cache/screens/state.json`, as the code review keeps its ledger header.
+- The state lives on this computer in the main checkout's `.cache/screens/state.json`, with the accepted pictures. Every worktree reads and writes that one record, so a run accepted in a worktree counts everywhere and outlives it.
 
 ## While building
 
@@ -113,7 +113,7 @@ After the code review and the fixes for its findings, when UI files or frames ch
 8. **Accept** only once every flagged screen was read and its faults fixed: `npx wf screens --accept`.
    - It accepts only the last run's screens, and only the pictures taken in it.
    - A light run moves the last run and adds its range. A deep run moves both and clears the light runs and any deferral. A run with a screen that did not shoot moves neither.
-   - Accepted hashes stay on this computer, so on a new one every screen is new.
+   - Accepted hashes stay on this computer, in the main checkout, so on a new computer every screen is new.
    - While the board shows built screens, it also copies each screen's Default picture to `design.built`. Commit those with the chunk, so the board shows them once the story is Built.
 
 The designer can also ask for a review at any time. Ask the same question, light or deep, without defer. `npx wf screens --sheets` puts the listed pictures six to a sheet, for a quick look by hand.
