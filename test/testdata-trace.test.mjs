@@ -60,6 +60,8 @@ test("the trace: spec rows no code names, and tests that name no row and no stor
 });
 
 const STORIES = "docs/plugins/uplink/user-stories.md";
+// Every line held, so these tests show what a proof is; the risk-aware gate has its own test below.
+const strict = merge(config, { testdata: { chunkScope: "all" } });
 const story = (id, lines) => `### ${id}. A story\n\nAs a user, I want it.\n\nAcceptance:\n\n${lines.map((l) => `- ${l}`).join("\n")}\n`;
 
 test("a chunk's acceptance lines and rules: proven, walk, left to a later chunk, disputed, or proven by nothing; check rows are counted, never gated", async () => {
@@ -75,7 +77,7 @@ test("a chunk's acceptance lines and rules: proven, walk, left to a later chunk,
     ].join("\n"),
     "crates/a/src/lib.rs": "#[test]\n// GM-06.1, C-GM-01\nfn shown() {}\n",
   };
-  const found = chunkChecks({ config, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" }, "37d", ["GM-06", "GM-07", "GM-08"], { open: ["37d", "CH-14", "CH-37a"], done: ["19j"] });
+  const found = chunkChecks({ config: strict, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" }, "37d", ["GM-06", "GM-07", "GM-08"], { open: ["37d", "CH-14", "CH-37a"], done: ["19j"] });
   const ids = (list) => list.map((each) => each.id);
   assert.deepEqual(ids(found.proven), ["GM-06.1", "GM-06.5"], "a walk signed off in an earlier chunk is not asked again; a removed line is no line");
   assert.deepEqual(ids(found.walk), ["GM-07.1"]);
@@ -100,7 +102,7 @@ test("a By that names no open chunk, or walked a chunk not done, proves nothing;
     "tools/testdata/fixtures/a.json": '{"proves": "GM-06.5"}',
     "tests/flow.spec.ts": "test('x', () => {}) // GM-06.6\n",
   };
-  const ctx = { config, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" };
+  const ctx = { config: strict, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" };
   const found = chunkChecks(ctx, "37d", ["GM-06"], { open: ["37d", "CH-01-fe"], done: ["19j"] });
   assert.deepEqual(found.proven.map((each) => each.id), ["GM-06.6"]);
   assert.deepEqual(found.later.map((each) => each.id), ["GM-06.3"]);
@@ -111,7 +113,31 @@ test("a By that names no open chunk, or walked a chunk not done, proves nothing;
     ["GM-06.5", ""],
   ]);
   const order = "## Chunks\n\n| Chunk | Status | Stories |\n| --- | --- | --- |\n| 37d. Catalog | In progress | GM-06 |\n";
-  const read = (p) => (p === config.buildOrder.file ? order : "");
+  const read = (p) => (p === strict.buildOrder.file ? order : "");
   assert.equal(chunkTrace(ctx, "37d", read).found.chunk, "37d");
   assert.deepEqual(chunkTrace(ctx, "99z", read), { noRow: true });
+});
+
+test("the chunk end holds high-risk lines to a proof and counts the low-risk ones; chunkScope all holds every line; a proof row is honoured for either", async () => {
+  const { chunkChecks, chunkLines } = await import("../lib/testdata-trace.mjs");
+  const risky = (id, lines, risk = "") => `### ${id}. A story\n\nAs a user, I want it.\n\n${risk ? `${risk}\n\n` : ""}Acceptance:\n\n${lines.map((l) => `- ${l}`).join("\n")}\n`;
+  const texts = {
+    [STORIES]: [risky("GM-06", ["Low, no test", "High, no test. Risk: high (privacy)", "Low, walked by hand", "Low, cited", "Low, a row that proves nothing"]), risky("GM-07", ["Whole story high"], "Risk: high (money)")].join("\n"),
+    [`${DIR}/flow.md`]: ["| Line | By |", "| --- | --- |", "| GM-06.3 | walk |", "| GM-06.5 | CH-99 |"].join("\n"),
+    "crates/a/src/lib.rs": "#[test]\n// GM-06.4\nfn cited() {}\n",
+  };
+  const run = (cfg) => chunkChecks({ config: cfg, tracked: Object.keys(texts), files: (p) => texts[p] ?? "" }, "37d", ["GM-06", "GM-07"], { open: ["37d"], done: [] });
+  const ids = (list) => list.map((each) => each.id);
+  const found = run(config);
+  assert.deepEqual(ids(found.unproven), ["GM-06.2", "GM-06.5", "GM-07.1"], "a tagged line, a line of a story tagged whole, and a row that names no open chunk");
+  assert.deepEqual(ids(found.low), ["GM-06.1"]);
+  assert.deepEqual(ids(found.walk), ["GM-06.3"], "a walk row is honoured for a low-risk line");
+  assert.deepEqual(ids(found.proven), ["GM-06.4"]);
+  const lines = chunkLines(found).join("\n");
+  assert.match(lines, /low-risk lines no test cites, not gated: 1 \(--all lists them\)/);
+  assert.match(lines, /high-risk lines and rules proven by nothing: 3/);
+  assert.ok(!lines.includes("Low, no test"));
+  assert.match(chunkLines(found, { all: true }).join("\n"), /not gated: 1\n {4}GM-06\.1 {2}Low, no test/);
+  const all = run(merge(config, { testdata: { chunkScope: "all" } }));
+  assert.deepEqual([ids(all.unproven), ids(all.low)], [["GM-06.1", "GM-06.2", "GM-06.5", "GM-07.1"], []]);
 });

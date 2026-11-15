@@ -88,6 +88,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.76.0: the chunk end holds only high-risk lines to a proof
+
+Freeorbit's open chunks had 363 acceptance lines proven by nothing, 272 of them low-risk, and closing one chunk's 8 took 7 new tests. Gating every line made the risk tags buy nothing.
+
+- **`testdata.chunkScope`**, `"high"` by default: `wf done chunk` waits on the lines tagged `Risk: high`, every line of a story tagged high as a whole, and the product and safety rules, as before. `"all"` holds every line, as v0.69.0 to v0.75.0 did.
+- **What is lost:** a low-risk line is no longer guaranteed a test. `npx wf testdata trace --chunk <id>` prints their count, `--all` lists them, and `wf done chunk` carries the count.
+- **A proof row is honoured for any line.** A low-risk line whose row says `walk` still goes on the sign-off page, and a row that proves nothing still fails. The low-risk lines with no test and no row get one line of text on the sign-off page, with no check each.
+- **What changes in a project.** Run `npx wf docs sync`. Nothing to set for the new gate; set `testdata.chunkScope` to `"all"` to keep the old one. A project that eased in with `testdata.chunkChecks: "warn"` can go back to `"fail"` once its high-risk lines are proven.
+
 ### v0.75.0: the ask server restarts itself after an upgrade, and a test for new parts
 
 - **No more `npx wf view stop` after an upgrade.** `wf ask page`, `wait`, and `wf view serve` now stop a question-pictures server older than the kit and start it again on the kit. A newer server is left alone, so two projects on different kit versions never take turns.

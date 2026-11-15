@@ -13,7 +13,7 @@
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf id <ID> [--all]                 where an ID is defined, and every place that cites it
 //   wf testdata trace [area] [--all]   spec rows no code names, and tests that name no row or story
-//   wf testdata trace --chunk <id>     a chunk's checks: proven, walk, later, disputed, or proven by nothing
+//   wf testdata trace --chunk <id> [--all]   a chunk's lines and rules: proven, walk, later, disputed, or proven by nothing
 //   wf testdata rename-ids [area] [--write] [--all]   qualify old IDs with their area: R-12 to R-GM-12
 //   wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]
 //   wf testdata drop <area> <ID>... --why "<why>" | --from <ask id> [--write]   rows the owner dropped   an ask page of the owner's rows, or the team's
@@ -170,7 +170,7 @@ const commands = {
 
   async testdata([name, ...args]) {
     if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id>\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata drop <area> <ID>... --why \"<why>\" | --from <ask id> [--write]\n       wf testdata budget <area> [story ids] [--check]\n       wf testdata delta <area> <file>\n       wf testdata prune <area> [--all] [--write]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
+      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id> [--all]\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata drop <area> <ID>... --why \"<why>\" | --from <ask id> [--write]\n       wf testdata budget <area> [story ids] [--check]\n       wf testdata delta <area> <file>\n       wf testdata prune <area> [--all] [--write]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
       return 2;
     }
     const root = projectRoot();
@@ -250,7 +250,7 @@ const commands = {
           console.log(`No row for ${chunk || "a chunk"} in the build order or the done list; name it as the row does, such as CH-12 or 37d.`);
           return 2;
         }
-        for (const line of chunkLines(found)) console.log(line);
+        for (const line of chunkLines(found, { all: args.includes("--all") })) console.log(line);
         return found.unproven.length ? 1 : 0;
       }
       const area = args.find((a) => !a.startsWith("--")) ?? null;

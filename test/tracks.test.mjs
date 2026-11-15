@@ -173,7 +173,7 @@ test("a chunk ends only when its acceptance lines are proven, walked, left to a 
   const run = (mode, status) => {
     const cfg = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], testdata: { chunkChecks: mode } });
     const io = { read: (p) => (p === "docs/plugins/uplink/test-data/README.md" ? "# Spec" : ""), wf: (args) => ({ status: args.join(" ") === "testdata trace --chunk 37d" ? status : 0 }) };
-    const step = steps("/nowhere", cfg, "chunk", "done", "37d", io).find((s) => Array.isArray(s) && s[0].startsWith("every acceptance line of the chunk"));
+    const step = steps("/nowhere", cfg, "chunk", "done", "37d", io).find((s) => Array.isArray(s) && s[0].startsWith("every acceptance line"));
     return step[1]();
   };
   assert.equal(run("fail", 0).status, "OK");
@@ -181,6 +181,16 @@ test("a chunk ends only when its acceptance lines are proven, walked, left to a 
   assert.match(run("warn", 1).note, /is warn/);
   assert.equal(run("warn", 1).status, "OK");
   assert.equal(run("off", 1).status, "SKIP");
+});
+
+test("the chunk end carries the count of low-risk lines with no test into wf done", async () => {
+  const { steps } = await import("../lib/tracks.mjs");
+  const { merge } = await import("../lib/config/config.mjs");
+  const { DEFAULTS } = await import("../lib/config/defaults.mjs");
+  const cfg = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }] });
+  const io = { read: (p) => (p.endsWith("test-data/README.md") ? "# Spec" : ""), wf: () => ({ status: 0, stdout: "  low-risk lines no test cites, not gated: 78 (--all lists them)\n" }) };
+  const step = steps("/nowhere", cfg, "chunk", "done", "38j", io).find((s) => Array.isArray(s) && s[0].startsWith("every acceptance line"));
+  assert.deepEqual(step[1](), { status: "OK", note: "78 low-risk lines have no test, not gated" });
 });
 
 test("a chunk-end trace that could not run fails, in warn mode too, and says why", async () => {

@@ -28,7 +28,8 @@ const SPEC = {
   [`${DIR}/glossary.md`]: "| Term | Plain meaning |\n| --- | --- |\n| Erasure | Asking a company to delete what it holds about you |",
   "docs/plugins/uplink/user-stories.md": "### GM-07. Move mail\n\nAcceptance:\n- moved\n",
 };
-const STORY_FILES = { stories: { files: ["docs/plugins/*/user-stories.md"] } };
+// Every line held, so these tests show what a proof is; the risk-aware gate has its own test.
+const STORY_FILES = { stories: { files: ["docs/plugins/*/user-stories.md"] }, testdata: { chunkScope: "all" } };
 
 test("the owner's rules are product, safety, and any with no Type; a plain line holds no code names", () => {
   const row = (type) => ({ kind: "rule", type });
