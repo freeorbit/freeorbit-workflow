@@ -112,8 +112,8 @@ test("a screen is read again when a picture taken now or its frame changed", () 
 
 test("each ticked viewport is shot as a new install shows it, and stressed when ticked", () => {
   assert.deepEqual(shotsFor([], "light"), ["wide-default"]);
-  assert.deepEqual(shotsFor([], "deep"), ["wide-default", "wide-stress", "narrow-default", "narrow-stress"]);
-  assert.deepEqual(shotsFor([], null), ["wide-default", "narrow-stress"]);
+  assert.deepEqual(shotsFor([], "deep"), ["wide-default"], "Default only, unless asked");
+  assert.deepEqual(shotsFor([], null), ["wide-default"]);
   assert.deepEqual(shotsFor(["--wide"], "deep"), ["wide-default"], "no stress, only what a new install shows");
   assert.deepEqual(shotsFor(["--narrow", "--stress"], "light"), ["narrow-default", "narrow-stress"]);
   assert.deepEqual(shotsFor(["--wide", "--narrow", "--stress"], "light").length, 4);
