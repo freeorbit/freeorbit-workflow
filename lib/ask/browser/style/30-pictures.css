@@ -28,7 +28,9 @@
 @media (min-width: 1500px) {
   :root[data-wide] .q-body.has-pic { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); column-gap: 24px; align-items: start; }
   :root[data-wide] .q-body.has-pic > * { grid-column: 2; }
-  :root[data-wide] .q-body.has-pic > .viewer { grid-column: 1; grid-row: 1 / span 40; --room: calc(100vh - var(--head) - var(--foot) - 170px); }
+  :root[data-wide] .q-body.has-pic > .viewer { grid-column: 1; grid-row: 1 / span 40; --room: calc(100vh - var(--head) - var(--foot) - 215px); }
+  /* The question's own line runs the page's width there, so a long one stays on one line above the picture. */
+  :root[data-wide] .q:has(.q-body.has-pic) > .q-head { max-width: none; }
   :root[data-wide] .q-body.has-pic > .viewer:not(.expanded) { --fit-h: max(260px, calc(var(--room) - 60px)); }
   :root[data-wide] .q-body.has-pic > .viewer:not(.expanded) .stage-wrap { max-height: max(320px, var(--room)); }
 }

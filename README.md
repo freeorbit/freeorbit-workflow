@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.85.1: a picture beside its answer stays above the footer
+
+Found on a real page: with a two-line question above it, the bottom of a picture beside its answer ran under the footer.
+
+- The picture leaves more room for what is above it, and on a wide window the question's own line runs the page's width, so a long one stays on one line.
+- Nothing to change in a project.
+
 ### v0.85.0: ask pages use a wide window
 
 On a wide window an ask page kept a 780 px column, so a picture sat in a small box that scrolled both ways.
