@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -12,7 +13,7 @@ import { storiesIn } from "../lib/docs/shape.mjs";
 import { briefs, migrate, reviewCovers, why } from "../lib/screens/run.mjs";
 import { jobsOf, lookStep, needsDisplay, screensHeadless, sessionSteps, shotsFor, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
-import { afterDefer, afterRun, readState } from "../lib/screens/state.mjs";
+import { afterDefer, afterRun, readState, recordDir, statePath, writeState } from "../lib/screens/state.mjs";
 
 const STRESS = { appearance: "light", corners: "round", density: "compact", textSize: "large" };
 
@@ -247,4 +248,26 @@ test("a chunk-end review and a build-time check each take their own headless set
   assert.equal(screensHeadless(atlas, null), false, "named screens, a chunk, or all");
   assert.equal(screensHeadless(config(true, { build: false }), "deep"), true);
   assert.equal(screensHeadless(config(true, { build: false }), null), false);
+});
+
+test("the review's record is the main checkout's, shared by its worktrees, and a removed commit counts from the base", () => {
+  const main = mkdtempSync(join(tmpdir(), "wf-record-"));
+  const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  git(main, "init", "-q", "-b", "main");
+  git(main, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "one");
+  const tree = join(mkdtempSync(join(tmpdir(), "wf-record-")), "wt");
+  git(main, "worktree", "add", "-q", tree);
+  const shared = join(realpathSync(main), ".cache/screens");
+  assert.equal(recordDir(main), shared);
+  assert.equal(recordDir(tree), shared, "a worktree reads and writes the main checkout's record");
+  assert.equal(statePath(tree), join(shared, "state.json"));
+  const outside = mkdtempSync(join(tmpdir(), "wf-record-"));
+  assert.equal(recordDir(outside), join(outside, ".cache/screens"), "outside git, the project's own");
+
+  const head = git(tree, "rev-parse", "HEAD");
+  writeState({ last: head, deep: "0123456789abcdef0123456789abcdef01234567", lightRuns: [], deferred: { count: 0, at: null } }, statePath(tree));
+  assert.ok(!readdirSync(shared).some((f) => f.endsWith(".part")), "written whole, through a file beside it");
+  const state = readState(statePath(main), "origin/main", main);
+  assert.equal(state.last, head, "a commit the repository has stays");
+  assert.equal(state.deep, "origin/main", "a commit since removed counts from the base");
 });
