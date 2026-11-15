@@ -88,6 +88,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.77.0: a screen review takes Default only
+
+- **Light, deep, and named screens take Default only**, the app's window as a new install shows it. Deep took four pictures a screen, Narrow and the stress look of both too; named screens took Default and the narrow picture in the stress look.
+- **The skill asks one question**, light, deep, or defer, and no longer asks which pictures. When the designer wants another picture, name every viewport to take: `--wide --narrow` for both, with `--stress` for the stress look too.
+
+A screen's narrow and stress pictures stay accepted, and are not taken again unless asked for.
+
 ### v0.76.2: a narrow whole-page picture shows each thing once
 
 The tauri kind's narrow pictures are shot a window at a time and joined. Freeorbit's screen readers flagged about 12 screens for three things the joining drew and the app does not:

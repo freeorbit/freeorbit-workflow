@@ -2,9 +2,9 @@
 name: screen-review
 description: >-
   The one screen check. A run is light (screens one change reaches on its
-  own), deep (also screens reached through shared code), or deferred, and takes
-  the pictures the designer ticks: Default (wide, beside the frame), Narrow (the
-  whole page), and the Stress look on top of either. A blind screen-reader
+  own), deep (also screens reached through shared code), or deferred, and
+  takes Default: the app's window beside its frame, as a new install shows it.
+  It takes Narrow (the whole page) and the Stress look only when asked. A blind screen-reader
   agent names each difference from the frame and each fault (clipping,
   wrapping, things out of view), and the main session reads every flag. Use
   while building a screen, at chunk end after the code review when UI files or
@@ -20,7 +20,7 @@ A run shoots on one app a core, up to `screens.jobsMax`, each on its own virtual
 
 A web app's browser follows `app.web.headless` unless `screens.headless` says otherwise: `review` for a chunk-end `--light` or `--deep` run, `build` for named screens, `--chunk`, or `--all`. A project that watches each build-time check but not the chunk-end review sets `{ "review": true, "build": false }`; a headed run on more than one app shoots on virtual displays, so `--jobs 1` keeps it on the person's screen.
 
-- Each screen takes one app session a viewport: the Reach is walked once, the default picture taken, then the stress look put on the same page and taken again.
+- Each screen takes one app session a viewport: the Reach is walked once and the picture taken. With `--stress`, the stress look is then put on the same page and taken again.
 - Each app builds a scenario once for the run, and copies it for every start.
 
 ## The screen list
@@ -52,11 +52,11 @@ The project's four-steps doc runs the gate at chunk start and chunk end. A Reach
 
 ## The pictures
 
-Three boxes, two viewports and a look. Each ticked viewport is shot as a new install shows it; with Stress ticked, in the stress look too. So up to four pictures a screen.
+Each run takes Default, as a new install shows it. Narrow and the stress look are taken only when the designer asks.
 
 - **Default**: the app's own window, beside its frame.
-- **Narrow**: `screens.narrow`, the whole page scrolled and joined.
-- **Stress look**: `screens.stress`, for each ticked viewport: the choices most likely to break, together.
+- **Narrow**: `screens.narrow`, the whole page scrolled and joined. Only when asked for. The flags name every viewport to take: `--wide --narrow` for both, `--narrow` alone for Narrow only.
+- **Stress look**: `screens.stress`, the choices most likely to break, together. Only when the designer asks for it: add `--stress` with the viewports, such as `--wide --stress`.
 
 **Reading a pair.** The scenario is the closest one, not a copy of the frame's data.
 
@@ -89,41 +89,38 @@ npx wf screens <screen>
 After the code review and the fixes for its findings, when UI files or frames changed. Never start it while the code review runs, because a fix can change a screen, and rebuild the app first so the pictures are of the fixed code:
 
 1. **Scope.** Run `npx wf screens scope`. Both lists empty: stop here.
-2. **Ask the designer, first question:** light, deep, or defer.
+2. **Ask the designer:** light, deep, or defer.
    - Show both lists' counts and times, the light runs waiting, and any deferral.
    - Recommend light. Recommend deep when the light list is empty and the deep one is not, or when two or more light runs are waiting.
    - Defer runs `npx wf screens --defer` and shoots nothing. Both lists keep growing until a run.
-3. **Ask the designer, second question:** which pictures, as checkboxes: Default, Narrow, Stress look.
-   - Light starts from Default. Deep starts from all three.
-   - Say which are the defaults in the option labels, and that Stress adds to the ticked viewports. Stress with no viewport ticked needs asking again.
-4. **Run** `npx wf screens --light` or `--deep`, with the ticked boxes: `--wide` for Default, `--narrow`, and `--stress`.
+3. **Run** `npx wf screens --light` or `--deep`. Do not ask which pictures: both take Default. Only when the designer asks for other pictures, name every viewport to take, such as `--wide --narrow`, and add `--stress` for the stress look.
    - `--chunk N`, `--all`, and names still check just those screens, without moving the state.
    - `--light` and `--deep` refuse until the code review ledger has reviewed or deferred at HEAD. `--force` is for a run the designer asks for outside chunk end.
-5. **Triage.** Run `npx wf screens --brief`. It writes one brief per eight listed screens and prints the reader's model. Start one `screen-reader` agent a brief, all at once, on that model, each with the prompt `Brief: <path>` and nothing else. Each returns one line a screen: `same`, `differs`, `fault`, or `could not read`.
-6. **Look.** Read in full every pair a reader flagged, every *frame changed* pair, and every picture a reader could not read. Enlarge a doubtful spot: crop and scale into `.cache/view/`, since the image reader caches by path.
+4. **Triage.** Run `npx wf screens --brief`. It writes one brief per eight listed screens and prints the reader's model. Start one `screen-reader` agent a brief, all at once, on that model, each with the prompt `Brief: <path>` and nothing else. Each returns one line a screen: `same`, `differs`, `fault`, or `could not read`.
+5. **Look.** Read in full every pair a reader flagged, every *frame changed* pair, and every picture a reader could not read. Enlarge a doubtful spot: crop and scale into `.cache/view/`, since the image reader caches by path.
 
    ```bash
    magick <picture> -crop 700x300+500+400 +repage -scale 300% .cache/view/crop-1.png
    ```
 
    A reader's flag that is not there in full is dropped. Name any you dropped in the report.
-7. **Fix or record.**
+6. **Fix or record.**
    - Fix a difference or fault now, and run those screens again.
    - A difference the designer accepts goes in the frame or in the decisions log, never only in the code.
    - To ask the designer about differences, use a `compare` ask page, one pair a difference, from `npx wf design annotate --ask` with an amber `drift` or red `bug` box, and the choice each needs as its question. Without a browser pane, send the annotate sheet first, and name where to look.
    - A fault you do not fix goes in the open questions log.
-8. **Report.** Tell the designer each screen read, with a line on what you saw, which lines came from a reader only, and what you did not read at full size. Give the reached count from the run's last line, and name any frame still waiting on this chunk.
-9. **Accept** only once every flagged screen was read and its faults fixed: `npx wf screens --accept`.
+7. **Report.** Tell the designer each screen read, with a line on what you saw, which lines came from a reader only, and what you did not read at full size. Give the reached count from the run's last line, and name any frame still waiting on this chunk.
+8. **Accept** only once every flagged screen was read and its faults fixed: `npx wf screens --accept`.
    - It accepts only the last run's screens, and only the pictures taken in it.
    - A light run moves the last run and adds its range. A deep run moves both and clears the light runs and any deferral. A run with a screen that did not shoot moves neither.
    - Accepted hashes stay on this computer, so on a new one every screen is new.
    - While the board shows built screens, it also copies each screen's Default picture to `design.built`. Commit those with the chunk, so the board shows them once the story is Built.
 
-The designer can also ask for a review at any time. Ask the same two questions, without defer. `npx wf screens --sheets` puts the listed pictures six to a sheet, for a quick look by hand.
+The designer can also ask for a review at any time. Ask the same question, light or deep, without defer. `npx wf screens --sheets` puts the listed pictures six to a sheet, for a quick look by hand.
 
 ## Do not
 
 - Do not accept a run whose flags you have not read.
 - Do not run every screen for a change that cannot reach them.
-- Do not defer without the designer's answer to the first question.
+- Do not defer without the designer's answer.
 - Do not change a frame to match the code without the designer's yes.
