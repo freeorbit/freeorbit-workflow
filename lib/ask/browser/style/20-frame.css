@@ -53,6 +53,11 @@ header.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srg
 .shell { max-width: 1280px; margin: 0 auto; padding: 0 16px calc(var(--foot) + 40px); display: grid; grid-template-columns: minmax(0, 1fr); justify-content: center; gap: 40px; }
 @media (min-width: 1180px) { .shell { grid-template-columns: 232px minmax(0, 780px); } }
 main.content { padding-top: 24px; min-width: 0; width: 100%; max-width: 780px; margin: 0 auto; }
+/* A page with a picture or a block takes the window's width. Its questions and text keep the reading width, so only what gains from the room uses it. */
+:root[data-wide] .shell, :root[data-wide] .top .row, :root[data-wide] .commit .row { max-width: 2080px; }
+:root[data-wide] main.content { max-width: none; }
+@media (min-width: 1180px) { :root[data-wide] .shell { grid-template-columns: 232px minmax(0, 1fr); } }
+:root[data-wide] .q-head, :root[data-wide] .q-body > :not(.viewer), :root[data-wide] .fold-line { max-width: 780px; }
 nav.rail { display: none; }
 @media (min-width: 1180px) { nav.rail { display: block; position: sticky; top: calc(var(--head) + 2px); align-self: start; padding: 24px 0; max-height: calc(100vh - var(--head) - var(--foot)); overflow: auto; } }
 .outline .g { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 10px 4px; }
@@ -107,7 +112,8 @@ nav.rail { display: none; }
 /* A table page has its rows to list, so no rail of ids beside it, and it takes the window's width. */
 :root[data-layout="table"] .shell { grid-template-columns: minmax(0, 1fr); }
 :root[data-layout="table"] nav.rail { display: none; }
-:root[data-layout="table"] main.content { max-width: 1240px; }
+:root[data-layout="table"] .shell, :root[data-layout="table"] .top .row, :root[data-layout="table"] .commit .row { max-width: 1632px; }
+:root[data-layout="table"] main.content { max-width: 1600px; }
 .opt.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
 .opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mark { position: relative; width: 16px; height: 16px; margin-top: 2px; border: 1.5px solid var(--line-3); border-radius: 50%; background: var(--panel); transition: border-color 160ms var(--ease), background-color 160ms var(--ease); }

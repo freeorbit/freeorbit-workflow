@@ -14,7 +14,8 @@
 /* A review's page takes the window's width: the strip lists its frames, so no rail. Its verdicts stay in view above the footer while the picture scrolls. */
 :root[data-layout="pages"] .shell { grid-template-columns: minmax(0, 1fr); }
 :root[data-layout="pages"] nav.rail { display: none; }
-:root[data-layout="pages"] main.content { max-width: 1240px; }
+:root[data-layout="pages"] .shell, :root[data-layout="pages"] .top .row, :root[data-layout="pages"] .commit .row { max-width: 2112px; }
+:root[data-layout="pages"] main.content { max-width: 2080px; }
 :root[data-layout="pages"] .viewer:not(.expanded) { overflow: visible; --fit-h: max(240px, calc(100vh - 380px)); }
 :root[data-layout="pages"] .viewer:not(.expanded) > .vbar { border-radius: var(--r-card) var(--r-card) 0 0; }
 :root[data-layout="pages"] .viewer:not(.expanded) > .verdicts { position: sticky; bottom: var(--foot); z-index: 5; background: var(--panel); border-radius: 0 0 var(--r-card) var(--r-card); box-shadow: 0 -6px 12px -8px rgb(0 0 0 / 30%); }
@@ -23,6 +24,14 @@
 .stage-wrap { background: var(--backdrop); padding: 14px; overflow: auto; max-height: 76vh; }
 /* Beside a question's answer a picture fits about a third of the window, so the answer is on the same screen; a review's pages and Expand keep their room. */
 :root:not([data-layout="pages"]) .viewer:not(.expanded) { --fit-h: max(36vh, 260px); }
+/* On a wide window the picture sits beside the answer, so both are on one screen and Fit takes the window's height: nothing scrolls in a small box. */
+@media (min-width: 1500px) {
+  :root[data-wide] .q-body.has-pic { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); column-gap: 24px; align-items: start; }
+  :root[data-wide] .q-body.has-pic > * { grid-column: 2; }
+  :root[data-wide] .q-body.has-pic > .viewer { grid-column: 1; grid-row: 1 / span 40; --room: calc(100vh - var(--head) - var(--foot) - 170px); }
+  :root[data-wide] .q-body.has-pic > .viewer:not(.expanded) { --fit-h: max(260px, calc(var(--room) - 60px)); }
+  :root[data-wide] .q-body.has-pic > .viewer:not(.expanded) .stage-wrap { max-height: max(320px, var(--room)); }
+}
 .stage-wrap.pannable { cursor: grab; }
 .stage-wrap.panning { cursor: grabbing; user-select: none; }
 /* Expanded: the viewer fills a modal dialog over the whole window, and Fit uses its height. */

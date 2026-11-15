@@ -88,6 +88,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.85.0: ask pages use a wide window
+
+On a wide window an ask page kept a 780 px column, so a picture sat in a small box that scrolled both ways.
+
+- **A page with a picture or a block takes the window's width**, up to 2080 px. Its questions, options, and text keep the 780 px reading width; tables, charts, and pictures get the room. A page of plain questions is as it was.
+- **On a window 1500 px or wider, a question's picture sits beside its answer**: the picture on the left, the options on the right. Fit then takes the window's height in place of a third of it, so a 1280×800 picture shows whole with nothing to scroll.
+- **Paged reviews** (`compare`, `frame-review`, `storyboard`) go up to 2080 px in place of 1240, and **table pages** up to 1600.
+- Narrower windows are unchanged. Nothing to change in a project or a spec.
+
 ### v0.84.0: a screen review can accept part of a run
 
 A run where some screens wait on a fix no longer holds back the ones that are fine.

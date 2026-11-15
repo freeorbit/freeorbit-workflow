@@ -80,7 +80,7 @@ Every template, question type, and block is made for one kind of question. Pick 
 
 ## Room and wording
 
-- **Room.** Options with no description sit in one row; three or more questions with the same described options describe them once above. A picture beside an answer fits a third of the window, and a table page takes the window's width.
+- **Room.** Options with no description sit in one row; three or more questions with the same described options describe them once above. A page with a picture or a block takes the window's width, and its text keeps a reading width. On a wide window a picture sits beside its answer at the window's height; on a narrower one it sits above the answer at a third of the window. A table page and a paged review take the window's width too.
 - **Wording.** A question is at most 160 characters, a label 60, a reason 200, and an option's description 160. Where the person asked for more detail, or the question opens follow-ups, `explain: true` gives its reasons and descriptions room.
 
 ## More, read when the page needs it
