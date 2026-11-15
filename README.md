@@ -88,6 +88,11 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.83.0: a screen-reader reads up to 24 pictures
+
+- **`wf screens --brief`** fills each brief by pictures, up to 24, in place of eight screens. Eight was set when a screen had up to four pictures; a Default-only run has one, so a 244-screen review starts 11 readers in place of 31. A run with narrow and stress pictures splits about as before.
+- Still one `screen-reader` a brief. Nothing to change in a project.
+
 ### v0.82.2: test-data instructions say each thing once
 
 - **The `design-test-data` skill** keeps its every-run commands at the top; the one-off ones (`prune`, `merge`, `fold`, `rename-ids`) moved to a Maintenance table at the end, and the section on specs from before v0.69.0 is left to the test-data doc.

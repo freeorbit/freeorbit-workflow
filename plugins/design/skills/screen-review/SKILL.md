@@ -100,7 +100,7 @@ After the code review and the fixes for its findings, when UI files or frames ch
    - `--chunk N`, `--all`, and names still check just those screens, without moving the state.
    - `--area <id>` narrows any run to that area's screens, such as `--deep --area uplink`; several are joined by commas, and `scope --area <id>` shows that part of each list. Use it when the designer asks for one area. Its accept counts the pictures but does not move the state, since the other areas were not looked at.
    - `--light` and `--deep` refuse until the code review ledger has reviewed or deferred at HEAD. `--force` is for a run the designer asks for outside chunk end.
-5. **Triage.** Run `npx wf screens --brief`. It writes one brief per eight listed screens and prints the reader's model. Start one `screen-reader` agent a brief, all at once, on that model, each with the prompt `Brief: <path>` and nothing else. Each returns one line a screen: `same`, `differs`, `fault`, or `could not read`.
+5. **Triage.** Run `npx wf screens --brief`. It writes the listed screens into briefs of up to 24 pictures each, so 24 screens at one picture a screen, and prints the reader's model. Start one `screen-reader` agent a brief, all at once, on that model, each with the prompt `Brief: <path>` and nothing else. Each returns one line a screen: `same`, `differs`, `fault`, or `could not read`.
 6. **Look.** Read in full every pair a reader flagged, every *frame changed* pair, and every picture a reader could not read. Enlarge a doubtful spot: crop and scale into `.cache/view/`, since the image reader caches by path.
 
    ```bash
