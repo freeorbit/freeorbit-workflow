@@ -1211,3 +1211,24 @@ test("the chart example builds, and the new blocks turn off like the rest", () =
   const { root, view } = project(raw);
   assert.deepEqual(buildPage(root, view, raw, KIT_KINDS).problems ?? [], []);
 });
+
+test("a page never writes the word null: append and replaceChildren are not handed a null", () => {
+  // append and replaceChildren turn null into the text "null"; h() skips it, these do not.
+  const dir = join(here, "..", "lib", "ask", "browser", "page");
+  const found = [];
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".js"))) {
+    const src = readFileSync(join(dir, file), "utf8");
+    for (const m of src.matchAll(/\.(append|prepend|replaceChildren|before|after)\(/g)) {
+      // Read the call's own arguments, at its own depth only.
+      let depth = 0, i = m.index + m[0].length, top = "";
+      for (; i < src.length; i++) {
+        const c = src[i];
+        if ("([{".includes(c)) depth++;
+        else if (")]}".includes(c)) { if (depth === 0) break; depth--; }
+        else if (depth === 0) top += c;
+      }
+      if (/:\s*null\b/.test(top)) found.push(`${file}: ${src.slice(m.index, m.index + 60)}`);
+    }
+  }
+  assert.deepEqual(found, []);
+});
