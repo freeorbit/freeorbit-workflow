@@ -17,9 +17,11 @@ description: >-
 
 This looks at screens against their frames. It does not test flows; for that, use the project's app-testing skill, `app-testing` or `web-app-testing`. It drives the app through `wf app`, and its settings are `screens` in `.workflow/config.json` (`npx wf config` prints them).
 
-A run shoots on one app a core, up to `screens.jobsMax`, each on its own virtual display, off the designer's screen. `--jobs 1` shoots on the user's screen instead, to watch, and so does a machine without a virtual display (`screens.display`).
+Each kind of run says where its apps show and how many at once, in `screens.runs`: `review` for a chunk-end `--light` or `--deep` run, `build` for named screens, `--chunk`, or `--all`.
 
-A web app's browser follows `app.web.headless` unless `screens.headless` says otherwise: `review` for a chunk-end `--light` or `--deep` run, `build` for named screens, `--chunk`, or `--all`. A project that watches each build-time check but not the chunk-end review sets `{ "review": true, "build": false }`; a headed run on more than one app shoots on virtual displays, so `--jobs 1` keeps it on the person's screen.
+- `show` is `screen` (one app on the person's screen, to watch), `virtual` (each app on its own KWin virtual display, off it), `headless` (a web app's browser with no window), or `auto` (headless for a web app, virtual for any other). `--show` overrides it for one run.
+- `jobs` is the most apps at once with `virtual` or `headless`, held to the number of cores; `--jobs` overrides it for one run. `screen` is always one app.
+- Each run says on its first line where it shows and how many apps. Without `kwin_wayland`, a `virtual` run shows on the person's screen, one app at a time, and says so.
 
 - Each screen takes one app session a viewport: the Reach is walked once and the picture taken. With `--stress`, the stress look is then put on the same page and taken again.
 - Each app builds a scenario once for the run, and copies it for every start.

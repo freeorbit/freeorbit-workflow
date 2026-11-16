@@ -23,7 +23,7 @@ What the workflow kit's own commands call. A plugin the project does not use nee
 | `chromium` | The design plugin and the web driver: draws frames to PNG, checks them, and runs the web app. Chrome counts too, and on macOS the one in Applications is found. | required | all | No frame renders; set `design.browser` to a browser's program. |
 | `magick` | ImageMagick: the design plugin's question sheets, and the screen review's contact sheets and crops. | optional | all | No sheet is made; read the pictures one at a time. |
 | `systemd-run` | `wf app`: starts the servers and the app as user units, under a memory cap. | optional | linux | `wf app` runs them as process groups instead, with the time limit and no memory cap, as on macOS. |
-| `kwin_wayland` | The screen review's parallel apps, each on a virtual display (`screens.display`). | optional | linux | One app at a time, on the user's screen. |
+| `kwin_wayland` | A screen run set to `virtual` (`screens.runs`): each app on its own virtual display. | optional | linux | One app at a time, on the user's screen. |
 | `opencode` | The second agent tool, in [ai-tools.md](ai-tools.md). | optional | all | Use Claude Code. |
 
 ### This project's

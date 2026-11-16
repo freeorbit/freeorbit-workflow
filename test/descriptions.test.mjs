@@ -28,14 +28,23 @@ test("the schema closes every group but the open maps, and carries the meaning, 
   assert.match(hover("team"), /^"solo" for one person.*Default: "solo"\./);
 });
 
-test("the reference doc lists every setting once", () => {
+test("the reference doc gives each section's defaults as JSON with comments", () => {
   const doc = configDoc();
   for (const path of settingPaths(DEFAULTS, OPEN)) {
-    const value = path.split(".").reduce((node, part) => node?.[part], DEFAULTS);
-    const group = value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length && !OPEN.has(path);
-    if (group) continue;
-    assert.equal(doc.split(`- **\`${path}\`**,`).length - 1, 1, path);
+    // Each setting is its key in its section's block, after its description as a comment.
+    const top = path.split(".")[0];
+    const own = doc.split(`\n## ${top}\n`)[1]?.split("\n## ")[0];
+    const section = own ?? doc.split("\n## The project and its team\n")[1].split("\n## ")[0];
+    assert.ok(section?.includes(`"${path.split(".").pop()}": `), path);
   }
+  // Without the comments, each section's block is the JSON a project writes.
+  for (const [, body] of doc.matchAll(/```jsonc\n([\s\S]*?)\n```/g)) {
+    const json = body.split("\n").filter((line) => !line.trim().startsWith("//")).join("\n");
+    assert.doesNotThrow(() => JSON.parse(`{${json}}`), json.slice(0, 80));
+  }
+  const screens = doc.split("\n## screens\n")[1].split("\n## ")[0];
+  assert.match(screens, /\n {6}\/\/   "screen": one app, on the person's screen, to watch\n/);
+  assert.match(screens, /\n {6}"show": "auto",\n/);
 });
 
 /** Enough of JSON Schema for the kit's: type, properties, and additionalProperties. Returns the paths that fail. */

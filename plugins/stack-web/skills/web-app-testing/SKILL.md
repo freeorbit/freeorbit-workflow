@@ -22,7 +22,7 @@ Run `npx wf check` while working, and `npx wf check --all` once before handing b
 
 ## 2. Run and look
 
-Chromium runs headless by default (`app.web.headless`), so the person's desktop is left alone; `start --headed` or `--headless` overrides it for one start, and a screen run sets its own with `screens.headless`, and with its sandbox (`app.web.sandbox`), which only a CI runner that forbids it turns off. The setting covers this driver, not the design tools' renders. A website has no fixed window: a run opens at `app.web.size`, or the project's frame size (`design.size`) when that is unset, and checks other widths with `size`. `<app.instanceEnv>=N` gives a second browser its own profile, unit, and debugging port (`app.web.debugPort` + N), with the servers shared, for a screen review in parallel.
+Chromium runs headless by default (`app.web.headless`), so the person's desktop is left alone; `start --headed` or `--headless` overrides it for one start, and a screen run says where it shows with `screens.runs`, and with its sandbox (`app.web.sandbox`), which only a CI runner that forbids it turns off. The setting covers this driver, not the design tools' renders. A website has no fixed window: a run opens at `app.web.size`, or the project's frame size (`design.size`) when that is unset, and checks other widths with `size`. `<app.instanceEnv>=N` gives a second browser its own profile, unit, and debugging port (`app.web.debugPort` + N), with the servers shared, for a screen review in parallel.
 
 ```bash
 npx wf app start --fresh            # starts the servers, then Chromium, and prints the first page

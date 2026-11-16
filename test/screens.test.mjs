@@ -10,8 +10,8 @@ import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, unreached } from "../lib/screens/list.mjs";
 import { storiesIn } from "../lib/docs/shape.mjs";
-import { acceptNames, areasOf, briefs, inAreas, migrate, reviewCovers, screens, takenBy, why, withOpen } from "../lib/screens/run.mjs";
-import { jobsOf, lookStep, needsDisplay, screensHeadless, sessionSteps, shotsFor, shotsProblem, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
+import { acceptNames, areasOf, briefs, inAreas, migrate, retiredRuns, reviewCovers, screens, takenBy, whereRuns, why, withOpen } from "../lib/screens/run.mjs";
+import { jobsFor, lookStep, sessionSteps, showFor, shotsFor, shotsProblem, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
 import { afterDefer, afterRun, openAfter, readState, recordDir, statePath, withRecordLock, writeState } from "../lib/screens/state.mjs";
 
@@ -162,12 +162,6 @@ test("screens split across apps in even lists, in order of scenario", () => {
   assert.deepEqual(lists.map((list) => list.map((each) => each.name)), [["a", "b", "e"], ["c", "d"]]);
   assert.deepEqual(splitScreens([screen("a", "s1"), screen("b", "s1"), screen("c", "s1"), screen("d", "s1")], 2).map((list) => list.length), [2, 2]);
   assert.equal(splitScreens([screen("a", "s1")], 4).length, 1);
-  assert.equal(jobsOf(["--jobs", "3"]), 3);
-  assert.equal(jobsOf([], 8, true), 8);
-  assert.equal(jobsOf([], 16, true), 8);
-  assert.equal(jobsOf([], 16, true, 12), 12);
-  assert.equal(jobsOf([], 8, false), 1);
-  assert.throws(() => jobsOf(["--jobs", "0"]));
 });
 
 test("a chunk-end run waits until the code review has run or been deferred at HEAD", () => {
@@ -235,24 +229,52 @@ test("a picture path with a space or a quote stays one word of the step", () => 
   assert.equal(stepWord("/tmp/plain.png"), "/tmp/plain.png");
 });
 
-test("only a Tauri window or a web browser with a window needs a display of its own", () => {
-  assert.equal(needsDisplay({ kind: "tauri", web: { headless: true } }), true);
-  assert.equal(needsDisplay({ kind: "web", web: { headless: true } }), false);
-  assert.equal(needsDisplay({ kind: "web", web: { headless: false } }), true);
-  assert.equal(needsDisplay({ kind: "web", web: { headless: true } }, false), true, "a headed run over a headless default");
-  assert.equal(needsDisplay({ kind: "web", web: { headless: false } }, true), false);
+test("each kind of run says where its apps show and how many at once", () => {
+  const tauri = (runs) => merge(DEFAULTS, { screens: { runs } });
+  const web = (runs) => merge(DEFAULTS, { app: { kind: "web" }, screens: { runs } });
+  // auto is headless for a web app's browser, a virtual display for any other window.
+  assert.equal(showFor(tauri({}), "deep"), "virtual");
+  assert.equal(showFor(web({}), null), "headless");
+  // Freeorbit: the review off the screen, a build-time check on it.
+  const freeorbit = tauri({ review: { show: "virtual", jobs: 4 }, build: { show: "screen" } });
+  assert.equal(showFor(freeorbit, "light"), "virtual");
+  assert.equal(showFor(freeorbit, null), "screen", "named screens, a chunk, or all");
+  assert.equal(showFor(freeorbit, null, ["--show", "virtual"]), "virtual", "--show for one run");
+  assert.throws(() => showFor(freeorbit, null, ["--show", "headless"]), /--show is headless, which is for a web app's browser/);
+  assert.throws(() => showFor(freeorbit, null, ["--show", "hidden"]), /--show is screen, virtual, headless, or auto, not "hidden"/);
+  // Jobs: the kind's own, held to the cores; one on the screen; --jobs for one run.
+  assert.equal(jobsFor(freeorbit, "deep", "virtual", [], 8), 4);
+  assert.equal(jobsFor(freeorbit, "deep", "virtual", [], 2), 2, "held to the cores");
+  assert.equal(jobsFor(freeorbit, "deep", "virtual", ["--jobs", "6"], 8), 6);
+  assert.equal(jobsFor(tauri({ build: { jobs: 3 } }), null, "virtual", [], 8), 3, "build has its own jobs");
+  assert.equal(jobsFor(tauri({ review: { jobs: 3 } }), null, "virtual", [], 8), 8, "review's jobs do not cap a build run");
+  assert.equal(jobsFor(freeorbit, null, "screen", [], 8), 1);
+  assert.equal(jobsFor(freeorbit, null, "screen", ["--jobs", "1"], 8), 1);
+  assert.throws(() => jobsFor(freeorbit, null, "screen", ["--jobs", "3"], 8), /--jobs 3 needs the apps off the person's screen: add --show virtual$/);
+  assert.throws(() => jobsFor(freeorbit, null, "virtual", ["--jobs", "0"], 8), /usage: --jobs N/);
+  // Each run says where it shows; virtual without KWin is the screen, one at a time, and says why.
+  assert.deepEqual(whereRuns(freeorbit, "deep", [], () => true, 8), { show: "virtual", jobs: 4, line: "A review run: 4 apps at once, on virtual displays, off your screen." });
+  assert.deepEqual(whereRuns(freeorbit, null, [], () => true, 8), { show: "screen", jobs: 1, line: "A build run: one app, on your screen." });
+  assert.deepEqual(whereRuns(freeorbit, "deep", [], () => false, 8), { show: "screen", jobs: 1, line: "A review run: one app, on your screen: virtual displays need kwin_wayland on Linux, which is not here." });
+  assert.equal(whereRuns(web({}), "light", [], () => false, 8).line, "A review run: 8 apps at once, headless, with no window.", "headless needs no KWin");
 });
 
-test("a chunk-end review and a build-time check each take their own headless setting, or app.web.headless", () => {
-  const config = (headless, screens) => merge(DEFAULTS, { app: { kind: "web", web: { headless } }, screens: { headless: screens } });
-  assert.equal(screensHeadless(config(true, {}), "light"), true, "unset follows app.web.headless");
-  assert.equal(screensHeadless(config(false, {}), null), false);
-  const atlas = config(false, { review: true, build: false });
-  assert.equal(screensHeadless(atlas, "light"), true);
-  assert.equal(screensHeadless(atlas, "deep"), true);
-  assert.equal(screensHeadless(atlas, null), false, "named screens, a chunk, or all");
-  assert.equal(screensHeadless(config(true, { build: false }), "deep"), true);
-  assert.equal(screensHeadless(config(true, { build: false }), null), false);
+test("a setting a run cannot use stops every command, and the old keys say what to write", async () => {
+  const { valueProblems, unknownKeys } = await import("../lib/config/config.mjs");
+  const check = (given) => valueProblems(merge(DEFAULTS, given), given);
+  assert.deepEqual(check({}), []);
+  assert.deepEqual(check({ screens: { runs: { build: { show: "screen" } } } }), [], "the default jobs is not blamed");
+  assert.deepEqual(check({ screens: { runs: { build: { show: "screen", jobs: 4 } } } }), ["screens.runs.build.jobs is 4, but show is screen, which is always one app; leave jobs out"]);
+  assert.deepEqual(check({ screens: { runs: { review: { show: "headless" } } } }), ["screens.runs.review.show is headless, which is for a web app's browser; an app's window is screen or virtual"]);
+  assert.deepEqual(check({ app: { kind: "web" }, screens: { runs: { review: { show: "headless" } } } }), []);
+  assert.deepEqual(check({ screens: { runs: { review: { show: "off" } } } }), ['screens.runs.review.show is screen, virtual, headless, auto, not "off"']);
+  assert.deepEqual(check({ screens: { runs: { review: { jobs: 0 } } } }), ["screens.runs.review.jobs is a whole number from 1 to 16, not 0"]);
+  // The old keys still load, do nothing, and the run and the doctor say what to write.
+  assert.deepEqual(unknownKeys({ screens: { headless: { build: false }, jobsMax: 4, display: "kwin" } }), []);
+  assert.equal(retiredRuns(merge(DEFAULTS, {})), null);
+  assert.deepEqual(retiredRuns(merge(DEFAULTS, { screens: { jobsMax: 4, headless: { review: true, build: false } } })), { review: { show: "virtual", jobs: 4 }, build: { show: "screen" } }, "Freeorbit's");
+  assert.deepEqual(retiredRuns(merge(DEFAULTS, { app: { kind: "web" }, screens: { headless: { review: true, build: null } } })), { review: { show: "headless", jobs: 8 }, build: { show: "headless", jobs: 8 } }, "null followed app.web.headless");
+  assert.deepEqual(retiredRuns(merge(DEFAULTS, { screens: { display: "none" } })), { review: { show: "screen" }, build: { show: "screen" } });
 });
 
 test("the review's record is the main checkout's, shared by its worktrees, and a removed commit counts from the base", () => {

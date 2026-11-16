@@ -88,6 +88,19 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.87.0: each kind of screen run says where it shows and how many at once
+
+`screens.headless` only switched a web app's browser, and on Linux with `kwin_wayland` a run went to virtual displays whatever it said, so `false` did not put a run on the person's screen. Three settings and `--jobs 1` answered one question.
+
+- **`screens.runs`** replaces `screens.headless`, `screens.jobsMax`, and `screens.display`. Each kind of run, `review` (a chunk-end `--light` or `--deep`) and `build` (named screens, `--chunk`, `--all`), has its own `show` and `jobs`:
+  - `show` is `screen` (one app on the person's screen), `virtual` (each app on its own KWin virtual display), `headless` (a web app's browser, no window), or `auto`, the default: headless for a web app, virtual for any other.
+  - `jobs` is the most apps at once with `virtual` or `headless`, held to the number of cores, 8 by default. `screen` is always one app.
+- **`--show`** overrides where one run shows; `--jobs` how many. `--jobs` above one with `screen` is an error that says to add `--show virtual`.
+- **Every run says on its first line** where it shows and how many apps. A `virtual` run without `kwin_wayland` shows on the person's screen, one at a time, and says so.
+- **A value the kit cannot use stops every command**, such as `headless` for a Tauri app, or `jobs` above one with `screen`.
+- **The old keys still load and do nothing.** `wf screens` and `wf doctor` print the `screens.runs` to write in their place, worked out from them: a `false` becomes `screen`, `true` becomes `headless` for a web app or `virtual` for any other, and `jobsMax` becomes each `jobs`. Copy it into `.workflow/config.json` and remove the old keys.
+- **`docs/workflow/config.md` is JSON with comments.** It starts with a contents list, and each section is its defaults as the JSON a project writes, with what each setting does, the words it takes, and why, as comments above it. A developer copies the part they change. The editor's hover and the schema list a setting's words too. Run `npx wf docs sync` to take it.
+
 ### v0.86.0: the launch.json server is `ask-pages`
 
 The server that shows ask pages was still called `question-pictures`, from when it only served pictures. And `npx wf view setup` looked for it by that name only, so in a project where the entry had been renamed it added a second one on the same port.
