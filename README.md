@@ -88,6 +88,14 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.87.1: a virtual display leaves your KWin scripts alone
+
+A `virtual` screen run started each KWin virtual display with the person's own KWin config and D-Bus session. So it ran their KWin scripts, and a tiling script such as Krohnkite registered its shortcuts from inside it, and they stopped working on the person's desktop.
+
+- Each virtual display now starts with an empty config folder, so it runs no KWin script, and with its own D-Bus session (`dbus-run-session`), so nothing it registers reaches the person's desktop.
+- The app's window is no longer tiled by a script inside the virtual display either.
+- Nothing to change in a project. If your shortcuts already stopped working, turn the script off and on in System Settings, or log out and in.
+
 ### v0.87.0: each kind of screen run says where it shows and how many at once
 
 `screens.headless` only switched a web app's browser, and on Linux with `kwin_wayland` a run went to virtual displays whatever it said, so `false` did not put a run on the person's screen. Three settings and `--jobs 1` answered one question.
