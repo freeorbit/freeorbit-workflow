@@ -11,7 +11,7 @@ import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, unreached } from "../lib/screens/list.mjs";
 import { storiesIn } from "../lib/docs/shape.mjs";
 import { acceptNames, areasOf, briefs, inAreas, migrate, retiredRuns, reviewCovers, screens, takenBy, whereRuns, why, withOpen } from "../lib/screens/run.mjs";
-import { jobsFor, lookStep, sessionSteps, showFor, shotsFor, shotsProblem, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
+import { displayApart, jobsFor, lookStep, sessionSteps, showFor, shotsFor, shotsProblem, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
 import { afterDefer, afterRun, openAfter, readState, recordDir, statePath, withRecordLock, writeState } from "../lib/screens/state.mjs";
 
@@ -462,4 +462,15 @@ test("a partial accept takes the named screens, moves the marks, and keeps the r
   assert.deepEqual(state.open, { b: head.slice(0, 7) });
   assert.equal(state.lightRuns.length, 1);
   assert.equal(read(join(record, "accepted.json")).b["wide-default"], "b1", "b keeps its last accepted picture");
+});
+
+test("a virtual display keeps apart from the person's desktop: no KWin scripts, its own D-Bus", () => {
+  const runtime = mkdtempSync(join(tmpdir(), "wf-display-"));
+  writeFileSync(join(runtime, "stale"), "");
+  mkdirSync(join(runtime, "app-agent-display-1-config"));
+  writeFileSync(join(runtime, "app-agent-display-1-config", "kwinrc"), "[Plugins]\nkrohnkiteEnabled=true\n");
+  const args = displayApart(runtime, "app-agent-display-1", () => true);
+  assert.deepEqual(args, [`--setenv=XDG_CONFIG_HOME=${join(runtime, "app-agent-display-1-config")}`, "dbus-run-session", "--"]);
+  assert.deepEqual(readdirSync(join(runtime, "app-agent-display-1-config")), [], "an empty config each start, so no script runs");
+  assert.deepEqual(displayApart(runtime, "app-agent-display-1", () => false).length, 1, "without dbus-run-session, the empty config still keeps scripts out");
 });
