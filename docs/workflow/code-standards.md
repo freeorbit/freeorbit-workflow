@@ -10,7 +10,7 @@ The code is written by people and by agents. A rule here serves both: a person c
 
 Nobody adds a rule here without a finding the reviewer accepted, or an owner decision in the decisions log, cited by its ID.
 
-1. The reviewer proposes a new rule or a change, as an `STD-` finding in [the ledger](../log/review-findings.md).
+1. The reviewer proposes a new rule or a change, as an `STD-` finding in [the ledger](../log/review/findings.md).
 2. The reviewer accepts, rejects, or defers it like any other finding.
 3. An accepted rule is added here with its date. A rejected one stays closed in the ledger, so it is not proposed again.
 

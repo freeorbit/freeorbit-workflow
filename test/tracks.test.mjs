@@ -142,7 +142,11 @@ test("the review gate passes at a commit followed only by ledger edits, on HEAD'
   commit(ledgerPath, `Last reviewed: none.\nDeferred: 1 times, last at ${code} on 2026-11-13.\n`, "defer");
   assert.match(gate(), /^OK/);
   commit(config.logs.ledgerClosed, "closed\n", "close a finding");
-  assert.match(gate(), /^OK/);
+  commit(`${config.logs.ledgerClosedDetails}/2026-W46.md`, "details\n", "file its details");
+  assert.match(gate(), /^OK/, "the closed details folder is the ledger's too");
+  commit(`${config.logs.ledgerClosedDetails}-old.md`, "x\n", "a file beside the folder");
+  assert.match(gate(), /^FAIL/, "a name that only starts like the folder is not in it");
+  git("reset", "-q", "--hard", "HEAD~1");
   // Any other file after it fails.
   commit("app.rs", "fn main() { 1; }\n", "more code");
   assert.match(gate(), /^FAIL/);

@@ -85,12 +85,12 @@ test("wf choose review writes a launch spec from the project that builds as it i
   git("init", "-q");
   git("config", "user.email", "t@example.test");
   git("config", "user.name", "t");
-  mkdirSync(join(root, "docs/log"), { recursive: true });
+  mkdirSync(join(root, "docs/log/review"), { recursive: true });
   writeFileSync(join(root, "a.ts"), "a\n");
   git("add", ".");
   git("commit", "-qm", "one");
   const first = git("rev-parse", "--short", "HEAD");
-  writeFileSync(join(root, "docs/log/review-findings.md"), `Last reviewed: ${first} on 2026-11-17, diff.\nDeep reviewed: ${first} on 2026-11-17.\nDeferred: none.\n`);
+  writeFileSync(join(root, "docs/log/review/findings.md"), `Last reviewed: ${first} on 2026-11-17, diff.\nDeep reviewed: ${first} on 2026-11-17.\nDeferred: none.\n`);
   writeFileSync(join(root, "a.ts"), "b\n");
   const spec = reviewSpec(root, merge(DEFAULTS, {}));
   assert.deepEqual(spec.runs.map((r) => r.id), ["light", "deep", "full", "defer"]);

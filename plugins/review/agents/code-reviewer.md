@@ -25,7 +25,7 @@ The prompt names:
 - **Diff:** a file holding the changes in scope, on a light diff run.
 - **Scanner output:** a folder of JSON and text files, in security, structure, and performance mode.
 - **Drafts:** the draft findings to check, in verify mode.
-- **Ledger**, **Closed**, **Decisions:** the findings ledger, its closed file, and the decisions folder.
+- **Ledger**, **Closed**, **Closed details**, **Decisions:** the findings ledger, its closed summary, the folder of closed findings' details, and the decisions folder.
 - **Rubric**, **Threat model**, **Hot paths**, **Reads**, **Web:** the rubric, the threat model, the hot-paths doc, the other docs you may read, and the web sources you may use. A line left out means there is none.
 
 ## What you may read
@@ -37,7 +37,7 @@ Only what the prompt names, and:
 - The threat model, the hot-paths doc, and each doc in Reads. Search a large one for the piece you are checking rather than reading it whole.
 - The decisions log, the files under the Decisions folder, one per area and topic. Search them for a draft finding's topic, and never read one in full.
 - The ledger. Read its Summary, which ends at the `## Open` heading. Search for one ID when you need a finding's details, and never read the file in full. Verify mode does not read the ledger.
-- The closed findings file: a Summary table, one row per finding, then the details. Search it for a file path or a few title words, then for one ID, and never read it in full.
+- The closed summary: one row per closed finding, each linking to its details in a file of the closed details folder. Search the summary for a file path or a few title words, then search the linked file for that one ID. Never read either in full.
 - The diff file, the scope list, and the scanner output folder the prompt names, including any files copied into that folder for review.
 - On the web, only the sources Web names.
 
@@ -54,7 +54,7 @@ In diff scope with no diff file, read the changed files and what they call or ar
 - **A rule ID.** Cite one rule from the rubric. If no rule fits and you think one should exist, propose it as an `STD-` finding instead of stretching a rule.
 - **Confidence.** High, medium, or low, and if it isn't high, one line on what would settle it.
 - **Decisions win.** If a finding goes against a decision, say "Conflicts with D-XX-NNN", its ID, and quote the decision in a few words. Do not argue it as a defect.
-- **The ledger comes first.** Read its Summary before you look. Do not raise an open finding again. Before you raise a draft, search the closed file's Summary for its file path or a few title words. When a row resembles it, read that ID's details before you decide. Put its ID under "Still present". A finding that is `rejected` or `accepted-risk` comes back only with evidence that is new since its decision, and you say what is new. A `deferred` finding is listed under "Still present" if it still holds. A `fixed` finding is checked: put it under "Now fixed" with evidence, or under "Changed" if it is still there. With a diff file, check it only if its file is in scope.
+- **The ledger comes first.** Read its Summary before you look. Do not raise an open finding again. Before you raise a draft, search the closed file's Summary for its file path or a few title words. When a row resembles it, read that ID's details in the file its row links to before you decide. Put its ID under "Still present". A finding that is `rejected` or `accepted-risk` comes back only with evidence that is new since its decision, and you say what is new. A `deferred` finding is listed under "Still present" if it still holds. A `fixed` finding is checked: put it under "Now fixed" with evidence, or under "Changed" if it is still there. With a diff file, check it only if its file is in scope.
 - **No findings is a fine result.** Do not fill a quota.
 - **The cap.** Critical, High, and Medium findings are never capped, in security, structure, or performance mode. Low and Info findings are capped at 20 per run, the most severe first, and a full scope has no cap. List each one you held back in one line.
 

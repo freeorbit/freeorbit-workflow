@@ -65,6 +65,7 @@ Diff: .cache/review-scan/changes.diff
 Scanner output: .cache/review-scan, files: <file names; structure mode: the structure scan files; performance mode: hot-paths.txt and the perf scan files>
 Ledger: <logs.ledger>
 Closed: <logs.ledgerClosed>
+Closed details: <logs.ledgerClosedDetails>
 Decisions: <logs.decisions>
 Rubric: <review.rubric>
 Threat model: <review.threatModel>
@@ -91,7 +92,7 @@ Drop what it drops and apply its downgrades. Keep each dropped draft's ID and re
 
 ## 4. Apply
 
-Change the ledger only with `npx wf ledger`; it keeps every row in step and refuses a change that would break the ledger. Never read the closed file in full. The commands and the ledger's shape are in [ledger-format.md](ledger-format.md).
+Change the ledger only with `npx wf ledger`; it keeps every row in step and refuses a change that would break the ledger. Never read the closed file or a closed details file in full. The commands and the ledger's shape are in [ledger-format.md](ledger-format.md).
 
 - New findings: write them to `.cache/review-scan/findings.json`, a list with the fields [ledger-format.md](ledger-format.md) names, then `npx wf ledger add .cache/review-scan/findings.json`. It gives each the next ID, `proposed`, and Found.
 - "Changed": `set <ID>` with `--severity` when it changed, and the new evidence in a dated `--note`.
@@ -113,4 +114,4 @@ Write each answer as its Status and a Decision of `<note>, <date>`. An accepted 
 - **Light run:** also `--light "| \`<since>..<HEAD>\`[ and uncommitted] | <date> | diff |"`.
 - **Deep run:** also `--deep "<short HEAD> on <date>."`, which clears `Light runs`.
 
-The ledger is committed with the chunk, in a commit after the one `Last reviewed` names. `wf done chunk` and a chunk-end screen review pass when every commit after it changes only the ledger and its closed file; a code change after it needs another run or a deferral.
+The ledger is committed with the chunk, in a commit after the one `Last reviewed` names. `wf done chunk` and a chunk-end screen review pass when every commit after it changes only the ledger, its closed file, and the closed details folder; a code change after it needs another run or a deferral.
