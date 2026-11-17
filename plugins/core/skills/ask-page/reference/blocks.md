@@ -14,6 +14,7 @@ A page can show more than questions: give `sections`, each a `title` and its `bl
 | `diagram` | `nodes` of `id`, `label`, `note`, `tone`; `links` of `from`, `to`, `label`; `direction` `right` or `down`; laid out by the kit, a loop's arrow dashed | SVG, Mermaid |
 | `timeline` | `events` of `date`, `title`, `note`, `state` (`done`, `now`, `next`) | Markdown |
 | `board` | `columns` (ids, or `id` and `title`), `cards` of `title`, `column`, `note`, `tone`, `owner`, `tags`; read only | Markdown, CSV |
+| `pictures` | `items` of `image` (from the project root), `label`, `name`; up to 12, side by side, each opens full size | none |
 | `questions` | Where the questions go; with none, they come after the blocks | — |
 | `part` | `name` of a part in `.workflow/ask-parts/<name>.json`, and `with`, values for `{field}` | — |
 

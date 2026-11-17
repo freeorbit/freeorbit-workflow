@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.1.0: chunk start shows what each chunk builds
+
+Picking the next chunk showed an ID and a command. Now the page says what each chunk is before you pick it.
+
+- **A details panel beside the runs.** Point at a chunk, or pick it, and the panel shows what it delivers (the build order's For the client, Who, and what it waits on), its numbers (stories, acceptance lines and the high-risk ones, frames and how many no scenario reaches, open questions), its frames as pictures, a table of its stories with each one's "As a…" line, and the questions still open on it.
+- **An overview above:** chunks by area (done, in progress, not started) and the next chunks in the build order.
+- **The recommendation passes over a chunk waiting on open questions** when one after it can start with none, and says so.
+- **For any launch page:** a run may carry `details`, blocks the page shows beside the runs, and a new `pictures` block shows up to 12 pictures side by side, each opening full size.
+
 ### v1.0.0: the first stable version
 
 The kit's first major version: the same code as v0.100.0, released as stable. From here a major version marks a change that asks something of a project, such as a setting renamed or a step it must run; a minor one adds what a project may use; a patch fixes. Each still says here what to do.
