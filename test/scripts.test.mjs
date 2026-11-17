@@ -188,3 +188,9 @@ test("wf check prints a skipped path step as SKIP, and runs it when the base is 
   assert.deepEqual(ran, ["lint", "infra"]);
   assert.equal(looked, false);
 });
+
+test("wf loads only the config statically, and each command imports its own modules when it runs (P-7)", () => {
+  const source = readFileSync(new URL("../bin/wf.mjs", import.meta.url), "utf8");
+  const statics = [...source.matchAll(/^import .* from "(\.\.\/lib\/[^"]+)";$/gm)].map((m) => m[1]);
+  assert.deepEqual(statics, ["../lib/config/config.mjs"]);
+});
