@@ -115,7 +115,7 @@ Where each note goes is the table in [AGENTS.md](../../AGENTS.md).
 
 - **ID.** `Q-NNN`, one counter across the open and resolved logs, never reused.
 - **Needs.** The role that answers it, from `roles`, or `client`, which the client's board asks on its story's item. A row under a chunk's heading is an open sign-off for `npx wf signoffs` until it moves out, except a `client` one, which never holds a merge.
-- **From.** Who raised it: a role, or `client (<channel>)`.
+- **From.** Who raised it: a role, `client (<channel>)`, or `team (<channel>)` for a teammate's comment on a board.
 - **Story.** The story IDs it touches, or `none`. **Raised** is the date.
 - **Detail.** The Question cell is one short sentence. More goes in one bullet per ID under the table, `- **Q-012.** ...`, with sub-bullets if needed.
 - **Revisit.** An untied question blocks nothing, so its detail says when to ask it again: a `Revisit when: ...` line on its bullet or a sub-bullet, or `--revisit "<when>"` on `npx wf question add`. `npx wf doc:facts status` lists each trigger for chunk start and the code review, and names the untied questions with none.

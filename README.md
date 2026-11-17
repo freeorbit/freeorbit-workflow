@@ -104,6 +104,10 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.4.1: a teammate's board comment can be logged
+
+- The board-feedback skill logs a teammate's comment as a question from `team (monday)`, but `wf question add` and `doc:check` took only a role or `client (<channel>)`, so it was refused. A question's From may now be `team (<channel>)` too. Nothing in a project changes.
+
 ### v1.4.0: performance standards for databases, services, and screens
 
 The performance pass had 8 rules, mostly about loops and blocking. It now has 18, from the database, service, and web guidance the rules cite, each one general and checkable in code.
