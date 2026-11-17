@@ -36,7 +36,7 @@ For how the plugins, the `wf` command, the docs, GitHub, the app, and the client
 
 4. Write `.workflow/config.json`: at least `project` and `people`, with `"team": "solo"` for one person. List the project's `areas` (each with its story prefix) and `scopes` (commit and branch prefixes). Run `npx wf docs sync`: it writes `AGENTS.md` with the Who decides block, and the workflow docs. Put `<!-- wf:index words -->`, `workflow`, and `logs` marker pairs in the docs index for its kit tables. Copy `templates/threat-model.md` to the file `review.threatModel` names when the first area reaches Step 3. `npx wf docs sync` writes `docs/workflow/config.md`, every setting with what it does, its default, and why, and `.workflow/config.schema.json`, which the config names as `$schema` so an editor shows the same on hover.
 
-5. `npx wf ai:sync` also writes deny rules for secret files into the committed `.claude/settings.json` and into each OpenCode agent, from the one list in the core plugin's guard (`SECRET_GLOBS`: `.env`, `.env.*`, keys, certificates, and SSH keys), so no session or agent reads them (audit W-11). `npx wf ai:check` fails when one is missing.
+5. `npx wf ai:sync` also writes deny rules for secret files into the committed `.claude/settings.json` and into each OpenCode agent, from the one list in the core plugin's guard (`SECRET_GLOBS`: `.env`, `.env.*`, keys, certificates, keystores, SSH keys, `.npmrc`, `.netrc`, `.git-credentials`, `.pgpass`, `credentials.json`), so no session or agent opens them with Read, Grep, or Glob (audit W-11). A main session's shell is not covered; SECURITY.md says what is. `npx wf ai:check` fails when one is missing.
 
 ## Guards
 
@@ -103,6 +103,20 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.93.0: security fixes from the kit's first full review
+
+A blind review of the whole kit (security, structure, and performance, verified on another model) found 54 findings on 2026-11-17. This release holds the security ones the owner accepted.
+
+- **SECURITY.md says what the kit really does.** It names each network call (`wf board` to monday.com, `gh`), each place outside the project it reads or writes, where an agent's limits hold, and two accepted risks: the ask-pages server does not tell one local account from another, and setup installs by tag.
+- **`wf app`'s `/tmp/<app>-agent` run folder** is made for this user alone (0700), and refused when another account owns it or it is a link. Its pid files and logs sit in it.
+- **More secret names.** `SECRET_GLOBS` adds keystores (`*.jks`, `*.keystore`), `.npmrc`, `.netrc`, `.git-credentials`, `.pgpass`, and `credentials.json`. Run `npx wf ai:sync` to write the new deny rules; `npx wf ai:check` fails until then.
+- **A blind agent's Grep over a folder** that holds such a file needs a glob or a type that leaves it out.
+- **Board commands run as `npx --no wf`** in the generated board-sync workflow and the docs, so with the token set they never fetch the unrelated npm package `wf`. Run `npx wf github sync` to rewrite the workflow.
+- **CI checkouts keep no token** (`persist-credentials: false`), in the kit's own workflow and the generated ones.
+- **monday calls refuse a redirect** and end after 60 s (180 s for a picture) with a plain error.
+- **A link that leads out of the project** is not listed or read by the kit's checks, so board sync never sends outside text.
+- **Smaller:** a pin's kind must be one of the kinds, not an inherited name; notification text is escaped for notify-send's markup; the ask tests' made-up key is allowed in `.gitleaks.toml`; the project's file list is read with a 64 MiB cap, not 1 MiB.
 
 ### v0.92.0: choice pages for the code review and the screen review
 

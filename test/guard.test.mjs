@@ -182,3 +182,25 @@ test("as a hook it denies with a reason, passes others silently, and a crash exi
   assert.equal(crashed.status, 2, "exit 2 blocks the call on any build");
   assert.match(crashed.stderr, /guard failed, so the call is blocked/);
 });
+
+test("a blind agent's Grep over a folder that holds a secret file needs a glob or a type that leaves it out (SB-7)", () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-guard-grep-")));
+  spawnSync("git", ["init", "-q"], { cwd: root });
+  mkdirSync(join(root, "src"));
+  writeFileSync(join(root, "src/a.mjs"), "a\n");
+  writeFileSync(join(root, "src/server.key"), "secret\n");
+  writeFileSync(join(root, ".npmrc"), "//registry/:_authToken=x\n");
+  const grep = (input) => decide({ agent_type: "code-reviewer", tool_name: "Grep", tool_input: { pattern: "x", ...input } }, root, CONFIG);
+  const rows = [
+    [{ path: join(root, "src") }, /holds src\/server\.key/, "a folder holding a key"],
+    [{}, /the project holds/, "the whole project, which holds .npmrc"],
+    [{ path: join(root, "src"), glob: "*.mjs" }, null, "a glob that leaves the key out"],
+    [{ path: join(root, "src"), glob: "*" }, /holds src\/server\.key/, "a glob that still takes it"],
+    [{ path: join(root, "src"), type: "js" }, null, "a type"],
+    [{ path: join(root, "src/a.mjs") }, null, "one file"],
+  ];
+  for (const [input, want, why] of rows) {
+    if (want === null) assert.equal(grep(input), null, why);
+    else assert.match(grep(input), want, why);
+  }
+});

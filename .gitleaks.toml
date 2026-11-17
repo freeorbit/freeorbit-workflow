@@ -7,6 +7,11 @@
 useDefault = true
 
 [[allowlists]]
+description = "The ask-pages tests' made-up project key, live-test-123456, which is no credential"
+regexTarget = "secret"
+regexes = ['''^live-test-123456$''']
+
+[[allowlists]]
 description = "The board tests' synthetic monday token"
 regexTarget = "secret"
 regexes = ['''^tok-0123456789abcdef$''']

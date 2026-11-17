@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -143,4 +143,21 @@ test("doc:check takes one index row for a folder's README, which stands for the 
     "docs/README.md: no row for docs/app/test-data/stray.md",
     "docs/README.md: no row for docs/app/test-data/tab/gaps.md",
   ]);
+});
+
+test("a link that leads out of the project is not listed and not read", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-links-"));
+  const outside = mkdtempSync(join(tmpdir(), "wf-outside-"));
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  mkdirSync(join(root, ".workflow"));
+  writeFileSync(join(root, ".workflow/config.json"), "{}");
+  writeFileSync(join(outside, "secret.md"), "not the project's\n");
+  writeFileSync(join(root, "real.md"), "ours\n");
+  symlinkSync(join(outside, "secret.md"), join(root, "out.md"));
+  symlinkSync(join(root, "real.md"), join(root, "in.md"));
+  const p = project(root);
+  assert.equal(p.tracked.includes("out.md"), false);
+  assert.equal(p.tracked.includes("in.md"), true);
+  assert.equal(p.files("in.md"), "ours\n");
+  assert.throws(() => p.files("out.md"), /leads out of the project/);
 });
