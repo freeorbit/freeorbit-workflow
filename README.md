@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.95.0: performance fixes from the kit's first full review
+
+The accepted performance findings from the 2026-11-17 review. Nothing to change in a project.
+
+- **The ask-pages server reads a page again only when its files change.** Each inbox line is kept with the time, inode, and size of the page's spec, answers, and live status, and the registry is kept by its own; a poll stats files and parses none that did not change. A page answered more than 30 days ago leaves the inbox; its answers stay in `wf ask history`.
+- **An open page asks for a short list** (`/__hub/inbox?limit=30`: every waiting ask, then the newest others), and **a tab out of view polls every 30 s**, not every 4 or 5. Coming back into view polls at once, and a hidden tab's title still shows an agent waiting.
+- **`wf` loads a command's modules only when it runs.** A git hook's `wf` start drops from about 80 ms to about 25 ms, and a `wf screens` run of a few hundred screens starts its many `wf app` calls that much faster.
+- **`wf screens` walks the frames once a run**, not once a screen, and **`wf doc:check` and board plan look frames and pictures up by name**, not by a scan of every tracked file for each row.
+- monday calls end after 60 s (v0.93.0).
 ### v0.94.0: a blind agent reads the board's comments
 
 `/board-feedback` had the main session read monday guests' comments, in a session that holds Bash and edits (review finding SB-3, SEC-MODEL). Now it never sees them.

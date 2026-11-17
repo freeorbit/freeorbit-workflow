@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { inbox } from "../lib/view/serve.mjs";
+import { ANSWERED_DAYS, inbox, inboxFor } from "../lib/view/serve.mjs";
 import { clearWaiting, markWaiting, noticeDue, noticeText, pageToken, tellWaiting, waitingSince } from "../lib/view/waiting.mjs";
 
 /** A view folder with one ask page. */
@@ -66,4 +66,31 @@ test("a notice goes through the server signed as the page, and to this machine's
   const away = async () => { throw new Error("ECONNREFUSED"); };
   assert.equal(await tellWaiting({ key: "k", id: "pick", text, port: 1, token: "t", post: away, local }), true);
   assert.deepEqual(calls, [["t", "b"]]);
+});
+
+test("the inbox leaves out a page answered long ago, and a page's own list keeps every waiting ask", () => {
+  const dir = view();
+  const list = [{ key: "p-1", name: "p", view: dir }];
+  const answered = () => ({ state: "answered", open: 0, answers: null });
+  assert.equal(inbox(list, answered).length, 1, "answered today, it is listed");
+  assert.equal(inbox(list, answered, () => null, Date.now() + (ANSWERED_DAYS + 1) * 86_400_000).length, 0, "answered over the days ago, it is not");
+  const items = [{ state: "answered" }, { state: "waiting" }, { state: "answered" }, { state: "partial" }, { state: "answered" }];
+  assert.deepEqual(inboxFor(items, 3).map((i) => i.state), ["waiting", "partial", "answered"]);
+  assert.equal(inboxFor(items, 0).length, 5, "no limit is the whole list");
+});
+
+test("an inbox line is read again only when its page's files change", () => {
+  const dir = view();
+  const list = [{ key: "p-1", name: "p", view: dir }];
+  let reads = 0;
+  const state = () => {
+    reads += 1;
+    return { state: "waiting", open: 1, answers: null };
+  };
+  inbox(list, state);
+  inbox(list, state);
+  assert.equal(reads, 1, "the second poll reads nothing");
+  writeFileSync(join(dir, "ask", "pick", "spec.json"), JSON.stringify({ id: "pick", title: "Pick two", template: "decision", questions: [{ id: "q" }] }));
+  assert.equal(inbox(list, state)[0].title, "Pick two");
+  assert.equal(reads, 2);
 });

@@ -47,38 +47,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { KIT_ROOT, reconcile } from "../lib/setup/ai.mjs";
-import { localToday } from "../lib/docs/check.mjs";
-import { runApp } from "../lib/app/driver.mjs";
-import { runTry } from "../lib/try/index.mjs";
-import { design } from "../lib/design/index.mjs";
-import { runAsk, runView } from "../lib/ask/index.mjs";
-import { diskCheck } from "../lib/disk.mjs";
-import { addDecision, supersedeAll } from "../lib/logs/decisions.mjs";
-import { runQuestion } from "../lib/logs/questions.mjs";
-import { runBoard } from "../lib/board/index.mjs";
-import { ruleset, rulesetBlocked, syncGithub } from "../lib/setup/github.mjs";
-import { runRelease, STEPS } from "../lib/release.mjs";
-import { runSignoffs } from "../lib/logs/signoffs.mjs";
-import { screens } from "../lib/screens/run.mjs";
-import { runTrack } from "../lib/tracks.mjs";
-import { runChecks } from "../lib/checks.mjs";
-import { install, runHook } from "../lib/setup/hooks.mjs";
-import { runTools } from "../lib/setup/tools.mjs";
-import { answerProblems, writeStarter } from "../lib/setup/init.mjs";
-import { runDoctor } from "../lib/setup/doctor.mjs";
-import { syncDocs } from "../lib/docs/docsync.mjs";
-import { didNotRun, ledger, performanceLine, scan } from "../lib/review.mjs";
-import { choose } from "../lib/choose/index.mjs";
-import { runTestdata } from "../lib/testdata.mjs";
 import { loadConfig, project, projectRoot } from "../lib/config/config.mjs";
-import { problems, warnings } from "../lib/docs/check.mjs";
-import { growth, status } from "../lib/docs/facts.mjs";
-import { findEntries } from "../lib/docs/shape.mjs";
-import { roleProblems, rolesBlock, writeRoles } from "../lib/roles.mjs";
 
 const commands = {
   async "doc:find"([query, ...paths]) {
+    const { findEntries } = await import("../lib/docs/shape.mjs");
     if (!query) {
       console.log("Usage: wf doc:find <ID, date, or heading> [file or folder ...]   (default: docs)");
       return 2;
@@ -90,6 +63,7 @@ const commands = {
   },
 
   async "doc:facts"([which]) {
+    const { growth, status } = await import("../lib/docs/facts.mjs");
     const context = project();
     const parts = which === "status" ? [status] : which === "growth" ? [growth] : [status, growth];
     const lines = [];
@@ -99,6 +73,7 @@ const commands = {
   },
 
   async "doc:check"() {
+    const { problems, warnings } = await import("../lib/docs/check.mjs");
     const context = project();
     const found = await problems(context);
     for (const problem of found) console.log(problem);
@@ -110,6 +85,7 @@ const commands = {
   },
 
   async roles([flag]) {
+    const { roleProblems, rolesBlock, writeRoles } = await import("../lib/roles.mjs");
     const root = projectRoot();
     const config = loadConfig(root);
     for (const problem of roleProblems(config)) console.error(`.workflow/config.json: ${problem}`);
@@ -122,6 +98,7 @@ const commands = {
   },
 
   async "ai:sync"() {
+    const { reconcile } = await import("../lib/setup/ai.mjs");
     const { problems, changed, counts } = await reconcile(projectRoot(), { write: true });
     for (const problem of problems) console.error(problem);
     console.log(`OpenCode is in step (${counts.agents} agents, ${counts.commands} commands, ${changed} updated).`);
@@ -129,6 +106,7 @@ const commands = {
   },
 
   async "ai:check"() {
+    const { reconcile } = await import("../lib/setup/ai.mjs");
     const { problems, counts } = await reconcile(projectRoot());
     for (const problem of problems) console.error(problem);
     if (problems.length) {
@@ -140,6 +118,8 @@ const commands = {
   },
 
   async scan(args) {
+    const { install } = await import("../lib/setup/hooks.mjs");
+    const { didNotRun, performanceLine, scan } = await import("../lib/review.mjs");
     const [mode, since] = args;
     const value = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
     const performance = value("--performance");
@@ -163,16 +143,19 @@ const commands = {
   },
 
   async choose(args) {
+    const { choose } = await import("../lib/choose/index.mjs");
     const root = projectRoot();
     return choose(root, loadConfig(root), args);
   },
 
   async ledger(args) {
+    const { ledger } = await import("../lib/review.mjs");
     const root = projectRoot();
     return ledger(root, loadConfig(root), args);
   },
 
   async docs([sub]) {
+    const { syncDocs } = await import("../lib/docs/docsync.mjs");
     if (sub !== "sync") {
       console.log("Usage: wf docs sync");
       return 2;
@@ -184,6 +167,7 @@ const commands = {
   },
 
   async testdata([name, ...args]) {
+    const { runTestdata } = await import("../lib/testdata.mjs");
     if (!name) {
       console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id> [--all]\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata drop <area> <ID>... --why \"<why>\" | --from <ask id> [--write]\n       wf testdata budget <area> [story ids] [--check]\n       wf testdata delta <area> <file>\n       wf testdata prune <area> [--all] [--write]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
       return 2;
@@ -289,25 +273,33 @@ const commands = {
     return found.defined.length || found.cited.length ? 0 : 1;
   },
 
-  design,
+  async design(args) {
+    const { design } = await import("../lib/design/index.mjs");
+    return design(args);
+  },
   async ask(args) {
+    const { runAsk } = await import("../lib/ask/index.mjs");
     return runAsk(args);
   },
   async view(args) {
+    const { runView } = await import("../lib/ask/index.mjs");
     return runView(args);
   },
 
   async app(args) {
+    const { runApp } = await import("../lib/app/driver.mjs");
     const root = projectRoot();
     return runApp(root, loadConfig(root), args);
   },
 
   async try(args) {
+    const { runTry } = await import("../lib/try/index.mjs");
     const root = projectRoot();
     return runTry(root, loadConfig(root), args);
   },
 
   async github([sub]) {
+    const { ruleset, rulesetBlocked, syncGithub } = await import("../lib/setup/github.mjs");
     const root = projectRoot();
     const config = loadConfig(root);
     if (sub === "ruleset") {
@@ -331,6 +323,8 @@ const commands = {
   },
 
   async decision([sub, ...args]) {
+    const { localToday } = await import("../lib/docs/check.mjs");
+    const { addDecision, supersedeAll } = await import("../lib/logs/decisions.mjs");
     const root = projectRoot();
     const config = loadConfig(root);
     if (sub === "add" && args.length === 3) {
@@ -349,20 +343,26 @@ const commands = {
   },
 
   async question(args) {
+    const { localToday } = await import("../lib/docs/check.mjs");
+    const { runQuestion } = await import("../lib/logs/questions.mjs");
     const root = projectRoot();
     return runQuestion(root, loadConfig(root), args, localToday());
   },
 
   async board(args) {
+    const { runBoard } = await import("../lib/board/index.mjs");
     return runBoard(project(), args);
   },
 
   async signoffs(args) {
+    const { localToday } = await import("../lib/docs/check.mjs");
+    const { runSignoffs } = await import("../lib/logs/signoffs.mjs");
     const root = projectRoot();
     return runSignoffs(root, loadConfig(root), args, localToday());
   },
 
   async release([name, ...args]) {
+    const { runRelease, STEPS } = await import("../lib/release.mjs");
     if (!name) {
       console.log(`Usage: wf release <${Object.keys(STEPS).join("|")}> [arguments]`);
       return 2;
@@ -372,16 +372,24 @@ const commands = {
   },
 
   async ready(args) {
+    const { runTrack } = await import("../lib/tracks.mjs");
     const root = projectRoot();
     return runTrack(root, loadConfig(root), "ready", args);
   },
 
   async done(args) {
+    const { runTrack } = await import("../lib/tracks.mjs");
     const root = projectRoot();
     return runTrack(root, loadConfig(root), "done", args);
   },
 
   async init([file]) {
+    const { KIT_ROOT, reconcile } = await import("../lib/setup/ai.mjs");
+    const { localToday } = await import("../lib/docs/check.mjs");
+    const { syncGithub } = await import("../lib/setup/github.mjs");
+    const { install } = await import("../lib/setup/hooks.mjs");
+    const { answerProblems, writeStarter } = await import("../lib/setup/init.mjs");
+    const { syncDocs } = await import("../lib/docs/docsync.mjs");
     if (!file) {
       console.log("Usage: wf init <answers.json>; the workflow-init skill writes the answers.");
       return 2;
@@ -408,20 +416,24 @@ const commands = {
   },
 
   async doctor() {
+    const { runDoctor } = await import("../lib/setup/doctor.mjs");
     return runDoctor(projectRoot(), project());
   },
 
   async tools() {
+    const { runTools } = await import("../lib/setup/tools.mjs");
     const root = projectRoot();
     return runTools(root, loadConfig(root));
   },
 
   async check(args) {
+    const { runChecks } = await import("../lib/checks.mjs");
     const root = projectRoot();
     return runChecks(root, loadConfig(root), args);
   },
 
   async hooks([hook]) {
+    const { install, runHook } = await import("../lib/setup/hooks.mjs");
     const root = projectRoot();
     if (hook === "install") {
       for (const line of install(root)) console.log(line);
@@ -437,11 +449,13 @@ const commands = {
   },
 
   async screens(args) {
+    const { screens } = await import("../lib/screens/run.mjs");
     const root = projectRoot();
     return screens(root, loadConfig(root), args);
   },
 
   async disk(args) {
+    const { diskCheck } = await import("../lib/disk.mjs");
     const root = projectRoot();
     const dryRun = args.includes("--dry-run");
     const number = args.find((arg) => /^\d+$/.test(arg));
