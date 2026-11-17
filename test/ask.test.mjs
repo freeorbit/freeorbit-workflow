@@ -616,7 +616,7 @@ test("blocks: sections are checked, the questions go in one place, and a part is
   const placed = run({ blocks: [{ type: "text", text: "hi" }] });
   assert.equal(placed.spec.sections.at(-1).blocks[0].type, "questions", "with no questions block, they come after");
   const bad = (more) => run(more).problems.join("\n");
-  assert.match(bad({ blocks: [{ type: "html", html: "<b>" }] }), /type is one of text, stats, table, diff, chart, diagram, timeline, board, questions, part/);
+  assert.match(bad({ blocks: [{ type: "html", html: "<b>" }] }), /type is one of text, stats, table, diff, chart, diagram, timeline, board, pictures, questions, part/);
   assert.match(bad({ blocks: [{ type: "questions" }, { type: "questions" }] }), /one questions block at most/);
   assert.match(bad({ blocks: [{ type: "table", source: "/etc/passwd" }] }), /no source \/etc\/passwd/);
   assert.match(bad({ blocks: [{ type: "part", name: "missing" }] }), /no part missing/);

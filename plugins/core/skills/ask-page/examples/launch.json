@@ -52,7 +52,23 @@
       "label": "Deep",
       "why": "Also the screens shared code reaches, and the light runs waiting",
       "time": "about 9 min",
-      "command": "npx wf screens --deep"
+      "command": "npx wf screens --deep",
+      "details": [
+        {
+          "type": "text",
+          "text": "**Reaches through shared code:** the shell, the tokens, and the accounts frame's styles."
+        },
+        {
+          "type": "pictures",
+          "title": "Frames on the deep list",
+          "items": [
+            {
+              "image": ".cache/screens/latest/accounts-wide.png",
+              "label": "accounts"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "defer",

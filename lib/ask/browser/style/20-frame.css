@@ -237,3 +237,15 @@ input.other-text { margin: 6px 0 0 28px; width: calc(100% - 28px); }
 :root[data-launch] .shell { padding-bottom: calc(var(--foot) + var(--launch) + 40px); }
 :root[data-launch] .sendpanel { bottom: calc(var(--foot) + var(--launch) + 10px); }
 :root[data-launch] .toast { bottom: calc(var(--foot) + var(--launch) + 14px); }
+
+/* A launch run's details, beside the runs: the run in view, picked, or recommended. */
+.q-body.has-details { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 1.25fr); column-gap: 24px; align-items: start; }
+.q-body.has-details > * { grid-column: 1; }
+.q-body.has-details > .launch-details { grid-column: 2; grid-row: 1 / span 40; position: sticky; top: calc(var(--head) + 12px); max-height: calc(100vh - var(--head) - var(--foot) - var(--launch, 0px) - 32px); overflow: auto; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); }
+:root[data-wide] .q-body.has-details > :not(.viewer) { max-width: none; }
+.launch-details .details-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.launch-details .block { margin: 10px 0; }
+@media (max-width: 1000px) {
+  .q-body.has-details { display: block; }
+  .q-body.has-details > .launch-details { position: static; max-height: none; margin-top: 12px; }
+}

@@ -49,3 +49,9 @@ ins.d-add { background: color-mix(in srgb, var(--ok) 24%, transparent); color: v
 .diff.inline.by-word del.d-del, .diff.inline.by-word ins.d-add { padding: 0 2px; }
 .diff.inline.by-word del.d-del + ins.d-add { margin-left: .45em; }
 
+
+/* A pictures block: thumbnails side by side; each opens full size. */
+.pic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.pic-cell { margin: 0; display: grid; gap: 4px; }
+.pic-open { padding: 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); cursor: zoom-in; overflow: hidden; }
+.pic-open img { display: block; width: 100%; height: auto; }

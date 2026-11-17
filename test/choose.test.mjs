@@ -8,7 +8,8 @@ import { test } from "node:test";
 import { answersMarkdown } from "../lib/ask/answers.mjs";
 import { RULES as S } from "../lib/ask/rules.mjs";
 import { normalize } from "../lib/ask/spec.mjs";
-import { chunkAdvice, chunkSpec, startable } from "../lib/choose/chunk.mjs";
+import { pictures } from "../lib/ask/advice.mjs";
+import { chunkAdvice, chunkDetails, chunkSpec, startable } from "../lib/choose/chunk.mjs";
 import { e2eSpec } from "../lib/choose/e2e.mjs";
 import { choose } from "../lib/choose/index.mjs";
 import { releaseAdvice, releaseSpec, unreleasedNotes } from "../lib/choose/release.mjs";
@@ -146,4 +147,33 @@ test("each new choice point writes a launch spec that builds as it is, and one w
   assert.equal(chunkSpec(root, config).recommended, "c-CH-01");
   assert.equal(releaseSpec(root, config).runs[0].command, "npx wf release check 0.1.0-rc.2");
   assert.equal(e2eSpec(root, config).runs[0].why, "2 journeys");
+});
+
+test("a chunk waiting on open questions gives way to one that can start now", () => {
+  const ready = [{ id: "37f" }, { id: "37m" }];
+  const open = (id) => (id === "37f" ? 2 : 0);
+  const advice = chunkAdvice([], ready, open);
+  assert.equal(advice.run, "c-37m");
+  assert.match(advice.why, /37f comes first but waits on 2 open questions; 37m can start now with none/);
+  assert.match(chunkAdvice([], [{ id: "37f" }], open).why, /though 2 questions on it are still open/);
+});
+
+test("a chunk's details say what it delivers, count it, show its frames and stories, and what is open on it", () => {
+  const story = { id: "APP-26", title: "Pick a look", as: "As a person I want a dark look", acceptance: [{ text: "a", removed: false, risk: null }, { text: "b", removed: false, risk: { level: "high" } }], risk: null };
+  const blocks = chunkDetails({ id: "36", forClient: "Looks you can pick", who: "Ken", waitsOn: "35" }, { stories: [story], frames: [{ image: "docs/x.png", label: "x" }], questions: [{ id: "Q-1", needs: "designer", question: "Which accent?" }], unreached: 1, doneIds: new Set(["35"]) });
+  assert.deepEqual(blocks.map((b) => b.type), ["text", "stats", "pictures", "table", "text"]);
+  assert.match(blocks[0].text, /\*\*For the client:\*\* Looks you can pick[\s\S]*\*\*Waits on:\*\* 35 \(done\)/);
+  assert.deepEqual(blocks[1].items.map((i) => [i.label, i.value, i.note ?? ""]), [["Stories", "1", ""], ["Acceptance lines", "2", "1 high-risk"], ["Frames", "1", "1 not reached yet"], ["Open questions", "1", ""]]);
+  assert.deepEqual(blocks[3].rows, [["APP-26 Pick a look", "As a person I want a dark look", "2", "1 high"]]);
+  assert.match(blocks[4].text, /\*\*Q-1\*\* \(needs designer\): Which accent\?/);
+});
+
+test("a launch run's details are checked as blocks, and a pictures block's pictures are copied like a question's", () => {
+  const raw = JSON.parse(JSON.stringify(EXAMPLE));
+  const { spec, problems } = normalize(raw);
+  assert.deepEqual(problems, []);
+  assert.deepEqual(spec.launch.details.deep.map((b) => b.type), ["text", "pictures"]);
+  assert.deepEqual(pictures(spec).map((p) => p.image), [".cache/screens/latest/accounts-wide.png"]);
+  raw.runs[1].details = [{ type: "pictures", items: [] }];
+  assert.match(normalize(raw).problems.join(), /a pictures block lists its items/);
 });
