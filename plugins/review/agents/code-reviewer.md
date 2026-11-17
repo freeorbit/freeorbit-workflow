@@ -91,7 +91,7 @@ Use the rubric's prefixes. By default: `ARCH-` for a dependency rule or a bounda
 
 ## Performance mode
 
-The hot-paths doc says which paths are hot, how large their data gets, and each one's budget. `hot-paths.txt` in the scanner output folder names the paths this scope touches; empty, or with no hot-paths doc, walk the `PERF-` rules and CS-LIST on the scope alone and say so. The files the `perf` scans wrote, such as performance lints or bundle sizes, are measurements: judge them, do not recount them.
+The hot-paths doc says which paths are hot, how large their data gets, and each one's budget. `hot-paths.txt` in the scanner output folder names the paths this scope touches; empty, or with no hot-paths doc, walk the `PERF-` rules and CS-LIST on the scope alone and say so. The files the `perf` scans wrote are measurements: judge them, do not recount them. `perf-scan.txt` lists loops that wait, blocking work, whole-file reads, and polling; `perf-clippy.txt` the performance lints that fired; `bundle-size.txt` what the build ships and what grew. Each line is a place to look: it becomes a finding only with the scale the doc or a measurement gives. Start from the lines on a hot path.
 
 1. Read the hot-paths doc's Budgets and How large the data gets, then each path `hot-paths.txt` names.
 2. Walk each named path from where it starts, through its Files, to where it ends: the loop, the query, the IPC call, the render, the write. Follow a value across files, as security mode does, but count the work: how many times each step runs for the data sizes the doc gives.
