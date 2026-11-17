@@ -47,8 +47,15 @@ test("the command is the run's, then each shown option's flag, an open option co
     [{ run: { choice: "deep" }, show: { choice: "screen" }, stress: { choice: "on" }, area: { text: "uplink,downlink" } }, "npx wf screens --deep --show screen --wide --stress --area uplink,downlink", "every option"],
     [{ run: { choice: "defer" }, show: { choice: "screen" } }, "npx wf screens --defer", "an option for other runs is left out"],
     [{ run: { choice: "light" }, area: { text: "a b; rm -rf ~" } }, "npx wf screens --light --area a 'b;' rm -rf '~'", "typed words are quoted for the shell"],
+    [{ run: { choice: "light" }, area: { text: "$' $& $$" } }, "npx wf screens --light --area '$'\\''' '$&' '$$'", "a $ pattern in typed words stays as typed"],
   ];
   for (const [A, want, why] of rows) assert.equal(command(A), want, why);
+});
+
+test("a triage item's answer line gives its ID once", () => {
+  const { spec } = normalize({ id: "t", title: "T", template: "triage", items: [{ id: "q-1", text: "Pick a name", recommended: "answer", why: "w" }] });
+  const record = { id: "t", hash: spec.hash, submitted: "2026-11-17T10:00:00Z", answers: { "q-1": { choice: "drop" } } };
+  assert.match(answersMarkdown(spec, record), /^- \*\*q-1\*\* Pick a name: \*\*drop\*\*/m);
 });
 
 test("the answers start with the command", () => {

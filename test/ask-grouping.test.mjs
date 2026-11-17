@@ -28,6 +28,9 @@ test("a long page with no groups is advised to group its questions", () => {
   assert.match(advice({ questions: many }), /9 questions and no groups: give each question a group/);
   assert.equal(advice({ questions: many.map((x, i) => ({ ...x, group: i < 4 ? "Layout" : "Words" })) }), "", "grouped, it is fine");
   assert.equal(advice({ questions: many.slice(0, GROUPING.ungrouped) }), "", "eight is fine");
+  const ids = many.map((x) => x.id);
+  const sections = [{ title: "A", blocks: [{ type: "questions", ids: ids.slice(0, 4) }] }, { title: "B", blocks: [{ type: "questions", ids: ids.slice(4) }] }];
+  assert.equal(advice({ questions: many, sections }), "", "placed in two sections, it is grouped");
 });
 
 test("questions that share their options are advised to be one grid, but not a template's own verdicts", () => {

@@ -114,6 +114,7 @@ The light, deep, or defer question went through the question tool, four short op
 - **`wf scan`** takes `--performance on|off` and `--verify` or `--no-verify` for one run, and says `Verify pass: on|off`.
 - **Take all recommendations** also answers the follow-ups that its answers bring into view.
 - More choice points can follow as modules in `lib/choose/`.
+- **Smaller fixes on every page:** a group whose questions are all hidden follow-ups hides too; a page placed in several sections no longer gets the "no groups" advice; a triage item's answer line gives its ID once.
 
 ### v0.91.0: you can tell when an agent is waiting on an ask page
 
