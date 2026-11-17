@@ -79,21 +79,7 @@ Nobody adds a rule here without a finding the reviewer accepted, or an owner dec
 
 ## Performance
 
-The hot-paths doc, from `review.hotPaths` in the config, says which paths are hot, how large their data gets, and the budget each must keep. These rules say what must hold on them (added 2026-11-17). The performance pass checks CS-LIST too.
-
-- **A finding names its scale**: the data size or the budget it breaks, from that doc or a measurement. "Could be faster" is not a finding.
-- **Off a hot path**, only a cost that grows with the data is raised.
-- **Blocking the UI thread or an async runtime** is High wherever it is.
-
-- **PERF-LOOP.** No I/O, query, IPC call, or process start inside a loop over data, one per item where one call could serve them all. Calls that do not depend on each other run together, not one after another.
-- **PERF-BOUND.** Every read, list, query, queue, and cache has a limit, or pages. Nothing loads a whole dataset into memory when it can stream it, and nothing waits on the network or a process without a timeout.
-- **PERF-BLOCK.** Nothing blocks the UI thread or an async runtime: no file, disk, or CPU-heavy work in an async handler or an event loop without moving it to a worker or a blocking pool, and no synchronous wait in a render.
-- **PERF-IPC.** What crosses a process or network boundary is sized to what the other side shows: no whole record where a page of it is read, no polling where an event would do, and no call per item where one carries the list.
-- **PERF-RENDER.** A guideline, not a hard rule. A change to one item does not redraw the whole list, a long list draws only what is in view, and a value worked out from props or state is not worked out again on every render.
-- **PERF-START.** Startup does only what the first screen needs. The rest waits until it is asked for, or runs after the first screen shows.
-- **PERF-ALLOC.** A guideline, not a hard rule. On a path the hot-paths doc lists, no copy, clone, or allocation per item that a borrow, a reuse, or one allocation up front would avoid. Raised nowhere else.
-- **PERF-DEP.** A new dependency that ships to the user is worth its size: the reviewer names what it adds to the bundle or the binary when a scan measures it, and a lighter way the code could do the same.
-<!-- wf:local performance -->
+The `PERF-` rules are in [performance-standards.md](performance-standards.md), which only the performance pass reads: work and data, databases, calls to other services, screens, and shipping. Severity follows the table above.
 
 ## Security
 

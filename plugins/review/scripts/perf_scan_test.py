@@ -69,6 +69,40 @@ TREE = {
         "  }\n"
         "}\n"
     ),
+    "src/fan.rs": (
+        "pub async fn all(ids: Vec<u32>) {\n"
+        "    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();\n"
+        "    for id in ids {\n"
+        "        tokio::spawn(work(id));\n"
+        "    }\n"
+        "    for group in groups {\n"
+        "        for id in group {\n"
+        "            tokio::spawn(work(id));\n"
+        "        }\n"
+        "    }\n"
+        "    let rows = db.query(\"SELECT * FROM notes WHERE id = ?\", [id]);\n"
+        "    let page = db.query(\"SELECT id FROM notes LIMIT 50 OFFSET ?\", [n]);\n"
+        "    let first = db.query(\"SELECT id FROM notes LIMIT 50 OFFSET 0\", []);\n"
+        "}\n"
+    ),
+    "db/views.sql": "CREATE VIEW recent AS SELECT * FROM notes ORDER BY at DESC;\n",
+    "web/screen.ts": (
+        "export function mount(rows: HTMLElement[]) {\n"
+        "  window.addEventListener('resize', fit);\n"
+        "  const watch = new ResizeObserver(fit);\n"
+        "  for (const row of rows) {\n"
+        "    row.style.height = row.offsetHeight + 'px';\n"
+        "  }\n"
+        "  return Promise.all(rows.map((row) => load(row)));\n"
+        "}\n"
+    ),
+    "web/clean.ts": (
+        "export function mount() {\n"
+        "  window.addEventListener('resize', fit);\n"
+        "  const timer = setInterval(tick, 1000);\n"
+        "  return () => { window.removeEventListener('resize', fit); clearInterval(timer); };\n"
+        "}\n"
+    ),
     "web/list.test.ts": "for (const id of ids) {\n  await invoke('x');\n}\n",
     "tools/gen.mjs": "for (const f of files) {\n  await write(f);\n}\n",
 }
@@ -120,6 +154,16 @@ class PerfScan(unittest.TestCase):
             ("Whole files", "src/sync.rs:5 ", "a whole file read"),
             ("Timers", "web/list.ts:9 setInterval(refresh, 1000);", "a polling timer"),
             ("Timers", "src/sync.rs:14 a loop that sleeps and checks again", "a sleep loop"),
+            ("Work fanned out", "src/fan.rs:2 ", "an unbounded channel"),
+            ("Work fanned out", "src/fan.rs:3 a task spawned per item, at line 4", "a task spawned per item"),
+            ("Work fanned out", "src/fan.rs:7 a task spawned per item, at line 8", "a nested loop's spawn, under the inner loop"),
+            ("Work fanned out", "web/screen.ts:7 ", "a promise per item, awaited together"),
+            ("Layout", "web/screen.ts:4 a loop that reads layout in its body, at line 5", "layout read in a loop"),
+            ("Listeners", "web/screen.ts:2 a listener set up here", "a listener never removed"),
+            ("Listeners", "web/screen.ts:3 an observer set up here", "an observer never disconnected"),
+            ("Queries", "src/fan.rs:11 every column read", "SELECT * in a Rust string"),
+            ("Queries", "src/fan.rs:12 paging by offset", "OFFSET by a parameter"),
+            ("Queries", "db/views.sql:1 every column read", "SELECT * in a .sql file"),
         ]
         for title, line, why in rows:
             with self.subTest(why):
@@ -138,10 +182,13 @@ class PerfScan(unittest.TestCase):
             ("web/list.test.ts", "a test file"),
             ("tools/gen.mjs", "a folder that does not ship"),
             ("mod tests", "Rust's test module"),
+            ("src/fan.rs:13", "OFFSET 0, the first page"),
+            ("src/fan.rs:6 ", "a spawn counted only in its innermost loop"),
         ]
         for place, why in rows:
             with self.subTest(why):
                 self.assertNotIn(place, text)
+        self.assertNotIn("web/clean.ts", self.section(text, "Listeners"), "set-ups taken down again")
 
     def test_a_list_keeps_only_those_paths(self):
         text = self.scan(keep=["web/list.ts"])

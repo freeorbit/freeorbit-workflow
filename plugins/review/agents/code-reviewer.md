@@ -26,14 +26,14 @@ The prompt names:
 - **Scanner output:** a folder of JSON and text files, in security, structure, and performance mode.
 - **Drafts:** the draft findings to check, in verify mode.
 - **Ledger**, **Closed**, **Closed details**, **Decisions:** the findings ledger, its closed summary, the folder of closed findings' details, and the decisions folder.
-- **Rubric**, **Threat model**, **Hot paths**, **Reads**, **Web:** the rubric, the threat model, the hot-paths doc, the other docs you may read, and the web sources you may use. A line left out means there is none.
+- **Rubric**, **Performance rubric**, **Threat model**, **Hot paths**, **Reads**, **Web:** the rubric, the `PERF-` rules (performance and verify mode), the threat model, the hot-paths doc, the other docs you may read, and the web sources you may use. A line left out means there is none.
 
 ## What you may read
 
 Only what the prompt names, and:
 
 - Any code or config in the repo, the root workspace files, and lockfiles.
-- The rubric. Every finding cites one of its rule IDs.
+- The rubric, and in performance and verify mode the performance rubric. Every finding cites one of their rule IDs.
 - The threat model, the hot-paths doc, and each doc in Reads. Search a large one for the piece you are checking rather than reading it whole.
 - The decisions log, the files under the Decisions folder, one per area and topic. Search them for a draft finding's topic, and never read one in full.
 - The ledger. Read its Summary, which ends at the `## Open` heading. Search for one ID when you need a finding's details, and never read the file in full. Verify mode does not read the ledger.
@@ -93,7 +93,7 @@ Use the rubric's prefixes. By default: `ARCH-` for a dependency rule or a bounda
 
 The hot-paths doc says which paths are hot, how large their data gets, and each one's budget. `hot-paths.txt` in the scanner output folder names the paths this scope touches; empty, or with no hot-paths doc, walk the `PERF-` rules and CS-LIST on the scope alone and say so. The files the `perf` scans wrote are measurements: judge them, do not recount them. `perf-scan.txt` lists loops that wait, blocking work, whole-file reads, and polling; `perf-clippy.txt` the performance lints that fired; `bundle-size.txt` what the build ships and what grew. Each line is a place to look: it becomes a finding only with the scale the doc or a measurement gives. Start from the lines on a hot path.
 
-1. Read the hot-paths doc's Budgets and How large the data gets, then each path `hot-paths.txt` names.
+1. Read the performance rubric, the rubric's severity table, then the hot-paths doc's Budgets and How large the data gets, then each path `hot-paths.txt` names.
 2. Walk each named path from where it starts, through its Files, to where it ends: the loop, the query, the IPC call, the render, the write. Follow a value across files, as security mode does, but count the work: how many times each step runs for the data sizes the doc gives.
 3. Check the `PERF-` rules and CS-LIST as you go, and CS-STATE's rule on a lock held across slow work.
 4. A finding names its scale: "runs once per request, and the doc gives 10,000 requests", or the budget it breaks and by how much. With no size in the doc and no measurement, the finding is at most Low and says what number would settle it. "Could be faster" is not a finding.

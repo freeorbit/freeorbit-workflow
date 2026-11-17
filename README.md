@@ -104,6 +104,22 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.4.0: performance standards for databases, services, and screens
+
+The performance pass had 8 rules, mostly about loops and blocking. It now has 18, from the database, service, and web guidance the rules cite, each one general and checkable in code.
+
+- **Their own doc:** the `PERF-` rules move to `docs/workflow/performance-standards.md`, which only the performance pass reads, so the security and structure passes read 2 KB less. `code-standards.md` keeps the severity table and points there.
+- **New rules:**
+  - Databases: PERF-INDEX, PERF-HOLD (short transactions and locks), PERF-CONN (pooled connections, SQLite's write-ahead log), and PERF-MIGRATE (online schema changes).
+  - Services: PERF-RETRY (capped backoff with jitter, safe to repeat) and PERF-FLOW (a limit on fan-out, and backpressure).
+  - Screens: PERF-LAYOUT, PERF-INPUT, PERF-MEDIA (a guideline), and PERF-LIFECYCLE (tear down what you set up, pause while hidden).
+- **Additions to the existing rules:**
+  - Keyset paging, expiring caches, and a cancel that reaches the work below it.
+  - No `SELECT *` on a hot path, and no regex that can backtrack forever on outside text.
+  - Code-split routes, and stable props for memoized children.
+- **The perf scan** also lists fan-out with no limit, layout read in a loop, listeners and observers with no take-down in the file, `SELECT *`, and paging by offset.
+- **Upgrading:** run `npx wf docs sync`. A project's own rules in code-standards' performance part move to the new doc on that sync. A project that names `docs.synced` adds `performance-standards` to it.
+
 ### v1.3.0: the review ledger in its own folder
 
 The closed findings' file held every closed finding's details, and kept growing (430 KB in Freeorbit). The ledger now has its own folder, and the closed details are split by the week they closed in.

@@ -168,3 +168,17 @@ test("an unclosed or misnamed index block is a problem", () => {
   const read = (file) => (file === config.docs.index ? "<!-- wf:index logs -->\nno end\n<!-- wf:index Logs -->\n<!-- /wf:index Logs -->\n" : null);
   assert.match(indexProblems(config, read, [])[0], /no matching end, or its name is not lowercase/);
 });
+
+test("a project's own performance rules move with their slot from code-standards to performance-standards", () => {
+  const config = merge(DEFAULTS, {});
+  const own = "- **PERF-OURS.** Our own rule.";
+  const old = `# Code standards\n\n<!-- wf:local performance -->\n${own}\n<!-- /wf:local performance -->\n`;
+  const read = (file) => (file === "docs/workflow/code-standards.md" ? old : null);
+  const { docs, orphans } = planDocs(config, read);
+  assert.deepEqual(orphans, [], "a moved part is not an orphan");
+  assert.match(docs.get("docs/workflow/performance-standards.md"), new RegExp(`<!-- wf:local performance -->\\n${own.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\n<!-- /wf:local performance -->`));
+  assert.doesNotMatch(docs.get("docs/workflow/code-standards.md"), /PERF-OURS/, "and the old copy loses it");
+  // A project that syncs only code-standards keeps the part flagged, so it is not lost.
+  const only = merge(DEFAULTS, { docs: { synced: ["code-standards"] } });
+  assert.match(planDocs(only, read).orphans.join(), /a part for performance/);
+});

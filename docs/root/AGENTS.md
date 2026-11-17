@@ -47,7 +47,7 @@ Efficiency that leads to our outcome is how we work, in every chat and every tas
 - **Four steps.** Follow [four-steps.md]({{docs.workflow}}/four-steps.md), for each area on its own. A later step can send the work back to design. Do not pick a stack or architecture before Step 3. Log an early idea in [open-questions.md]({{logs.openQuestions}}).
 - **Chunks.** Run the [chunk-start]({{docs.workflow}}/four-steps.md#chunk-start) and [chunk-end]({{docs.workflow}}/four-steps.md#chunk-end) steps. Ask once at the start, each question to the role that owns it, and do not build the part that depends on an answer. Chunk end runs the `code-review-ledger` skill before the commit proposal.
 <!-- wf:local data -->
-- **Code** follows [code-standards.md]({{docs.workflow}}/code-standards.md).
+- **Code** follows [code-standards.md]({{docs.workflow}}/code-standards.md), and code on a hot path [performance-standards.md]({{docs.workflow}}/performance-standards.md).
 <!-- wf:local design -->
 - **Branches.** Nothing is committed or pushed to `main`. Work goes on a `<scope>/<slug>` branch and lands by pull request, as in [branches.md]({{docs.workflow}}/branches.md).
 - **Commits** follow the `commit` skill, and pull requests the `pull-request` skill. One yes covers a pull request and the push it needs; a merge needs its own yes.

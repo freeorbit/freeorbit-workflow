@@ -68,6 +68,7 @@ Closed: <logs.ledgerClosed>
 Closed details: <logs.ledgerClosedDetails>
 Decisions: <logs.decisions>
 Rubric: <review.rubric>
+Performance rubric: <review.performanceRubric; performance mode only>
 Threat model: <review.threatModel>
 Hot paths: <review.hotPaths>
 Reads: <review.reads>
@@ -84,6 +85,8 @@ With it on, run `code-reviewer` once more, on the verify model:
 
 ```text
 Mode: verify
+Rubric: <review.rubric>
+Performance rubric: <review.performanceRubric, when a draft is a PERF- finding>
 Drafts:
 <the merged drafts, as the agent wrote them>
 ```

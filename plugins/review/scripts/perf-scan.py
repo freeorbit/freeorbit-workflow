@@ -8,7 +8,8 @@ judge against the PERF- rules and the hot-paths doc, not a finding: a loop over
 three items may wait in each turn, and a sync command may read one small file.
 With a list, only those paths are reported.
 
-It reads .rs, .ts, .tsx, .js, and .mjs files, by their text, with no compiler:
+It reads .rs, .ts, .tsx, .js, and .mjs files, and .sql files for their
+queries, by their text, with no compiler:
 a loop or an async body is found by its braces, after strings and comments are
 taken out. Tests and folders that do not ship, such as tools/, are left
 out, since their cost is not the user's.
@@ -20,6 +21,7 @@ import sys
 from pathlib import Path
 
 CODE = (".rs", ".ts", ".tsx", ".js", ".mjs")
+SQL_FILES = (".sql",)
 
 # A loop's first line, and what in its body waits or crosses a boundary.
 RUST_LOOP = re.compile(r"^\s*(?:'\w+:\s*)?(?:for\b.*\bin\b|while\b|loop\b)[^;]*\{\s*$")
@@ -39,6 +41,26 @@ TAURI_COMMAND = re.compile(r"^\s*#\[tauri::command(?:\((?P<args>[^)]*)\))?\]")
 # A whole file read into memory.
 RUST_WHOLE = re.compile(r"\bfs::read(?:_to_string)?\(|\.read_to_(?:string|end)\(")
 TS_WHOLE = re.compile(r"\breadFileSync\(|\breadFile\(|\.arrayBuffer\(\)|\.text\(\)")
+
+# Work fanned out over a list with no limit on how much runs at once.
+TS_FANOUT = re.compile(r"\bPromise\.(?:all|allSettled)\(\s*[\w.$]+\.map\(")
+RUST_FANOUT = re.compile(r"\b(?:try_)?join_all\(|\bunbounded_channel\b")
+RUST_SPAWN = re.compile(r"\b(?:tokio::)?(?:task::)?spawn\(")
+
+# Layout read back, which forces the browser to lay the page out again when a loop also writes styles.
+TS_LAYOUT = re.compile(r"\.(?:offset(?:Height|Width|Top|Left)|client(?:Height|Width)|scroll(?:Height|Width|Top|Left))\b|\bgetBoundingClientRect\(|\bgetComputedStyle\(")
+
+# What a screen sets up, and what takes it down again; more set-ups than take-downs in a file is a place to look.
+LIFECYCLE = [
+    (re.compile(r"\baddEventListener\("), re.compile(r"\bremoveEventListener\(|\bsignal\s*:"), "a listener"),
+    (re.compile(r"\bsetInterval\("), re.compile(r"\bclearInterval\("), "an interval"),
+    (re.compile(r"(?<![\w.])listen\("), re.compile(r"\bunlisten\b|\bun\w*\(\)"), "an event listen"),
+    (re.compile(r"\bnew (?:Resize|Intersection|Mutation)Observer\("), re.compile(r"\.disconnect\("), "an observer"),
+]
+
+# A query that reads every column, and paging by a large or variable offset.
+SQL_STAR = re.compile(r"\bselect\s+(?:distinct\s+)?\*\s+from\b", re.I)
+SQL_OFFSET = re.compile(r"\boffset\s+(?:\?|\$\d+|:\w+|\{|\$\{|\d{3,})", re.I)
 
 # A timer that asks again and again.
 TS_POLL = re.compile(r"\bsetInterval\(")
@@ -90,7 +112,9 @@ def inside_blocking(lines, start, end):
 
 
 def scan_rust(path, lines, report):
-    """Loops that wait, blocking work in async code and sync commands, whole-file reads, and sleep loops."""
+    """Loops that wait, blocking work in async code and sync commands, whole-file reads, sleep loops, and fan-out."""
+    # A spawn belongs to the innermost loop around it; a later loop that holds it is an inner one.
+    spawned_in = {}
     for at, line in enumerate(lines):
         if RUST_LOOP.match(bare(line)):
             first, last = region(lines, at)
@@ -99,6 +123,7 @@ def scan_rust(path, lines, report):
                 report["loops"].append(f"{path}:{at + 1} a loop that waits or does I/O in its body, at line {', '.join(str(n + 1) for n in waits[:5])}")
             if line.strip().startswith(("loop", "while")) and any(RUST_SLEEP.search(lines[n]) for n in range(first + 1, last + 1)):
                 report["polls"].append(f"{path}:{at + 1} a loop that sleeps and checks again")
+            spawned_in.update({n: at for n in range(first + 1, last + 1) if RUST_SPAWN.search(bare(lines[n]))})
         if RUST_ASYNC_FN.match(line):
             first, last = region(lines, at)
             allowed = inside_blocking(lines, first, last)
@@ -113,9 +138,16 @@ def scan_rust(path, lines, report):
                 io = [n for n in range(first + 1, last + 1) if RUST_BLOCKING.search(bare(lines[n])) or RUST_WAITS.search(bare(lines[n]))]
                 if io:
                     report["blocking"].append(f"{path}:{fn + 1} a sync Tauri command, which runs on the main thread, does I/O at line {', '.join(str(n + 1) for n in io[:5])}")
+        if RUST_FANOUT.search(bare(line)):
+            report["fanout"].append(f"{path}:{at + 1} {line.strip()[:70]}")
         # A read held to a size by .take() is bounded already.
         if RUST_WHOLE.search(bare(line)) and ".take(" not in line and ".take(" not in (lines[at - 1] if at else ""):
             report["whole"].append(f"{path}:{at + 1} {line.strip()[:70]}")
+    loops = {}
+    for spawn, loop in sorted(spawned_in.items()):
+        loops.setdefault(loop, []).append(spawn)
+    for loop, spawns in sorted(loops.items()):
+        report["fanout"].append(f"{path}:{loop + 1} a task spawned per item, at line {', '.join(str(n + 1) for n in spawns[:5])}")
 
 
 def scan_ts(path, lines, report):
@@ -129,10 +161,28 @@ def scan_ts(path, lines, report):
                 report["loops"].append(f"{path}:{at + 1} an async callback per item")
             elif waits:
                 report["loops"].append(f"{path}:{at + 1} a loop that waits or calls out in its body, at line {', '.join(str(n + 1) for n in waits[:5])}")
+            reads = [n for n in range(first + 1, last + 1) if TS_LAYOUT.search(bare(lines[n]))]
+            if reads:
+                report["layout"].append(f"{path}:{at + 1} a loop that reads layout in its body, at line {', '.join(str(n + 1) for n in reads[:5])}")
+        if TS_FANOUT.search(text):
+            report["fanout"].append(f"{path}:{at + 1} {line.strip()[:70]}")
         if TS_POLL.search(text):
             report["polls"].append(f"{path}:{at + 1} {line.strip()[:70]}")
         if TS_WHOLE.search(text):
             report["whole"].append(f"{path}:{at + 1} {line.strip()[:70]}")
+    for setup, teardown, what in LIFECYCLE:
+        made = [n for n, line in enumerate(lines) if setup.search(bare(line))]
+        if len(made) > sum(1 for line in lines if teardown.search(bare(line))):
+            report["lifecycle"].extend(f"{path}:{n + 1} {what} set up here, and the file takes down fewer than it sets up" for n in made[:5])
+
+
+def scan_sql(path, lines, report):
+    """Queries that read every column, and paging by offset; strings are kept, since queries live in them."""
+    for at, line in enumerate(lines):
+        if SQL_STAR.search(line):
+            report["sql"].append(f"{path}:{at + 1} every column read: {line.strip()[:70]}")
+        if SQL_OFFSET.search(line):
+            report["sql"].append(f"{path}:{at + 1} paging by offset: {line.strip()[:70]}")
 
 
 def main():
@@ -141,12 +191,15 @@ def main():
     if len(sys.argv) > 2 and sys.argv[2]:
         keep = set(Path(sys.argv[2]).read_text().split())
         paths = [path for path in paths if path in keep]
-    keys = ["loops", "blocking", "whole", "polls"]
+    keys = ["loops", "blocking", "whole", "polls", "fanout", "layout", "lifecycle", "sql"]
     report = {key: [] for key in keys}
     for path in paths:
-        if not path.endswith(CODE) or is_test(path) or not Path(path).exists():
+        if not path.endswith(CODE + SQL_FILES) or is_test(path) or not Path(path).exists() or Path(path).is_symlink():
             continue
         text = Path(path).read_text(encoding="utf-8", errors="replace")
+        scan_sql(path, before_tests(text) if path.endswith(".rs") else text.split("\n"), report)
+        if path.endswith(SQL_FILES):
+            continue
         if path.endswith(".rs"):
             scan_rust(path, before_tests(text), report)
         else:
@@ -156,6 +209,10 @@ def main():
         "blocking": "Blocking work on an async runtime or the main thread (PERF-BLOCK)",
         "whole": "Whole files read into memory (PERF-BOUND)",
         "polls": "Timers and loops that check again and again (PERF-IPC)",
+        "fanout": "Work fanned out over a list with no limit, and unbounded channels (PERF-FLOW)",
+        "layout": "Layout read inside a loop (PERF-LAYOUT)",
+        "lifecycle": "Listeners, timers, and observers set up with no matching take-down in the file (PERF-LIFECYCLE)",
+        "sql": "Queries that read every column, and paging by offset (PERF-IPC, PERF-BOUND)",
     }
     with open(folder / "perf-scan.txt", "w", encoding="utf-8") as out:
         out.write("Places to look, not findings: judge each against the hot-paths doc's data sizes.\n\n")
