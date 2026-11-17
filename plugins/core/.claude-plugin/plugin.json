@@ -1,5 +1,5 @@
 {
   "name": "core",
-  "version": "0.92.0",
+  "version": "0.93.0",
   "description": "Commit, pull request, handoff, and doc-find skills; the wf docs, roles, and OpenCode scripts; and the blind feedback-reader agent for the board's comments."
 }

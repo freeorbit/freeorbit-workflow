@@ -94,12 +94,13 @@ After the code review and the fixes for its findings, when UI files or frames ch
 
 1. **Rebuild the app**, so the pictures are of the fixed code.
 2. **Scope.** Run `npx wf screens scope`. Both lists empty: stop here, unless a backend change altered words on a screen; then run those screens by name.
-3. **Ask the designer:** light, deep, or defer.
-   - Show both lists' counts and times, the light runs waiting, and any deferral.
-   - Recommend light. Recommend deep when the light list is empty and the deep one is not, or when two or more light runs are waiting.
-   - Before a deep run, check how much of the usage limit is left; the times `scope` gives are estimates.
+3. **Ask the designer** on the choice page: `npx wf choose screens | npx wf ask page -`, then the `ask-page` skill's steps.
+   - The page shows both lists' counts and times, the light runs waiting, the screens left open, and whether the code review covers HEAD. Each run, light, deep, or defer, shows its command; where the apps show, the areas, and the pictures the project sets are options.
+   - It recommends light; deep when the light list is empty and the deep one is not, or when two or more light runs are waiting.
+   - Before a deep run, check how much of the usage limit is left; the times are estimates.
    - Defer runs `npx wf screens --defer` and shoots nothing. Both lists keep growing until a run.
-4. **Run** `npx wf screens --light` or `--deep`. Do not ask which pictures: both take Default. Only when the designer asks for other pictures, name every viewport to take, such as `--wide --narrow`, and add `--stress` for the stress look.
+   - With no browser pane, ask in the chat with the same runs and options.
+4. **Run** the command the page returns, `Command:` at the head of its answers, such as `npx wf screens --light`. Do not ask which pictures: both take Default. Only when the designer asks for other pictures, name every viewport to take, such as `--wide --narrow`, and add `--stress` for the stress look.
    - `--chunk N`, `--all`, and names still check just those screens, without moving the state.
    - `--area <id>` narrows any run to that area's screens, such as `--deep --area uplink`; several are joined by commas, and `scope --area <id>` shows that part of each list. Use it when the designer asks for one area. Its accept counts the pictures but does not move the state, since the other areas were not looked at.
    - `--light` and `--deep` refuse until the code review ledger has reviewed or deferred at HEAD. `--force` is for a run the designer asks for outside chunk end.

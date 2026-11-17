@@ -1,5 +1,7 @@
 /* --- richer answers: follow-ups, scale, grid, sort, edits, form, owner, boxes --- */
 .q.is-hidden { display: none !important; }
+/* A group whose questions are all hidden follow-ups, such as a launch page's options before a run is picked, hides with them. */
+.section:has(> .q):not(:has(> .q:not(.is-hidden))) { display: none; }
 .chip.follow { color: var(--accent); border-color: var(--accent-line); }
 .scale { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 2px; }
 .stars { display: inline-flex; gap: 2px; }
