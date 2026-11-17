@@ -33,6 +33,10 @@ header.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srg
 .top h1 { font-size: 14px; line-height: 18px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.005em; }
 .top .who { font-size: 12px; line-height: 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .top .who a { color: inherit; }
+.waitpill { font-size: 12px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.waitpill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: wf-wait-pulse 1.6s ease-in-out infinite; }
+@keyframes wf-wait-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .waitpill::before { animation: none; } }
 .saved { font-size: 12px; color: var(--muted); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .saved::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--line-3); }
 .saved.on::before { background: var(--ok); }

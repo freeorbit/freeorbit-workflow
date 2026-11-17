@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.91.0: you can tell when an agent is waiting on an ask page
+
+With the browser on another screen, or the pane tucked in the sidebar, nothing showed that the chat was waiting on a page until the whole reply was read. A page's own notifications had to be turned on, and worked only while a page was open.
+
+- **`wf ask wait` marks the page while it runs.** The page's header shows "Agent waiting" with how long, its tab title starts with ●, and its tab icon carries a dot. The inbox marks the row, and its title starts with ● too. The marks go when the page is sent or `wait` stops.
+- **A desktop notification when `wait` starts**, and one reminder after `ask.remind` minutes, 10 by default, through the ask-pages server. It is on by default where the machine has a notifier; `ask.notify: false` turns it off. A page's own notice of the same ask is shown once, not twice.
+- **The skill** brings the browser pane into view where the harness can, and starts its line in the chat with **Waiting on the ask page:**.
+- `off: ["waiting"]` takes the marks off one page.
+
 ### v0.90.0: scans for the performance pass
 
 The review module has three scans for `review.scans.perf`; the review section above gives the entries to copy.
