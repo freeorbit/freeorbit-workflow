@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.99.0: the kit in Orca, and wherever Claude Code runs
+
+A developer runs Claude Code inside Orca, an agent IDE with its own terminals, worktrees, and a browser per worktree, and no desktop browser pane.
+
+- **`npx wf ask open <id>`** opens an ask page where the person looks: a tab of Orca's browser in Orca, the browser pane in Claude's desktop app, the system's browser in a terminal. `ask.open` (`auto`, `pane`, `orca`, `system`, `print`) forces one. The ask-page skill opens every page with it, and `wf ask page` names it as the next step.
+- **In Orca, an agent waiting on a page** also puts the unread dot on its workspace, beside the desktop notification.
+- **A harness's own branch name**, such as Orca's or `claude/…`, is refused at push with the command that renames it: `git branch -m <scope>/<slug>`.
+- Orca is known by the `ORCA_*` variables in its terminals; outside them a bare `orca` never runs, since on Linux it is often GNOME's screen reader.
+
 ### v0.98.0: test data, the review gate, the board, and the guard, each in its place
 
 The last structure findings from the 2026-11-17 review. Nothing to change in a project; nothing a command does changes, except that `wf testdata trace --chunk` with no chunk now says it needs one.
