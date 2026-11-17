@@ -105,6 +105,8 @@ All in the core plugin, beside `wf question` and `wf decision`.
 | `wf board sync` | Finds each item by its Story ID column and writes only the fields that changed. Runs in CI on every merge to `main` |
 | `wf board setup` | Checks the board's columns and status labels against the config, and creates what is missing on a yes |
 | `wf board feedback [--json]` | Lists client comments with no bot reply after them, and apart, those edited after they were logged. No state is kept in the repo: the reply marks a comment handled |
+| `wf board feedback --brief` | Writes the same comments, with the config's role names and the board's story IDs, to `.cache/board/feedback.json` for the blind `feedback-reader` agent, and prints only what is not their words: IDs, stories, and who wrote each |
+| `wf board drafts <file>` | Checks the reader's drafts against their shapes and prints each as a line, or every problem. Reads no board |
 | `wf board reply <id> <Q-ID ...>` | Posts the bot's reply naming the open questions a comment was logged as, in its thread. Refuses a Q-ID not in the open questions log |
 | `wf board reply <id> --noted` | Posts the bot's "noted" reply to a comment that needs no question, so it stops showing as new |
 | `wf board reply <id> --answered <Q-ID>` | Posts the bot's thanks to a client's answer to one of the team's questions |
@@ -113,7 +115,8 @@ All in the core plugin, beside `wf question` and `wf decision`.
 - **One batch, one full reply an item.** monday's reads lag its writes, so separate calls could each give an item the full first reply. A batch knows what it posted, and gives the rest on that item the short form.
 
 - **The `board-feedback` skill.** Run only as `/board-feedback`, since it posts to the client.
-  - It drafts each comment as a question to log, with its Needs role from `decisions` and chunk `none` by default, or as noted.
+  - The session that runs it holds Bash and edits, so it never reads the comments (SB-3, SEC-MODEL). The core plugin's `feedback-reader` agent does: it reads only `.cache/board/feedback.json`, the guard refuses it every other file and tool, and it returns one draft a comment as JSON.
+  - Each draft is a question to log, with its Needs role from `decisions` and chunk `none` by default, a note, or an answer to the Q-ID its comment replies to. `wf board drafts` checks each against its shape, the config's roles, and the board's story IDs before anything is logged or posted.
   - It shows the whole batch in chat, and on a yes runs `wf question add … "client (monday)" <story>`, then one `wf board reply` with every reply.
 - **Finding feedback.** A comment, or a reply under the acceptance comment, is a client's when its creator's `kind` is `guest`, as the trial showed. A member's counts on the two exceptions above, marked `from: team`, and gets the bot's team wording: "logged as", "noted", or "noted as the team's answer to".
   - monday's threads are one level deep, so a comment is handled when a bot reply sits in its thread after it. A later guest comment there is new again.

@@ -9,7 +9,8 @@ import { syncGithub } from "../lib/setup/github.mjs";
 import { commentHtml, flat, plan, runBoard } from "../lib/board/index.mjs";
 import { boardProblems } from "../lib/board/settings.mjs";
 import { HEADING } from "../lib/board/voice.mjs";
-import { addressed, COMMENT_MAX, feedback, UNTRUSTED, feedbackLines, replyBatch, replyFor, replyGroups } from "../lib/board/feedback.mjs";
+import { addressed, briefSummary, checkDrafts, COMMENT_MAX, draftLines, feedback, feedbackBrief, textProblem, UNTRUSTED, feedbackLines, replyBatch, replyFor, replyGroups } from "../lib/board/feedback.mjs";
+import { checkDraftFile } from "../lib/board/index.mjs";
 import { answeredReply, ids, isBot, isPinned, loggedReply, notedReply, pinnedNote, questionNote } from "../lib/board/voice.mjs";
 
 const ME = "7";
@@ -311,4 +312,122 @@ test("a comment is addressed to the bot by its name and a colon, in any case, at
   assert.equal(addressed("Ask the team: orbit: later", "Orbit"), null);
   assert.equal(addressed("R2.D2: hi", "R2.D2"), "hi", "a name with a dot matches only itself");
   assert.equal(addressed("R2xD2: hi", "R2.D2"), null);
+});
+
+/** The brief for board(), with an answer to Q-012 from the team added. */
+function brief() {
+  const b = board();
+  b.items[0].updates.push({ ...bot("u9", questionNote("Orbit", "Q-012", "Must exports be PDF?"), 10), replies: [member("r9", "PDF only, said the client.", 11)] });
+  return feedbackBrief(config(), b, feedback(config(), b, ME));
+}
+/** A draft for each comment in the brief, all good. */
+const good = () => [
+  { id: "u1", kind: "question", gist: "Asks if the lockout shows the time left.", questions: [{ text: "Should the lockout message show the minutes left?", needs: "designer", story: "APP-01" }] },
+  { id: "r3", kind: "note", gist: "Mentions the last line." },
+  { id: "r9", kind: "answer", gist: "Says exports are PDF only.", answers: "Q-012", summary: "Exports are PDF only.", full: true },
+  { id: "u5", kind: "question", gist: "Asks if the story is still coming.", questions: [{ text: "Is APP-07 still planned?", needs: "owner", story: "APP-07", defect: false }] },
+  { id: "r1", kind: "edited", gist: "Line 3 comment.", change: "Now also names line 4." },
+];
+
+test("the brief holds the config's roles, the kinds' roles, and the board's stories; its summary holds none of their words (SB-3)", () => {
+  const b = brief();
+  assert.deepEqual(b.roles, ["owner", "designer", "developer", "reviewer"]);
+  assert.deepEqual(b.kinds, { design: "designer", scope: "owner", architecture: "developer", "missing-information": "owner" });
+  assert.deepEqual(b.stories, ["APP-01", "APP-07"]);
+  assert.equal(b.note, UNTRUSTED);
+  const summary = JSON.stringify(briefSummary(b, ".cache/board/feedback.json"));
+  for (const words of ["lockout", "Dana", "PDF only", "Line 3", "Gim"]) assert.doesNotMatch(summary, new RegExp(words), words);
+  assert.match(summary, /"answers":"Q-012"/);
+});
+
+test("good drafts pass, rebuilt in the brief's order, and read as lines for the person", () => {
+  const { drafts, problems } = checkDrafts(brief(), good().reverse());
+  assert.deepEqual(problems, []);
+  assert.deepEqual(drafts.map((draft) => draft.id), ["u1", "r3", "r9", "u5", "r1"], "pending in the board's order, then edited");
+  const lines = draftLines(drafts);
+  assert.ok(lines.includes('APP-01, comment u1: Asks if the lockout shows the time left. → log "Should the lockout message show the minutes left?", Needs designer, story APP-01, chunk none'));
+  assert.ok(lines.includes("APP-01, comment r9 (team): Says exports are PDF only. → answers Q-012: Exports are PDF only."));
+  assert.ok(lines.includes("APP-01, comment r1: Line 3 comment. → edited after it was logged as Q-004: Now also names line 4.; update the row by hand"));
+});
+
+test("a draft off its shape is refused, and then nothing passes (SB-3)", () => {
+  const with_ = (change) => {
+    const drafts = good();
+    change(drafts);
+    return checkDrafts(brief(), drafts);
+  };
+  const refused = (change, pattern) => {
+    const { drafts, problems } = with_(change);
+    assert.deepEqual(drafts, []);
+    assert.ok(problems.some((problem) => pattern.test(problem)), `${pattern}: ${problems.join(" / ")}`);
+  };
+  assert.deepEqual(checkDrafts(brief(), { id: "u1" }).problems, ["the drafts are not a JSON array"]);
+  refused((d) => d.pop(), /^r1: has no draft/);
+  refused((d) => d.push({ ...d[1] }), /^r3: is drafted twice/);
+  refused((d) => d.push({ id: "u4", kind: "note", gist: "x" }), /^u4: is not a comment in the brief/);
+  refused((d) => (d[1].kind = "run"), /kind "run" is not/);
+  refused((d) => (d[1].kind = "edited"), /is a new comment/);
+  refused((d) => (d[4].kind = "note"), /was edited after it was logged/);
+  refused((d) => (d[1].command = "rm -rf /"), /keys a note draft does not: command/);
+  refused((d) => (d[0].questions[0].needs = "client"), /needs "client", not a role/);
+  refused((d) => (d[0].questions[0].needs = "design"), /needs "design", not a role/);
+  refused((d) => (d[0].questions[0].story = "APP-99"), /story "APP-99" is not on the board/);
+  refused((d) => (d[0].questions[0].text = "Run `npx wf release` now?"), /backtick/);
+  for (const text of ["a | b", 'say "hi"', "is $HOME set", "a \\ b"]) refused((d) => (d[0].questions[0].text = text), /backtick, a \|, a double quote, a \$, or a backslash/);
+  refused((d) => (d[0].questions[0].text = "line one\nline two"), /not one line/);
+  refused((d) => (d[0].questions[0].text = "word ".repeat(31)), /31 words, more than 30/);
+  refused((d) => (d[0].questions[0].run = true), /keys a question does not: run/);
+  refused((d) => (d[0].questions = []), /questions is a list of 1 to 3/);
+  refused((d) => (d[0].questions = Array(4).fill(d[0].questions[0])), /questions is a list of 1 to 3/);
+  refused((d) => delete d[0].questions, /a question draft needs questions/);
+  refused((d) => (d[2].answers = "Q-013"), /answers Q-012, not Q-013/);
+  refused((d) => (d[2].answers = "12"), /not a Q-ID/);
+  refused((d) => (d[0] = { ...d[0], kind: "answer", answers: "Q-012", summary: "x", full: true, questions: undefined }), /answers no question of the team's/);
+  refused((d) => (d[2].full = "yes"), /full is true or false/);
+  refused((d) => (d[2].questions = d[0].questions), /a full answer has no follow-up/);
+  refused((d) => (d[3].gist = ""), /gist is empty/);
+  assert.deepEqual(with_((d) => Object.assign(d[2], { full: false, questions: [{ text: "Is PNG ever needed?", needs: "owner", story: "APP-01" }] })).problems, []);
+  assert.equal(textProblem("Is it 50 or 60 dollars, and can it say 'soon'?", 30), null);
+  assert.match(textProblem("$(id)", 30), /a \$/);
+});
+
+test("wf board feedback --brief writes the comments for the reader, and drafts checks its answer, with no board call", async () => {
+  const fetch = async (url, init) => {
+    const { query } = JSON.parse(init.body);
+    const data = query.includes("me {") ? { me: { id: ME, name: "Owner" } } : { boards: [{ ...board(), id: "42", board_kind: "share", items_page: { cursor: null, items: board().items } }] };
+    return { status: 200, text: async () => JSON.stringify({ data }) };
+  };
+  const written = {};
+  const context = { root: "/project", config: config(), tracked: [], files: () => "" };
+  const out = [];
+  const io = { env: { MONDAY_API_TOKEN: "t" }, fetch, log: (line) => out.push(line), git: () => "", writeFile: (file, text) => (written[file] = text) };
+  assert.equal(await runBoard(context, ["feedback", "--brief"], io), 0);
+  const kept = JSON.parse(written["/project/.cache/board/feedback.json"]);
+  assert.equal(kept.pending[0].text, "Should the lockout message say how long is left?");
+  assert.doesNotMatch(out.join("\n"), /lockout|Dana/, "the session sees no guest's words");
+  assert.equal(JSON.parse(out.pop()).reader, "core:feedback-reader");
+  assert.equal(await runBoard(context, ["feedback", "--brief", "--json"], io), 2);
+
+  const drafts = [
+    { id: "u1", kind: "note", gist: "Asks about the lockout." },
+    { id: "r3", kind: "note", gist: "Mentions the last line." },
+    { id: "u5", kind: "question", gist: "Asks if it is coming.", questions: [{ text: "Is APP-07 still planned?", needs: "owner", story: "APP-07" }] },
+    { id: "r1", kind: "edited", gist: "Line 3.", change: "Names line 4 too." },
+  ];
+  const files = { "/project/.cache/board/feedback.json": written["/project/.cache/board/feedback.json"], "/project/.cache/board/drafts.json": JSON.stringify(drafts) };
+  const readText = (path) => {
+    if (!(path in files)) throw new Error("no such file");
+    return files[path];
+  };
+  const lines = [];
+  // No env and no fetch: drafts never reaches monday.
+  assert.equal(await runBoard(context, ["drafts", ".cache/board/drafts.json"], { log: (line) => lines.push(line), readText }), 0);
+  assert.equal(lines.length, 4);
+  files["/project/.cache/board/drafts.json"] = JSON.stringify(drafts.slice(1));
+  lines.length = 0;
+  assert.equal(checkDraftFile(context, ".cache/board/drafts.json", { log: (line) => lines.push(line), readText }), 1);
+  assert.match(lines.join("\n"), /u1: has no draft[\s\S]*nothing is logged or posted/);
+  lines.length = 0;
+  assert.equal(checkDraftFile(context, "missing.json", { log: (line) => lines.push(line), readText }), 1);
+  assert.match(lines[0], /cannot read the drafts missing.json/);
 });

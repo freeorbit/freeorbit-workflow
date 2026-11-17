@@ -18,7 +18,10 @@ import { dirname, isAbsolute, join, normalize, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 
 /** The agents this guards, by name without the plugin prefix. */
-export const GUARDED = ["e2e-tester", "test-data-designer", "screen-reader", "code-reviewer"];
+export const GUARDED = ["e2e-tester", "test-data-designer", "screen-reader", "code-reviewer", "feedback-reader"];
+
+/** The one file the feedback reader reads: the board comments `wf board feedback --brief` wrote (SB-3). */
+export const FEEDBACK_FILE = ".cache/board/feedback.json";
 
 /** Hosts the code reviewer may fetch when the config names none: advisory and official sources only. */
 export const WEB_DOMAINS = [
@@ -182,6 +185,8 @@ export function policies(config) {
     },
     "screen-reader": { read: [".cache/screens/**"], search: [], bash: false, web: false },
     "code-reviewer": { read: ["**"], search: ["**"], bash: false, web: config.review?.webDomains?.length ? config.review.webDomains : WEB_DOMAINS },
+    // It reads outside text, the board's comments, so it holds no other tool (SEC-MODEL): one file, and nothing else.
+    "feedback-reader": { read: [FEEDBACK_FILE], search: [], bash: false, web: false, tools: ["Read"] },
   };
 }
 
@@ -281,6 +286,7 @@ export function decide(input, root, config) {
   const tool = input.tool_name;
   const args = input.tool_input ?? {};
   const deny = (why) => `${name} is blind (W-08): ${why}.`;
+  if (policy.tools && !policy.tools.includes(tool)) return deny(`it uses no tool but ${policy.tools.join(", ")}`);
 
   if (["Edit", "Write", "NotebookEdit", "MultiEdit"].includes(tool)) return deny("it never edits a file");
   if (tool === "Read") {

@@ -18,7 +18,7 @@ flowchart LR
   end
   subgraph sessions ["Agent sessions: Claude Code or OpenCode"]
     skills["Skills: ask-page, commit, pull-request, code-review-ledger, screen-review, design-frames, design-test-data, e2e-test, release, board-feedback"]
-    agents["Blind agents: code-reviewer, screen-reader, test-data-designer, e2e-tester"]
+    agents["Blind agents: code-reviewer, screen-reader, test-data-designer, e2e-tester, feedback-reader"]
     guard["Guard hook: what each blind agent may read and run"]
   end
   wf["npx wf: checks, logs, IDs, app driver, screens, GitHub files, board"]

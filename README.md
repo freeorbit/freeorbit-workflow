@@ -40,7 +40,7 @@ For how the plugins, the `wf` command, the docs, GitHub, the app, and the client
 
 ## Guards
 
-The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-data-designer`, `screen-reader`, `code-reviewer`) to what their prompts allow: what each may read and search, the tester's few commands, and the reviewer's advisory hosts (`review.webDomains`). A crash in the hook blocks the call: it exits 2, which blocks on any Claude Code build, and `onFailure: block` covers a hook that never starts. Each blind agent also starts without the project's CLAUDE.md. `hooks.blindness: false` turns it off. A guard needs a logged failure or an accepted audit item behind it (W-18).
+The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-data-designer`, `screen-reader`, `code-reviewer`, `feedback-reader`) to what their prompts allow: what each may read and search, the tester's few commands, the feedback reader's one file and no other tool, and the reviewer's advisory hosts (`review.webDomains`). A crash in the hook blocks the call: it exits 2, which blocks on any Claude Code build, and `onFailure: block` covers a hook that never starts. Each blind agent also starts without the project's CLAUDE.md. `hooks.blindness: false` turns it off. A guard needs a logged failure or an accepted audit item behind it (W-18).
 
 `node scripts/smoke.mjs` runs a new project's first hour end to end with this checkout: init, the checks, the hooks, a question sheet, and the web driver. CI runs it on Linux and macOS.
 
@@ -75,7 +75,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf init <answers.json>` | Sets up a new project from the `workflow-init` skill's answers: the config, the logs, each area's first docs, the docs index, the package scripts, and the Claude Code settings, then the docs, agent settings, and hooks. It keeps every file that exists |
 | `wf doctor` | Whether a project's set-up is whole: the config, the kit's pin and install, the plugins, the docs, the agent settings, the tools, the hooks, and GitHub |
 | `wf question add <chunk \| none> "<question>" <needs> "<from>" [story IDs ...] [--revisit "<when>"]`, `wf question resolve <Q-ID> "<decision>"` | The open questions log, one table per chunk: the next Q-ID across both logs, and moving an answered row to the resolved log with the date and the decisions it led to. doc:check holds the shape, the IDs, the roles, and that nothing ticked stays open. `--revisit` gives an untied question its trigger, which `wf doc:facts status` lists |
-| `wf board feedback [--json]`, `wf board reply <id> <Q-ID ...> \| --noted [-- <id> ...]` | The client's comments on the board with no bot reply yet, read only, and the bot's replies to them in one batch: the open questions each was logged as, or noted. The `board-feedback` skill turns them into open questions after a yes in chat. The bot signs as `board.bot.name`, Orbit by default |
+| `wf board feedback [--json \| --brief]`, `wf board drafts <file>`, `wf board reply <id> <Q-ID ...> \| --noted [-- <id> ...]` | The client's comments on the board with no bot reply yet, read only, and the bot's replies to them in one batch: the open questions each was logged as, or noted. `--brief` writes the comments for the blind `feedback-reader` agent and prints none of their words; `drafts` checks the agent's drafts against their shapes. The `board-feedback` skill turns them into open questions after a yes in chat. The bot signs as `board.bot.name`, Orbit by default |
 | `wf board <setup [--create] \| plan \| sync>` | The stories on the client's monday.com board, one way, from `board` in the config and the token in `board.tokenEnv`: setup checks the columns, labels, and Kanban view, including an Owner column assigned by hand that sync never touches; plan lists each change; sync writes only what differs, with each story's acceptance lines in a pinned comment and its pull request from git history, and never deletes. CI runs sync on each merge, with the token in a GitHub Environment limited to `board.branch`. The design, and the steps to turn it on, are in `docs/design/board-sync.md` |
 | `wf signoffs [--bypass "<reason>"]` | The open questions under a chunk's heading, each waiting on its Needs role, and the `- [ ] needs <role>:` lines open in the pull request body; none in a solo project. `--bypass` lets a repository admin, one of `people`, merge past the open chunk questions with a line in the body, which counts only while gh confirms that admin |
 | `wf roles [--write]` | The Who decides block from `people` and `decisions`, or write it between the `<!-- wf:roles -->` markers in `AGENTS.md` |
@@ -103,6 +103,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.92.0: a blind agent reads the board's comments
+
+`/board-feedback` had the main session read monday guests' comments, in a session that holds Bash and edits (review finding SB-3, SEC-MODEL). Now it never sees them.
+
+- **`wf board feedback --brief`** writes the comments to `.cache/board/feedback.json`, with the config's role names and the board's story IDs, and prints only IDs, stories, and who wrote each.
+- **The core plugin's `feedback-reader` agent** reads that one file and returns one draft a comment as JSON: a question with its role and story, a note, an answer to the Q-ID its comment replies to, or what changed in an edited one. The guard refuses it every other file and every other tool.
+- **`wf board drafts <file>`** checks the drafts before anything is logged or posted: the keys of each kind, roles from `roles` in the config, story IDs on the board, the right Q-ID, and each text one line within its words, with no `"`, `$`, backtick, `|`, or backslash. The skill shows the person the checked lines and still waits for a yes before any post.
+- In a project that uses OpenCode, run `npx wf ai:sync` to add the agent. `.cache/` is already gitignored by `wf init`. Nothing else to change.
 
 ### v0.91.0: you can tell when an agent is waiting on an ask page
 
