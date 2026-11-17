@@ -134,6 +134,11 @@ test("add assigns the next ID and refuses a bad cell; resolve moves the row, its
   const id = addQuestion(root, config(), { chunk: "none", question: "Can a client add a risk?", needs: "owner", from: "client (monday)", date: "2026-11-15" });
   assert.equal(id, "Q-015");
   assert.throws(() => addQuestion(root, config(), { chunk: "none", question: "Q?", needs: "boss", from: "owner", date: "2026-11-15" }), /Needs "boss"/);
+  // A teammate's board comment is logged as the board-feedback skill says, team (<channel>).
+  assert.equal(addQuestion(root, config(), { chunk: "none", question: "Should a teammate's note count?", needs: "owner", from: "team (monday)", date: "2026-11-15" }), "Q-016");
+  for (const from of ["team", "team ()", "staff (monday)", "team (a (b))"]) {
+    assert.throws(() => addQuestion(root, config(), { chunk: "none", question: "Q?", needs: "owner", from, date: "2026-11-15" }), /is a role, "client \(<channel>\)", or "team \(<channel>\)"/, from);
+  }
 
   resolveQuestion(root, config(), "Q-012", "D-REV-001", "2026-11-16");
   resolveQuestion(root, config(), "Q-013", "none: the import keeps every field", "2026-11-16");
