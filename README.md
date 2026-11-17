@@ -104,6 +104,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.0.0: the first stable version
+
+The kit's first major version: the same code as v0.100.0, released as stable. From here a major version marks a change that asks something of a project, such as a setting renamed or a step it must run; a minor one adds what a project may use; a patch fixes. Each still says here what to do.
+
+- **Nothing to change** coming from v0.100.0. Pin `v1.0.0` in `package.json` and `.claude/settings.json`, as for any version.
+- Coming from an older version, follow each entry below since the one the project pins.
+
 ### v0.100.0: choice pages for chunk start, a release, and an end-to-end test
 
 The launch pages `wf choose review` and `wf choose screens` began, for three more points where a choice needs the project's state in front of it.
