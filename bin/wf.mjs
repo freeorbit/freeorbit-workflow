@@ -30,7 +30,7 @@
 //   wf try [scenario] [--keep] [--dry-run] [--files]   open the app yourself at a test scenario
 //   wf disk [--dry-run] [GB]            check free space, and clean only leftovers when low
 //   wf github <sync | check | ruleset>   the .github files from the github config, and the ruleset to apply
-//   wf board <setup [--create] | plan | sync | feedback [--json | --brief] | drafts <file> | reply <id> <Q-ID ...|--noted>>   the client's monday.com board
+//   wf board <setup [--create] | plan | sync | feedback [--json | --brief] | drafts <file> | reply <id> <Q-ID ...|--noted|--answered <Q-ID>>>   the client's monday.com board
 //   wf signoffs [--bypass "<reason>"]   the questions this branch still waits on, or an admin's bypass of them
 //   wf decision add <file> "<decision>" "<why>" | supersede <ID> [<ID> ...] <by ID>   the decisions log
 //   wf question add <chunk | none> "<question>" <needs> "<from>" [story IDs ...] [--revisit "<when>"] | resolve <Q-ID> "<decision>"   the open questions log
@@ -395,7 +395,8 @@ const commands = {
       return 2;
     }
     const root = process.cwd();
-    const answers = JSON.parse(readFileSync(file, "utf8"));
+    const { readJsonFile } = await import("../lib/process.mjs");
+    const answers = readJsonFile(file);
     const found = answerProblems(answers);
     if (found.length) {
       for (const problem of found) console.error(problem);

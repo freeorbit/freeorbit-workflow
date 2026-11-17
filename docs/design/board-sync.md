@@ -103,7 +103,7 @@ All in the core plugin, beside `wf question` and `wf decision`.
 | --- | --- |
 | `wf board plan` | A dry run: each item it would create, change, or retire, with the fields that differ, and each acceptance comment, delivery note, restyled note, and client question it would post or edit. Needs the token to read the board, never to write |
 | `wf board sync` | Finds each item by its Story ID column and writes only the fields that changed. Runs in CI on every merge to `main` |
-| `wf board setup` | Checks the board's columns and status labels against the config, and creates what is missing on a yes |
+| `wf board setup [--create]` | Checks the board's columns and status labels against the config; with `--create`, it creates what is missing |
 | `wf board feedback [--json]` | Lists client comments with no bot reply after them, and apart, those edited after they were logged. No state is kept in the repo: the reply marks a comment handled |
 | `wf board feedback --brief` | Writes the same comments, with the config's role names and the board's story IDs, to `.cache/board/feedback.json` for the blind `feedback-reader` agent, and prints only what is not their words: IDs, stories, and who wrote each |
 | `wf board drafts <file>` | Checks the reader's drafts against their shapes and prints each as a line, or every problem. Reads no board |

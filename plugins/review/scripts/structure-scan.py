@@ -42,29 +42,20 @@ JS_TESTS = (".test.ts", ".test.tsx", ".test.mjs", ".test.js")
 VALUES = re.compile(r"\"(?:[^\"\\]|\\.)*\"|'(?:[^'\\]|\\.)*'|`[^`]*`|\b\d+(?:\.\d+)?\b")
 
 
+# The scans run with python3 -I, which leaves the script's own folder off the
+# path; the shared helpers sit beside it, in the kit, so that folder is added.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from scanlib import before_tests, is_test_file, tracked as tracked_paths  # noqa: E402
+
+
 def tracked():
     """Every tracked path, with generated files and fixtures left out."""
-    out = subprocess.check_output(["git", "ls-files"], text=True)
     return [
         path
-        for path in out.splitlines()
+        for path in tracked_paths()
         if not path.startswith(("docs/", "tools/testdata/fixtures/"))
         and not path.endswith(GENERATED)
     ]
-
-
-def is_test_file(path):
-    """True for a whole file of tests."""
-    return (
-        "/tests/" in path
-        or "/plugin_tests/" in path
-        or path.endswith((".test.ts", ".test.tsx"))
-    )
-
-
-def before_tests(text):
-    """A Rust file's lines above its test module."""
-    return re.split(r"#\[cfg\((?:all\()?test", text)[0].split("\n")
 
 
 def functions(lines, pattern):
