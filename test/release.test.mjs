@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 import { merge, unknownKeys } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { nextVersions, parseTag, releaseCommand, runRelease } from "../lib/release.mjs";
+import { nextVersions, parseTag, releaseCommand, releaseTags, runRelease } from "../lib/release.mjs";
 
 test("a release step is the project's prefix with the version, quoted when it needs it", () => {
   const config = merge(DEFAULTS, { release: { commands: { set: "node tools/version.mjs set" } } });
@@ -108,4 +108,12 @@ test("the notes go in the changelog unless the project puts them on the GitHub R
   assert.equal(DEFAULTS.release.notes, "changelog");
   assert.equal(merge(DEFAULTS, { release: { notes: "github" } }).release.notes, "github");
   assert.deepEqual(unknownKeys({ release: { notes: "github" } }), []);
+});
+
+test("the release tags are read from git, and a git that cannot list them says so", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-tags-"));
+  const config = merge(DEFAULTS, {});
+  assert.throws(() => releaseTags(root, config), /git tag failed/, "not a repository");
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  assert.deepEqual(releaseTags(root, config), []);
 });
