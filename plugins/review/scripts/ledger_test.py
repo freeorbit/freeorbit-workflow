@@ -138,6 +138,11 @@ class Ledger(unittest.TestCase):
         self.assertNotIn("MOD-001", self.ledger.read_text())
         self.assert_in_step()
 
+    def test_an_accepted_cost_is_closed(self):
+        self.run_tool("set", "MOD-001", "--status", "accepted-cost", "--decision", "Accept cost, 2026-11-17.")
+        self.assertIn("[MOD-001](#mod-001) | Low | accepted-cost", self.closed.read_text())
+        self.assert_in_step()
+
     def test_a_closed_finding_can_come_back(self):
         self.run_tool("set", "SEC-001", "--status", "accepted", "--severity", "Low", "--note", "Back.")
         text = self.ledger.read_text()

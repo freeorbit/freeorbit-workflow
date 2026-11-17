@@ -21,7 +21,7 @@ npx wf ledger check
 
 ## Shape
 
-- **Three groups**, by what is left to do. **Open**: proposed, accepted, deferred. **Fixed, waiting for review**: fixed. **Closed**: verified, rejected, accepted-risk, superseded. An empty group says "None." and is kept.
+- **Three groups**, by what is left to do. **Open**: proposed, accepted, deferred. **Fixed, waiting for review**: fixed. **Closed**: verified, rejected, accepted-risk, accepted-cost, superseded. An empty group says "None." and is kept.
 - **Summary.** One table per group, one row per finding: `| [ID](#id) | Severity | Status | Title | Where |`. Where is the main file and line, or the advisory ID, as a short code span.
 - **Details.** Each finding is `### <ID>`, its title in bold, and a `| Field | Value |` table with the rows Status, Severity, Confidence, Rule, Note (only when there is one), Found, Evidence, Why it matters, Suggestion, Decision. A `|` in a cell is `\|`.
 - **The closed file** holds the Closed summary under `## Summary` and the details under `## Details`, both newest first, so the ledger stays the size of what is left to do. A finding moves there when it closes, and back under Open when it returns. Every row links `#id` in its own file.

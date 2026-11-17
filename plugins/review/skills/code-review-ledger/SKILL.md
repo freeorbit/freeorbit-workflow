@@ -1,11 +1,11 @@
 ---
 name: code-review-ledger
 description: >-
-  Runs the read-only code review: scans, the code-reviewer agent in security
-  and structure modes, an optional verify pass on another model, then asks the reviewer
+  Runs the read-only code review: scans, the code-reviewer agent in security,
+  structure, and performance modes, an optional verify pass on another model, then asks the reviewer
   for a verdict on each finding and keeps the findings ledger. Use at chunk end
-  before the commit proposal, and for any review, security, CVE, dependency, or
-  structure check.
+  before the commit proposal, and for any review, security, CVE, dependency,
+  structure, or performance check.
 ---
 
 # Code review ledger
@@ -41,7 +41,9 @@ npx wf scan diff <since>           # deep: scope list and scans; the agent reads
 npx wf scan full                   # when asked, or when Last reviewed is none
 ```
 
-It empties `.cache/review-scan`, writes `scope.txt`, runs the `every` scans, the `deps` scans when a dependency file changed or in full mode, the `full` scans in full mode, then the `structure` scans. A non-zero exit means "found something" as often as "failed": read the output before treating it as a failure.
+It empties `.cache/review-scan`, writes `scope.txt`, runs the `every` scans, the `deps` scans when a dependency file changed or in full mode, the `full` scans in full mode, then the `structure` scans.
+
+Its `Performance pass:` line says whether the performance pass runs, from `review.performance`. With `deep`, the default, it runs on every deep or full run, and on a light run whose changes touch a hot path's Files in the `review.hotPaths` doc. When it runs, the scan writes `hot-paths.txt`, the paths the pass walks, and runs the `perf` scans. A non-zero exit means "found something" as often as "failed": read the output before treating it as a failure.
 
 - **Nothing in scope** and no dependency file changed: say "No new findings", close the run as in step 6, and stop.
 - **Code in a repo the scope list does not reach:** copy those files into `.cache/review-scan` now, after the scan has emptied it, so the agent can read them.
@@ -51,18 +53,19 @@ It empties `.cache/review-scan`, writes `scope.txt`, runs the `every` scans, the
 
 Models come from `review.models`. In Claude Code, pass them to each subagent. In OpenCode, run both review passes on the session model; with `review.verify` on, verify on an available fully qualified `provider/model` different from it, and if there is none, ask rather than verifying with the same model, and record the run as light.
 
-Run the `code-reviewer` agent twice, in parallel. The prompt holds only these lines, naming each scanner file, because search tools can skip a gitignored folder. Add nothing of your own about the code:
+Run the `code-reviewer` agent once for each pass, in parallel: security, structure, and performance when the scan's line says it runs. The prompt holds only these lines, naming each scanner file, because search tools can skip a gitignored folder. Add nothing of your own about the code:
 
 ```text
-Mode: security | structure
+Mode: security | structure | performance
 Scope: full | <the lines of scope.txt>
 Diff: .cache/review-scan/changes.diff
-Scanner output: .cache/review-scan, files: <file names; structure mode: the structure scan files>
+Scanner output: .cache/review-scan, files: <file names; structure mode: the structure scan files; performance mode: hot-paths.txt and the perf scan files>
 Ledger: <logs.ledger>
 Closed: <logs.ledgerClosed>
 Decisions: <logs.decisions>
 Rubric: <review.rubric>
 Threat model: <review.threatModel>
+Hot paths: <review.hotPaths>
 Reads: <review.reads>
 Web: <review.web>
 ```
@@ -71,7 +74,7 @@ Take those settings from `npx wf config`, which prints the kit's defaults too; t
 
 ## 3. Verify
 
-Merge the New and Changed sections of both deltas into one list of drafts. With `review.verify` off, the default, the drafts go on to step 4 as the two passes wrote them; say in the summary that no verify pass ran.
+Merge the New and Changed sections of every delta into one list of drafts. With `review.verify` off, the default, the drafts go on to step 4 as the two passes wrote them; say in the summary that no verify pass ran.
 
 With it on, run `code-reviewer` once more, on the verify model:
 
@@ -94,7 +97,7 @@ Change the ledger only with `npx wf ledger`; it keeps every row in step and refu
 
 ## 5. Ask the reviewer
 
-Ask once, in batches up to the question tool's limit or all on one `triage` ask page with these options as its `verdicts` (the `ask-page` skill), one question per new or changed finding: its ID, severity, title, and evidence in a line. Options are Accept, Defer, and Reject, plus Accept risk for a `SEC-` or `DEP-` finding. Recommend one and say why.
+Ask once, in batches up to the question tool's limit or all on one `triage` ask page with these options as its `verdicts` (the `ask-page` skill), one question per new or changed finding: its ID, severity, title, and evidence in a line. Options are Accept, Defer, and Reject, plus Accept risk for a `SEC-` or `DEP-` finding, and Accept cost for a `PERF-` finding: the cost stays, and the hot-paths doc lists it under Known costs. Recommend one and say why.
 
 In the same batch, read the `Revisit` lines of `npx wf doc:facts status` against this run's findings. Where a trigger now holds, such as a kind of finding it names coming up again, ask that question's role whether it moves under the chunk.
 
