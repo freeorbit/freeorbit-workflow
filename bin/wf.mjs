@@ -7,7 +7,8 @@
 //   wf roles [--write] the Who decides block, or write it into AGENTS.md
 //   wf ai:sync         OpenCode agents, commands, and skill paths from the project and the kit
 //   wf ai:check        fail if any of those is out of step
-//   wf scan full | diff <since> [--light]   the review's scans into .cache/review-scan
+//   wf scan full | diff <since> [--light] [--performance on|off] [--verify | --no-verify]   the review's scans into .cache/review-scan
+//   wf choose <review | screens>       a launch page's spec for a choice point, from the project's state, for wf ask page -
 //   wf ledger <ledger.py arguments>         change the review ledger
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
@@ -68,6 +69,7 @@ import { answerProblems, writeStarter } from "../lib/setup/init.mjs";
 import { runDoctor } from "../lib/setup/doctor.mjs";
 import { syncDocs } from "../lib/docs/docsync.mjs";
 import { didNotRun, ledger, performanceLine, scan } from "../lib/review.mjs";
+import { choose } from "../lib/choose/index.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
 import { loadConfig, project, projectRoot } from "../lib/config/config.mjs";
 import { problems, warnings } from "../lib/docs/check.mjs";
@@ -137,20 +139,32 @@ const commands = {
     return 0;
   },
 
-  async scan([mode, since, flag]) {
-    if (!["full", "diff"].includes(mode) || (mode === "diff" && !since)) {
-      console.log("Usage: wf scan full | wf scan diff <since> [--light]");
+  async scan(args) {
+    const [mode, since] = args;
+    const value = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
+    const performance = value("--performance");
+    if (!["full", "diff"].includes(mode) || (mode === "diff" && (!since || since.startsWith("--"))) || (performance && !["on", "off"].includes(performance))) {
+      console.log("Usage: wf scan full | wf scan diff <since> [--light] [--performance on|off] [--verify | --no-verify]");
       return 2;
     }
     const root = projectRoot();
-    const result = await scan(root, loadConfig(root), { mode, since, light: flag === "--light" || since === "--light" });
+    const config = loadConfig(root);
+    const result = await scan(root, config, { mode, since: mode === "diff" ? since : undefined, light: args.includes("--light"), performance });
     if (mode === "diff") console.log(`Scope: ${result.scope.length} files, in .cache/review-scan/scope.txt.${result.deps ? " A dependency file changed, so the deps scans ran." : ""}`);
-    console.log(performanceLine(loadConfig(root).review, result.performance));
+    console.log(performanceLine(performance ? { ...config.review, performance: performance === "on" ? "always" : "off" } : config.review, result.performance));
+    // The verify pass runs in the skill; the scan says whether this run asked for it, so the skill reads one line.
+    const verify = args.includes("--verify") ? true : args.includes("--no-verify") ? false : config.review.verify;
+    console.log(`Verify pass: ${verify ? "on" : "off"}${args.includes("--verify") || args.includes("--no-verify") ? ", asked for this run" : ", from review.verify"}.`);
     for (const [name, code] of result.ran) {
       const note = didNotRun(code) ? " DID NOT RUN: install or fix it before reviewing" : code ? " (read its output: non-zero often means found something)" : "";
       console.log(`  ${name}: exit ${code}${note}`);
     }
     return result.ran.some(([, code]) => didNotRun(code)) ? 1 : 0;
+  },
+
+  async choose(args) {
+    const root = projectRoot();
+    return choose(root, loadConfig(root), args);
   },
 
   async ledger(args) {

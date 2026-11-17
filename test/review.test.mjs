@@ -142,3 +142,13 @@ test("a run with the performance pass writes the paths it walks and runs the per
   assert.deepEqual(skipped.ran, []);
   assert.equal(existsSync(join(root, ".cache/review-scan/hot-paths.txt")), false);
 });
+
+test("--performance on or off overrides review.performance for one scan", async () => {
+  const root = repo();
+  writeFileSync(join(root, "b.txt"), "b\n");
+  const config = merge(DEFAULTS, { review: { scans: { perf: [{ name: "perf", run: "true" }] } } });
+  const ran = async (performance) => (await scan(root, config, { mode: "diff", since: "HEAD", light: true, performance })).ran.map(([name]) => name);
+  assert.deepEqual(await ran(null), [], "a light run that touches no hot path skips it");
+  assert.deepEqual(await ran("on"), ["perf"]);
+  assert.deepEqual(await ran("off"), []);
+});

@@ -49,6 +49,7 @@ Every template, question type, and block is made for one kind of question. Pick 
 | You need | Use |
 | --- | --- |
 | One of a few plans or answers | `decision` |
+| How to run a step: runs with their commands, and options that add flags | `launch`; `npx wf choose <point>` writes one from the project, and its answer is the command |
 | Answers from several people, each their own | `batch`, by `role`: chunk start, a story check |
 | The open questions: now, keep, or drop | `triage`, with `verdicts` for others, such as Accept, Defer, Reject on review findings |
 | An order: chunks, fixes, stories | `rank`, or a `rank` question |

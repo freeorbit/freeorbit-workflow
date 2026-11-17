@@ -1,0 +1,114 @@
+{
+  "id": "screens-run",
+  "title": "Screen review: which run?",
+  "template": "launch",
+  "intro": "Chunk 14's code review is done. Pick a run; the command below the questions is what runs.",
+  "chunk": "CH-14",
+  "from": "developer",
+  "blocks": [
+    {
+      "type": "stats",
+      "title": "Since the last run",
+      "items": [
+        {
+          "label": "Light",
+          "value": "6 screens",
+          "tone": "info",
+          "note": "about 2 min"
+        },
+        {
+          "label": "Deep",
+          "value": "41 screens",
+          "tone": "warn",
+          "note": "about 9 min"
+        },
+        {
+          "label": "Light runs waiting",
+          "value": "2",
+          "tone": "warn"
+        },
+        {
+          "label": "Left open",
+          "value": "1",
+          "tone": "info",
+          "note": "accounts-empty"
+        }
+      ]
+    },
+    {
+      "type": "questions"
+    }
+  ],
+  "runs": [
+    {
+      "id": "light",
+      "label": "Light",
+      "why": "The screens a change reaches in one place only",
+      "time": "about 2 min",
+      "command": "npx wf screens --light"
+    },
+    {
+      "id": "deep",
+      "label": "Deep",
+      "why": "Also the screens shared code reaches, and the light runs waiting",
+      "time": "about 9 min",
+      "command": "npx wf screens --deep"
+    },
+    {
+      "id": "defer",
+      "label": "Defer",
+      "why": "Shoots nothing; both lists keep growing until a run",
+      "command": "npx wf screens --defer"
+    }
+  ],
+  "recommended": "deep",
+  "why": "Two light runs are waiting, so a deep run clears them and covers the shared code.",
+  "modifiers": [
+    {
+      "id": "show",
+      "text": "Where should the apps show?",
+      "kind": "choice",
+      "runs": [
+        "light",
+        "deep"
+      ],
+      "options": [
+        {
+          "id": "set",
+          "label": "As the project sets it",
+          "why": "screens.runs.review: virtual, 4 at once"
+        },
+        {
+          "id": "screen",
+          "label": "On my screen",
+          "why": "One app at a time, to watch",
+          "flag": "--show screen"
+        }
+      ],
+      "recommended": "set",
+      "why": "A review run is read from its pictures, so it need not be watched."
+    },
+    {
+      "id": "stress",
+      "text": "Take the stress look too?",
+      "kind": "toggle",
+      "runs": [
+        "light",
+        "deep"
+      ],
+      "flag": "--wide --stress",
+      "why": "Only when the designer asks for it; it doubles the pictures."
+    },
+    {
+      "id": "area",
+      "text": "Only these areas (ids, commas between; empty for all)",
+      "kind": "text",
+      "runs": [
+        "light",
+        "deep"
+      ],
+      "flag": "--area {value}",
+      "detail": "An area run does not move the record."
+    }
+  ]
+}

@@ -228,3 +228,12 @@ input.other-text { margin: 6px 0 0 28px; width: calc(100% - 28px); }
 .tick.later { background: transparent; border: 1.5px dashed var(--warn); color: var(--warn); line-height: 15px; }
 .tick.agent { background: var(--sunk); color: var(--accent); border: 1.5px solid var(--accent); line-height: 15px; }
 
+/* A launch page's command, a row above Send; the page leaves room for it. */
+.launchcmd { height: var(--launch); max-width: 1280px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; gap: 10px; min-width: 0; border-bottom: 1px solid var(--line); }
+.launchcmd .lbl { font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.launchcmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font: 13px/1.4 var(--mono); padding: 4px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line-2); }
+:root[data-launch] { --launch: 46px; }
+.runcmd { grid-column: 2 / 4; min-width: 0; display: block; margin-top: 6px; font: 12px/1.4 var(--mono); color: var(--muted); overflow-x: auto; white-space: nowrap; }
+:root[data-launch] .shell { padding-bottom: calc(var(--foot) + var(--launch) + 40px); }
+:root[data-launch] .sendpanel { bottom: calc(var(--foot) + var(--launch) + 10px); }
+:root[data-launch] .toast { bottom: calc(var(--foot) + var(--launch) + 14px); }

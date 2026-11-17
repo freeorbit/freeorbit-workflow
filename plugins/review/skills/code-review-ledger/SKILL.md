@@ -25,11 +25,12 @@ Deferred: none. | Deferred: <n> times, last at <short HEAD> on <date>.
 ## 0. Trigger
 
 - **Asked for a review.** No defer prompt. Ask once whether to run deep or light, unless they named one.
-- **Chunk end**, before the commit proposal. Ask the reviewer once: a light diff run now, a deep one now, or defer.
-  - **Show** the range `<Last reviewed>..HEAD` (plus uncommitted), its commit count, and the `Deferred` line when it is not `none`. When `Light runs` has rows, also show `<Deep reviewed>..HEAD` and its count.
-  - **Recommend** light, or deep when two or more light runs are waiting, or when the change is mostly in a repo the scope list does not reach.
+- **Chunk end**, before the commit proposal. Ask the reviewer once, on the choice page: `npx wf choose review | npx wf ask page -`, then the `ask-page` skill's steps.
+  - **The page shows** the backlog since `Last reviewed`, the light runs waiting, the deferrals, and the hot paths touched. Each run, light, deep, full, or defer, shows what it covers and its command; the performance and verify passes are options. It recommends light, or deep when two or more light runs are waiting, and full when nothing was reviewed yet.
+  - **Its answer is a command.** Run it as step 1 says; `Command:` heads the answers. Recommend deep yourself in a note when the change is mostly in a repo the scope list does not reach.
   - **Before a deep run**, check how much of the usage limit is left, and call any cost or time you give an estimate.
-  - **Defer:** run nothing. `npx wf ledger defer --at <short HEAD>`, then go on to the commit proposal. The ledger edit is committed with the chunk, as step 6 says.
+  - **Defer:** the command is `npx wf ledger defer --at <short HEAD>`; run it, then go on to the commit proposal. The ledger edit is committed with the chunk, as step 6 says.
+  - With no browser pane, ask in the chat with the same runs and options.
 
 ## 1. Scan
 
@@ -43,7 +44,9 @@ npx wf scan full                   # when asked, or when Last reviewed is none
 
 It empties `.cache/review-scan`, writes `scope.txt`, runs the `every` scans, the `deps` scans when a dependency file changed or in full mode, the `full` scans in full mode, then the `structure` scans.
 
-Its `Performance pass:` line says whether the performance pass runs, from `review.performance`. With `deep`, the default, it runs on every deep or full run, and on a light run whose changes touch a hot path's Files in the `review.hotPaths` doc. When it runs, the scan writes `hot-paths.txt`, the paths the pass walks, and runs the `perf` scans. A non-zero exit means "found something" as often as "failed": read the output before treating it as a failure.
+`--performance on` or `off` overrides `review.performance` for the run, and `--verify` or `--no-verify` overrides `review.verify`; the choice page adds them.
+
+Its `Performance pass:` line says whether the performance pass runs, from `review.performance`. Its `Verify pass:` line says whether step 3 verifies. With `deep`, the default, it runs on every deep or full run, and on a light run whose changes touch a hot path's Files in the `review.hotPaths` doc. When it runs, the scan writes `hot-paths.txt`, the paths the pass walks, and runs the `perf` scans. A non-zero exit means "found something" as often as "failed": read the output before treating it as a failure.
 
 - **Nothing in scope** and no dependency file changed: say "No new findings", close the run as in step 6, and stop.
 - **Code in a repo the scope list does not reach:** copy those files into `.cache/review-scan` now, after the scan has emptied it, so the agent can read them.
@@ -74,7 +77,7 @@ Take those settings from `npx wf config`, which prints the kit's defaults too; t
 
 ## 3. Verify
 
-Merge the New and Changed sections of every delta into one list of drafts. With `review.verify` off, the default, the drafts go on to step 4 as the two passes wrote them; say in the summary that no verify pass ran.
+Merge the New and Changed sections of every delta into one list of drafts. With the scan's `Verify pass:` line off, the default from `review.verify`, the drafts go on to step 4 as the passes wrote them; say in the summary that no verify pass ran.
 
 With it on, run `code-reviewer` once more, on the verify model:
 

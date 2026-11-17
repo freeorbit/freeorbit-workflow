@@ -104,6 +104,17 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.92.0: choice pages for the code review and the screen review
+
+The light, deep, or defer question went through the question tool, four short options at most, so the backlog, the light runs waiting, the hot paths touched, and the kit's other options stayed out of sight.
+
+- **A `launch` ask template.** One question, Which run?, each run with what it covers, its time or cost, and its command; then options that add to the run: a toggle, a choice, or typed words, each shown only for the runs it fits. A row above Send shows the command the answers make, and the answers start with `Command:`, so what runs is what was shown.
+- **`npx wf choose review`** and **`npx wf choose screens`** write a launch spec from the project's state, for `npx wf ask page -`. Review: light, deep, full, or defer, with the backlog, the light runs, the deferrals, and the hot paths touched, and the performance and verify passes as options. Screens: light, deep, or defer, with both lists and their times, the screens left open, and whether the code review covers HEAD, and where the apps show, the areas, the narrow and stress pictures, and `--force` as options.
+- **The `code-review-ledger` and `screen-review` skills** ask on these pages at chunk end, and run the command they return.
+- **`wf scan`** takes `--performance on|off` and `--verify` or `--no-verify` for one run, and says `Verify pass: on|off`.
+- **Take all recommendations** also answers the follow-ups that its answers bring into view.
+- More choice points can follow as modules in `lib/choose/`.
+
 ### v0.91.0: you can tell when an agent is waiting on an ask page
 
 With the browser on another screen, or the pane tucked in the sidebar, nothing showed that the chat was waiting on a page until the whole reply was read. A page's own notifications had to be turned on, and worked only while a page was open.
