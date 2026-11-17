@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.100.0: choice pages for chunk start, a release, and an end-to-end test
+
+The launch pages `wf choose review` and `wf choose screens` began, for three more points where a choice needs the project's state in front of it.
+
+- **`npx wf choose chunk`**: each chunk that can start, from the build order (nothing it waits on left undone), any in progress, and a quick fix, each with its `npx wf ready` command and its stories, owner, and open questions. Chunk start in `four-steps.md` asks on it when the person has not named the chunk.
+- **`npx wf choose release`**: each version `wf release next` lists, with the newest tag, the commits since, the open lines, and whether the Unreleased notes are written; the answer is `npx wf release check <version>`. The release skill's first step asks on it.
+- **`npx wf choose e2e`**: each area with its journeys counted from its test-data spec; the answer is `npx wf testdata journeys <area>`, where the e2e-test skill starts. It recommends none: the area is the person's to name.
+- **One way is no choice.** A point with a single run, such as e2e in a one-area project, prints `Nothing to choose: …` with its command on stderr and exits 3, so a pipe into `wf ask page` stops before it asks.
+
 ### v0.99.0: the kit in Orca, and wherever Claude Code runs
 
 A developer runs Claude Code inside Orca, an agent IDE with its own terminals, worktrees, and a browser per worktree, and no desktop browser pane.

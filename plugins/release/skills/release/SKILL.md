@@ -25,7 +25,7 @@ Only the releaser starts this skill. When the person who ran `/release` does not
 
 ## 1. Choose the version
 
-Ask the releaser: pre-release or stable. Then run `git fetch --tags` and `npx wf release next`. Without `release.commands.next`, the kit works it out from the tags, with `release.tagPrefix` and `release.preRelease`.
+Run `git fetch --tags`, then ask the releaser on the choice page: `npx wf choose release | npx wf ask page -`, then the `ask-page` skill's steps. It lists each version `wf release next` would, with the newest tag, the commits since, the open lines, and whether the Unreleased notes are written; the answer is `npx wf release check <version>`, step 2's command. With `release.commands.next` set, or no browser pane, run `npx wf release next` and ask in the chat. Without `release.commands.next`, the kit works it out from the tags, with `release.tagPrefix` and `release.preRelease`.
 
 - **Pre-release.** Offer the next pre-release of the open line first. When the releaser wants a new line, suggest patch, minor, or major from the notes under `## Unreleased` in the changelog (`release.changelog`), with a one-line reason, and let them choose.
   - Below 1.0, a minor line is for new features or anything that breaks, and a patch line for fixes only.
