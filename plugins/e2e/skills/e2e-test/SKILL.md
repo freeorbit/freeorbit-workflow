@@ -22,7 +22,7 @@ It needs the app driver (`wf app`, from the `stack-tauri-rust` plugin or another
 
 ## 1. Scope
 
-The person asking names the area: an area id from `areas` in the config. List, without asking:
+The person asking names the area: an area id from `areas` in the config. When they have not, ask on the choice page, `npx wf choose e2e | npx wf ask page -`: each area with its journeys counted, and the `npx wf testdata journeys <area>` command this step runs. Then list, without asking:
 
 - **The journeys.** Each `### DS-<prefix>-<n>.` section (`### D<n>.` in a spec not yet renamed) in the area files of `<area docs>/test-data/`, with its `Covers:` line. Leave out a journey whose stories are all in chunks not built yet.
 - **Starts and fixtures.** `npx wf testdata journeys <area>` prints each journey's `Starts from:` states with the scenario that holds each, and each fixture's `Reach`. Note every state or stored fixture with "no scenario", and every "not set". Typed and date fixtures go to the tester.

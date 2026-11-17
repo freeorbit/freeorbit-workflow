@@ -8,7 +8,10 @@ import { test } from "node:test";
 import { answersMarkdown } from "../lib/ask/answers.mjs";
 import { RULES as S } from "../lib/ask/rules.mjs";
 import { normalize } from "../lib/ask/spec.mjs";
+import { chunkAdvice, chunkSpec, startable } from "../lib/choose/chunk.mjs";
+import { e2eSpec } from "../lib/choose/e2e.mjs";
 import { choose } from "../lib/choose/index.mjs";
+import { releaseAdvice, releaseSpec, unreleasedNotes } from "../lib/choose/release.mjs";
 import { ledgerState, reviewAdvice, reviewSpec } from "../lib/choose/review.mjs";
 import { screensAdvice } from "../lib/choose/screens.mjs";
 import { merge } from "../lib/config/config.mjs";
@@ -96,4 +99,51 @@ test("wf choose review writes a launch spec from the project that builds as it i
   const out = [];
   assert.equal(await choose(root, merge(DEFAULTS, {}), ["nope"], (line) => out.push(line)), 2);
   assert.match(out.join("\n"), /review .*\n\s+screens /);
+});
+
+test("chunk start offers what can start, what is in progress, and a quick fix, and recommends carrying on first", () => {
+  const rows = [
+    { chunk: "CH-03. Search", group: "Not started", waitsOn: "CH-02" },
+    { chunk: "CH-04. Labels", group: "Not started", waitsOn: "CH-01" },
+    { chunk: "CH-05. Export", group: "Not started", waitsOn: "" },
+  ];
+  const ready = startable(rows, new Set(["CH-01"]));
+  assert.deepEqual(ready.map((row) => [row.id, row.waiting]), [["CH-03", ["CH-02"]], ["CH-04", []], ["CH-05", []]]);
+  const can = ready.filter((row) => !row.waiting.length);
+  assert.equal(chunkAdvice([{ id: "CH-02" }], can).run, "c-CH-02");
+  assert.equal(chunkAdvice([], can).run, "c-CH-04");
+  assert.equal(chunkAdvice([], []).run, "quick");
+});
+
+test("a release recommends the open line's next pre-release, else a patch line, and knows when notes are written", () => {
+  assert.equal(releaseAdvice([{ kind: "pre-release", version: "0.2.0-rc.2", why: "the next of the open line, after v0.2.0-rc.1" }]).run, "pre-release-1");
+  assert.equal(releaseAdvice([{ kind: "patch" }, { kind: "minor" }]).run, "patch");
+  assert.equal(unreleasedNotes("# Changelog\n\n## Unreleased\n\n- Fixed the sign-in.\n\n## 0.1.0\n\n- First.\n"), true);
+  assert.equal(unreleasedNotes("# Changelog\n\n## Unreleased\n\n## 0.1.0\n\n- First.\n"), false);
+});
+
+test("each new choice point writes a launch spec that builds as it is, and one way is no choice", async () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-choose-points-"));
+  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+  git("init", "-q");
+  git("config", "user.email", "t@example.test");
+  git("config", "user.name", "t");
+  mkdirSync(join(root, "docs/log"), { recursive: true });
+  mkdirSync(join(root, "docs/app/test-data"), { recursive: true });
+  writeFileSync(join(root, "docs/log/build-order.md"), "## Not started\n\n| Chunk | Status | Stories | Waits on |\n| --- | --- | --- | --- |\n| CH-01. Sign-in | Not started | APP-01 | |\n");
+  writeFileSync(join(root, "docs/app/test-data/core.md"), "### DS-APP-1. Sign in\n\n### DS-APP-2. Sign out\n");
+  writeFileSync(join(root, "a.txt"), "a\n");
+  git("add", ".");
+  git("commit", "-qm", "one");
+  git("tag", "v0.1.0-rc.1");
+  const config = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }] });
+  for (const spec of [chunkSpec(root, config), releaseSpec(root, config)]) assert.deepEqual(normalize(spec).problems, [], spec.id);
+  const two = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }, { id: "web", prefix: "WEB", docs: "docs/web" }] });
+  assert.deepEqual(normalize(e2eSpec(root, two)).problems, [], "e2e with two areas");
+  const said = [];
+  assert.equal(await choose(root, config, ["e2e"], () => {}, (line) => said.push(line)), 3, "one area is no choice");
+  assert.deepEqual(said, ["Nothing to choose: app. Run npx wf testdata journeys app"]);
+  assert.equal(chunkSpec(root, config).recommended, "c-CH-01");
+  assert.equal(releaseSpec(root, config).runs[0].command, "npx wf release check 0.1.0-rc.2");
+  assert.equal(e2eSpec(root, config).runs[0].why, "2 journeys");
 });
