@@ -130,7 +130,7 @@ test("wf github writes the board-sync workflow only while the board is set up", 
     "      - run: npm install",
     "          MONDAY_API_TOKEN: ${{ secrets.MONDAY_API_TOKEN }}",
     'test -n "$MONDAY_API_TOKEN" || { echo "::error::Add MONDAY_API_TOKEN to the board environment (Settings → Environments), with its deployment branches limited to main"; exit 1; }',
-    "          npx wf board sync",
+    "          npx --no wf board sync",
   ]) {
     assert.ok(yaml.includes(line), `missing:\n${line}\nin:\n${yaml}`);
   }

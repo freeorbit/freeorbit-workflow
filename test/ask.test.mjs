@@ -365,6 +365,7 @@ test("answers keep to what the page asks", () => {
   assert.deepEqual(pin({ picture: 1, x: 10.4, y: 20, kind: "bug", text: "clipped", box: 1 }).answers.answers["accounts-wide"].pins, [{ picture: 1, x: 10, y: 20, kind: "bug", text: "clipped", box: 1 }]);
   assert.match(pin({ picture: 2, x: 1, y: 1, kind: "bug" }).problems.join(), /a pin has/);
   assert.match(pin({ picture: 0, x: 1, y: 1, kind: "shiny" }).problems.join(), /a pin has/);
+  for (const kind of ["constructor", "toString", "__proto__"]) assert.match(pin({ picture: 0, x: 1, y: 1, kind }).problems.join(), /a pin has/, `${kind} is no pin kind`);
   const { spec: rank } = normalize(example("rank"));
   assert.match(checkAnswers(rank, { id: rank.id, hash: rank.hash, answers: { order: { order: ["search"] } } }, KIT_KINDS).problems.join(), /every item once/);
   assert.equal(answered({ decide: "later" }), true);

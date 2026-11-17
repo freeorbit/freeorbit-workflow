@@ -157,7 +157,7 @@ test("wf id's lines: a second definition is flagged, citations past 15 are count
   assert.ok(!lines.some((l) => l.includes("\x1b")));
 });
 
-test("the project's files leave out one deleted but not staged, and name each symbolic link", () => {
+test("the project's files leave out one deleted but not staged, name each symbolic link, and list none that leads out", () => {
   const root = mkdtempSync(join(tmpdir(), "wf-files-"));
   const git = (...args) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
   git("init", "-q");
@@ -165,10 +165,11 @@ test("the project's files leave out one deleted but not staged, and name each sy
   writeFileSync(join(root, ".workflow", "config.json"), "{}");
   for (const name of ["a.md", "gone.md"]) writeFileSync(join(root, name), "x");
   symlinkSync("/etc/hostname", join(root, "link.md"));
+  symlinkSync(join(root, "a.md"), join(root, "near.md"));
   git("add", ".");
   rmSync(join(root, "gone.md"));
   const { tracked, links } = project(root);
-  assert.deepEqual(tracked.sort(), [".workflow/config.json", "a.md", "link.md"]);
-  assert.deepEqual([...links], ["link.md"]);
+  assert.deepEqual(tracked.sort(), [".workflow/config.json", "a.md", "near.md"]);
+  assert.deepEqual([...links].sort(), ["link.md", "near.md"]);
   rmSync(root, { recursive: true, force: true });
 });

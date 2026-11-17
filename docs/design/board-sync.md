@@ -241,10 +241,10 @@ For a project on the kit, once its stories are ready for the client.
 
 1. Ask the monday account's admin for a shareable board, and invite the client there as a guest.
 2. Set `board.boardId` in `.workflow/config.json` to the board's number, from its address.
-3. With the token in `MONDAY_API_TOKEN`, run `npx wf board setup --create`.
+3. With the token in `MONDAY_API_TOKEN`, run `npx --no wf board setup --create`. A board command runs with the token set, so it is `npx --no wf`: when the kit is not installed it stops, and never fetches the unrelated package called `wf` from npm.
    - A column it says can't be set on items belongs to a portfolio, such as a project template's status. Point `board.columns` at an id of the project's own, with its title in `board.titles`, and run it again.
    - Then add a Kanban view grouped by Build, and one by Client review, on the board by hand, if cards suit better than the tables setup makes.
-4. Run `npx wf board plan`, and check what it would write.
+4. Run `npx --no wf board plan`, and check what it would write.
 5. In GitHub, create the `board` environment, set its deployment branches to `main` only, and add `MONDAY_API_TOKEN` to it as a secret.
 6. Run `npx wf github sync`, and merge the workflow it writes. The merge runs the first sync.
 

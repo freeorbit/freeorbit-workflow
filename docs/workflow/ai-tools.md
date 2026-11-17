@@ -22,6 +22,8 @@ npx wf ai:check
 
 `ai:sync` is the kit's `wf ai:sync`. It also removes a generated file whose source is gone, and stops on a hand-written file it would replace. It refuses an agent defined both in `.claude/agents/` and in the kit, because Claude Code would quietly prefer the project copy. `ai:check` fails on any of these without writing.
 
+OpenCode runs no hooks, so the core plugin's guard does not run there. In Claude Code it holds each blind agent to the files, folders, and commands it may use; in OpenCode an agent's prompt and its tool list are its limits, with the secret deny rules. SECURITY.md says so.
+
 Generated agents deny every action they do not list, and OpenCode applies the last matching rule. So the adapter repeats OpenCode's `.env` read rules after the read allow, and an agent cannot read outside the repo. A workflow that hands an agent files writes them inside the repo, such as `.cache/review-scan/` for the review scanners.
 
 Canonical agents use `name`, `description`, `model: inherit`, and a comma-separated `tools` list. The generator requires the filename and `name` to match. It rejects unknown frontmatter fields, fixed models, and unmapped tools rather than silently dropping behavior. A new field or tool needs an explicit mapping in the kit's `lib/setup/ai.mjs`.

@@ -13,6 +13,7 @@
 // Input: the hook's JSON on stdin. Output: a deny decision on stdout, or
 // nothing to let the call go on.
 
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, isAbsolute, join, normalize, relative } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -39,7 +40,7 @@ export const WEB_DOMAINS = [
  * denies them to blind agents on every file tool, and `wf ai:sync` writes them
  * as deny rules for Claude Code's settings and OpenCode's agents (W-11).
  */
-export const SECRET_GLOBS = [".env", ".env.*", "*.pem", "*.key", "*.p12", "*.pfx", "id_rsa*", "id_ed25519*", "id_ecdsa*"];
+export const SECRET_GLOBS = [".env", ".env.*", "*.pem", "*.key", "*.p12", "*.pfx", "*.jks", "*.keystore", "id_rsa*", "id_ed25519*", "id_ecdsa*", ".npmrc", ".netrc", ".git-credentials", ".pgpass", "credentials.json"];
 // A command that chains, pipes, redirects, or substitutes could run anything.
 const SHELL_META = /[;&|`<>\n\r]|\$\(/;
 
@@ -141,7 +142,7 @@ const braces = (pattern) => {
   return m ? m[2].split(",").flatMap((alt) => braces(`${m[1]}${alt}${m[3]}`)) : [pattern];
 };
 
-const SECRET_NAMES = [".env", ".env.local", "server.pem", "server.key", "cert.p12", "cert.pfx", "id_rsa", "id_rsa.pub", "id_ed25519", "id_ecdsa"];
+const SECRET_NAMES = [".env", ".env.local", "server.pem", "server.key", "cert.p12", "cert.pfx", "release.jks", "app.keystore", "id_rsa", "id_rsa.pub", "id_ed25519", "id_ecdsa", ".npmrc", ".netrc", ".git-credentials", ".pgpass", "credentials.json"];
 const PLAIN_NAMES = ["a.rs", "main.mjs", "README.md", "notes.txt", "Cargo.toml", "data.csv", "shot.png"];
 
 /**
@@ -273,6 +274,19 @@ export function e2eCommand(command, root, search = [".cache/e2e"]) {
 }
 
 /** The decision for one tool call: null to let it go on, or the reason it is denied. */
+/**
+ * The files a search of `folder` would read that SECRET_GLOBS names: those git
+ * lists there, tracked or not, less what it ignores, as ripgrep reads them.
+ * A Grep `glob` narrows them; a `type` reads only that language's files.
+ */
+export function secretsUnder(root, folder, { glob: pattern, type } = {}, list = (dir) => execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", dir || "."], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }).split("\0").filter(Boolean)) {
+  if (type) return [];
+  const found = list(folder).filter((path) => isSecret(path));
+  if (!pattern) return found;
+  const names = braces(String(pattern)).map((alt) => searchGlob(alt.split("/").pop()));
+  return found.filter((path) => names.some((name) => name.test(path.split("/").pop())));
+}
+
 export function decide(input, root, config) {
   const name = agentName(input);
   if (!name || !GUARDED.includes(name)) return null;
@@ -298,6 +312,11 @@ export function decide(input, root, config) {
     if (isSecret(path) || isSecret(inside(root, args.path ?? root))) return deny(`${path} may hold a secret`);
     const pattern = patternProblem(tool === "Glob" ? args.pattern : args.glob);
     if (pattern) return deny(pattern);
+    // A Grep over a folder prints lines from every file in it, a secret one too (SB-7).
+    if (tool === "Grep" && statSync(join(root, path), { throwIfNoEntry: false })?.isDirectory()) {
+      const secret = secretsUnder(root, path, args)[0];
+      if (secret) return deny(`${path || "the project"} holds ${secret}, which may hold a secret; search it with a glob or a type that leaves such files out`);
+    }
     // Searching one file it may read shows nothing reading it would not, such as the Risk lines in user-stories.md.
     const check = (at) => {
       const readable = policy.read.some((each) => glob(each).test(at));
