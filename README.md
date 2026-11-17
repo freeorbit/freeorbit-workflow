@@ -82,11 +82,36 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 
 The review module's `structure-scan.py` is the scan for a Rust and TypeScript project, including tests of one shape that one table could hold; another stack lists its own under `review.scans.structure`.
 
+The performance pass's scans go under `review.scans.perf`, and run only when the pass runs. The review module has three. Each writes measured facts, not findings, which the reviewer judges against the hot-paths doc:
+
+- **`perf-scan.py`** (Rust and TypeScript, no compiler): loops that await, call the backend, or do I/O each turn; blocking work in an async fn or a sync Tauri command; whole files read into memory; timers and sleep loops. It leaves out tests and folders that do not ship, such as `tools/`.
+- **`perf-clippy.py`** (Rust): Clippy's perf group and the other lints that name a cost, such as `redundant_clone`, `needless_collect`, `large_futures`, and `await_holding_lock`, with every other lint off.
+- **`bundle-size.py`** (web, and a Tauri app's frontend): what the build ships by kind, raw and gzipped, the largest files, and what grew, is new, or went since the last measure, kept in `.cache/perf/`. Run the build first.
+
+```json
+"perf": [
+  { "name": "perf-scan", "run": "python3 -I \"$KIT/plugins/review/scripts/perf-scan.py\" $SCAN $FILES" },
+  { "name": "perf-clippy", "run": "python3 -I \"$KIT/plugins/review/scripts/perf-clippy.py\" $SCAN $FILES > $SCAN/perf-clippy.err 2>&1" },
+  { "name": "bundle-size", "run": "pnpm build > $SCAN/build.txt 2>&1 && python3 -I \"$KIT/plugins/review/scripts/bundle-size.py\" $SCAN dist" }
+]
+```
+
+A web app can add Lighthouse CI from its own dev dependencies, such as `pnpm exec lhci autorun --upload.target=filesystem --upload.outputDir=$SCAN/lighthouse`, with its budgets in `lighthouserc`.
+
 A project adds its own checks and status lines with `extensions` in its config: modules that export `checks(context)` and `status(context)`.
 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v0.90.0: scans for the performance pass
+
+The review module has three scans for `review.scans.perf`; the review section above gives the entries to copy.
+
+- **`perf-scan.py`** lists loops that wait or do I/O each turn, blocking work in async code and in sync Tauri commands, whole-file reads, and polling, in Rust and TypeScript.
+- **`perf-clippy.py`** runs Clippy's performance lints only, whatever the project's own lint settings.
+- **`bundle-size.py`** measures what a web build ships and what changed since the last measure.
+- Add the ones that fit the stack. Nothing runs until they are listed.
 
 ### v0.89.0: the code review checks performance
 
