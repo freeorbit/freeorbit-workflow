@@ -3,9 +3,10 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { forOwner, isJargon, testdataProblems, testdataWarnings } from "../lib/testdata.mjs";
-import { chunkChecks } from "../lib/testdata-trace.mjs";
-import { reviewSpec } from "../lib/testdata-review.mjs";
+import { forOwner, isJargon } from "../lib/testdata/index.mjs";
+import { testdataProblems, testdataWarnings } from "../lib/testdata/checks.mjs";
+import { chunkChecks } from "../lib/testdata/trace.mjs";
+import { reviewSpec } from "../lib/testdata/review.mjs";
 
 const DIR = "docs/plugins/uplink/test-data";
 const config = (more = {}) => merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], ...more });
@@ -74,7 +75,7 @@ test("the review command: a chunk's stories, an empty flag refused, and a chunk 
   const { mkdtempSync, mkdirSync, writeFileSync, readFileSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
-  const { runReview } = await import("../lib/testdata-cli.mjs");
+  const { runReview } = await import("../lib/testdata/cli.mjs");
   const root = mkdtempSync(join(tmpdir(), "wf-owner-"));
   const texts = { ...SPEC, "docs/log/build-order.md": "## Chunks\n\n| Chunk | Status | Stories |\n| --- | --- | --- |\n| 37d. Move | In progress | GM-07 |\n" };
   for (const [path, text] of Object.entries(texts)) { mkdirSync(join(root, path, ".."), { recursive: true }); writeFileSync(join(root, path), text); }
@@ -90,7 +91,7 @@ test("the review command: a chunk's stories, an empty flag refused, and a chunk 
 test("a product rule in code words warns; the trace names what nothing proves", async () => {
   const texts = { [`${DIR}/x.md`]: `${RULES}\n| R-GM-01 | State | product | Undo in \`gmail-ready\` goes back once | GM-07 | 2026-11-14 |` };
   assert.ok(testdataWarnings(context(config(), texts)).some((w) => /R-GM-01 is the owner's to read; say it in plain words/.test(w)));
-  const { chunkLines } = await import("../lib/testdata-trace.mjs");
+  const { chunkLines } = await import("../lib/testdata/trace.mjs");
   const lines = chunkLines(chunkChecks(context(config(STORY_FILES), SPEC), "37d", ["GM-07"], { open: ["37d"], done: [] })).join("\n");
   assert.match(lines, /proven by nothing: 3/);
   assert.match(lines, /craft rules no test cites yet, the team's, not gated: 1/);

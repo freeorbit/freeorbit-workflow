@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.98.0: test data, the review gate, the board, and the guard, each in its place
+
+The last structure findings from the 2026-11-17 review. Nothing to change in a project; nothing a command does changes, except that `wf testdata trace --chunk` with no chunk now says it needs one.
+
+- **Test data is a folder**, `lib/testdata/`: `index.mjs` (the project's steps and how a spec reads), `checks.mjs` (doc:check's test-data checks), `cli.mjs`, and the steps, each a file. `wf testdata` chooses its step in one place, `runTestdataCommand`; `bin/wf.mjs` no longer holds the merge, fold, rename, and trace steps.
+- **Whether the code review covers HEAD** is one function in `lib/review.mjs`, `reviewCoversHead`, which the screen review, the track gates, and the choice page share. The retired `screens.*` keys' translation sits with the config's other retired keys.
+- **The board's code** is three files: `setup.mjs` (columns, labels, views), `wanted.mjs` (what the board should hold), and `index.mjs` (plan, writes, and the command).
+- **The guard's `decide`** chooses a function per tool, and Read, Grep, and Glob share one path check.
+
 ### v0.97.0: the ask pages' code, each part where it belongs
 
 From the 2026-11-17 review's structure findings. Nothing to change in a project; nothing a page or a command does changes.

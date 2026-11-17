@@ -6,7 +6,7 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { commandFor, runTestdata } from "../lib/testdata.mjs";
+import { commandFor, runTestdata } from "../lib/testdata/index.mjs";
 
 test("a step's command is the project's prefix with the arguments, quoted when they need it", () => {
   const config = merge(DEFAULTS, { testdata: { commands: { route: "gen route" } } });

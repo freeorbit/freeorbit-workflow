@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { dataRows, foldFile, mergeFolder, mergeLines, sectionOf } from "../lib/testdata-merge.mjs";
+import { dataRows, foldFile, mergeFolder, mergeLines, sectionOf } from "../lib/testdata/merge.mjs";
 
 const config = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }] });
 const context = (texts) => ({ config, tracked: Object.keys(texts), files: (path) => texts[path] ?? "" });

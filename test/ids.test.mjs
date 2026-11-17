@@ -10,8 +10,8 @@ import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { storyIds } from "../lib/docs/shape.mjs";
 import { findId, idLines } from "../lib/idfind.mjs";
 import { idKinds, kindOf, qualify, within } from "../lib/ids.mjs";
-import { testdataProblems, testdataWarnings } from "../lib/testdata.mjs";
-import { areaOfPath, renameIds, textSpans } from "../lib/testdata-rename.mjs";
+import { testdataProblems, testdataWarnings } from "../lib/testdata/checks.mjs";
+import { areaOfPath, renameIds, textSpans } from "../lib/testdata/rename.mjs";
 import { rootOf } from "../plugins/core/hooks/guard.mjs";
 
 const AREAS = [

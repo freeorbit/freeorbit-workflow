@@ -8,7 +8,8 @@ import { fileURLToPath } from "node:url";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { installSteps } from "../lib/setup/github.mjs";
-import { commentHtml, plan, planLines, runBoard, wanted } from "../lib/board/index.mjs";
+import { plan, planLines, runBoard } from "../lib/board/index.mjs";
+import { commentHtml, wanted } from "../lib/board/wanted.mjs";
 import { mondayClient, retryNotFound, STATUS_COLORS, withLabels } from "../lib/board/monday.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));

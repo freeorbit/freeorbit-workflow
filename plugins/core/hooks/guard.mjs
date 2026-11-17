@@ -292,6 +292,71 @@ export function secretsUnder(root, folder, { glob: pattern, type } = {}, list = 
   return found.filter((path) => names.some((name) => name.test(path.split("/").pop())));
 }
 
+/**
+ * Where a path a tool names leads, or why it is refused: outside the
+ * project, out of it through a link, or a file that may hold a secret. The
+ * one check Read, Grep, and Glob share (TB-10). Gives { path } or { why }.
+ */
+function pathCheck(root, given) {
+  if (inside(root, given) === null) return { why: `${given} is outside the project` };
+  // Where the path leads, through any link, is what is read (SEC-082).
+  const path = where(root, given);
+  if (path === null) return { why: `${given} leads outside the project` };
+  if (isSecret(path) || isSecret(inside(root, given))) return { why: `${path} may hold a secret` };
+  return { path };
+}
+
+/** Read: a file the agent may read. */
+function readCall(args, root, policy, deny) {
+  const { path, why } = pathCheck(root, args.file_path);
+  if (why) return deny(why);
+  return policy.read.some((pattern) => glob(pattern).test(path)) ? null : deny(`${path} is not among what it may read`);
+}
+
+/** Grep and Glob: a folder it may search, or one file it may read, with no secret file in reach. */
+function searchCall(tool, args, root, policy, deny) {
+  const { path, why } = pathCheck(root, args.path ?? root);
+  if (why) return deny(why);
+  const pattern = patternProblem(tool === "Glob" ? args.pattern : args.glob);
+  if (pattern) return deny(pattern);
+  // A Grep over a folder prints lines from every file in it, a secret one too (SB-7).
+  if (tool === "Grep" && statSync(join(root, path), { throwIfNoEntry: false })?.isDirectory()) {
+    const secret = secretsUnder(root, path, args)[0];
+    if (secret) return deny(`${path || "the project"} holds ${secret}, which may hold a secret; search it with a glob or a type that leaves such files out`);
+  }
+  // Searching one file it may read shows nothing reading it would not, such as the Risk lines in user-stories.md.
+  const check = (at) => {
+    const readable = policy.read.some((each) => glob(each).test(at));
+    const ok = readable || policy.search.some((dir) => dir === "**" || at === dir || at.startsWith(`${dir}/`));
+    return ok ? null : deny(`search only in ${policy.search.join(", ") || "nothing"}, or in one file it may read, with that as the path`);
+  };
+  // A Glob may name its folder in the pattern, docs/app/test-data/**/*.md with no path: it searches that
+  // folder, or the one file when the pattern has no wildcard. The pattern has passed the checks above.
+  if (tool === "Glob" && args.pattern) {
+    const parts = String(args.pattern).split("/");
+    const wild = parts.findIndex((part) => /[*?[{]/.test(part));
+    const lead = (wild < 0 ? parts : parts.slice(0, wild)).join("/");
+    const narrowed = lead ? where(root, join(args.path ?? root, lead)) : null;
+    if (narrowed !== null && narrowed !== path && (path === "" || narrowed.startsWith(`${path}/`))) return check(narrowed);
+  }
+  return check(path);
+}
+
+/** WebFetch: only a host its policy lists, or any with "any". */
+function fetchCall(args, policy, deny) {
+  if (policy.web === "any") return null;
+  if (!policy.web) return deny("it fetches nothing from the web");
+  let host = "";
+  try {
+    host = new URL(args.url).hostname.toLowerCase();
+  } catch {
+    return deny(`${args.url} is not a web address`);
+  }
+  const ok = policy.web.some((domain) => host === domain || host.endsWith(`.${domain}`));
+  return ok ? null : deny(`${host} is not an advisory or official source it may fetch`);
+}
+
+/** Why a guarded agent's tool call is denied, or null: each tool's own check, chosen here. */
 export function decide(input, root, config) {
   const name = agentName(input);
   if (!name || !GUARDED.includes(name)) return null;
@@ -301,62 +366,15 @@ export function decide(input, root, config) {
   const args = input.tool_input ?? {};
   const deny = (why) => `${name} is blind (W-08): ${why}.`;
   if (policy.tools && !policy.tools.includes(tool)) return deny(`it uses no tool but ${policy.tools.join(", ")}`);
-
   if (["Edit", "Write", "NotebookEdit", "MultiEdit"].includes(tool)) return deny("it never edits a file");
-  if (tool === "Read") {
-    if (inside(root, args.file_path) === null) return deny(`${args.file_path} is outside the project`);
-    // Where the path leads, through any link, is what is read (SEC-082).
-    const path = where(root, args.file_path);
-    if (path === null) return deny(`${args.file_path} leads outside the project`);
-    if (isSecret(path) || isSecret(inside(root, args.file_path))) return deny(`${path} may hold a secret`);
-    return policy.read.some((pattern) => glob(pattern).test(path)) ? null : deny(`${path} is not among what it may read`);
-  }
-  if (tool === "Grep" || tool === "Glob") {
-    if (inside(root, args.path ?? root) === null) return deny(`${args.path} is outside the project`);
-    const path = where(root, args.path ?? root);
-    if (path === null) return deny(`${args.path} leads outside the project`);
-    if (isSecret(path) || isSecret(inside(root, args.path ?? root))) return deny(`${path} may hold a secret`);
-    const pattern = patternProblem(tool === "Glob" ? args.pattern : args.glob);
-    if (pattern) return deny(pattern);
-    // A Grep over a folder prints lines from every file in it, a secret one too (SB-7).
-    if (tool === "Grep" && statSync(join(root, path), { throwIfNoEntry: false })?.isDirectory()) {
-      const secret = secretsUnder(root, path, args)[0];
-      if (secret) return deny(`${path || "the project"} holds ${secret}, which may hold a secret; search it with a glob or a type that leaves such files out`);
-    }
-    // Searching one file it may read shows nothing reading it would not, such as the Risk lines in user-stories.md.
-    const check = (at) => {
-      const readable = policy.read.some((each) => glob(each).test(at));
-      const ok = readable || policy.search.some((dir) => dir === "**" || at === dir || at.startsWith(`${dir}/`));
-      return ok ? null : deny(`search only in ${policy.search.join(", ") || "nothing"}, or in one file it may read, with that as the path`);
-    };
-    // A Glob may name its folder in the pattern, docs/app/test-data/**/*.md with no path: it searches that
-    // folder, or the one file when the pattern has no wildcard. The pattern has passed the checks above.
-    if (tool === "Glob" && args.pattern) {
-      const parts = String(args.pattern).split("/");
-      const wild = parts.findIndex((part) => /[*?[{]/.test(part));
-      const lead = (wild < 0 ? parts : parts.slice(0, wild)).join("/");
-      const narrowed = lead ? where(root, join(args.path ?? root, lead)) : null;
-      if (narrowed !== null && narrowed !== path && (path === "" || narrowed.startsWith(`${path}/`))) return check(narrowed);
-    }
-    return check(path);
-  }
+  if (tool === "Read") return readCall(args, root, policy, deny);
+  if (tool === "Grep" || tool === "Glob") return searchCall(tool, args, root, policy, deny);
   if (tool === "Bash") {
     if (policy.bash !== "e2e") return deny("it runs no commands");
     const why = e2eCommand(args.command, root, policy.search);
     return why ? deny(why) : null;
   }
-  if (tool === "WebFetch") {
-    if (policy.web === "any") return null;
-    if (!policy.web) return deny("it fetches nothing from the web");
-    let host = "";
-    try {
-      host = new URL(args.url).hostname.toLowerCase();
-    } catch {
-      return deny(`${args.url} is not a web address`);
-    }
-    const ok = policy.web.some((domain) => host === domain || host.endsWith(`.${domain}`));
-    return ok ? null : deny(`${host} is not an advisory or official source it may fetch`);
-  }
+  if (tool === "WebFetch") return fetchCall(args, policy, deny);
   if (tool === "WebSearch") return policy.web ? null : deny("it searches nothing on the web");
   return null;
 }

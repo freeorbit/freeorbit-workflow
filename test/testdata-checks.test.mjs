@@ -4,7 +4,8 @@ import { test } from "node:test";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { readStories } from "../lib/docs/stories.mjs";
-import { CATEGORIES, areaKind, categoryCells, categoryNames, flowAreas, tableRows, testdataProblems, testdataWarnings } from "../lib/testdata.mjs";
+import { CATEGORIES, areaKind, categoryCells, categoryNames, flowAreas, tableRows } from "../lib/testdata/index.mjs";
+import { testdataProblems, testdataWarnings } from "../lib/testdata/checks.mjs";
 
 const config = (more = {}) => merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], ...more });
 const context = (cfg, texts) => ({ config: cfg, tracked: Object.keys(texts), files: (path) => texts[path] ?? "" });

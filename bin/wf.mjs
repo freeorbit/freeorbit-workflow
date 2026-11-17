@@ -44,7 +44,7 @@
 //   wf doctor         whether the project's set-up is whole
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { loadConfig, project, projectRoot } from "../lib/config/config.mjs";
@@ -166,97 +166,9 @@ const commands = {
     return 0;
   },
 
-  async testdata([name, ...args]) {
-    const { runTestdata } = await import("../lib/testdata.mjs");
-    if (!name) {
-      console.log("Usage: wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> [arguments]\n       wf testdata trace [area] [--all]\n       wf testdata trace --chunk <id> [--all]\n       wf testdata rename-ids [area] [--write] [--all]\n       wf testdata review <area> [--chunk <id> | --stories <ids>] [--team]\n       wf testdata drop <area> <ID>... --why \"<why>\" | --from <ask id> [--write]\n       wf testdata budget <area> [story ids] [--check]\n       wf testdata delta <area> <file>\n       wf testdata prune <area> [--all] [--write]\n       wf testdata merge <folder> [--write]\n       wf testdata fold <file> <sibling> [--write]");
-      return 2;
-    }
-    const root = projectRoot();
-    if (["review", "drop", "budget", "delta", "prune"].includes(name)) {
-      // The kit's own steps on an area's spec as a whole: the review page, the owner's drops, the budgets, and the prune.
-      const { runBudget, runDelta, runDrop, runPrune, runReview } = await import("../lib/testdata-cli.mjs");
-      return { review: runReview, drop: runDrop, budget: runBudget, delta: runDelta, prune: runPrune }[name](root, project(), args);
-    }
-    if (name === "refresh-close") {
-      // A refresh that took a story over its budget does not close: the stories stay stale until the spec is back within it.
-      const { runCloseGate } = await import("../lib/testdata-cli.mjs");
-      const { execFileSync } = await import("node:child_process");
-      const atHead = (path) => {
-        try {
-          return execFileSync("git", ["show", `HEAD:${path}`], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
-        } catch {
-          return "";
-        }
-      };
-      if (runCloseGate(project(), atHead, args) === 1) return 1;
-    }
-    if (name === "merge" || name === "fold") {
-      // The kit's own steps: a dry run unless --write, and never a write that loses a row.
-      const { foldFile, mergeFolder, mergeLines } = await import("../lib/testdata-merge.mjs");
-      const { existsSync, mkdirSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } = await import("node:fs");
-      const { dirname, join } = await import("node:path");
-      const [first, second] = args.filter((a) => !a.startsWith("--"));
-      if (!first || (name === "fold" && !second)) {
-        console.log(name === "merge" ? "Usage: wf testdata merge <flow area folder> [--write]" : "Usage: wf testdata fold <small file> <sibling> [--write]");
-        return 2;
-      }
-      // An ignored file is not listed, so a merge asks the disk whether its file is there.
-      const ctx = { ...project(), exists: (path) => existsSync(join(root, path)) };
-      const found = name === "merge" ? mergeFolder(ctx, first) : foldFile(ctx, first, second);
-      const asked = args.includes("--write");
-      const write = asked && found.before === found.after;
-      let kept = [];
-      if (write) {
-        for (const [path, text] of found.writes) {
-          mkdirSync(dirname(join(root, path)), { recursive: true });
-          writeFileSync(join(root, path), text);
-        }
-        for (const path of found.removes) unlinkSync(join(root, path));
-        if (name === "merge") {
-          const folder = join(root, first.replace(/\/+$/, ""));
-          kept = readdirSync(folder);
-          if (!kept.length) rmdirSync(folder);
-        }
-      }
-      for (const line of mergeLines(found, { from: first, asked, write, limit: ctx.config.testdata.limits.lines, kept })) console.log(line);
-      return found.before === found.after ? 0 : 1;
-    }
-    if (name === "rename-ids") {
-      // The kit's own step: a dry run unless --write.
-      const { renameIds, renameLines } = await import("../lib/testdata-rename.mjs");
-      const { writeFileSync } = await import("node:fs");
-      const { join } = await import("node:path");
-      const { config, tracked, files, links } = project();
-      const write = args.includes("--write");
-      // A link can point outside the project, so it is never read or written.
-      const found = renameIds({ config, tracked: tracked.filter((path) => !links.has(path)), files }, args.find((a) => !a.startsWith("--")) ?? null);
-      found.links = [...links];
-      if (write) for (const [path, text] of found.texts) writeFileSync(join(root, path), text);
-      for (const line of renameLines(found, { write, all: args.includes("--all") })) console.log(line);
-      return 0;
-    }
-    if (name === "trace") {
-      // The kit's own step: it reads the spec and the code, and runs no project command.
-      const { chunkLines, chunkTrace, trace, traceLines } = await import("../lib/testdata-trace.mjs");
-      const at = args.indexOf("--chunk");
-      if (at >= 0) {
-        // A chunk's checks and rules: 1 while any is proven by nothing, 2 when the chunk has no row.
-        const chunk = args[at + 1] ?? "";
-        const read = (path) => (path && existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "");
-        const { found, noRow } = chunkTrace(project(), chunk, read);
-        if (noRow) {
-          console.log(`No row for ${chunk || "a chunk"} in the build order or the done list; name it as the row does, such as CH-12 or 37d.`);
-          return 2;
-        }
-        for (const line of chunkLines(found, { all: args.includes("--all") })) console.log(line);
-        return found.unproven.length ? 1 : 0;
-      }
-      const area = args.find((a) => !a.startsWith("--")) ?? null;
-      for (const line of traceLines(trace(project(), area), { all: args.includes("--all") })) console.log(line);
-      return 0;
-    }
-    return runTestdata(root, loadConfig(root), name, args);
+  async testdata(args) {
+    const { runTestdataCommand } = await import("../lib/testdata/cli.mjs");
+    return runTestdataCommand(projectRoot(), args);
   },
 
   /** `wf id <ID> [--all]`: where an ID is defined, and every place that cites it. */

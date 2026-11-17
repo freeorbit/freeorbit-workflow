@@ -3,8 +3,8 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { specIds } from "../lib/testdata.mjs";
-import { testsIn, trace, traceLines } from "../lib/testdata-trace.mjs";
+import { specIds } from "../lib/testdata/index.mjs";
+import { testsIn, trace, traceLines } from "../lib/testdata/trace.mjs";
 
 const DIR = "docs/plugins/uplink/test-data";
 const config = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }], stories: { files: ["docs/plugins/*/user-stories.md"] } });
@@ -65,7 +65,7 @@ const strict = merge(config, { testdata: { chunkScope: "all" } });
 const story = (id, lines) => `### ${id}. A story\n\nAs a user, I want it.\n\nAcceptance:\n\n${lines.map((l) => `- ${l}`).join("\n")}\n`;
 
 test("a chunk's acceptance lines and rules: proven, walk, left to a later chunk, disputed, or proven by nothing; check rows are counted, never gated", async () => {
-  const { chunkChecks, chunkLines } = await import("../lib/testdata-trace.mjs");
+  const { chunkChecks, chunkLines } = await import("../lib/testdata/trace.mjs");
   const texts = {
     [STORIES]: [story("GM-06", ["Shown", "Needs CH-14's code", "Nothing proves it", "Removed (2026-11-14).", "Walked before"]), story("GM-07", ["Looks right"]), story("GM-08", ["Cannot hold"]), story("GM-30", ["Another chunk's"])].join("\n"),
     [`${DIR}/flow.md`]: [
@@ -94,7 +94,7 @@ test("a chunk's acceptance lines and rules: proven, walk, left to a later chunk,
 });
 
 test("a By that names no open chunk, or walked a chunk not done, proves nothing; a lane can be named; only a test or a scenario proves", async () => {
-  const { chunkChecks, chunkTrace } = await import("../lib/testdata-trace.mjs");
+  const { chunkChecks, chunkTrace } = await import("../lib/testdata/trace.mjs");
   const texts = {
     [STORIES]: story("GM-06", ["Typo", "Not walked yet", "A lane's", "Named in app code", "Named in a fixture", "In a test file"]),
     [`${DIR}/flow.md`]: ["| Line | By |", "| --- | --- |", "| GM-06.1 | CH-99 |", "| GM-06.2 | walked 37d |", "| GM-06.3 | CH-01-fe |"].join("\n"),
@@ -119,7 +119,7 @@ test("a By that names no open chunk, or walked a chunk not done, proves nothing;
 });
 
 test("the chunk end holds high-risk lines to a proof and counts the low-risk ones; chunkScope all holds every line; a proof row is honoured for either", async () => {
-  const { chunkChecks, chunkLines } = await import("../lib/testdata-trace.mjs");
+  const { chunkChecks, chunkLines } = await import("../lib/testdata/trace.mjs");
   const risky = (id, lines, risk = "") => `### ${id}. A story\n\nAs a user, I want it.\n\n${risk ? `${risk}\n\n` : ""}Acceptance:\n\n${lines.map((l) => `- ${l}`).join("\n")}\n`;
   const texts = {
     [STORIES]: [risky("GM-06", ["Low, no test", "High, no test. Risk: high (privacy)", "Low, walked by hand", "Low, cited", "Low, a row that proves nothing"]), risky("GM-07", ["Whole story high"], "Risk: high (money)")].join("\n"),
@@ -142,6 +142,6 @@ test("the chunk end holds high-risk lines to a proof and counts the low-risk one
   assert.deepEqual([ids(all.unproven), ids(all.low)], [["GM-06.1", "GM-06.2", "GM-06.5", "GM-07.1"], []]);
   const typo = merge(config, { testdata: { chunkScope: "All" } });
   assert.deepEqual(ids(run(typo).low), [], "a mistyped scope never relaxes the gate");
-  const { testdataProblems } = await import("../lib/testdata.mjs");
+  const { testdataProblems } = await import("../lib/testdata/checks.mjs");
   assert.ok(testdataProblems({ config: typo, tracked: [], files: () => "" }).some((p) => /testdata.chunkScope "All" is not high or all/.test(p)));
 });

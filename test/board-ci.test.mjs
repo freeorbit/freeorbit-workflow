@@ -9,7 +9,8 @@ import { fileURLToPath } from "node:url";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { githubFiles, syncGithub } from "../lib/setup/github.mjs";
-import { plan, wanted } from "../lib/board/index.mjs";
+import { plan } from "../lib/board/index.mjs";
+import { wanted } from "../lib/board/wanted.mjs";
 import { chunkPrs, prNumber, repoUrl, runGit, storyPr } from "../lib/board/prs.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
