@@ -53,7 +53,7 @@ flowchart LR
 | Plugin | What it adds | Detail |
 | --- | --- | --- |
 | core | The guard, the ask-page, commit, pull-request, doc-find, handoff, handoff-resume, workflow-init, workflow-doctor, and board-feedback skills | [ai-tools.md](ai-tools.md), [branches.md](branches.md) |
-| review | The `code-review-ledger` skill and the read-only `code-reviewer` agent, with the findings ledger | [code-standards.md](code-standards.md) |
+| review | The `code-review-ledger` skill and the read-only `code-reviewer` agent, with the findings ledger | [code-standards.md](code-standards.md), [performance-standards.md](performance-standards.md) |
 | design | Frames as HTML or exported PNG, their review pictures, and the screen review with the `screen-reader` agent | [four-steps.md](four-steps.md#step-2-design-frames) |
 | testdata | The `test-data-designer` agent and a seeded generator, so development never uses real personal data | [test-data-process.md](test-data-process.md) |
 | e2e | The `e2e-tester` agent, which follows the stories through the running app | [test-data-process.md](test-data-process.md) |
