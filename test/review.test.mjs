@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { didNotRun, inScope, ledger, scan, touchesDeps } from "../lib/review.mjs";
+import { didNotRun, hotPaths, inScope, ledger, performanceLine, performancePass, scan, touchesDeps } from "../lib/review.mjs";
 
 test("scope leaves out excluded folders and files that are gone", () => {
   const exists = (p) => p !== "gone.ts";
@@ -100,4 +100,45 @@ test("a diff scan from something that is not a commit fails before it empties th
 
 test("ledger runs ledger.py on the config's ledger files", () => {
   assert.equal(ledger(repo(), merge(DEFAULTS, {}), ["--help"]), 0);
+});
+
+const HOT = "# Hot paths\n\n## Hot paths\n\n| Path | Files | Runs |\n| --- | --- | --- |\n| Sync | `src/sync/**`, `core/sync.rs` | each minute |\n| No files | | x |\n\n## Known costs\n\n| Path | Files |\n| --- | --- |\n| Old | `old/**` |\n";
+
+test("the hot paths are the Hot paths table's rows with files, and nothing past it", () => {
+  assert.deepEqual(hotPaths(HOT), [{ name: "Sync", files: ["src/sync/**", "core/sync.rs"] }]);
+  assert.deepEqual(hotPaths("# Nothing\n"), []);
+});
+
+test("the performance pass runs by its setting, and a light run only when it touches a hot path", () => {
+  const paths = hotPaths(HOT);
+  const rows = [
+    ["deep", "diff", true, ["src/sync/a.ts"], { runs: true, touched: ["Sync"] }, "a light run touching a hot path"],
+    ["deep", "diff", true, ["src/ui/a.ts"], { runs: false, touched: [] }, "a light run touching none"],
+    ["deep", "diff", false, ["src/ui/a.ts"], { runs: true, touched: [] }, "a deep run touching none"],
+    ["deep", "full", false, [], { runs: true, touched: ["Sync"] }, "a full run walks every path"],
+    ["always", "diff", true, ["src/ui/a.ts"], { runs: true, touched: [] }, "always"],
+    ["off", "diff", false, ["src/sync/a.ts"], { runs: false, touched: ["Sync"] }, "off"],
+  ];
+  for (const [setting, mode, light, scope, want, why] of rows) assert.deepEqual(performancePass(setting, { mode, light, scope, paths }), want, why);
+  assert.match(performanceLine({ performance: "deep", hotPaths: "" }, { runs: true, touched: [] }), /review.hotPaths is not set/);
+  assert.match(performanceLine({ performance: "deep" }, { runs: false, touched: [] }), /skipped/);
+});
+
+test("a run with the performance pass writes the paths it walks and runs the perf scans", async () => {
+  const root = repo();
+  mkdirSync(join(root, "docs"));
+  writeFileSync(join(root, "docs/hot-paths.md"), HOT);
+  mkdirSync(join(root, "src/sync"), { recursive: true });
+  writeFileSync(join(root, "src/sync/a.ts"), "a\n");
+  const config = merge(DEFAULTS, { review: { hotPaths: "docs/hot-paths.md", scans: { perf: [{ name: "perf", run: 'echo perf > "$SCAN/perf.txt"' }] } } });
+  const light = await scan(root, config, { mode: "diff", since: "HEAD", light: true });
+  assert.deepEqual(light.ran, [["perf", 0]]);
+  assert.equal(readFileSync(join(root, ".cache/review-scan/hot-paths.txt"), "utf8"), "Sync\n");
+  writeFileSync(join(root, "src/sync/a.ts"), "a\n");
+  execFileSync("git", ["add", "."], { cwd: root });
+  execFileSync("git", ["commit", "-qm", "sync"], { cwd: root });
+  writeFileSync(join(root, "b.txt"), "b\n");
+  const skipped = await scan(root, config, { mode: "diff", since: "HEAD", light: true });
+  assert.deepEqual(skipped.ran, []);
+  assert.equal(existsSync(join(root, ".cache/review-scan/hot-paths.txt")), false);
 });

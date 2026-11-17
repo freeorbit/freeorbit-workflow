@@ -37,3 +37,17 @@ test("a story ID inside a fenced example is not a reference", async () => {
   const found = (await problems(context, "2026-11-09")).filter((line) => line.includes("no story"));
   assert.deepEqual(found, ["docs/a.md: no story APP-02"]);
 });
+
+test("past Step 3, a hot-paths doc is checked only when review.hotPaths names one", async () => {
+  const HOT = readFileSync(new URL("../templates/hot-paths.md", import.meta.url), "utf8");
+  const drafted = TEMPLATE.split("\n").slice(1).join("\n");
+  const run = async (review, hot) => {
+    const texts = { "docs/log/build-order.md": ORDER("Done 2026-11-02"), "docs/app/threat-model.md": drafted, ...(hot === undefined ? {} : { "docs/app/hot-paths.md": hot }) };
+    const context = { root: "/nowhere", config: merge(DEFAULTS, { docs: { index: "none.md" }, review: { threatModel: "docs/app/threat-model.md", ...review } }), tracked: Object.keys(texts), files: (path) => texts[path] };
+    return (await problems(context, "2026-11-09")).filter((line) => line.includes("hot-paths") && !line.includes(": no file "));
+  };
+  assert.deepEqual(await run({}), []);
+  assert.match((await run({ hotPaths: "docs/app/hot-paths.md" }))[0], /the hot-paths doc review.hotPaths names is missing/);
+  assert.match((await run({ hotPaths: "docs/app/hot-paths.md" }, HOT))[0], /still the kit's empty template/);
+  assert.deepEqual(await run({ hotPaths: "docs/app/hot-paths.md" }, HOT.split("\n").slice(1).join("\n")), []);
+});

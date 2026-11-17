@@ -38,6 +38,7 @@ test("the config carries the areas as scopes and story files, and the starter fi
   assert.deepEqual(config.scopes, ["app", "review", "workflow"]);
   assert.deepEqual(config.stories.files, ["docs/app/user-stories.md", "docs/review/user-stories.md"]);
   assert.equal(config.review.threatModel, "docs/app/threat-model.md");
+  assert.equal(config.review.hotPaths, "docs/app/hot-paths.md");
   const files = starterFiles(merge(DEFAULTS, config), ANSWERS.plugins, "2026-11-09");
   assert.match(files.get("docs/log/build-order.md"), /\| \[review\]\(build-order\/review\.md\) \| Not started \| Not started \| Not started \| Not started \|/);
   assert.ok(files.has("docs/log/decisions/workflow.md"));
@@ -61,10 +62,11 @@ test("package.json, settings, and .gitignore keep the project's own entries", ()
 test("init never overwrites a file the project already has", () => {
   const root = mkdtempSync(join(tmpdir(), "wf-init-"));
   writeFileSync(join(root, "AGENTS.md"), "ours");
-  const report = writeStarter(root, ANSWERS, { today: "2026-11-09", template: "TEMPLATE" });
+  const report = writeStarter(root, ANSWERS, { today: "2026-11-09", templates: { "threat-model": "TEMPLATE", "hot-paths": "HOT" } });
   assert.ok(report.some(([file, what]) => file === ".workflow/config.json" && what === "written"));
   assert.equal(readFileSync(join(root, "docs/app/threat-model.md"), "utf8"), "TEMPLATE");
-  const again = writeStarter(root, ANSWERS, { today: "2026-11-10", template: "TEMPLATE" });
+  assert.equal(readFileSync(join(root, "docs/app/hot-paths.md"), "utf8"), "HOT");
+  const again = writeStarter(root, ANSWERS, { today: "2026-11-10", templates: { "threat-model": "TEMPLATE", "hot-paths": "HOT" } });
   assert.ok(again.some(([file, what]) => file === "docs/log/build-order.md" && what === "kept, already there"));
   assert.equal(readFileSync(join(root, "AGENTS.md"), "utf8"), "ours");
 });
@@ -103,13 +105,13 @@ test("answers and config paths outside the project are refused before anything i
 test("a bad JSON file stops init before the first write, and a kept config wins", () => {
   const root = mkdtempSync(join(tmpdir(), "wf-init-bad-"));
   writeFileSync(join(root, "package.json"), "{ not json");
-  assert.throws(() => writeStarter(root, ANSWERS, { today: "2026-11-09", template: "T" }), /package.json is not valid JSON/);
+  assert.throws(() => writeStarter(root, ANSWERS, { today: "2026-11-09", templates: { "threat-model": "T", "hot-paths": "T" } }), /package.json is not valid JSON/);
   assert.equal(existsSync(join(root, "docs")), false);
   const again = mkdtempSync(join(tmpdir(), "wf-init-kept-"));
   execFileSync("mkdir", ["-p", join(again, ".workflow")]);
   writeFileSync(join(again, ".workflow/config.json"), JSON.stringify({ ...configFrom(ANSWERS), areas: [{ id: "only", prefix: "ONL", docs: "docs/only" }] }));
   writeFileSync(join(again, "package.json"), '{"name":"x"}');
-  const report = writeStarter(again, ANSWERS, { today: "2026-11-09", template: "T" });
+  const report = writeStarter(again, ANSWERS, { today: "2026-11-09", templates: { "threat-model": "T", "hot-paths": "T" } });
   assert.ok(existsSync(join(again, "docs/only/user-stories.md")));
   assert.ok(!existsSync(join(again, "docs/review/user-stories.md")));
   assert.ok(report.some(([file, what]) => file === "package.json" && what === "merged"));
@@ -159,11 +161,11 @@ test("init writes the ask-pages server, keeping the project's own", () => {
   const root = mkdtempSync(join(tmpdir(), "wf-init-view-"));
   execFileSync("mkdir", ["-p", join(root, ".claude")]);
   writeFileSync(join(root, ".claude/launch.json"), JSON.stringify({ version: "0.0.1", configurations: [{ name: "api", port: 3000 }] }));
-  writeStarter(root, ANSWERS, { today: "2026-11-10", template: "T" });
+  writeStarter(root, ANSWERS, { today: "2026-11-10", templates: { "threat-model": "T", "hot-paths": "T" } });
   const launch = JSON.parse(readFileSync(join(root, ".claude/launch.json"), "utf8"));
   assert.deepEqual(launch.configurations.map((c) => c.name), ["api", "ask-pages"]);
   const core = mkdtempSync(join(tmpdir(), "wf-init-coreview-"));
-  writeStarter(core, { ...ANSWERS, plugins: ["core"] }, { today: "2026-11-10", template: "T" });
+  writeStarter(core, { ...ANSWERS, plugins: ["core"] }, { today: "2026-11-10", templates: { "threat-model": "T", "hot-paths": "T" } });
   assert.deepEqual(JSON.parse(readFileSync(join(core, ".claude/launch.json"), "utf8")).configurations.map((c) => c.runtimeArgs), [["wf", "view", "serve"]]);
 });
 
@@ -171,7 +173,7 @@ test("a bad launch.json stops init before anything is written", () => {
   const root = mkdtempSync(join(tmpdir(), "wf-init-badlaunch-"));
   execFileSync("mkdir", ["-p", join(root, ".claude")]);
   writeFileSync(join(root, ".claude/launch.json"), "{ not json");
-  assert.throws(() => writeStarter(root, ANSWERS, { today: "2026-11-10", template: "T" }), /launch.json is not valid JSON/);
+  assert.throws(() => writeStarter(root, ANSWERS, { today: "2026-11-10", templates: { "threat-model": "T", "hot-paths": "T" } }), /launch.json is not valid JSON/);
   assert.equal(existsSync(join(root, ".workflow")), false);
   assert.equal(existsSync(join(root, "docs")), false);
 });

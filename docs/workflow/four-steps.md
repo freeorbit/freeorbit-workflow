@@ -33,6 +33,13 @@ The first area to finish Step 3 also drafts the threat model, from the kit's `te
 - A later area adds its own assets and boundaries.
 - `npx wf doc:check` fails while an area is past Step 3 and the threat model is missing or still the template.
 
+It drafts the hot-paths doc beside it, from the kit's `templates/hot-paths.md`, into the file `review.hotPaths` names.
+
+- It says what the person waits for and each budget, how large the data gets, and each hot path with its files.
+- The agent drafts it from the architecture and the stories, and the owner reviews it with the threat model.
+- A later area adds its own paths.
+- `npx wf doc:check` fails while an area is past Step 3 and the doc `review.hotPaths` names is missing or still the template.
+
 <!-- wf:local step-3 -->
 
 ### Step 4. Implementation

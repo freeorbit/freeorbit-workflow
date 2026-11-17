@@ -28,7 +28,7 @@ LEDGER = "docs/log/review-findings.md"
 CLOSED = "docs/log/review-findings-closed.md"
 OPEN = {"proposed", "accepted", "deferred"}
 FIXED = {"fixed"}
-CLOSED_STATES = {"verified", "rejected", "accepted-risk", "superseded"}
+CLOSED_STATES = {"verified", "rejected", "accepted-risk", "accepted-cost", "superseded"}
 HEAD = "| ID | Severity | Status | Title | Where |\n| --- | --- | --- | --- | --- |\n"
 ROWS = ["Status", "Severity", "Confidence", "Rule", "Note", "Found", "Evidence", "Why it matters", "Suggestion", "Decision"]
 

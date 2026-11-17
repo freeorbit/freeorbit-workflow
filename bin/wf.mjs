@@ -67,7 +67,7 @@ import { runTools } from "../lib/setup/tools.mjs";
 import { answerProblems, writeStarter } from "../lib/setup/init.mjs";
 import { runDoctor } from "../lib/setup/doctor.mjs";
 import { syncDocs } from "../lib/docs/docsync.mjs";
-import { didNotRun, ledger, scan } from "../lib/review.mjs";
+import { didNotRun, ledger, performanceLine, scan } from "../lib/review.mjs";
 import { runTestdata } from "../lib/testdata.mjs";
 import { loadConfig, project, projectRoot } from "../lib/config/config.mjs";
 import { problems, warnings } from "../lib/docs/check.mjs";
@@ -145,6 +145,7 @@ const commands = {
     const root = projectRoot();
     const result = await scan(root, loadConfig(root), { mode, since, light: flag === "--light" || since === "--light" });
     if (mode === "diff") console.log(`Scope: ${result.scope.length} files, in .cache/review-scan/scope.txt.${result.deps ? " A dependency file changed, so the deps scans ran." : ""}`);
+    console.log(performanceLine(loadConfig(root).review, result.performance));
     for (const [name, code] of result.ran) {
       const note = didNotRun(code) ? " DID NOT RUN: install or fix it before reviewing" : code ? " (read its output: non-zero often means found something)" : "";
       console.log(`  ${name}: exit ${code}${note}`);
@@ -378,8 +379,8 @@ const commands = {
       for (const problem of found) console.error(problem);
       return 1;
     }
-    const template = readFileSync(join(KIT_ROOT, "templates", "threat-model.md"), "utf8");
-    for (const [path, what] of writeStarter(root, answers, { today: localToday(), template })) console.log(`${path}: ${what}`);
+    const templates = Object.fromEntries(["threat-model", "hot-paths"].map((name) => [name, readFileSync(join(KIT_ROOT, "templates", `${name}.md`), "utf8")]));
+    for (const [path, what] of writeStarter(root, answers, { today: localToday(), templates })) console.log(`${path}: ${what}`);
     const config = loadConfig(root);
     for (const path of syncDocs(root, config)) console.log(`${path}: written`);
     const { problems } = await reconcile(root, { write: true, tools: config.ai.tools });

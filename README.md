@@ -88,6 +88,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.89.0: the code review checks performance
+
+The review had a security pass and a structure pass; only CS-LIST and a line of CS-STATE said anything about cost. Now a third pass walks the paths where the product spends its time.
+
+- **The rubric's new Performance section** holds the `PERF-` rules: no I/O or call per item in a loop, a limit on every read and queue, nothing blocking the UI thread or an async runtime, IPC sized to what is shown, renders, startup, allocation on hot paths, and a new dependency's size. Run `npx wf docs sync` to get it.
+- **A hot-paths doc**, `review.hotPaths`, plays the threat model's part: the budgets, how large the data gets, and each hot path with its files as globs. Draft one from the kit's `templates/hot-paths.md`, beside the threat model, and set `review.hotPaths` to it. `wf init` writes it for a new project. Without one, the pass walks the `PERF-` rules on the changes alone.
+- **`review.performance`** says when the pass runs: `deep`, the default, on every deep run and on a light run whose changes touch a hot path's files; `always`; or `off`. `wf scan` says on its `Performance pass:` line whether it runs and which paths it walks.
+- **`review.scans.perf`** holds scans that measure cost, such as performance lints or bundle sizes, run only when the pass runs. Empty by default.
+- **A finding names its scale**: the data size or the budget it breaks. A `PERF-` finding can be closed as `accepted-cost`, and the doc lists it under Known costs.
+
 ### v0.88.0: board feedback takes the team's answers and relayed comments
 
 `wf board feedback` read only a guest's comments. When the owner answered one of Orbit's questions in its thread, the answer was dropped without a word (Atlas NX, 2026-11-16).
