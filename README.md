@@ -104,6 +104,21 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.96.0: structure fixes from the kit's first full review, the small ones
+
+The smaller structure findings the owner accepted from the 2026-11-17 review. Nothing to change in a project.
+
+- **One `git()` and one `flagValue()`** in `lib/process.mjs`. git's output is read with a 64 MiB cap everywhere, so a large project's file list no longer fails with ENOBUFS, and a flag given with no value says so, as `wf screens --gate` with no chunk now does.
+- **A JSON file that is not JSON is named**, with what to do: `.workflow/config.json`, an answers file, `wf init`'s answers, and the guard's read of the config.
+- **A board sync that monday cuts short** says the changes before it are written and to run sync again, which finishes it.
+- **`wf screens` returns its own exit code** from each step, not through `process.exitCode`.
+- **A tauri start that fails stops its app**, as a web start does, and takes the same memory and time caps.
+- **The headless browser says when a page never loaded**, after 9 seconds, in place of measuring a half-loaded page.
+- **The board's column titles come from `board.titles` alone**; the code no longer keeps its own, which disagreed.
+- **The test-data drop log dates by the local day**, as every other log.
+- **The review scanners share `scanlib.py`**: one rule for what a test file is, the tracked files, and Rust's lines above its tests.
+- **Smaller:** the page-settle wait has tests; usage lines name `--answered` and `setup --create`; three header comments are fixed.
+
 ### v0.95.1: the ask pages tested in a real browser
 
 The kit's own tests now drive the ask pages in headless Chromium, so `npm test` in the kit needs Chromium or Chrome, as its design checks do. Nothing to change in a project.

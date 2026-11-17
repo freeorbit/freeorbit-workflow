@@ -398,7 +398,12 @@ async function main() {
   if (!name || !GUARDED.includes(name)) return;
   const root = rootOf(input.cwd, process.env.CLAUDE_PROJECT_DIR);
   const file = join(root, ".workflow", "config.json");
-  const config = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {};
+  let config = {};
+  try {
+    config = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {};
+  } catch (error) {
+    throw new Error(`.workflow/config.json is not valid JSON (${error.message}); fix it, and the guard reads it again`);
+  }
   const why = decide(input, root, config);
   if (why) {
     process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: why } }));

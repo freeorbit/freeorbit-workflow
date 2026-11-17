@@ -20,7 +20,6 @@ import sys
 from pathlib import Path
 
 CODE = (".rs", ".ts", ".tsx", ".js", ".mjs")
-TESTS = (".test.ts", ".test.tsx", ".test.js", ".test.mjs", ".spec.ts", ".spec.tsx")
 
 # A loop's first line, and what in its body waits or crosses a boundary.
 RUST_LOOP = re.compile(r"^\s*(?:'\w+:\s*)?(?:for\b.*\bin\b|while\b|loop\b)[^;]*\{\s*$")
@@ -46,18 +45,19 @@ TS_POLL = re.compile(r"\bsetInterval\(")
 RUST_SLEEP = re.compile(r"\bsleep\(")
 
 
-def tracked():
-    """Every tracked path."""
-    return subprocess.check_output(["git", "ls-files"], text=True).splitlines()
-
+# The scans run with python3 -I, which leaves the script's own folder off the
+# path; the shared helpers sit beside it, in the kit, so that folder is added.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from scanlib import before_tests, is_test_file, tracked as tracked_paths  # noqa: E402
+tracked = tracked_paths
 
 # Folders whose code runs for the developer, not the person using the product.
-NOT_SHIPPED = {"test", "tests", "tools", "testdata", "fixtures", "plugin_tests", "benches", "examples", "scripts"}
+NOT_SHIPPED = {"tools", "testdata", "fixtures", "benches", "examples", "scripts"}
 
 
 def is_test(path):
     """True for a file of tests, or one in a folder that does not ship, such as tools/."""
-    return path.endswith(TESTS) or bool(NOT_SHIPPED & set(path.split("/")[:-1]))
+    return is_test_file(path) or bool(NOT_SHIPPED & set(path.split("/")[:-1]))
 
 
 def bare(line):
@@ -77,11 +77,6 @@ def region(lines, start):
         if opened and depth <= 0:
             return start, at
     return start, len(lines) - 1
-
-
-def before_tests(text):
-    """A Rust file's lines above its test module."""
-    return re.split(r"#\[cfg\((?:all\()?test", text)[0].split("\n")
 
 
 def inside_blocking(lines, start, end):
