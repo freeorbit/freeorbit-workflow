@@ -183,6 +183,28 @@ test("as a hook it denies with a reason, passes others silently, and a crash exi
   assert.match(crashed.stderr, /guard failed, so the call is blocked/);
 });
 
+test("the feedback reader reads the one brief file and uses no other tool (SB-3)", () => {
+  assert.equal(call("core:feedback-reader", "Read", { file_path: "/p/.cache/board/feedback.json" }), null);
+  assert.equal(call("feedback-reader", "Read", { file_path: ".cache/board/feedback.json" }), null);
+  for (const path of ["/p/.cache/board/drafts.json", "/p/.workflow/config.json", "/p/docs/log/open-questions.md", "/p/.env", "/etc/passwd"]) {
+    assert.match(call("feedback-reader", "Read", { file_path: path }), /feedback-reader is blind/, path);
+  }
+  for (const [tool, input] of [
+    ["Bash", { command: "npx wf board reply u1 --noted" }],
+    ["Edit", { file_path: "/p/.cache/board/feedback.json" }],
+    ["Write", { file_path: "/p/.cache/board/feedback.json" }],
+    ["Grep", { pattern: "x", path: "/p/.cache/board" }],
+    ["Glob", { pattern: "*", path: "/p/.cache/board" }],
+    ["WebFetch", { url: "https://osv.dev" }],
+    ["WebSearch", { query: "x" }],
+    ["Skill", { skill: "commit" }],
+    ["Agent", { prompt: "x" }],
+    ["mcp__monday__create_update", { body: "x" }],
+  ]) {
+    assert.match(call("feedback-reader", tool, input), /uses no tool but Read/, tool);
+  }
+});
+
 test("a blind agent's Grep over a folder that holds a secret file needs a glob or a type that leaves it out (SB-7)", () => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-guard-grep-")));
   spawnSync("git", ["init", "-q"], { cwd: root });
