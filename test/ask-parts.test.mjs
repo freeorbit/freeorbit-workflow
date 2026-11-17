@@ -12,7 +12,10 @@ import { fileURLToPath } from "node:url";
 import { BLOCK_KINDS, RICH_TYPES } from "../lib/ask/blocks.mjs";
 import { BLOCK_FIELDS, fieldsOf, TYPE_FIELDS } from "../lib/ask/fields.mjs";
 import { pageScript } from "../lib/ask/page.mjs";
-import { ITEM_FIELDS, normalize, TEMPLATES, TYPES } from "../lib/ask/spec.mjs";
+import { ITEM_FIELDS } from "../lib/ask/fieldnames.mjs";
+import { TYPES } from "../lib/ask/questions.mjs";
+import { normalize } from "../lib/ask/spec.mjs";
+import { TEMPLATES } from "../lib/ask/templates.mjs";
 
 const skill = join(dirname(fileURLToPath(import.meta.url)), "../plugins/core/skills/ask-page");
 const read = (file) => readFileSync(join(skill, file), "utf8");

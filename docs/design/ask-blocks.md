@@ -127,7 +127,7 @@ Phase 4 lets a page say more between builds. Each is a file the CLI writes and t
 A template, a question type, or a block lives in several places. `test/ask-parts.test.mjs` fails and names the place a new one was left out of.
 
 - **A block.** Its check in `lib/ask/blocks.mjs`, its drawing in the page's `BLOCKS` record, its styles, its line in `lib/ask/fields.mjs`, its row in the skill's `reference/blocks.md`, and an example that uses it.
-- **A question type.** Its check in `lib/ask/spec.mjs`, its drawing and answer rule in the page, its line in `fields.mjs`, its row in `reference/answer-types.md`, and an example that asks it.
+- **A question type.** Its check in `lib/ask/questions.mjs`, its drawing and answer rule in the page, its line in `fields.mjs`, its row in `reference/answer-types.md`, and an example that asks it.
 - **A template.** Its entry in `TEMPLATES` with its items' fields, its example, its row in `reference/templates.md`, and its place in the skill's table.
 
 ## Not chosen, for later

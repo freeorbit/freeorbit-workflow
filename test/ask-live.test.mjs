@@ -16,7 +16,8 @@ import { addReply, changesSince, everyAsk, historyMarkdown, keepRound, LIVE_LIMI
 import { buildPage } from "../lib/ask/page.mjs";
 import { normalize } from "../lib/ask/spec.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
-import { answersPath, askDir, inbox, serve } from "../lib/view/serve.mjs";
+import { answersPath, askDir } from "../lib/ask/store.mjs";
+import { inbox, serve } from "../lib/view/serve.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 process.env.WF_ASK_NO_SERVER = "1";

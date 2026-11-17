@@ -9,7 +9,8 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { EXAMPLES, runAsk } from "../lib/ask/index.mjs";
-import { GROUPING, normalize } from "../lib/ask/spec.mjs";
+import { GROUPING } from "../lib/ask/advice.mjs";
+import { normalize } from "../lib/ask/spec.mjs";
 
 process.env.WF_ASK_NO_SERVER = "1";
 process.env.WF_STATE_DIR = mkdtempSync(join(tmpdir(), "wf-ask-group-state-"));
@@ -73,7 +74,7 @@ test("wf ask page builds the page and prints the advice", async () => {
 });
 
 test("picture advice: a joined sheet, a box the pictures do not have, and a frame against the app with no compare", async () => {
-  const { pictureAdvice } = await import("../lib/ask/spec.mjs");
+  const { pictureAdvice } = await import("../lib/ask/advice.mjs");
   const pic = (w, h, boxes = []) => ({ image: "a.png", label: "A", w, h, boxes });
   const page = (q) => ({ questions: [{ id: "q", text: "Fine?", look: "", detail: "", pictures: [], compare: null, ...q }] });
   assert.match(pictureAdvice(page({ pictures: [pic(5136, 1684)] })).join(), /q: picture A is 5136×1684, likely several frames joined in one sheet; give each its own picture with npx wf design annotate --ask/);
@@ -86,7 +87,7 @@ test("picture advice: a joined sheet, a box the pictures do not have, and a fram
 });
 
 test("template advice: a decision page doing another template's job is pointed at that template", async () => {
-  const { templateAdvice } = await import("../lib/ask/spec.mjs");
+  const { templateAdvice } = await import("../lib/ask/advice.mjs");
   const tq = (id, extra = {}) => ({ id, text: `Pick ${id}?`, options: [], pictures: [], compare: null, role: "", ...extra });
   const page = (questions, template = "decision") => templateAdvice({ template, questions });
   assert.match(page([tq("a", { role: "designer" }), tq("b", { role: "owner" }), tq("c", { role: "owner" })]).join(), /3 questions for 2 roles \(designer, owner\): a batch page/);
@@ -104,7 +105,7 @@ test("template advice: a decision page doing another template's job is pointed a
 
 test("the ask-page skill's numbered steps carry the pictures, the advice, and the open, and a bare compare pair is advised", async () => {
   const { readFileSync } = await import("node:fs");
-  const { pictureAdvice } = await import("../lib/ask/spec.mjs");
+  const { pictureAdvice } = await import("../lib/ask/advice.mjs");
   const skill = readFileSync(new URL("../plugins/core/skills/ask-page/SKILL.md", import.meta.url), "utf8");
   const steps = skill.slice(skill.indexOf("## Steps"), skill.indexOf("## Grouping"));
   // Each was missed in a real session while it sat outside the steps.
