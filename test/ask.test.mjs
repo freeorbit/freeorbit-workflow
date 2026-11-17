@@ -545,7 +545,12 @@ test("wait returns once answers to the page as it is now are sent, and export ma
     if (mine === undefined) delete process.env.CLAUDE_CODE_HOST_SESSION_ID;
     else process.env.CLAUDE_CODE_HOST_SESSION_ID = mine;
     const spec = JSON.parse(readFileSync(join(view, "ask/next-chunks/spec.json"), "utf8"));
-    assert.equal(await runAsk(["wait", "next-chunks", "--timeout", "0.6"], log), 3);
+    // While wait runs, the page is marked as waited on, and the mark goes when it ends.
+    const waiting = runAsk(["wait", "next-chunks", "--timeout", "0.6"], log);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    assert.equal(existsSync(join(view, "ask/next-chunks/waiting.json")), true);
+    assert.equal(await waiting, 3);
+    assert.equal(existsSync(join(view, "ask/next-chunks/waiting.json")), false);
     const file = answersPath(view, "next-chunks");
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, JSON.stringify({ id: "next-chunks", hash: spec.hash, submitted: "2026-11-13T10:00:00Z", answers: { order: { order: ["labels", "search", "offline"] } } }));
