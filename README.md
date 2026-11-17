@@ -104,6 +104,10 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.95.1: the ask pages tested in a real browser
+
+The kit's own tests now drive the ask pages in headless Chromium, so `npm test` in the kit needs Chromium or Chrome, as its design checks do. Nothing to change in a project.
+
 ### v0.95.0: performance fixes from the kit's first full review
 
 The accepted performance findings from the 2026-11-17 review. Nothing to change in a project.
