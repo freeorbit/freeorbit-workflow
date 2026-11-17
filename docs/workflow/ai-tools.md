@@ -58,6 +58,14 @@ Claude Code exposes a project skill as `/<skill-name>`. OpenCode can load it wit
 
 Other skills do not need command wrappers.
 
+## Harnesses
+
+Claude Code runs the same plugins, skills, and hooks wherever it runs: in a terminal, in Claude's desktop app, or in an agent IDE such as Orca, which runs the `claude` CLI in its own terminals and worktrees.
+
+- **Ask pages** open with `npx wf ask open <id>`, where the person looks: the desktop app's browser pane, a tab of Orca's browser for the worktree, or the system's browser. `ask.open` forces one.
+- **Waiting.** In Orca, an agent waiting on an ask page also puts the unread dot on its workspace.
+- **Branches.** A branch the harness named, such as `claude/…` or an Orca workspace's, is renamed to `<scope>/<slug>` before its first push; the push hook says so.
+
 ## Model routing
 
 Canonical agents inherit the active model, so switching tools does not leave a Claude model ID in OpenCode or an OpenCode provider ID in Claude Code. When a workflow requires a particular or different model, keep that choice at the native invocation point.

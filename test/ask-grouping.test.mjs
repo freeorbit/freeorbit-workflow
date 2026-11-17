@@ -109,7 +109,7 @@ test("the ask-page skill's numbered steps carry the pictures, the advice, and th
   const skill = readFileSync(new URL("../plugins/core/skills/ask-page/SKILL.md", import.meta.url), "utf8");
   const steps = skill.slice(skill.indexOf("## Steps"), skill.indexOf("## Grouping"));
   // Each was missed in a real session while it sat outside the steps.
-  for (const must of ["wf design annotate <spec> --ask", "`Pictures:`", "Open the address in the browser pane", "wf ask wait <id>` in the background", "built again"]) assert.ok(steps.includes(must), `the steps say: ${must}`);
+  for (const must of ["wf design annotate <spec> --ask", "`Pictures:`", "`npx wf ask open <id>`", "wf ask wait <id>` in the background", "built again"]) assert.ok(steps.includes(must), `the steps say: ${must}`);
   const agents = readFileSync(new URL("../docs/root/AGENTS.md", import.meta.url), "utf8");
   assert.match(agents, /\*\*Make every picture with `npx wf design annotate <spec>`\*\*/);
   assert.match(agents, /\*\*With a browser pane, ask on an ask page\.\*\*/);

@@ -22,7 +22,7 @@ A branch is `<scope>/<slug>`, such as `app/chunk-21-scan` or `workflow/branch-ru
 
 - **Slug.** Lowercase words joined by hyphens, 40 characters or fewer. It starts with the ID when there is one: `chunk-21`, `app-37`, `sec-043`.
 - **Release lines.** `release/X.Y`, such as `release/0.2`, is a release line, not work. Release tooling work goes under one of the project's scopes, such as `workflow/release-feed-notes`.
-- **Worktrees.** A branch an app or tool named for itself, such as `claude/…`, is renamed before its first push: `git branch -m <scope>/<slug>`.
+- **Worktrees.** A branch an app or tool named for itself, such as Claude's `claude/…` or an Orca workspace's, is renamed before its first push: `git branch -m <scope>/<slug>`. The push hook refuses it until then and says so. Orca keeps the workspace, which it finds by its folder.
 
 ## The flow
 
