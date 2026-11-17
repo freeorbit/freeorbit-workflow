@@ -282,7 +282,7 @@ const commands = {
     return runAsk(args);
   },
   async view(args) {
-    const { runView } = await import("../lib/ask/index.mjs");
+    const { runView } = await import("../lib/view/command.mjs");
     return runView(args);
   },
 

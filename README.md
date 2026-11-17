@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.97.0: the ask pages' code, each part where it belongs
+
+From the 2026-11-17 review's structure findings. Nothing to change in a project; nothing a page or a command does changes.
+
+- **An ask page's files on disk** (its id, folder, answers path, and spec reader) live in `lib/ask/store.mjs`, not in the HTTP server, which imports them. Writing a file whole is `lib/files.mjs`, shared with the screen review's record.
+- **`wf view`** is `lib/view/command.mjs`, not part of `wf ask`. Its `notify` and the server's notifier walk the notifiers in one place, `notifyNow` in `desktop.mjs`.
+- **The server's routes** share one page lookup and one capped JSON body read.
+- **`lib/ask/spec.mjs`**, 811 lines, is five files by job: `spec.mjs` (normalize and the hash), `templates.mjs`, `questions.mjs`, `fieldnames.mjs`, and `advice.mjs`.
+
 ### v0.96.0: structure fixes from the kit's first full review, the small ones
 
 The smaller structure findings the owner accepted from the 2026-11-17 review. Nothing to change in a project.

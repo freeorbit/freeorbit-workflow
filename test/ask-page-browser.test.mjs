@@ -21,7 +21,8 @@ import { openChromium } from "../lib/browser/headless.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { browserFor } from "../lib/config/platform.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
-import { answersPath, serve } from "../lib/view/serve.mjs";
+import { answersPath } from "../lib/ask/store.mjs";
+import { serve } from "../lib/view/serve.mjs";
 import { projectKey } from "../lib/view/view.mjs";
 import { markWaiting } from "../lib/view/waiting.mjs";
 

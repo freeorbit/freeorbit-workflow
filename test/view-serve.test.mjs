@@ -12,9 +12,11 @@ import { fileURLToPath } from "node:url";
 import { Script } from "node:vm";
 
 import { askState, checkAnswers } from "../lib/ask/answers.mjs";
-import { EXAMPLES, runView } from "../lib/ask/index.mjs";
+import { EXAMPLES } from "../lib/ask/index.mjs";
+import { runView } from "../lib/view/command.mjs";
 import { buildPage } from "../lib/ask/page.mjs";
-import { answersPath, readSpec, serve, servedFile } from "../lib/view/serve.mjs";
+import { answersPath, readSpec } from "../lib/ask/store.mjs";
+import { serve, servedFile } from "../lib/view/serve.mjs";
 import { asker, ensureHub, hubUp, keptToken, olderVersion, projects, register, stateDir } from "../lib/view/hub.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
 import { projectKey, SERVER, withViewServer } from "../lib/view/view.mjs";
