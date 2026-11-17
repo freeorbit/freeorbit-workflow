@@ -7,7 +7,8 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { didNotRun, hotPaths, inScope, ledger, performanceLine, performancePass, scan, touchesDeps } from "../lib/review.mjs";
+import { didNotRun, hotPaths, inScope, ledger, ledgerToMove, OLD_LEDGER, performanceLine, performancePass, scan, touchesDeps } from "../lib/review.mjs";
+import { doctorSteps } from "../lib/setup/doctor.mjs";
 
 test("scope leaves out excluded folders and files that are gone", () => {
   const exists = (p) => p !== "gone.ts";
@@ -151,4 +152,29 @@ test("--performance on or off overrides review.performance for one scan", async 
   assert.deepEqual(await ran(null), [], "a light run that touches no hot path skips it");
   assert.deepEqual(await ran("on"), ["perf"]);
   assert.deepEqual(await ran("off"), []);
+});
+
+test("a ledger from before v1.3.0 is moved once by wf ledger migrate, and until then wf ledger and doctor say so", async () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-ledger-move-"));
+  const config = merge(DEFAULTS, {});
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  mkdirSync(join(root, "docs/log"), { recursive: true });
+  const ledgerText = "# Review findings\n\nLast reviewed: abc on 2026-11-01, diff.\nDeferred: none.\n\n## Light runs\n\nNone.\n\n## Summary\n\n### Open\n\nNone.\n\n### Fixed, waiting for review\n\nNone.\n\n## Open\n\nNone.\n\n## Fixed, waiting for review\n\nNone.\n";
+  writeFileSync(join(root, OLD_LEDGER.ledger), ledgerText);
+  writeFileSync(join(root, OLD_LEDGER.closed), "# Closed review findings\n\n## Summary\n\n| ID | Severity | Status | Title | Where |\n| --- | --- | --- | --- | --- |\n| [SEC-001](#sec-001) | High | verified | Old | `b.rs:2` |\n\n## Details\n\n### SEC-001\n\n**Old**\n\n| Field | Value |\n| --- | --- |\n| Status | verified |\n| Found | 2026-11-02 at abc |\n");
+  execFileSync("git", ["add", "."], { cwd: root });
+  assert.deepEqual(ledgerToMove(root, config), OLD_LEDGER);
+  const step = doctorSteps(root, { config }).find(([name]) => name === "the review ledger is in its folder")[1];
+  assert.match(JSON.stringify(step()), /run npx wf ledger migrate/);
+  assert.equal(ledger(root, config, ["summary"]), 1, "wf ledger refuses the old layout");
+  assert.equal(ledger(root, config, ["migrate"]), 0);
+  assert.equal(ledgerToMove(root, config), null);
+  assert.ok(existsSync(join(root, "docs/log/review/closed/2026-W45.md")));
+  assert.equal(ledger(root, config, ["check"]), 0);
+  assert.equal(ledger(root, config, ["migrate"]), 0, "a second migrate has nothing to move");
+  assert.doesNotMatch(JSON.stringify(step()), /migrate/);
+  // A project that kept the old paths in its config moves only the details, in place.
+  const kept = merge(DEFAULTS, { logs: { ledger: "docs/log/review/findings.md", ledgerClosed: "docs/log/review/closed.md", ledgerClosedDetails: "docs/log/review/old" } });
+  writeFileSync(join(root, kept.logs.ledgerClosed), `${readFileSync(join(root, kept.logs.ledgerClosed), "utf8")}\n## Details\n\nNone.\n`);
+  assert.deepEqual(ledgerToMove(root, kept), { ledger: kept.logs.ledger, closed: kept.logs.ledgerClosed });
 });

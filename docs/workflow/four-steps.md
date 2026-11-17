@@ -126,7 +126,7 @@ Before the commit proposal, in this order. The parts below say how.
 The `code-review-ledger` skill runs in diff mode.
 
 - The reviewer picks a deep or light run, or defers it to a later run, which then reviews every deferred chunk at once. A light run is logged in the ledger, and the next deep run covers it.
-- It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review-findings.md), and asks the reviewer once to accept, defer, or reject each new one.
+- It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review/findings.md), and asks the reviewer once to accept, defer, or reject each new one.
 - The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
 
 ### Acceptance lines proven

@@ -673,7 +673,7 @@ test("blocks: the named sources read the project's logs, and an absent one is an
   const config = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }] });
   const source = sourcesFor(root, config);
   assert.match(source("open-questions").empty, /No docs\/log\/open-questions\.md/);
-  mkdirSync(join(root, "docs/log/decisions"), { recursive: true });
+  for (const dir of ["docs/log/decisions", "docs/log/review"]) mkdirSync(join(root, dir), { recursive: true });
   writeFileSync(join(root, config.logs.openQuestions), readFileSync(join(here, "fixtures/questions/open.md"), "utf8"));
   assert.ok(source("open-questions").rows.length > 0);
   writeFileSync(join(root, config.logs.ledger), "# Findings\n\n| ID | Severity | Status | Title | Where |\n| --- | --- | --- | --- | --- |\n| [SEC-001](#sec-001) | Medium | proposed | A | `a.mjs:1` |\n| [SEC-002](#sec-002) | Low | verified | B | `b.mjs:2` |\n\n## Open\n\n| ID | x |\n| --- | --- |\n| SEC-009 | not summary |\n");

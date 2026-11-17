@@ -10,27 +10,84 @@
     ledger.py check                   list rows and details that disagree
 
 Run from the repo root. A status decides the group, and a finding moves with
-it. A closed finding's row and details live in the closed file, so the ledger
-holds only what is left to do. `--ledger` and `--closed`
-name other files, for the tests. `add` takes a list of objects with prefix,
+it. A closed finding's row lives in the closed file, and its details in the
+closed folder, one file per week it closed (2026-W46.md), or per month with
+`--period month` (2026-11.md), so the ledger holds only what is left to do and
+no file grows for good. `--ledger`, `--closed`, and `--details` name other
+places, as the config does. `add` takes a list of objects with prefix,
 title, severity, confidence, rule, where, evidence, why, and suggestion, and
 optionally note. The date is the --date option, or today.
 """
 
 import argparse
 import json
+import os
 import re
 import sys
+from dataclasses import dataclass, field as fields
 from datetime import date
 from pathlib import Path
 
-LEDGER = "docs/log/review-findings.md"
-CLOSED = "docs/log/review-findings-closed.md"
+LEDGER = "docs/log/review/findings.md"
+CLOSED = "docs/log/review/closed.md"
+DETAILS = "docs/log/review/closed"
 OPEN = {"proposed", "accepted", "deferred"}
 FIXED = {"fixed"}
 CLOSED_STATES = {"verified", "rejected", "accepted-risk", "accepted-cost", "superseded"}
 HEAD = "| ID | Severity | Status | Title | Where |\n| --- | --- | --- | --- | --- |\n"
-ROWS = ["Status", "Severity", "Confidence", "Rule", "Note", "Found", "Evidence", "Why it matters", "Suggestion", "Decision"]
+ROWS = ["Status", "Severity", "Confidence", "Rule", "Note", "Found", "Closed", "Evidence", "Why it matters", "Suggestion", "Decision"]
+
+
+DAY = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
+PERIOD_FILE = re.compile(r"^\d{4}-(?:W\d{2}|\d{2})$")
+
+
+def period_of(text, period):
+    """The week (2026-W46) or month (2026-11) of the first date in a text, or None."""
+    day = DAY.search(text or "")
+    if not day:
+        return None
+    if period == "month":
+        return f"{day.group(1)}-{day.group(2)}"
+    year, week, _ = date(*map(int, day.groups())).isocalendar()
+    return f"{year}-W{week:02d}"
+
+
+def period_kind(name):
+    """Whether a details file is a week's or a month's, by its name."""
+    return "week" if "-W" in name else "month"
+
+
+@dataclass
+class Closed:
+    """The closed findings: the summary file's text, and each details file's text by its period."""
+
+    summary: str
+    files: dict = fields(default_factory=dict)
+    folder: str = "closed"  # the details folder, relative to the summary file
+    back: str = "../closed.md"  # the summary file, relative to the details folder
+    period: str = "week"  # how a newly closed finding is filed
+
+    def link(self, name, finding):
+        """A summary row's link to a finding's details."""
+        return f"{self.folder}/{name}.md#{finding.lower()}"
+
+    def find(self, finding):
+        """The details file holding a finding, and where in it, or None."""
+        for name, text in self.files.items():
+            at = block_at(text, finding)
+            if at:
+                return name, at
+        return None
+
+
+def details_file(name, summary_link):
+    """A new details file's head, with an empty Details group."""
+    return (
+        f"# Closed review findings, {name}\n\n"
+        f"The details of the findings that closed in {name}, newest first. Their rows are in [the closed summary]({summary_link}). "
+        "Nothing reads this file in full: look a finding up by its ID.\n\n## Details\n\nNone.\n"
+    )
 
 
 def group_of(status):
@@ -56,6 +113,11 @@ def block_at(text, finding):
         return None
     end = re.compile(r"^#{2,3} ", re.M).search(text, start.end())
     return start.start(), end.start() if end else len(text)
+
+
+def drop_field(block, name):
+    """Take a detail row out, if it is there."""
+    return re.sub(rf"^\| {name} \| .* \|\n", "", block, count=1, flags=re.M)
 
 
 def field(block, name):
@@ -136,7 +198,7 @@ def add(args, ledger, closed):
     """Add new findings under Open."""
     today = args.date or date.today().isoformat()
     for item in json.loads(Path(args.file).read_text()):
-        finding = f"{item['prefix']}-{next_number(item['prefix'], ledger, closed):03d}"
+        finding = f"{item['prefix']}-{next_number(item['prefix'], ledger, closed.summary, *closed.files.values()):03d}"
         rows = {
             "Status": "proposed",
             "Severity": item["severity"],
@@ -149,7 +211,7 @@ def add(args, ledger, closed):
             "Suggestion": item["suggestion"],
             "Decision": "",
         }
-        table = "".join(f"| {name} | {cell(rows[name])} |\n" for name in ROWS if rows[name] is not None)
+        table = "".join(f"| {name} | {cell(rows[name])} |\n" for name in ROWS if rows.get(name) is not None)
         block = f"### {finding}\n\n**{item['title']}**\n\n| Field | Value |\n| --- | --- |\n{table}\n"
         row = f"| [{finding}](#{finding.lower()}) | {item['severity']} | proposed | {cell(item['title'])} | {item['where']} |\n"
         ledger = add_detail(add_row(ledger, "Open", row), "Open", block)
@@ -160,13 +222,14 @@ def add(args, ledger, closed):
 def set_finding(args, ledger, closed):
     """Change a finding's fields, and move it when its group changes."""
     finding = args.id
+    today = args.date or date.today().isoformat()
     in_ledger = block_at(ledger, finding)
-    place = in_ledger or block_at(closed, finding)
-    if not place:
+    found = None if in_ledger else closed.find(finding)
+    if not in_ledger and not found:
         sys.exit(f"No finding {finding}.")
-    source = ledger if in_ledger else closed
-    block = source[place[0] : place[1]]
-    row = row_of(ledger if in_ledger else closed, finding)
+    name, place = (None, in_ledger) if in_ledger else found
+    block = (ledger if in_ledger else closed.files[name])[place[0] : place[1]]
+    row = row_of(ledger if in_ledger else closed.summary, finding)
     if row is None:
         where = "the ledger's summary" if in_ledger else "the closed file's summary"
         sys.exit(f"{finding} has details but no row in {where}; add its row, then run this again.")
@@ -190,13 +253,28 @@ def set_finding(args, ledger, closed):
         ledger = ledger[: place[0]] + ledger[place[1] :]
         ledger = drop_row(fill_group(ledger, group_of(was)), group_of(was), row)
     else:
-        closed = fill_group(closed[: place[0]] + closed[place[1] :], "Details")
-        closed = drop_row(closed, "Summary", row, "##")
+        text = closed.files[name]
+        closed.files[name] = fill_group(text[: place[0]] + text[place[1] :], "Details")
+        closed.summary = drop_row(closed.summary, "Summary", row, "##")
     target = group_of(status)
+
+    def relink(link):
+        """The row with its link pointed at where the details now are."""
+        return re.sub(r"^(\| \[[A-Z]+-\d+\]\()[^)]*\)", lambda m: f"{m.group(1)}{link})", new_row, count=1)
+
     if target == "Closed":
-        return ledger, add_row(add_detail(closed, "Details", block), "Summary", new_row, "##")
+        # A finding is filed under the period it closed in, and stays in its file while it stays closed.
+        if not field(block, "Closed"):
+            block = set_field(block, "Closed", today)
+        if name is None:
+            name = period_of(field(block, "Closed"), closed.period)
+        text = closed.files.get(name) or details_file(name, closed.back)
+        closed.files[name] = add_detail(text, "Details", block)
+        closed.summary = add_row(closed.summary, "Summary", relink(closed.link(name, finding)), "##")
+        return ledger, closed
+    block = drop_field(block, "Closed")
     ledger = add_detail(ledger, target, block)
-    return add_row(ledger, target, new_row), closed
+    return add_row(ledger, target, relink(f"#{finding.lower()}")), closed
 
 
 def defer(args, ledger):
@@ -231,13 +309,12 @@ def state(args, ledger):
 def summary_of(ledger, closed):
     """Each group's summary rows, and where its details live."""
     head = re.search(r"^## Open$", ledger, re.M).start()
-    details = section(closed, "##", "Details")[0]
     groups = {}
     for name in ["Open", "Fixed, waiting for review"]:
         start, end = section(ledger[:head] + "\n## End\n", "###", name)
         groups[name] = (ledger[start:end], ledger[head:])
-    start, end = section(closed, "##", "Summary")
-    groups["Closed"] = (closed[start:end], closed[details:])
+    start, end = section(closed.summary, "##", "Summary")
+    groups["Closed"] = (closed.summary[start:end], "".join(closed.files.values()))
     return groups
 
 
@@ -252,23 +329,51 @@ def problems(ledger, closed):
             at = block_at(home, finding)
             if not at:
                 found.append(f"{finding}: no details")
-            elif field(home[at[0] : at[1]], "Status") != status:
+                continue
+            if field(home[at[0] : at[1]], "Status") != status:
                 found.append(f"{finding}: row says {status}, details say {field(home[at[0] : at[1]], 'Status')}")
-            if link != f"#{finding.lower()}":
+            if name == "Closed":
+                want = closed.link(closed.find(finding)[0], finding)
+            else:
+                want = f"#{finding.lower()}"
+            if link != want:
                 found.append(f"{finding}: link points at the wrong place")
-    summaries = ledger[: re.search(r"^## Open$", ledger, re.M).start()] + closed[: section(closed, "##", "Details")[0]]
+    summaries = ledger[: re.search(r"^## Open$", ledger, re.M).start()] + closed.summary
     found += [f"{finding}: details in the summary" for finding in re.findall(r"^### ([A-Z]+-\d+)$", summaries, re.M)]
     ids = re.findall(r"^\| \[([A-Z]+-\d+)\]", "".join(rows for rows, _ in groups.values()), re.M)
     found += [f"{finding}: two rows" for finding in sorted({i for i in ids if ids.count(i) > 1})]
     details = re.findall(r"^### ([A-Z]+-\d+)$", groups["Open"][1] + groups["Closed"][1], re.M)
+    found += [f"{finding}: details twice" for finding in sorted({i for i in details if details.count(i) > 1})]
     found += [f"{finding}: details with no row" for finding in sorted(set(details) - set(ids))]
+    for name, text in closed.files.items():
+        for finding in re.findall(r"^### ([A-Z]+-\d+)$", text, re.M):
+            at = block_at(text, finding)
+            stamp = period_of(field(text[at[0] : at[1]], "Closed"), period_kind(name))
+            if stamp and stamp != name:
+                found.append(f"{finding}: closed in {stamp}, filed under {name}")
     return found
+
+
+def read_closed(summary_path, details_path, period="week"):
+    """The closed summary and its details files."""
+    summary = summary_path.read_text()
+    if re.search(r"^## Details$", summary, re.M):
+        sys.exit(f"{summary_path} still holds the closed findings' details; run npx wf ledger migrate to move them into {details_path}.")
+    files = {path.stem: path.read_text() for path in sorted(details_path.glob("*.md")) if PERIOD_FILE.match(path.stem)} if details_path.is_dir() else {}
+    return Closed(summary, files, relative(details_path, summary_path.parent), relative(summary_path, details_path), period)
+
+
+def relative(path, start):
+    """A path as a Markdown link from a folder reads it, with forward slashes."""
+    return os.path.relpath(path, start).replace(os.sep, "/")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--ledger", default=LEDGER)
     parser.add_argument("--closed", default=CLOSED)
+    parser.add_argument("--details", default=DETAILS)
+    parser.add_argument("--period", choices=["week", "month"], default="week")
     parser.add_argument("--date")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("add").add_argument("file")
@@ -284,8 +389,8 @@ def main():
     commands.add_parser("summary")
     commands.add_parser("check")
     args = parser.parse_args()
-    ledger_path, closed_path = Path(args.ledger), Path(args.closed)
-    ledger, closed = ledger_path.read_text(), closed_path.read_text()
+    ledger_path, closed_path, details_path = Path(args.ledger), Path(args.closed), Path(args.details)
+    ledger, closed = ledger_path.read_text(), read_closed(closed_path, details_path, args.period)
     if args.command == "check":
         found = problems(ledger, closed)
         print("\n".join(found) or "The ledger is in step.")
@@ -304,13 +409,18 @@ def main():
         ledger = state(args, ledger)
     # A change that would put the files out of step is not written; problems
     # they already had are reported, and do not block a change.
-    had = set(problems(ledger_path.read_text(), closed_path.read_text()))
+    had = set(problems(ledger_path.read_text(), read_closed(closed_path, details_path, args.period)))
     found = problems(ledger, closed)
     new = [problem for problem in found if problem not in had]
     if new:
         sys.exit("Nothing written; the change would leave:\n" + "\n".join(new))
     ledger_path.write_text(ledger)
-    closed_path.write_text(closed)
+    closed_path.write_text(closed.summary)
+    for name, text in closed.files.items():
+        path = details_path / f"{name}.md"
+        if not path.exists() or path.read_text() != text:
+            details_path.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
     if found:
         sys.exit("\n".join(found))
 

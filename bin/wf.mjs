@@ -9,7 +9,7 @@
 //   wf ai:check        fail if any of those is out of step
 //   wf scan full | diff <since> [--light] [--performance on|off] [--verify | --no-verify]   the review's scans into .cache/review-scan
 //   wf choose <review | screens | chunk | release | e2e>   a launch page's spec for a choice point, from the project's state, for wf ask page -
-//   wf ledger <ledger.py arguments>         change the review ledger
+//   wf ledger <ledger.py arguments>         change the review ledger; migrate moves an older one
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf id <ID> [--all]                 where an ID is defined, and every place that cites it

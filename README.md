@@ -54,7 +54,7 @@ The core plugin's PreToolUse hook keeps the blind agents (`e2e-tester`, `test-da
 | `wf config` | The project's settings over the defaults, with reasons |
 | `wf ai:sync`, `wf ai:check` | OpenCode agents and slash commands generated from the project's and the kit's, and the skill paths in `opencode.json` |
 | `wf scan full \| diff <since> [--light]` | The review's scans, from `review.scans` in the config, into `.cache/review-scan`, with the scope list and the diff |
-| `wf ledger <arguments>` | Changes the review ledger through `ledger.py` |
+| `wf ledger <arguments>` | Changes the review ledger through `ledger.py`; `wf ledger migrate` moves a ledger from before v1.3.0 into its folder |
 | `wf docs sync` | Writes the kit's workflow docs into `docs/workflow/` and its `AGENTS.md` and `CLAUDE.md` into the root, keeping the project's parts between each `wf:local` pair and filling `{{config}}` values and the Who decides block. Rewrites the docs index's `wf:index` tables (words, workflow, logs) |
 | `wf testdata <step> <area> ...` | The project's test-data steps (route, stale, covered, index, journeys, e2e-files, refresh-close), from `testdata.commands`; and the kit's own `trace [area]` (spec rows no code names, and tests that name no row or story) `budget <area> [ids] [--check]` and `delta <area> <file>` (the designer's budgets, held by the tool), `prune <area> [--write]` (check rows no code cites, out of the spec), `rename-ids [area] [--write]` (old IDs qualified with the area's prefix), and `merge <folder>` / `fold <file> <sibling>` (fewer files, every row kept) |
 | `wf id <ID> [--all]` | What an ID is, where it is defined, and each line that cites it, in docs and code; the patterns are in `docs/workflow/ids.md` |
@@ -103,6 +103,22 @@ A project adds its own checks and status lines with `extensions` in its config: 
 ## Upgrading
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
+
+### v1.3.0: the review ledger in its own folder
+
+The closed findings' file held every closed finding's details, and kept growing (430 KB in Freeorbit). The ledger now has its own folder, and the closed details are split by the week they closed in.
+
+- **New layout:**
+  - `docs/log/review/findings.md` is the open and fixed ledger, as before.
+  - `docs/log/review/closed.md` holds only the closed summary, each row linking to its details.
+  - `docs/log/review/closed/2026-W46.md` and so on hold the details, one file per ISO week. Only the newest file grows.
+- **Closing a finding** stamps a Closed row with the date, which picks its file. A finding that comes back loses the stamp.
+- **Settings:** `logs.ledgerClosedDetails` names the folder, and `logs.ledgerClosedPeriod` is `week` or `month`. A project that closes few findings can set `month`.
+- **To upgrade:**
+  1. Run `npx wf ledger migrate` once. It moves both files, files each closed finding by its close date or, before this version, its found date, and rewrites the links to them in the project's Markdown.
+  2. Run `npx wf docs sync`, then commit.
+  3. The migrate lists any other file that names an old path, such as a script; change those by hand.
+- Until then, `wf ledger` and `wf doctor` say to migrate. A project that set `logs.ledger` and `logs.ledgerClosed` itself keeps its paths; the migrate moves only the details out of its closed file.
 
 ### v1.2.0: choice pages read faster and say more
 
