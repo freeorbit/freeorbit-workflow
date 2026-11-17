@@ -104,6 +104,10 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.1.1: a launch page's details panel stays still
+
+- Pointing at a run with little to show, such as a chunk with no stories, shrank the panel. That moved the page under the pointer onto another run and back, and the panel jittered. The panel now keeps the tallest height it has had. It also follows the pointer only after a moment, so passing over a run on the way to another does not redraw it.
+
 ### v1.1.0: chunk start shows what each chunk builds
 
 Picking the next chunk showed an ID and a command. Now the page says what each chunk is before you pick it.
