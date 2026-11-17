@@ -6,9 +6,9 @@ import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { readStories, riskLines } from "../lib/docs/stories.mjs";
 import { findId } from "../lib/idfind.mjs";
 import { kindOf } from "../lib/ids.mjs";
-import { testdataProblems, testdataWarnings } from "../lib/testdata.mjs";
-import { budget, budgetLines, checkDelta, grown } from "../lib/testdata-budget.mjs";
-import { builtStories, pruneChecks, pruneLines } from "../lib/testdata-prune.mjs";
+import { testdataProblems, testdataWarnings } from "../lib/testdata/checks.mjs";
+import { budget, budgetLines, checkDelta, grown } from "../lib/testdata/budget.mjs";
+import { builtStories, pruneChecks, pruneLines } from "../lib/testdata/prune.mjs";
 
 const DOCS = "docs/plugins/uplink";
 const DIR = `${DOCS}/test-data`;
@@ -112,7 +112,7 @@ test("prune takes out check rows nothing cites, for built stories; cited, walked
 });
 
 test("a refresh is held to what it added: an overage already there at the last commit does not stop the close, and an area the kit cannot read is the project's to report", async () => {
-  const { runCloseGate } = await import("../lib/testdata-cli.mjs");
+  const { runCloseGate } = await import("../lib/testdata/cli.mjs");
   const stories = { [`${DOCS}/user-stories.md`]: [story("GM-01", ["a"], "Risk: high (money)"), story("GM-03", ["a"]), story("GM-04", ["a"]), story("GM-05", ["a"])].join("\n") };
   const before = { ...stories, [`${DIR}/move.md`]: [FIXTURES, ...fixtures("m-one", 6, "GM-01"), ...fixtures("m-three", 1, "GM-03")].join("\n") };
   const now = { ...stories, [`${DIR}/move.md`]: [FIXTURES, ...fixtures("m-one", 7, "GM-01"), ...fixtures("m-three", 1, "GM-03")].join("\n") };
@@ -147,7 +147,7 @@ test("prune leaves an empty table that is not a checks table, and the kit's own 
   const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
-  const { runDrop } = await import("../lib/testdata-cli.mjs");
+  const { runDrop } = await import("../lib/testdata/cli.mjs");
   const root = mkdtempSync(join(tmpdir(), "wf-craft-"));
   mkdirSync(join(root, ".cache/view/answers"), { recursive: true });
   writeFileSync(join(root, ".cache/view/answers/page.json"), JSON.stringify({ answers: { "craft.craft": { choice: "drop", note: "all of them" } } }));
@@ -157,7 +157,7 @@ test("prune leaves an empty table that is not a checks table, and the kit's own 
 });
 
 test("an acceptance line holds no date or decision ID, and the board leaves out a removed line", async () => {
-  const { commentHtml } = await import("../lib/board/index.mjs");
+  const { commentHtml } = await import("../lib/board/wanted.mjs");
   const text = story("GM-07", ["The letter is filled in.", "Kept for the next letter (added 2026-11-14, D-GM-047).", "Removed (2026-11-14).", "Offered, not filled.\n  - Changed by D-GM-051."]);
   const warned = testdataWarnings(context(config(), { [`${DOCS}/user-stories.md`]: text })).filter((w) => /a date or a decision ID/.test(w));
   assert.deepEqual(warned, [`${DOCS}/user-stories.md: 2 acceptance lines hold a date or a decision ID (GM-07.2, GM-07.4); the client reads these lines, so each note goes in the area's story-changes.md, | Line | Change | Date | Decision |`], "a removed line keeps its date; a sub-line counts");
@@ -166,7 +166,7 @@ test("an acceptance line holds no date or decision ID, and the board leaves out 
 });
 
 test("a proof row may name a rule: the line is proven once a test cites that rule; chunk ids may end in a digit", async () => {
-  const { chunkChecks } = await import("../lib/testdata-trace.mjs");
+  const { chunkChecks } = await import("../lib/testdata/trace.mjs");
   const { CHUNK_ID, laneOf } = await import("../lib/lanes.mjs");
   const spec = (cite) => ({
     [`${DOCS}/user-stories.md`]: story("GM-07", ["Shown", "The step finishes with AI off", "Also off"]),

@@ -6,9 +6,10 @@ import { test } from "node:test";
 
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
-import { areaSpec, testdataProblems } from "../lib/testdata.mjs";
-import { runDrop } from "../lib/testdata-cli.mjs";
-import { dropRows, dropsFromAnswers } from "../lib/testdata-drop.mjs";
+import { areaSpec } from "../lib/testdata/index.mjs";
+import { testdataProblems } from "../lib/testdata/checks.mjs";
+import { runDrop } from "../lib/testdata/cli.mjs";
+import { dropRows, dropsFromAnswers } from "../lib/testdata/drop.mjs";
 
 const DIR = "docs/plugins/uplink/test-data";
 const config = merge(DEFAULTS, { areas: [{ id: "uplink", prefix: "GM", docs: "docs/plugins/uplink" }] });

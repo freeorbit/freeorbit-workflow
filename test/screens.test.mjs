@@ -10,10 +10,12 @@ import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, unreached } from "../lib/screens/list.mjs";
 import { storiesIn } from "../lib/docs/shape.mjs";
-import { acceptNames, areasOf, briefs, inAreas, migrate, retiredRuns, reviewCovers, screens, takenBy, whereRuns, why, withOpen } from "../lib/screens/run.mjs";
+import { acceptNames, areasOf, briefs, inAreas, migrate, screens, takenBy, whereRuns, why, withOpen } from "../lib/screens/run.mjs";
 import { displayApart, jobsFor, lookStep, sessionSteps, showFor, shotsFor, shotsProblem, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
 import { afterDefer, afterRun, openAfter, readState, recordDir, statePath, withRecordLock, writeState } from "../lib/screens/state.mjs";
+import { retiredRuns } from "../lib/config/config.mjs";
+import { reviewCovers } from "../lib/review.mjs";
 
 const STRESS = { appearance: "light", corners: "round", density: "compact", textSize: "large" };
 
