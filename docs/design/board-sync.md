@@ -69,7 +69,9 @@ A run on 2026-11-10 against a throwaway board, as the owner's own token, at API 
 | Rate limits | `ratelimit` and `ratelimit-policy` headers: 3,335 requests a minute, 200 at once, 10,000,000 complexity a minute<br>• The `complexity` field gives each query's cost |
 
 - **The bot is the owner.** With a personal token, the bot's reply has the owner as creator, `kind` `member`. Feedback cannot tell the bot by its creator, so a comment is handled when a reply under it starts with the 🤖 marker.
-- **A client comment is a guest's.** `creator { kind }` is `guest` for a client and `member` for the team, so the team's own comments are never logged as client questions.
+- **A client comment is a guest's.** `creator { kind }` is `guest` for a client and `member` for the team, so the team's own comments are never logged as client questions, with two exceptions:
+  - A member's reply in a thread where the bot asked one of the team's questions is the answer to it. The owner often holds the answer (Atlas NX, 2026-11-16).
+  - A member's comment that starts with the bot's name and a colon, in any case, such as `Orbit: the client said on the call…`, is for the repo: a client's words relayed from a call or an email. Not `@Orbit`, which opens monday's mentions, and the bot is no monday user.
 - **An unknown label fails loudly.** With `create_labels_if_missing: false`, a label the column lacks is a `ColumnValueException` listing the labels it has. Sync always sends that flag, so the board's labels stay the config's.
 - **Errors come back as HTTP 200.** A failed call has a 200 status and an `errors` list, so the client checks the body, not the status.
 - **A column update is costly.** Each `change_multiple_column_values` cost about 30,000 complexity, so a minute holds about 330. A project's stories fit, but sync sends only the items that changed.
@@ -113,7 +115,7 @@ All in the core plugin, beside `wf question` and `wf decision`.
 - **The `board-feedback` skill.** Run only as `/board-feedback`, since it posts to the client.
   - It drafts each comment as a question to log, with its Needs role from `decisions` and chunk `none` by default, or as noted.
   - It shows the whole batch in chat, and on a yes runs `wf question add … "client (monday)" <story>`, then one `wf board reply` with every reply.
-- **Finding feedback.** A comment, or a reply under the acceptance comment, is a client's when its creator's `kind` is `guest`, as the trial showed.
+- **Finding feedback.** A comment, or a reply under the acceptance comment, is a client's when its creator's `kind` is `guest`, as the trial showed. A member's counts on the two exceptions above, marked `from: team`, and gets the bot's team wording: "logged as", "noted", or "noted as the team's answer to".
   - monday's threads are one level deep, so a comment is handled when a bot reply sits in its thread after it. A later guest comment there is new again.
   - A comment whose `updated_at` is after its bot reply is listed as edited, with the Q-IDs the reply named, and is never logged twice.
 

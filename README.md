@@ -88,6 +88,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v0.88.0: board feedback takes the team's answers and relayed comments
+
+`wf board feedback` read only a guest's comments. When the owner answered one of Orbit's questions in its thread, the answer was dropped without a word (Atlas NX, 2026-11-16).
+
+- **A team member's reply in a thread where Orbit asked a question** is now listed as its answer, the same as a guest's.
+- **A team member's comment that starts with Orbit's name and a colon**, in any case, such as `Orbit: the client said on the call…`, is listed too, with the name cut. Not `@Orbit`, which opens monday's mentions. Any other team comment stays out, as before.
+- **Each entry says `from`**: `guest` or `team`. The skill logs a team comment's question with the source `team (monday)`, and notes when a teammate answered for the client.
+- **Orbit's reply to a teammate is short**, with no thanks for raising it: "logged as Q-012", "noted", or "noted as the team's answer to Q-011". A guest's reply is unchanged.
+- Tell your team: start a comment with `Orbit:` to have it picked up.
+
 ### v0.87.1: a virtual display leaves your KWin scripts alone
 
 A `virtual` screen run started each KWin virtual display with the person's own KWin config and D-Bus session. So it ran their KWin scripts, and a tiling script such as Krohnkite registered its shortcuts from inside it, and they stopped working on the person's desktop.
