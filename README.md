@@ -104,6 +104,18 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.2.0: choice pages read faster and say more
+
+Nothing in a project's own files changes.
+
+- **The details panel follows the pointer at once** and holds a steady height, scrolling inside, so the page never moves under the pointer. A chip says whether it shows the run you point at, the one you picked, or the recommended one. On a window 1000 px or narrower, the panel sits under the run it shows.
+- **The why sits in the recommended run's card.** A launch page has no outline rail and no select-all row, and its button says "Take the recommendation".
+- **Chunk start** shows the build order's log lines that name the chunk. It offers only well-formed chunk ids and lists the rest under "Not offered here". A chunk with nothing linked says so in one line.
+- **Every choice page** puts the choice first and the facts after it. A release page with both kinds prepared the same way says so once.
+- **Safer reads:** the release, end-to-end, and chunk pages read the project through its own reader, so a link that leads out of the project is never read.
+- **`ask.open` set to orca** prints the address outside Orca unless `ORCA_CLI_COMMAND` names the command, so GNOME's screen reader never starts.
+- An exported page now carries the pictures in a pictures block and in a run's details.
+
 ### v1.1.1: a launch page's details panel stays still
 
 - Pointing at a run with little to show, such as a chunk with no stories, shrank the panel. That moved the page under the pointer onto another run and back, and the panel jittered. The panel now keeps the tallest height it has had. It also follows the pointer only after a moment, so passing over a run on the way to another does not redraw it.

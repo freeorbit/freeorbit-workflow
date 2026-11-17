@@ -395,6 +395,35 @@ test("an exported page carries its pictures inside it", () => {
   assert.doesNotMatch(html, /"src":"p\//);
 });
 
+test("an exported launch page carries the pictures in its runs' details", () => {
+  const raw = example("launch");
+  const { root, view } = project(raw);
+  const { spec } = buildPage(root, view, raw, KIT_KINDS);
+  const html = exportHtml(view, spec, KIT_KINDS, null);
+  assert.match(html, /data:image\/png;base64,/);
+  assert.doesNotMatch(html, /"src":"p\//, "no picture is left pointing at the view folder");
+});
+
+test("a run's details problems name the run", () => {
+  const raw = example("launch");
+  raw.runs[1].details = [{ type: "questions" }];
+  assert.match(normalize(raw).problems.join("\n"), /runs 2 details block 1: a run's details holds no questions/);
+});
+
+test("the details panel shows the run pointed at, else the one picked, else the recommended one", () => {
+  const S = answerSteps();
+  const rows = [
+    // in view, picked, recommended → id, state, picked
+    [null, null, "light", { id: "light", state: "recommended", picked: null }],
+    [null, "deep", "light", { id: "deep", state: "picked", picked: "deep" }],
+    ["full", "deep", "light", { id: "full", state: "looking", picked: "deep" }],
+    ["full", null, "light", { id: "full", state: "looking", picked: null }],
+    ["deep", "deep", "light", { id: "deep", state: "picked", picked: "deep" }],
+    [null, null, undefined, { id: null, state: "recommended", picked: null }],
+  ];
+  for (const [inView, picked, rec, want] of rows) assert.deepEqual({ ...S.detailsRun(inView, picked, rec) }, want, `${inView}/${picked}/${rec}`);
+});
+
 test("the page's script, joined from its parts, parses", () => {
   new Script(pageScript());
 });

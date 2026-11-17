@@ -238,14 +238,26 @@ input.other-text { margin: 6px 0 0 28px; width: calc(100% - 28px); }
 :root[data-launch] .sendpanel { bottom: calc(var(--foot) + var(--launch) + 10px); }
 :root[data-launch] .toast { bottom: calc(var(--foot) + var(--launch) + 14px); }
 
-/* A launch run's details, beside the runs: the run in view, picked, or recommended. */
+/* A launch run's details: a steady pane beside the runs that scrolls inside; on a narrow window, under the run it shows. */
 .q-body.has-details { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 1.25fr); column-gap: 24px; align-items: start; }
 .q-body.has-details > * { grid-column: 1; }
-.q-body.has-details > .launch-details { grid-column: 2; grid-row: 1 / span 40; position: sticky; top: calc(var(--head) + 12px); max-height: calc(100vh - var(--head) - var(--foot) - var(--launch, 0px) - 32px); overflow: auto; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); }
+.q-body.has-details > .launch-details { grid-column: 2; grid-row: 1 / span 40; position: sticky; top: calc(var(--head) + 12px); height: calc(100vh - var(--head) - var(--foot) - var(--launch, 0px) - 32px); overflow: auto; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: var(--r-card); background: var(--panel); }
+.launch-details[data-state="looking"] { border-style: dashed; border-color: var(--accent-line); }
+.launch-details:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 :root[data-wide] .q-body.has-details > :not(.viewer) { max-width: none; }
-.launch-details .details-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.launch-details .details-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.launch-details .details-title { margin: 0; font-size: 15px; }
+.launch-details .details-why { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
 .launch-details .block { margin: 10px 0; }
+.state-chip { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); }
+.state-chip.looking { border-style: dashed; color: var(--accent); border-color: var(--accent-line); }
+.state-chip.picked { color: var(--text, inherit); background: var(--accent-soft); border-color: var(--accent-line); }
+.opt .rec-why { grid-column: 2 / 4; display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 @media (max-width: 1000px) {
   .q-body.has-details { display: block; }
-  .q-body.has-details > .launch-details { position: static; max-height: none; margin-top: 12px; }
+  .q-body.has-details .launch-details { position: static; height: auto; max-height: 70vh; margin: 6px 0 10px; }
 }
+/* A launch page asks one thing: no outline rail beside it. */
+:root[data-launch] nav.rail { display: none !important; }
+@media (min-width: 1180px) { :root[data-launch] .shell, :root[data-launch][data-wide] .shell { grid-template-columns: minmax(0, 1fr); } }
