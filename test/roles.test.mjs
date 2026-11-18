@@ -51,3 +51,17 @@ test("the block replaces only what sits between its markers", () => {
   assert.equal(withBlock(text, `${BLOCK_START}\nnew\n${BLOCK_END}`), `# Rules\n\n${BLOCK_START}\nnew\n${BLOCK_END}\n\nMore.\n`);
   assert.equal(withBlock("# No markers\n", "x"), null);
 });
+
+test("Later lists each role with who holds it, then the client; solo gives the one person every role", async () => {
+  const { laterRoles } = await import("../lib/roles.mjs");
+  const team = merge(DEFAULTS, { team: "small", people: [{ name: "Ken", roles: ["owner", "developer:backend"] }, { name: "Sam", roles: ["designer"] }, { name: "Ana", roles: ["reviewer", "developer"] }] });
+  assert.deepEqual(laterRoles(team), [
+    { role: "owner", names: ["Ken"] },
+    { role: "designer", names: ["Sam"] },
+    { role: "developer", names: ["Ken", "Ana"] },
+    { role: "reviewer", names: ["Ana"] },
+    { role: "client", names: [] },
+  ]);
+  const solo = merge(DEFAULTS, { team: "solo", people: [{ name: "Ken", roles: ["owner"] }] });
+  assert.ok(laterRoles(solo).filter((r) => r.role !== "client").every((r) => r.names.join() === "Ken"));
+});

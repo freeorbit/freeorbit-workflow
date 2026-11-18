@@ -17,6 +17,7 @@ import { runView } from "../lib/view/command.mjs";
 import { buildPage } from "../lib/ask/page.mjs";
 import { answersPath, readSpec } from "../lib/ask/store.mjs";
 import { serve, servedFile } from "../lib/view/serve.mjs";
+import { readSettings, settingsFile, writeSettings } from "../lib/view/settings.mjs";
 import { asker, ensureHub, hubUp, keptToken, olderVersion, projects, register, stateDir } from "../lib/view/hub.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
 import { projectKey, SERVER, withViewServer } from "../lib/view/view.mjs";
@@ -126,6 +127,56 @@ test("a page asks the server for a desktop notification with its own token; the 
     assert.equal((await post({ key, id: spec.id, title: "T5" }, pageToken(key, spec.id), { Origin: "http://evil.test" })).status, 403);
     assert.match(await (await fetch(`${base}/`)).text(), new RegExp(`<meta name="wf-token" content="${pageToken("__hub", "inbox")}">`));
     assert.deepEqual(shown, [["T", "B"], ["T4", ""]]);
+  } finally {
+    await close();
+  }
+});
+
+test("the server keeps the ask pages' settings in a file, puts them in each page it serves, and takes them only from its own pages", async () => {
+  const raw = example("decision");
+  const { root, view } = project(raw);
+  const { spec } = buildPage(root, view, raw, KIT_KINDS, {}, {});
+  const key = projectKey(root);
+  const file = settingsFile(mkdtempSync(join(tmpdir(), "wf-settings-")));
+  const find = (k) => (k === key ? { key, view, name: "demo", kinds: KIT_KINDS } : null);
+  const { port, pageToken, close } = await serve({ resolve: find, list: () => [], check: checkAnswers, stateOf: askState, port: 0, log: () => {}, settings: { read: () => readSettings(file), write: (value) => writeSettings(value, file) } });
+  const base = `http://127.0.0.1:${port}`;
+  const post = (body, tok, headers = {}) => fetch(`${base}/__hub/settings`, { method: "POST", headers: { "Content-Type": "application/json", "X-WF-Token": tok, ...headers }, body: JSON.stringify(body) });
+  const look = { theme: "slate", accent: "teal", mode: "dark" };
+  try {
+    assert.deepEqual((await (await fetch(`${base}/__hub/settings`)).json()).settings, {});
+    assert.equal((await post({ key, id: spec.id, settings: { "wf-ask:look": look, "wf-ask:notify": true } }, pageToken(key, spec.id))).status, 200);
+    assert.deepEqual(JSON.parse(readFileSync(file, "utf8")), { "wf-ask:look": look, "wf-ask:notify": true });
+    if (process.platform !== "win32") assert.equal(statSync(file).mode & 0o777, 0o600, "for this user alone");
+    // Each page served, and the inbox, carry them, ready before any script reads its storage.
+    const page = await (await fetch(`${base}/${key}/ask/${spec.id}/`)).text();
+    const served = (html) => JSON.parse(html.match(/<script type="application\/json" id="wf-settings">(.*?)<\/script>/)[1]);
+    assert.deepEqual(served(page), { keys: ["wf-ask:look", "wf-ask:notify", "wf-ask:inbox"], settings: { "wf-ask:look": look, "wf-ask:notify": true } }, "with the keys the server keeps, so the page holds one list");
+    assert.deepEqual(served(await (await fetch(`${base}/`)).text()).settings["wf-ask:look"], look);
+    // From the inbox, with the hub's token: only what changed is sent, so the look another tab set stays; null drops a key.
+    assert.equal((await post({ key: "__hub", id: "inbox", settings: { "wf-ask:inbox": { project: "a" }, "wf-ask:notify": null } }, pageToken("__hub", "inbox"))).status, 200);
+    assert.deepEqual(readSettings(file), { "wf-ask:look": look, "wf-ask:inbox": { project: "a" } });
+    // A $ in a value is text: a replacement pattern such as $' or $` never copies the page into the settings.
+    const dollars = { theme: "$'", accent: "$`", mode: "$&$$" };
+    assert.equal((await post({ key, id: spec.id, settings: { "wf-ask:look": dollars } }, pageToken(key, spec.id))).status, 200);
+    const again = await (await fetch(`${base}/${key}/ask/${spec.id}/`)).text();
+    assert.deepEqual(served(again).settings["wf-ask:look"], dollars);
+    assert.equal(again.split('id="wf-settings"').length, 2, "the page is not copied into itself");
+    // Refused: a wrong token, another origin, a key the server does not keep, too large, and a value that would end the script.
+    assert.equal((await post({ key, id: spec.id, settings: {} }, "wrong")).status, 403);
+    assert.equal((await post({ key, id: spec.id, settings: {} }, pageToken(key, spec.id), { Origin: "http://evil.test" })).status, 403);
+    assert.equal((await post({ key, id: spec.id, settings: { "wf-ask:notified": [] } }, pageToken(key, spec.id))).status, 422);
+    assert.equal((await post({ key, id: spec.id, settings: { "wf-ask:look": { theme: "x".repeat(17 * 1024) } } }, pageToken(key, spec.id))).status, 413);
+    assert.equal((await post({ key, id: spec.id, settings: { "wf-ask:look": { theme: "</script><script>alert(1)</script>" } } }, pageToken(key, spec.id))).status, 200);
+    assert.doesNotMatch(await (await fetch(`${base}/${key}/ask/${spec.id}/`)).text(), /<\/script><script>alert/);
+    // A page that is not this server's, or not there, is refused.
+    assert.equal((await post({ key, id: "no-such-page", settings: {} }, pageToken(key, "no-such-page"))).status, 403);
+    assert.equal((await post({ key, id: spec.id, settings: ["a"] }, pageToken(key, spec.id))).status, 422);
+    // A settings file that is not settings, or larger than settings can be, reads as none, so no page breaks on it.
+    writeFileSync(file, "not json");
+    assert.deepEqual(readSettings(file), {});
+    writeFileSync(file, JSON.stringify({ "wf-ask:look": { theme: "x".repeat(20 * 1024) } }));
+    assert.deepEqual(readSettings(file), {});
   } finally {
     await close();
   }
