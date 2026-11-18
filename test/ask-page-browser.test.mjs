@@ -19,6 +19,7 @@ import { buildPage } from "../lib/ask/page.mjs";
 import { placeholderPng } from "../lib/ask/placeholder.mjs";
 import { openChromium } from "../lib/browser/headless.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
+import { merge } from "../lib/config/config.mjs";
 import { browserFor } from "../lib/config/platform.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
 import { answersPath } from "../lib/ask/store.mjs";
@@ -43,7 +44,7 @@ after(async () => {
 });
 
 /** Build `raw` in a project of its own, with a stand-in for each picture it names, serve it, and open it in a window of this size. */
-async function openPage(raw, { before: prepare, width = 1280, height = 900 } = {}) {
+async function openPage(raw, { before: prepare, width = 1280, height = 900, config = null, settings } = {}) {
   const root = mkdtempSync(join(scratch, "project-"));
   const walk = (v) => {
     if (Array.isArray(v)) v.forEach(walk);
@@ -57,13 +58,13 @@ async function openPage(raw, { before: prepare, width = 1280, height = 900 } = {
   };
   walk(raw);
   const view = join(root, ".cache/view");
-  const built = buildPage(root, view, raw, KIT_KINDS);
+  const built = buildPage(root, view, raw, KIT_KINDS, {}, config ? { ctx: { config } } : {});
   assert.deepEqual(built.problems ?? [], []);
   const { spec } = built;
   const key = projectKey(root);
   prepare?.({ view, spec });
   const project = { key, view, name: "demo", kinds: KIT_KINDS };
-  const server = await serve({ resolve: (k) => (k === key ? project : null), list: () => [project], check: checkAnswers, stateOf: askState, port: 0, log: () => {} });
+  const server = await serve({ resolve: (k) => (k === key ? project : null), list: () => [project], check: checkAnswers, stateOf: askState, port: 0, log: () => {}, ...(settings ? { settings } : {}) });
   servers.push(server);
   await browser.open(`http://127.0.0.1:${server.port}/${key}/ask/${spec.id}/`, width, height);
   await until("document.querySelector('footer.commit') !== null", "the page to build");
@@ -487,4 +488,57 @@ test("a page with a picture takes the window's width; on a wide window the pictu
 test("a review's page takes the window's width", async () => {
   await openPage(example("frame-review"), { width: 2400, height: 900 });
   assert.equal(await style("main.content", "max-width"), "2080px");
+});
+
+/** A team of two, so Later lists who each role is. */
+const TEAM = merge(DEFAULTS, { team: "small", people: [{ name: "Ken", roles: ["owner", "developer", "reviewer"] }, { name: "Sam", roles: ["designer"] }] });
+const laterPage = () => ({
+  id: "later-demo",
+  title: "Empty states",
+  template: "decision",
+  questions: [
+    { id: "copy", text: "What does the list say with no accounts?", role: "designer", options: [{ id: "short", label: "No accounts yet", why: "Plain" }, { id: "cta", label: "Add your first", why: "Leads on" }], recommended: "cta", why: "It says what to do." },
+    { id: "icon", text: "Show an icon?", role: "developer:frontend", options: [{ id: "yes", label: "Yes", why: "Friendlier" }, { id: "no", label: "No", why: "Calmer" }], recommended: "no", why: "The text is enough." },
+    { id: "name", text: "What do we call the empty state?", type: "text" },
+  ],
+});
+const forPick = (id) => `document.querySelector("#q-${id} .later-for")`;
+
+test("Later shows who it is for, from the team, starting on the question's role, and an answer after takes it back", async () => {
+  const { sent } = await openPage(laterPage(), { config: TEAM });
+  assert.equal(await js(`${forPick("copy")}.hidden`), true, "no For until Later");
+  await click("#q-copy .meta button", "Later");
+  assert.equal(await js(`${forPick("copy")}.hidden`), false);
+  assert.equal(await js(`${forPick("copy")}.querySelector("select").value`), "designer");
+  assert.deepEqual(await js(`[...${forPick("copy")}.querySelectorAll("option")].map((o) => o.textContent)`), ["owner (Ken)", "designer (Sam)", "developer (Ken)", "reviewer (Ken)", "client"]);
+  // A specialty the team list does not name on its own is still there to pick, and picked.
+  await click("#q-icon .meta button", "Later");
+  assert.equal(await js(`${forPick("icon")}.querySelector("select").value`), "developer:frontend");
+  await js(`(() => { const s = ${forPick("copy")}.querySelector("select"); s.value = "client"; s.dispatchEvent(new Event("change", { bubbles: true })); return null; })()`);
+  // Picking an option after Later takes back Later and who it was for, so Send is not refused.
+  await click("#q-icon [data-id='yes']");
+  assert.equal(await js(`${forPick("icon")}.hidden`), true);
+  // Typing an answer after Later takes it back the same way.
+  await click("#q-name .meta button", "Later");
+  await js(`(() => { const a = document.querySelector("#q-name textarea"); a.value = "Nothing here"; a.dispatchEvent(new Event("input", { bubbles: true })); return null; })()`);
+  await click("footer.commit .btn.primary");
+  await until(`!document.querySelector(".receipt").hidden`, "the receipt");
+  assert.deepEqual(sent().answers, { copy: { decide: "later", for: "client" }, icon: { choice: "yes" }, name: { text: "Nothing here" } });
+});
+
+test("a page sends the server only the settings that changed, and nothing when it opens with what the server has", async () => {
+  const writes = [];
+  let kept = { "wf-ask:look": { theme: "", mode: "auto", density: "comfortable", size: "m", accent: "teal", advance: true, sep: "sections", motion: "system", fold: "none", zoom: "fit", compare: "swipe" }, "wf-ask:inbox": { project: "a" } };
+  const settings = { read: () => kept, write: (changed) => { writes.push(changed); kept = { ...kept, ...changed }; return kept; } };
+  await openPage(choices(), { settings });
+  assert.equal(await js(`window.wfLook.look.accent`), "teal", "the server's look wins");
+  await new Promise((r) => setTimeout(r, 700));
+  assert.deepEqual(writes, [], "opening the page changes nothing");
+  await js(`window.wfLook.remember({ density: "compact" }), null`);
+  await until(`true`, "");
+  await new Promise((r) => setTimeout(r, 700));
+  assert.equal(writes.length, 1);
+  assert.deepEqual(Object.keys(writes[0]), ["wf-ask:look"], "only the look, so another tab's inbox filters stay");
+  assert.equal(writes[0]["wf-ask:look"].density, "compact");
+  assert.deepEqual(kept["wf-ask:inbox"], { project: "a" });
 });
