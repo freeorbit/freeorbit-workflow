@@ -104,6 +104,14 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.5.0: ask-page settings that stay, and Later for someone
+
+Nothing in a project's own files changes.
+
+- **Settings stay across sessions.** The ask pages kept their look (theme, accent, light or dark, density, size, motion, folding, zoom, compare), notifications, and the inbox's filters in the browser, which a new session's pane or Orca's browser may not have. The ask-pages server now keeps them for this user, in `ask-settings.json` in its state folder, and puts them in every page it serves, so a page opens with them. A browser's own settings from before go up the first time a page opens; an exported page still uses its browser alone.
+- **Later, for someone.** Picking Later on a question shows a For list: each role with the names of the people who hold it, and the client. It starts on the question's own role. `npx wf ask record <id>` logs the open question for whoever is picked, with the answer's note under it.
+- The server restarts on the new kit by itself, the next time a page is built.
+
 ### v1.4.1: a teammate's board comment can be logged
 
 - The board-feedback skill logs a teammate's comment as a question from `team (monday)`, but `wf question add` and `doc:check` took only a role or `client (<channel>)`, so it was refused. A question's From may now be `team (<channel>)` too. Nothing in a project changes.

@@ -146,6 +146,8 @@ input.other-text { margin: 6px 0 0 28px; width: calc(100% - 28px); }
 /* The quiet row: You decide, Later, + Note */
 .meta { display: flex; gap: 2px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
 .meta .sep { width: 1px; height: 16px; background: var(--line-2); margin: 0 6px; }
+.meta .later-for { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; }
+.meta .later-for .pick { height: 26px; max-width: 240px; }
 .note { margin-top: 8px; }
 .note textarea { min-height: 56px; }
 

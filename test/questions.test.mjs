@@ -228,3 +228,14 @@ test("question add keeps every story ID given", () => {
   assert.equal(storyList(["GM-01", "GM-02,GM-03", "GM-02"]), "GM-01, GM-02, GM-03");
   assert.equal(storyList(["GM-01, GM-04"]), "GM-01, GM-04");
 });
+
+test("a question's note goes under its revisit trigger, which runs to the end of its line", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-questions-note-"));
+  mkdirSync(join(root, "docs/log"), { recursive: true });
+  writeFileSync(join(root, OPEN), fixture("open.md"));
+  writeFileSync(join(root, RESOLVED), fixture("resolved.md"));
+  const id = addQuestion(root, config(), { chunk: "none", question: "Who writes the copy?", needs: "designer", from: "developer", date: "2026-11-19", revisit: "the next ask about x", note: "Sam has a draft" });
+  const text = readFileSync(join(root, OPEN), "utf8");
+  assert.match(text, new RegExp(`- \\*\\*${id}\\.\\*\\* Revisit when: the next ask about x\\n  - Note: Sam has a draft\\n`));
+  assert.deepEqual(check({ [OPEN]: text }), [], "and the log still checks");
+});

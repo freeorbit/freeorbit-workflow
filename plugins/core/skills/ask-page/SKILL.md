@@ -29,7 +29,7 @@ An ask page is one HTML page built from a JSON spec. The person answers in the b
    - End the turn there, with no question, buttons, or "Sent it" choice in the chat, and none in a closing next-step box either. `wait` wakes you when the page is sent, and a choice in the chat stays open after the person has answered on the page.
    - A page built again asks again: open it and run `wait` again.
 6. When `wait` prints the answers, act on them. A partial send lists the open questions; carry on with what is answered, and wait again for the rest.
-7. Run `npx wf ask record <id>` when the spec marks decisions with `record`, or any answer is "Later".
+7. Run `npx wf ask record <id>` when the spec marks decisions with `record`, or any answer is "Later". Each "Later" becomes an open question for the person the answer names in `for`, else the question's `role`, else the owner, with its note under it.
 
 No browser pane: send `wf ask export <id>`'s `.html` file, or ask in the chat. When the person says notifications do not show, run `npx wf view notify`. The person's Copy answers text, pasted into the chat, is read with `wf ask import` from a file holding it.
 
@@ -98,7 +98,7 @@ Every template, question type, and block is made for one kind of question. Pick 
 ## Answers
 
 
-Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, or `decide` (`agent` or `later`), with an optional `note`, `other`, `owner`, `reply`, and `pins` (picture, x, y, `w` and `h` for a box, kind, text).
+Each answer has `choice`, `order`, `text`, `number`, `rows`, `edits`, `fields`, or `decide` (`agent` or `later`, and with `later` a `for` role), with an optional `note`, `other`, `owner`, `reply`, and `pins` (picture, x, y, `w` and `h` for a box, kind, text).
 
 - `wait` prints a count, then every answer; past eight plain agreements with the recommendation, only the others. `npx wf ask answers <id>` prints them again, `--all` lists every one, and `--json` gives the file. They are in `.cache/view/answers/<id>.json`.
 - `npx wf ask export <id>` writes one `.html` with the pictures inside, and the answers as `.md` and `.json`. Offline, the page saves an answers file for `wf ask import`.

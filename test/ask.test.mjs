@@ -333,8 +333,25 @@ test("record writes later answers as open questions and recorded choices as deci
   assert.equal(lines.length, 2);
   assert.match(lines[0], /^layout: /);
   assert.match(readFileSync(join(root, "docs/log/decisions/app.md"), "utf8"), /How should the accounts list be laid out\? Tabs per provider/);
-  assert.match(lines[1], /^empty: open question Q-\d{3}$/);
+  assert.match(lines[1], /^empty: open question Q-\d{3}, for owner$/, "with no one picked, the question's own role, else the owner");
   assert.match(readFileSync(join(root, config.logs.openQuestions), "utf8"), /What does the screen say with no accounts\?/);
+  // Left for a person the page lists, with a note, which goes under the question.
+  const later = recordAnswers(root, config, spec, { answers: { empty: { decide: "later", for: "designer", note: "Sam has the copy" } } }, "2026-11-13");
+  const [, id] = later[0].match(/^empty: open question (Q-\d{3}), for designer$/);
+  const open = readFileSync(join(root, config.logs.openQuestions), "utf8");
+  assert.match(open, new RegExp(`\\| ${id} \\| What does the screen say with no accounts\\? \\| designer \\|`));
+  assert.match(open, new RegExp(`- \\*\\*${id}\\.\\*\\* Note: Sam has the copy`), "a chunk's question has no trigger, so the note is its detail");
+  assert.match(recordAnswers(root, config, spec, { answers: { empty: { decide: "later", for: "boss" } } }, "2026-11-13")[0], /^empty: not recorded: .*Needs "boss"/, "a role the project does not have is refused");
+});
+
+test("a question left for later may name who it is for, and only then", () => {
+  const { spec } = normalize(example("decision"));
+  const check = (value) => checkAnswers(spec, { id: spec.id, hash: spec.hash, answers: { empty: value } }, KIT_KINDS);
+  assert.equal(check({ decide: "later", for: "designer" }).answers.answers.empty.for, "designer");
+  assert.equal(check({ decide: "later", for: "developer:frontend" }).answers.answers.empty.for, "developer:frontend");
+  assert.match(check({ decide: "agent", for: "designer" }).problems.join(), /for is only with decide "later"/);
+  assert.match(check({ decide: "later", for: "Designer; rm" }).problems.join(), /for is a role, such as designer, or client/);
+  assert.match(answersMarkdown(spec, { answers: { empty: { decide: "later", for: "client" } } }), /later, for client/);
 });
 
 test("wait returns once answers to the page as it is now are sent, and export makes one offline file", async () => {
