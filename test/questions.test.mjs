@@ -73,7 +73,7 @@ test("doc:check holds the IDs, cells, header, and details", () => {
     /Q-1 is not an ID/,
     /Q-002 Needs "boss"/,
     /Q-002 From "somebody"/,
-    /Q-002 Story is "none" or story IDs/,
+    /Q-002 Story is "none", or story or work item IDs/,
     /Q-002 Raised is a date/,
     /Q-003 Question has 31 words, over 30/,
     /Q-003 is also at/,

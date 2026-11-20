@@ -84,6 +84,38 @@ Acceptance:
 
 Flows live in `user-flows.md` for that area, as mermaid flowcharts. Name nodes in camelCase with no spaces. A flow step maps to one or more story IDs. Mention those IDs in the paragraph under the diagram.
 
+## Plan docs
+
+An area may have a plan doc for the work that is not a story: research, rounds of questions with a domain expert, a trial, the architecture. Start one from the kit's `templates/plan.md`.
+
+- **Only work that is not a story.** A step leaves behind knowledge, a decision, or a tool. What a person can check by using the product is a story, built in the order the build order gives, and never repeated as a step.
+- **It ends where the build order takes over.** A phase that would be "build these stories" is left out; a step that unblocks a story names it under Unblocks.
+- **Shown to the client.** With `board.workItems.plans` listing it, each phase and step is a work item on the client's board, apart from the stories. `npx wf doc:check` checks its shape.
+
+```markdown
+## Phase 1. Understand the documents
+
+Learn what the documents hold before deciding what to build.
+
+| ID | Step | Who | Status | Leaves behind | Unblocks |
+| --- | --- | --- | --- | --- | --- |
+| W-APP-01 | 1.1 Profile each sample document | Developer | Done | A profile of each | |
+| W-APP-02 | 1.2 Get the missing records from the expert | Expert, developer | Waiting on Glen: asked 2026-11-20 | A contract for records | APP-03 |
+```
+
+- **A phase.** A `## Phase N. Title` heading, numbered 1, 2, 3 in order, a new one last. Under it a one-sentence lead, then the table. Other `##` sections are the team's and are not read.
+- **A step.** `ID`, then `Step`, `Who`, and `Status`. `Leaves behind` and `Unblocks` are optional.
+  - `ID` is `W-<prefix>-<nn>`, never reused. A step keeps it when renumbered, so its board item keeps the client's replies.
+  - `Step` is the step's number under its phase, then what is done.
+  - `Unblocks` lists the story IDs the step unblocks, comma-separated.
+- **Status.** One of these words, then a comma or colon and anything the client should read, such as `Later: after 1.7`.
+  - **Done.** Finished.
+  - **Now.** In hand.
+  - **Next.** Can start as soon as someone picks it up.
+  - **Later.** Waits on an earlier step.
+  - **Waiting.** `Waiting on <name>`: waits on a person outside the work, such as the client.
+- **What the client reads.** A phase's title and lead, and a step's text, Who, and Status, so none holds an ID, a link, a backtick, or a file path. `Leaves behind` is the team's and may.
+
 ## Logs
 
 The append-only records live in `docs/log/`. They grow every chunk, so nobody reads one whole, and each keeps a shape that grep can find:
