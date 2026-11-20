@@ -18,7 +18,7 @@ What the workflow kit's own commands call. A plugin the project does not use nee
 | --- | --- | --- | --- | --- |
 | `node` | Node 24 or later: every `wf` command. | required | all | Nothing in the kit runs. |
 | `git` | The repo. `wf doc:check` reads its file list, and the hooks and reviews read its history. | required | all | The docs check stops. |
-| `python3` | The review ledger and its tests, and the design plugin's frame renderer. | required | all | `wf ledger` and `wf design render` stop. |
+| `python3` | The review ledger and its scans, and their tests. | required | all | `wf ledger` and `wf scan` stop. |
 | `gh` | Pull requests, squash merges, `wf github`, and `wf signoffs` reading a pull request and confirming an admin's bypass. | optional | all | Open and merge pull requests on the website. |
 | `chromium` | The design plugin and the web driver: draws frames to PNG, checks them, and runs the web app. Chrome counts too, and on macOS the one in Applications is found. | required | all | No frame renders; set `design.browser` to a browser's program. |
 | `magick` | ImageMagick: the design plugin's question sheets, and the screen review's contact sheets and crops. | optional | all | No sheet is made; read the pictures one at a time. |

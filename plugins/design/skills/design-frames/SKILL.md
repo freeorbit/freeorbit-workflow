@@ -28,10 +28,10 @@ Use the project's tokens and shared classes, as its frames doc says. Do not hard
 With `design.source` `png`, the designer draws in a design tool such as Figma, and the frames are the pictures it exports. Nothing is drawn or rendered here.
 
 1. **Export.** The person exports each frame as PNG at 1x, so a picture's pixels are the frame's size. Ask for every state the stories need, such as empty, loading, and an error, not only the full screen.
-2. **Size.** On the first import, read the pictures' size (`magick identify -format "%w %h"`). If it is not `design.size`, propose setting `design.size` to it: a config change, so ask first. A website opens at that size too, unless `app.web.size` says otherwise.
+2. **Size.** On the first import, read the pictures' sizes (`magick identify -format "%w %h"`). Key screens drawn as full pages share a width and vary in height. If the width is not `design.size`'s, propose setting `design.size` to that width and the window's height, the shortest picture's: a config change, so ask first. A website opens at that size too, unless `app.web.size` says otherwise.
 3. **File.** Name each frame in lowercase words joined by hyphens, after the state it shows, and save it as `<review>/<area>/<section>/<frame>.png`. The section is its screen-list heading as a slug.
 4. **List.** Add the frame's row to the area's screen list, with its stories, its Reach, and what it shows, as for a drawn frame.
-5. **Check.** `npx wf design check` fails each picture not at `design.size`. Then `npx wf design storyboard` lists them for the designer's review.
+5. **Check.** `npx wf design check` fails each picture not at `design.size`'s width, or shorter than its height; a full-page frame taller than the window is right. Then `npx wf design storyboard` lists them for the designer's review.
 6. **Change.** A redrawn frame replaces its picture at the same path. A frame dropped in the design tool is deleted here, with its row.
 
 Step 2 is done when every story's screens have a frame and the designer has accepted the storyboard.
@@ -54,7 +54,7 @@ npx wf design render <frame> <frame>   # named frames
 npx wf design check <frame>            # what runs past the window or is cut off
 ```
 
-Render only the frames you changed, unless a shared file changed. `check` opens each frame at every size in `design.check.sizes` and lists what runs past the window or is cut off; it exits 1 when it finds any. Only the drawing size is kept as a PNG. When a change affects a smaller window, take a screenshot of the app at that size with the project's app-testing skill and read it.
+Render only the frames you changed, unless a shared file changed. `check` opens each frame at every size in `design.check.sizes` and lists what runs past the window or is cut off; it exits 1 when it finds any. Only the drawing size is kept as a PNG: `design.size`'s width, and as tall as the page, so a full-page frame shows whole. A fixed bar sits at the window's bottom, partway down a taller picture. When a change affects a smaller window, take a screenshot of the app at that size with the project's app-testing skill and read it.
 
 Then read the PNG. The image reader caches by path, so copy the PNG to a new name first, such as `.cache/view/<frame>-2.png`, and read the copy. Look for clipped or overflowing text, missing pieces, and a layout that does not match the story. Fix and render again. Two or three passes should be enough.
 

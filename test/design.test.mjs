@@ -9,7 +9,6 @@ import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { annotateForAsk, askPictures, boxArgs, checkSpec, magickText, fit, indexHtml, KIT_KINDS as KINDS, kindsFor, legend, viewerHtml } from "../lib/design/annotate.mjs";
 import { designPaths, findFrame, frameFiles, pickFrames, sectionFolder } from "../lib/design/frames.mjs";
-import { renderArgs } from "../lib/design/index.mjs";
 import { changed, frames, grid, picture, screenLists, storyboard } from "../lib/design/storyboard.mjs";
 
 const config = (design = {}, more = {}) => merge(DEFAULTS, { design, ...more });
@@ -203,12 +202,6 @@ test("frames are found by name in their area's section folders, from the config'
   assert.deepEqual(frameFiles(other), []);
 });
 
-test("render gets the folders and window size from the config", () => {
-  const args = renderArgs(designPaths("/p", config({ size: [1440, 900], browser: "chromium" })), ["d-start"]);
-  assert.deepEqual(args.slice(1), ["--root", "/p", "--frames", "/p/docs/design/frames", "--review", "/p/docs/design/review", "--shared", "shared", "--size", "1440x900", "--browser", "chromium", "d-start"]);
-  assert.match(args[0], /plugins\/design\/scripts\/render\.py$/);
-});
-
 test("with design.source png, frames are the exported pictures, and render and check have nothing to do", async () => {
   const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
@@ -226,7 +219,7 @@ test("with design.source png, frames are the exported pictures, and render and c
   assert.deepEqual(frameFiles(designPaths(root, merge(DEFAULTS, {}))), []);
 });
 
-test("with design.source png, render has nothing to do, and check holds each picture to design.size", async () => {
+test("with design.source png, render has nothing to do, and check holds each picture to design.size's width and at least its height", async () => {
   const { spawnSync } = await import("node:child_process");
   const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
@@ -250,10 +243,16 @@ test("with design.source png, render has nothing to do, and check holds each pic
   assert.match(run("render").stdout, /nothing to render/);
   assert.match(run("check", "nope").stdout, /No frame matches nope/);
   assert.equal(run("check").status, 0);
+  // A full-page frame, taller than the window, is right.
+  writeFileSync(join(root, "docs/design/review/app/sign-in/reviews.png"), png(1440, 1720));
+  assert.match(run("check").stdout, /All 2 frames are 1440 wide and at least 960 high/);
+  writeFileSync(join(root, "docs/design/review/app/sign-in/short.png"), png(1440, 900));
+  assert.match(run("check").stdout, /short: 1440x900, not 1440 wide and at least 960 high/);
+  writeFileSync(join(root, "docs/design/review/app/sign-in/short.png"), png(1440, 960));
   writeFileSync(join(root, "docs/design/review/app/sign-in/invite.png"), png(2880, 1920));
   const wrong = run("check");
   assert.equal(wrong.status, 1);
-  assert.match(wrong.stdout, /app\/sign-in\/invite: 2880x1920, not design.size 1440x960; export it at 1x/);
+  assert.match(wrong.stdout, /app\/sign-in\/invite: 2880x1920, not 1440 wide and at least 960 high, as design.size says; export it at 1x/);
   writeFileSync(join(root, "docs/design/review/app/sign-in/invite.png"), "not a picture");
   mkdirSync(join(root, "docs/design/review/app/sign-in/folder.png"));
   const bad = run("check").stdout;

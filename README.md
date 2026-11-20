@@ -104,6 +104,19 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.7.0: frames render as full pages
+
+`wf design render` shot each frame as one window, so a key screen drawn as a full page, such as a 1440×1720 one, lost everything below the window.
+
+- **A frame's picture is a full page** at `design.size`'s width, as tall as its content and never shorter than `design.size`'s height. Fonts load before it is measured.
+- **The window stays `design.size`,** so what sizes itself by the window (100vh, min-height: 100%) lays out as on that screen: a sign-in page is not stretched. A fixed bar, such as a footer at `bottom: 0`, sits at that window's bottom, partway down a taller picture.
+- **A page area that scrolls on its own** (`design.check.page`), or sits in a box that does, is the exception: the window grows by what it hides, so the whole page shows. One of a fixed height that does not follow the window is shot as it shows, and render says how much it hides.
+- **A frame taller than 20,000px** fails on its own, and the frames after it still render.
+- **Render runs in Node** through Chromium's debugging protocol, as `wf design check` does; `plugins/design/scripts/render.py` is gone.
+- **With `design.source` png,** `wf design check` takes a picture at `design.size`'s width and any height at or above its height.
+- **The screen review** pairs the app's window shot with the frame's top, as tall as that shot, and hashes that top, so a full-page frame is not read as different from a window.
+- Nothing to change in a project: run `npx wf design render` to redraw the frames at their full height. The next screen review reads each framed screen once more, since its frame is drawn anew.
+
 ### v1.6.0: each screen keeps its own mark
 
 The screen review kept one mark for the whole app. A light run never took a screen off the deep list, and a run of one area, a chunk, or some screens moved nothing, so only a deep run cleared the backlog.
