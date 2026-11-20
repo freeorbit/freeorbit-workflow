@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.6.0: each screen keeps its own mark
+
+The screen review kept one mark for the whole app. A light run never took a screen off the deep list, and a run of one area, a chunk, or some screens moved nothing, so only a deep run cleared the backlog.
+
+- **A mark per picture.** Each screen's pictures keep the commit they were last accepted at, and a screen is due when a change that reaches it landed after its own mark. An accept marks what it took, at the commit the run was shot at, whatever the run: light, deep, one area, a chunk, or some screens.
+- **A light run takes its screens off the deep list.** The deep list is every screen due; what only shared code reaches stays on it until a run takes it. The "light runs waiting" count is gone, and the choice page recommends deep when shared code alone reaches as many screens as the light list.
+- **A partial accept leaves the rest due.** A changed screen left out, or one that failed to shoot, keeps its mark and stays due until accepted. Pictures nothing has reached since their marks move forward with an accept, so the marks stay a few commits. `scope --names open` is gone; `scope` says how many commits the marks span.
+- **Nothing to do in a project.** Its `screens.scope` module is unchanged: the kit asks it once for each commit the marks name. The first accept turns the old record into marks. A screen on the old deep list keeps the deep mark, any other the last one, and a screen left open stays due until accepted.
+
 ### v1.5.0: ask-page settings that stay, and Later for someone
 
 Nothing in a project's own files changes.

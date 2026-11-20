@@ -10,10 +10,10 @@ import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { chunkStatus, chunkStories, coverage, gateProblems, parseReach, parseScreens, reachCounts, reachLine, screensFiles, unreached } from "../lib/screens/list.mjs";
 import { storiesIn } from "../lib/docs/shape.mjs";
-import { acceptNames, areasOf, briefs, inAreas, migrate, screens, takenBy, whereRuns, why, withOpen } from "../lib/screens/run.mjs";
+import { acceptNames, areasOf, briefs, dueLists, inAreas, migrate, screens, takenBy, whereRuns, why } from "../lib/screens/run.mjs";
 import { displayApart, jobsFor, lookStep, sessionSteps, showFor, shotsFor, shotsProblem, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
-import { afterDefer, afterRun, openAfter, readState, recordDir, statePath, withRecordLock, writeState } from "../lib/screens/state.mjs";
+import { afterAccept, afterDefer, fromV1, markOf, readState, recordDir, statePath, withRecordLock, writeState } from "../lib/screens/state.mjs";
 import { retiredRuns } from "../lib/config/config.mjs";
 import { reviewCovers } from "../lib/review.mjs";
 
@@ -64,7 +64,7 @@ test("each area's screen list is found under its docs folder, in the config's or
   }
   const config = merge(DEFAULTS, { areas: [{ id: "b", prefix: "B", docs: "docs/b" }, { id: "a", prefix: "A", docs: "docs/a" }, { id: "c", prefix: "C", docs: "docs/c" }] });
   assert.deepEqual(screensFiles(root, config).map((path) => path.slice(root.length + 1)), ["docs/b/design/screens.md", "docs/a/design/screens.md"]);
-  assert.deepEqual(readState(join(root, "none.json")), { last: "origin/main", deep: "origin/main", lightRuns: [], deferred: { count: 0, at: null }, open: {} });
+  assert.deepEqual(readState(join(root, "none.json")), { version: 2, marks: {}, last: null, deferred: { count: 0, at: null } });
 });
 
 test("a brief lists each screen's reason, stories, caption, and pictures, 24 pictures to a brief", () => {
@@ -128,17 +128,65 @@ test("each ticked viewport is shot as a new install shows it, and stressed when 
   assert.throws(() => shotsFor(["--stress"], "deep"), /needs a viewport/);
 });
 
-test("a light run adds its range, and a deep run clears the runs and any deferral", () => {
-  const start = { last: "aaaaaaa1", deep: "aaaaaaa1", lightRuns: [], deferred: { count: 0, at: null } };
+test("an accept marks each picture it took at the run's commit, and a chunk-end run clears a deferral", () => {
+  const start = { version: 2, marks: { a: { "wide-default": "aaaaaaa1" }, b: { "wide-default": "aaaaaaa1" } }, last: "aaaaaaa1", deferred: { count: 0, at: null } };
   const deferred = afterDefer(start, "bbbbbbb2");
   assert.deepEqual(deferred.deferred, { count: 1, at: "bbbbbbb" });
-  assert.equal(deferred.last, "aaaaaaa1", "a deferral moves nothing else");
-  const light = afterRun(deferred, "light", "ccccccc3");
-  assert.deepEqual(light.lightRuns, ["aaaaaaa..ccccccc"]);
-  assert.equal(light.deep, "aaaaaaa1");
-  assert.deepEqual(light.deferred.count, 0);
-  const deep = afterRun(light, "deep", "ddddddd4");
-  assert.deepEqual(deep, { last: "ddddddd4", deep: "ddddddd4", lightRuns: [], deferred: { count: 0, at: null }, open: {} });
+  assert.deepEqual(deferred.marks, start.marks, "a deferral moves nothing else");
+  // Some screens, outside chunk end: only their marks move, and the deferral stays.
+  const named = afterAccept(deferred, { a: ["wide-default", "narrow-default"] }, "ccccccc3");
+  assert.deepEqual(named.marks, { a: { "wide-default": "ccccccc3", "narrow-default": "ccccccc3" }, b: { "wide-default": "aaaaaaa1" } });
+  assert.equal(named.deferred.count, 1);
+  assert.equal(named.last, "aaaaaaa1");
+  // A light run at chunk end: its screens, the last run, and no deferral.
+  const light = afterAccept(named, { b: ["wide-default"] }, "ddddddd4", true);
+  assert.deepEqual(light.marks.b, { "wide-default": "ddddddd4" });
+  assert.deepEqual([light.last, light.deferred], ["ddddddd4", { count: 0, at: null }]);
+  assert.equal(markOf(light, "a", "narrow-default"), "ccccccc3");
+  assert.equal(markOf(light, "b", "narrow-default"), "origin/main", "a picture never accepted is due from the base");
+  assert.equal(markOf(light, "new", "wide-default", "main"), "main");
+});
+
+test("a record from before marks keeps what each screen was due from", () => {
+  const v1 = { last: "1111111", deep: "0000000", lightRuns: ["0000000..1111111"], deferred: { count: 2, at: "1111111" }, open: { c: "2222222" } };
+  const accepted = { a: { "wide-default": "h", "narrow-default": "n", frame: "f" } };
+  assert.deepEqual(fromV1(v1, new Map([["b", ["shell.tsx"]], ["c", ["c.tsx"]]]), ["a", "b", "c"], accepted), {
+    version: 2,
+    marks: {
+      a: { "wide-default": "1111111", "narrow-default": "1111111" },
+      b: { "wide-default": "0000000" },
+      c: { "wide-default": "0000000" },
+    },
+    pending: ["c"],
+    last: "1111111",
+    deferred: { count: 2, at: "1111111" },
+  }, "a: off the deep list, so the last run; b: on it, so the deep run; c: left open, so pending until accepted");
+});
+
+test("each screen is due from its own mark: the project's module is asked once a mark, as if the whole app were marked there", async () => {
+  const asked = [];
+  // Since the base, b changed in one place and the shell reached a and b; since x, only c changed.
+  const listsAt = async (at) => {
+    asked.push(at);
+    return at === "base"
+      ? { light: new Map([["b", ["b.tsx"]]]), deep: new Map([["a", ["shell.tsx"]], ["b", ["shell.tsx"]]]) }
+      : { light: new Map([["c", ["c.tsx"]]]), deep: new Map() };
+  };
+  const state = { version: 2, marks: { a: { "wide-default": "x" }, c: { "wide-default": "x" } } };
+  const { light, deep, marks } = await dueLists(["a", "b", "c"], state, ["wide-default"], listsAt, "base");
+  assert.deepEqual(new Set(light.keys()), new Set(["b", "c"]), "a's mark is past the shell change; b has none, so is due from the base");
+  assert.deepEqual(new Set(deep.keys()), new Set(["b", "c"]), "the deep list holds every screen due");
+  assert.deepEqual(deep.get("b"), ["shell.tsx", "b.tsx"]);
+  assert.deepEqual([asked.sort(), marks], [["base", "x"], 1], "the base is asked about, but is not a mark");
+  // A screen left open before marks is due whatever changed, on the deep list only, until an accept takes it.
+  const held = await dueLists(["a", "b", "c"], { ...state, pending: ["a", "c", "gone"] }, ["wide-default"], listsAt, "base");
+  assert.deepEqual([new Set(held.light.keys()), held.deep.get("a")], [new Set(["b"]), ["left out of an accept"]]);
+  assert.ok(!held.deep.has("gone"), "a screen off the list is not due");
+  assert.deepEqual(afterAccept({ version: 2, marks: {}, pending: ["a", "c"] }, { a: ["wide-default"] }, "x").pending, ["c"]);
+  assert.ok(!("pending" in afterAccept({ version: 2, marks: {}, pending: ["a"] }, { a: ["wide-default"] }, "x")), "none left, none kept");
+  // A run with a picture a screen never had takes that picture from the base.
+  const narrow = await dueLists(["a"], state, ["wide-default", "narrow-default"], listsAt, "base");
+  assert.deepEqual([...narrow.deep.keys()], ["a"], "a's narrow picture was never accepted, so the shell change is due");
 });
 
 test("older accepted pictures keep their meaning under the new names", () => {
@@ -294,14 +342,17 @@ test("the review's record is the main checkout's, shared by its worktrees, and a
   assert.equal(recordDir(outside), join(outside, ".cache/screens"), "outside git, the project's own");
 
   const head = git(tree, "rev-parse", "HEAD");
-  writeState({ last: head, deep: "0123456789abcdef0123456789abcdef01234567", lightRuns: [], deferred: { count: 0, at: null } }, statePath(tree));
+  const gone = "0123456789abcdef0123456789abcdef01234567";
+  writeState({ version: 2, marks: { a: { "wide-default": head }, b: { "wide-default": gone } }, last: head, deferred: { count: 0, at: null } }, statePath(tree));
   assert.ok(!readdirSync(shared).some((f) => f.endsWith(".part")), "written whole, through a file beside it");
   const state = readState(statePath(main), "origin/main", main);
-  assert.equal(state.last, head, "a commit the repository has stays");
-  assert.equal(state.deep, "origin/main", "a commit since removed counts from the base");
+  assert.equal(markOf(state, "a", "wide-default"), head, "a commit the repository has stays");
+  assert.equal(markOf(state, "b", "wide-default"), "origin/main", "a commit since removed counts from the base");
+  writeState({ last: head, deep: gone, lightRuns: [], deferred: { count: 0, at: null } }, statePath(tree));
+  assert.equal(readState(statePath(main), "origin/main", main).deep, "origin/main", "and so in a record from before marks");
 });
 
-test("--area narrows a run to those areas' screens, and its accept does not move the state", async () => {
+test("--area narrows a run to those areas' screens, and its accept moves only their marks", async () => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-area-")));
   execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
   execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "one"], { cwd: root });
@@ -317,11 +368,12 @@ test("--area narrows a run to those areas' screens, and its accept does not move
   assert.throws(() => areasOf(["--area", "downlink"], config), /--area app\|uplink.*no area downlink/);
   assert.throws(() => areasOf(["--area"], config), /usage: --area/);
 
-  // A deep run narrowed to uplink is accepted: its pictures count, the state stays.
+  // A deep run narrowed to uplink is accepted: its screen is marked where the run was shot, and home is not.
+  const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
   const latest = join(root, ".cache/screens/latest");
   mkdirSync(latest, { recursive: true });
   writeFileSync(join(latest, "hashes.json"), JSON.stringify({ accounts: { "wide-default": "h" } }));
-  writeFileSync(join(latest, "run.json"), JSON.stringify({ mode: "deep", shots: ["wide-default"], failed: 0, areas: ["uplink"] }));
+  writeFileSync(join(latest, "run.json"), JSON.stringify({ mode: "deep", shots: ["wide-default"], at: head, failed: 0, unreached: [], areas: ["uplink"] }));
   const lines = [];
   const log = console.log;
   console.log = (line) => lines.push(String(line));
@@ -330,8 +382,8 @@ test("--area narrows a run to those areas' screens, and its accept does not move
   } finally {
     console.log = log;
   }
-  assert.match(lines.join("\n"), /covered only uplink, so the state does not move/);
-  assert.ok(!existsSync(statePath(root)), "no state written");
+  assert.match(lines.join("\n"), /Marked 1 screens at \w{7}, and the deep run as the last/);
+  assert.deepEqual(JSON.parse(readFileSync(statePath(root), "utf8")).marks, { accounts: { "wide-default": head } });
   assert.deepEqual(JSON.parse(readFileSync(join(recordDir(root), "accepted.json"), "utf8")), { accounts: { "wide-default": "h" } });
 });
 
@@ -373,11 +425,6 @@ test("a project in a folder of its repository keeps its record in that folder of
   assert.deepEqual(order, ["outer", "after a stale lock"]);
 });
 
-test("a light run after the state fell back to the base names its range without cutting the branch name", () => {
-  const state = afterRun({ last: "origin/main", deep: "origin/main", lightRuns: [], deferred: { count: 0, at: null } }, "light", "1234567890abcdef1234567890abcdef12345678");
-  assert.deepEqual(state.lightRuns, ["origin/main..1234567"]);
-});
-
 test("an accept takes the whole run, the named screens, or all but them; a name the run lacks takes nothing", () => {
   const latest = { a: {}, b: {}, c: {} };
   assert.deepEqual(takenBy(latest, [], false), ["a", "b", "c"]);
@@ -390,23 +437,7 @@ test("an accept takes the whole run, the named screens, or all but them; a name 
   assert.deepEqual(acceptNames(["--accept", "--except", "a", "@left.txt"], root), ["a", "b", "c"]);
 });
 
-test("open screens stay until an accept takes them, and join the deep list only", () => {
-  const open = openAfter({ a: "1111111", b: "1111111", gone: "1111111" }, ["a"], ["c"], "2222222abcdef", ["a", "b", "c"]);
-  assert.deepEqual(open, { b: "1111111", c: "2222222" }, "a was taken, gone is off the list, c is left out now");
-  const start = { last: "aaaaaaa1", deep: "aaaaaaa1", lightRuns: ["x..y"], deferred: { count: 2, at: "aaaaaaa" }, open: { b: "1111111" } };
-  assert.deepEqual(afterRun(start, "deep", "ddddddd4", open), { last: "ddddddd4", deep: "ddddddd4", lightRuns: [], deferred: { count: 0, at: null }, open });
-  assert.deepEqual(afterRun(start, "light", "ddddddd4").open, { b: "1111111" }, "a whole light accept keeps what was open");
-  assert.deepEqual(afterDefer(start, "eeeeeee5").open, { b: "1111111" });
-
-  const lists = { light: new Map([["b", ["b.tsx"]], ["d", ["d.tsx"]]]), deep: new Map([["e", ["shell.tsx"]]]) };
-  const now = withOpen(lists, { b: "1111111", c: "2222222", gone: "1111111" }, ["b", "c", "d", "e"]);
-  assert.deepEqual([...now.light.keys()], ["d"], "an open screen is on the deep list only");
-  assert.deepEqual([...now.deep], [["e", ["shell.tsx"]], ["b", ["b.tsx", "left open at 1111111"]], ["c", ["left open at 2222222"]]]);
-  assert.deepEqual([...now.open.keys()], ["b", "c"], "a screen off the list is not open");
-  assert.deepEqual([...lists.light.keys()], ["b", "d"], "the project's lists are not changed");
-});
-
-test("a partial accept takes the named screens, moves the marks, and keeps the rest open and listed to read", async () => {
+test("a partial accept marks the screens it took; those left out stay due and listed to read", async () => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-partial-")));
   execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
   execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "one"], { cwd: root });
@@ -415,15 +446,16 @@ test("a partial accept takes the named screens, moves the marks, and keeps the r
   mkdirSync(join(root, "docs/app/design"), { recursive: true });
   const rows = ["a", "b", "c"].map((name) => `| \`${name}\` | X-1 | \`s › go #/\` | it |`).join("\n");
   writeFileSync(join(root, "docs/app/design/screens.md"), `| Screen | Stories | Reach | Shows |\n| --- | --- | --- | --- |\n${rows}\n`);
-  writeFileSync(join(root, "scope.mjs"), 'export const lists = () => ({ light: new Map([["b", ["b.tsx"]]]), deep: new Map() });\n');
+  // Since the base, b changed in one place and the shell reached a; nothing has changed since HEAD.
+  writeFileSync(join(root, "scope.mjs"), `export const lists = ({ state }) => state.last === "${head}" ? { light: new Map(), deep: new Map() } : { light: new Map([["b", ["b.tsx"]]]), deep: new Map([["a", ["shell.tsx"]]]) };\n`);
   const latest = join(root, ".cache/screens/latest");
   const record = recordDir(root);
   const read = (path) => JSON.parse(readFileSync(path, "utf8"));
-  const shot = (mode, hashes) => {
+  const shot = (mode, hashes, more = {}) => {
     mkdirSync(latest, { recursive: true });
     writeFileSync(join(latest, "hashes.json"), JSON.stringify(hashes));
-    writeFileSync(join(latest, "run.json"), JSON.stringify({ mode, shots: ["wide-default"], failed: 0 }));
-    writeFileSync(join(root, ".cache/screens/to-read.json"), JSON.stringify(["a", "b"].map((name) => ({ name, why: "app changed", pictures: [], framed: false }))));
+    writeFileSync(join(latest, "run.json"), JSON.stringify({ mode, shots: ["wide-default"], at: head, failed: 0, unreached: [], ...more }));
+    writeFileSync(join(root, ".cache/screens/to-read.json"), JSON.stringify(Object.keys(hashes).filter((name) => name !== "c").map((name) => ({ name, why: "app changed", pictures: [], framed: false }))));
   };
   const lines = [];
   const say = async (...args) => {
@@ -439,31 +471,176 @@ test("a partial accept takes the named screens, moves the marks, and keeps the r
   };
   mkdirSync(record, { recursive: true });
   writeFileSync(join(record, "accepted.json"), JSON.stringify({ c: { "wide-default": "c1" } }));
+  assert.equal(await say("scope", "--names", "light"), "b");
+  assert.equal(await say("scope", "--names", "deep"), "a\nb");
 
   // A deep run changed a and b; c is as accepted. b has a fault, so it is left out.
   shot("deep", { a: { "wide-default": "a1" }, b: { "wide-default": "b1" }, c: { "wide-default": "c1" } });
   await assert.rejects(say("--accept", "--except", "z"), /not in the last run: z/);
   assert.deepEqual(read(join(record, "accepted.json")), { c: { "wide-default": "c1" } }, "a wrong name accepts nothing");
-  assert.match(await say("--accept", "--except", "b"), /Accepted 2 screens, left 1 to read[\s\S]*deep run is recorded[\s\S]*Left open: 1 screens/);
-  assert.deepEqual(Object.keys(read(join(record, "accepted.json"))).sort(), ["a", "c"]);
-  assert.deepEqual(read(statePath(root)), { last: head, deep: head, lightRuns: [], deferred: { count: 0, at: null }, open: { b: head.slice(0, 7) } });
+  assert.match(await say("--accept", "--except", "b"), /Accepted 2 screens, left 1 to read[\s\S]*Marked 2 screens at \w{7}, and the deep run as the last[\s\S]*1 changed screens left out keep their marks/);
+  const state = read(statePath(root));
+  assert.deepEqual(state.marks, { a: { "wide-default": head }, c: { "wide-default": head } }, "b keeps no mark, so it is due from the base");
+  assert.equal(state.version, 2);
   assert.deepEqual(read(join(root, ".cache/screens/to-read.json")).map((item) => item.name), ["b"], "b is still listed to read");
-  assert.equal(await say("scope", "--names", "open"), "b");
-  assert.equal(await say("scope", "--names", "light"), "", "an open screen is on the deep list only");
-  assert.match(await say("scope"), /Deep, since \w{7}: 1 screens[\s\S]*Left open: 1 of the deep list's screens/);
+  assert.equal(await say("scope", "--names", "light"), "", "b left out is pending: on the deep list only, whatever changed");
+  assert.equal(await say("scope", "--names", "deep"), "b", "a left the deep list");
+  assert.deepEqual(read(statePath(root)).pending, ["b"]);
+  assert.match(await say("scope"), /Light: 0 screens[\s\S]*Deep: 1 screens, 1 of them only through shared code[\s\S]*1 commit now; the last chunk-end run was at \w{7}[\s\S]*due until accepted: 1 screens/);
 
-  // b is fixed and accepted from the same run: it closes, and the run is not recorded twice.
-  assert.match(await say("--accept", "b"), /Accepted 1 screens\./);
-  assert.deepEqual(read(statePath(root)), { last: head, deep: head, lightRuns: [], deferred: { count: 0, at: null }, open: {} });
+  // b is fixed and accepted from the same run: nothing is due.
+  assert.match(await say("--accept", "b"), /Accepted 1 screens\.[\s\S]*Marked 1 screens/);
+  assert.equal(await say("scope", "--names", "deep"), "");
   assert.ok(!existsSync(join(root, ".cache/screens/to-read.json")), "nothing left to read");
 
-  // A light run by names: only the changed screen left out is open, not the unchanged one.
-  shot("light", { a: { "wide-default": "a2" }, b: { "wide-default": "b2" }, c: { "wide-default": "c1" } });
-  await say("--accept", "a");
-  const state = read(statePath(root));
-  assert.deepEqual(state.open, { b: head.slice(0, 7) });
-  assert.equal(state.lightRuns.length, 1);
-  assert.equal(read(join(record, "accepted.json")).b["wide-default"], "b1", "b keeps its last accepted picture");
+  // A run by names, outside chunk end, also marks what it took, and a screen it could not reach.
+  shot(null, { a: { "wide-default": "a2" } }, { unreached: ["c"] });
+  assert.match(await say("--accept"), /Marked 2 screens at \w{7}\./);
+  assert.equal(read(join(record, "accepted.json")).b["wide-default"], "b1");
+});
+
+test("an accept marks where the run was shot, takes the unchanged screens left out, and moves settled marks forward", async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-shot-at-")));
+  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+  git("init", "-q", "-b", "main");
+  git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "one");
+  const shotAt = git("rev-parse", "HEAD");
+  git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "two");
+  const later = git("rev-parse", "HEAD");
+  const config = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }], screens: { scope: "scope.mjs" } });
+  mkdirSync(join(root, "docs/app/design"), { recursive: true });
+  const rows = ["a", "b", "c", "d"].map((name) => `| \`${name}\` | X-1 | \`s › go #/\` | it |`).join("\n");
+  writeFileSync(join(root, "docs/app/design/screens.md"), `| Screen | Stories | Reach | Shows |\n| --- | --- | --- | --- |\n${rows}\n`);
+  // From any commit, a and b are due; c and d are not.
+  writeFileSync(join(root, "scope.mjs"), 'export const lists = () => ({ light: new Map([["a", ["a.tsx"]], ["b", ["b.tsx"]]]), deep: new Map() });\n');
+  const record = recordDir(root);
+  mkdirSync(record, { recursive: true });
+  writeFileSync(join(record, "accepted.json"), JSON.stringify({ b: { "wide-default": "b0" }, c: { "wide-default": "c1" } }));
+  writeState({ version: 2, marks: { d: { "wide-default": shotAt } }, pending: ["gone"], last: null, deferred: { count: 1, at: "1234567" } }, statePath(root));
+  const latest = join(root, ".cache/screens/latest");
+  mkdirSync(latest, { recursive: true });
+  // Shot at the first commit; accepted after a second. a changed, b changed, c is as accepted.
+  writeFileSync(join(latest, "hashes.json"), JSON.stringify({ a: { "wide-default": "a1" }, b: { "wide-default": "b1" }, c: { "wide-default": "c1" } }));
+  writeFileSync(join(latest, "run.json"), JSON.stringify({ mode: null, shots: ["wide-default"], at: shotAt, failed: 0, unreached: [] }));
+  const log = console.log;
+  console.log = () => {};
+  try {
+    await screens(root, config, ["--accept", "a"]);
+  } finally {
+    console.log = log;
+  }
+  const state = JSON.parse(readFileSync(statePath(root), "utf8"));
+  assert.equal(state.marks.a["wide-default"], shotAt, "marked where the run was shot, not at the later HEAD");
+  assert.equal(state.marks.c["wide-default"], shotAt, "c was left out but unchanged, so it is taken");
+  assert.ok(!state.marks.b, "b changed and was left out, so it keeps no mark");
+  assert.equal(state.marks.d["wide-default"], shotAt, "d is not due, so its mark moves with the accept");
+  assert.deepEqual(state.pending, ["b"], "b, left out changed, is pending; the pending screen off the list goes");
+  assert.deepEqual(state.deferred, { count: 1, at: "1234567" }, "a run outside chunk end leaves a deferral");
+  assert.deepEqual(JSON.parse(readFileSync(join(latest, "hashes.json"), "utf8")), { b: { "wide-default": "b1" } }, "only the changed screen left out stays to accept");
+  assert.equal(JSON.parse(readFileSync(join(latest, "run.json"), "utf8")).at, shotAt, "and keeps where it was shot");
+  assert.notEqual(later, shotAt);
+});
+
+test("an accept settles nothing from a run with uncommitted changes, never moves a mark back, holds a screen that did not shoot, and counts a chunk end once", async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-settle-")));
+  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+  const commit = (m) => git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", m);
+  git("init", "-q", "-b", "main");
+  commit("one");
+  const first = git("rev-parse", "HEAD");
+  commit("two");
+  const second = git("rev-parse", "HEAD");
+  const config = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }], screens: { scope: "scope.mjs" } });
+  mkdirSync(join(root, "docs/app/design"), { recursive: true });
+  const rows = ["a", "b", "c", "d"].map((name) => `| \`${name}\` | X-1 | \`s › go #/\` | it |`).join("\n");
+  writeFileSync(join(root, "docs/app/design/screens.md"), `| Screen | Stories | Reach | Shows |\n| --- | --- | --- | --- |\n${rows}\n`);
+  writeFileSync(join(root, "scope.mjs"), "export const lists = () => ({ light: new Map(), deep: new Map() });\n");
+  const record = recordDir(root);
+  mkdirSync(record, { recursive: true });
+  writeFileSync(join(record, "accepted.json"), JSON.stringify({ b: { "wide-default": "b0" } }));
+  const latest = join(root, ".cache/screens/latest");
+  mkdirSync(latest, { recursive: true });
+  const accept = async (run, hashes, args = []) => {
+    writeFileSync(join(latest, "hashes.json"), JSON.stringify(hashes));
+    writeFileSync(join(latest, "run.json"), JSON.stringify({ shots: ["wide-default"], failed: 0, unreached: [], ...run }));
+    const log = console.log;
+    console.log = () => {};
+    try {
+      await screens(root, config, ["--accept", ...args]);
+    } finally {
+      console.log = log;
+    }
+    return JSON.parse(readFileSync(statePath(root), "utf8"));
+  };
+  // c's mark is past the first commit, so an accept shot there never moves it back; d is marked at the first.
+  writeState({ version: 2, marks: { c: { "wide-default": second }, d: { "wide-default": first } }, last: null, deferred: { count: 0, at: null } }, statePath(root));
+  let state = await accept({ mode: "light", at: first, dirty: true, failedNames: ["a"] }, { b: { "wide-default": "b1" } }, ["--except", "b"]);
+  assert.deepEqual(state.marks, { c: { "wide-default": second }, d: { "wide-default": first } }, "a run with uncommitted changes settles nothing, and b was left out");
+  assert.deepEqual(state.pending, ["a", "b"], "a did not shoot and b was left out: both stay due");
+  assert.equal(state.last, first);
+  // A deferral at the next chunk end, then the leftovers accepted: the chunk end is not counted again.
+  writeState({ ...state, deferred: { count: 1, at: "1234567" } }, statePath(root));
+  state = await accept(JSON.parse(readFileSync(join(latest, "run.json"), "utf8")), { b: { "wide-default": "b1" } }, ["b"]);
+  assert.deepEqual(state.deferred, { count: 1, at: "1234567" });
+  assert.equal(state.last, first);
+  assert.deepEqual(state.pending, ["a"]);
+  // A clean run at the first commit leaves c, whose mark is not on that run's history, where it is.
+  state = await accept({ mode: null, at: first }, {});
+  assert.equal(state.marks.c["wide-default"], second, "never moved back");
+  // A clean run at the second moves d, which nothing reached, forward to it; a, pending, stays unmarked.
+  state = await accept({ mode: null, at: second }, {});
+  assert.equal(state.marks.d["wide-default"], second);
+  assert.ok(!state.marks.a, "a is pending, so not settled");
+  await assert.rejects(accept({ mode: null, at: "HEAD" }, {}), /is not a commit id/);
+});
+
+test("a git that cannot check the record's commits stops the read, so no mark is dropped", () => {
+  const notRepo = mkdtempSync(join(tmpdir(), "wf-not-repo-"));
+  const path = join(notRepo, "state.json");
+  writeFileSync(path, JSON.stringify({ version: 2, marks: { a: { "wide-default": "0123456789abcdef0123456789abcdef01234567" } } }));
+  assert.throws(() => readState(path, "origin/main", notRepo), /git could not check the screen record's commits/);
+  writeFileSync(path, JSON.stringify({ version: 2, marks: {}, pending: "a", deferred: 5, last: "HEAD" }));
+  const odd = readState(path, "origin/main", notRepo);
+  assert.deepEqual([odd.pending, odd.deferred, odd.last], [undefined, { count: 0, at: null }, null], "values that are not what the record holds are dropped");
+});
+
+test("a mark is a commit id the repository has; any other is dropped, and counted", () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-marks-")));
+  execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+  execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "one"], { cwd: root });
+  const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+  const path = join(root, "state.json");
+  writeFileSync(path, JSON.stringify({ version: 2, marks: { a: { "wide-default": head, "narrow-default": "HEAD" }, b: { "wide-default": "--output=/tmp/x" }, c: { "wide-default": ["HEAD"] }, d: { "wide-default": "0123456789abcdef0123456789abcdef01234567" }, e: "x" } }));
+  const state = readState(path, "origin/main", root);
+  assert.deepEqual(state.marks, { a: { "wide-default": head }, b: {}, c: {}, d: {} });
+  assert.equal(state.pruned, 4);
+  assert.ok(!JSON.stringify(state).includes("pruned"), "the count is not written back");
+});
+
+test("a record from before marks is turned into them on the first accept, keeping what was left open", async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-v1-")));
+  execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+  execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "one"], { cwd: root });
+  const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+  const config = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }], screens: { scope: "scope.mjs" } });
+  mkdirSync(join(root, "docs/app/design"), { recursive: true });
+  const rows = ["a", "b", "c"].map((name) => `| \`${name}\` | X-1 | \`s › go #/\` | it |`).join("\n");
+  writeFileSync(join(root, "docs/app/design/screens.md"), `| Screen | Stories | Reach | Shows |\n| --- | --- | --- | --- |\n${rows}\n`);
+  writeFileSync(join(root, "scope.mjs"), "export const lists = () => ({ light: new Map(), deep: new Map() });\n");
+  writeState({ last: head, deep: head, lightRuns: [], deferred: { count: 3, at: "1234567" }, open: { b: head.slice(0, 7) } }, statePath(root));
+  const latest = join(root, ".cache/screens/latest");
+  mkdirSync(latest, { recursive: true });
+  writeFileSync(join(latest, "hashes.json"), JSON.stringify({ a: { "wide-default": "a1" } }));
+  writeFileSync(join(latest, "run.json"), JSON.stringify({ mode: null, shots: ["wide-default"], at: head, failed: 0, unreached: [] }));
+  const log = console.log;
+  console.log = () => {};
+  try {
+    await screens(root, config, ["--accept"]);
+  } finally {
+    console.log = log;
+  }
+  const state = JSON.parse(readFileSync(statePath(root), "utf8"));
+  assert.deepEqual(state, { version: 2, marks: { a: { "wide-default": head }, b: { "wide-default": head }, c: { "wide-default": head } }, pending: ["b"], last: head, deferred: { count: 3, at: "1234567" } });
 });
 
 test("a virtual display keeps apart from the person's desktop: no KWin scripts, its own D-Bus", () => {
