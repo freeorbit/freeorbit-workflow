@@ -108,7 +108,8 @@ Each kit version that changes a project's own files says what to do here. After 
 
 - **An ask can be archived from the inbox,** such as one asked for a test or no longer relevant: its Archive button, or A on the current row, with Undo for a moment. It leaves the inbox and the asks menu until it is asked again.
 - **Show archived** lists the archived asks, each with Restore. Nothing is deleted: the page, its answers, and its history stay.
-- The inbox no longer redraws every row each few seconds, only when something changed, so a click is never lost under a redraw.
+- **An ask an agent is blocked on stays,** with no Archive button, since hiding it would hide what the agent waits for; an archived ask an agent starts waiting on shows again.
+- The inbox no longer redraws every row each few seconds, only when something changed or once a minute, and the row or button with the focus keeps it.
 
 ### v1.9.1: a pinned comment with code in it is no longer edited on every sync
 
