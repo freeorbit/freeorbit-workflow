@@ -104,6 +104,12 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.10.0: archive an ask
+
+- **An ask can be archived from the inbox,** such as one asked for a test or no longer relevant: its Archive button, or A on the current row, with Undo for a moment. It leaves the inbox and the asks menu until it is asked again.
+- **Show archived** lists the archived asks, each with Restore. Nothing is deleted: the page, its answers, and its history stay.
+- The inbox no longer redraws every row each few seconds, only when something changed, so a click is never lost under a redraw.
+
 ### v1.9.1: a pinned comment with code in it is no longer edited on every sync
 
 A story whose text held a backtick, such as Atlas NX's INF-01, was planned as `comment … edit acceptance` on every `wf board plan` and sync, forever. monday drops `<code>` from a comment and keeps its words, so what sync sent never matched what monday kept, and monday ignored each edit as a no-op.
