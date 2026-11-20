@@ -75,7 +75,8 @@ test("the ledger's state, and the run each choice point recommends", () => {
   assert.deepEqual(ledgerState("Last reviewed: none.\nDeep reviewed: none.\nDeferred: none.\n"), { last: null, deep: null, deferred: 0, lightRuns: 0 });
   const review = [[{ last: null, lightRuns: 0 }, "full"], [{ last: "a", lightRuns: 2 }, "deep"], [{ last: "a", lightRuns: 1 }, "light"]];
   for (const [state, run] of review) assert.equal(reviewAdvice(state).run, run);
-  const screens = [[{ light: 0, deep: 0, lightRuns: 0 }, "defer"], [{ light: 3, deep: 9, lightRuns: 2 }, "deep"], [{ light: 0, deep: 9, lightRuns: 0 }, "deep"], [{ light: 3, deep: 9, lightRuns: 0 }, "light"]];
+  // The deep list holds every screen due; the rest of it beyond the light list is what only shared code reaches.
+  const screens = [[{ light: 0, deep: 0 }, "defer"], [{ light: 3, deep: 9 }, "deep"], [{ light: 0, deep: 9 }, "deep"], [{ light: 5, deep: 9 }, "light"], [{ light: 3, deep: 9, deepOnly: 1 }, "light"]];
   for (const [state, run] of screens) assert.equal(screensAdvice(state).run, run);
 });
 

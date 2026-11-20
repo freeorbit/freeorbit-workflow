@@ -74,15 +74,14 @@ A screen is listed to read when its app pictures **or its frame** changed since 
 
 `npx wf screens scope` gives two lists, and about how long each takes, from the project's `screens.scope` module.
 
-- **Light**: screens a changed file reaches in one place only, such as its own page, its route, or its frame. Counted from the last run, light or deep.
-- **Deep**: screens a changed file reaches in more than one place, such as a shared component, the shell, the tokens, or the shared frame styles. Counted from the last deep run, with that span's light screens too.
-- A screen on both is on the deep list only.
-- **Left open**: screens a partial accept left out. They stay on the deep list until an accept takes them. `npx wf screens scope --names open` lists them, so a fix can run just them: `npx wf screens $(npx wf screens scope --names open)`.
+- **Each screen has its own mark**: the commit each of its pictures was last accepted at. A screen is due when a change that reaches it landed after its own mark, so an accepted run moves the screens it took and leaves the rest as they were. Screens nothing has reached since their marks move with it, so the marks stay a few commits.
+- **Light**: screens a changed file reaches in one place only, such as its own page, its route, or its frame.
+- **Deep**: every screen due, with those a changed file reaches in more than one place, such as a shared component, the shell, the tokens, or the shared frame styles. A light run takes its screens off this list too.
 - The state lives on this computer in the main checkout's `.cache/screens/state.json`, with the accepted pictures. Every worktree reads and writes that one record, so a run accepted in a worktree counts everywhere and outlives it.
 
 ## While building
 
-As soon as a screen renders, check it on its own, and fix what differs before building the next one. A named run does not move the state:
+As soon as a screen renders, check it on its own, and fix what differs before building the next one. Accepting it moves that screen's mark, so it leaves both lists:
 
 ```bash
 npx wf screens <screen>
@@ -95,14 +94,14 @@ After the code review and the fixes for its findings, when UI files or frames ch
 1. **Rebuild the app**, so the pictures are of the fixed code.
 2. **Scope.** Run `npx wf screens scope`. Both lists empty: stop here, unless a backend change altered words on a screen; then run those screens by name.
 3. **Ask the designer** on the choice page: `npx wf choose screens | npx wf ask page -`, then the `ask-page` skill's steps.
-   - The page shows both lists' counts and times, the light runs waiting, the screens left open, and whether the code review covers HEAD. Each run, light, deep, or defer, shows its command; where the apps show, the areas, and the pictures the project sets are options.
-   - It recommends light; deep when the light list is empty and the deep one is not, or when two or more light runs are waiting.
+   - The page shows both lists' counts and times, how many only shared code reaches, and whether the code review covers HEAD. Each run, light, deep, or defer, shows its command; where the apps show, the areas, and the pictures the project sets are options.
+   - It recommends light; deep when the light list is empty and the deep one is not, or when shared code alone reaches as many screens as the light list.
    - Before a deep run, check how much of the usage limit is left; the times are estimates.
    - Defer runs `npx wf screens --defer` and shoots nothing. Both lists keep growing until a run.
    - With no browser pane, ask in the chat with the same runs and options.
 4. **Run** the command the page returns, `Command:` at the head of its answers, such as `npx wf screens --light`. Do not ask which pictures: both take Default. Only when the designer asks for other pictures, name every viewport to take, such as `--wide --narrow`, and add `--stress` for the stress look.
-   - `--chunk N`, `--all`, and names still check just those screens, without moving the state.
-   - `--area <id>` narrows any run to that area's screens, such as `--deep --area uplink`; several are joined by commas, and `scope --area <id>` shows that part of each list. Use it when the designer asks for one area. Its accept counts the pictures but does not move the state, since the other areas were not looked at.
+   - `--chunk N`, `--all`, and names check just those screens; accepting them moves their marks.
+   - `--area <id>` narrows any run to that area's screens, such as `--deep --area uplink`; several are joined by commas, and `scope --area <id>` shows that part of each list. Use it when the designer asks for one area. Its accept moves that area's marks only.
    - `--light` and `--deep` refuse until the code review ledger has reviewed or deferred at HEAD. `--force` is for a run the designer asks for outside chunk end.
 5. **Triage.** Run `npx wf screens --brief`. It writes the listed screens into briefs of up to 24 pictures each, so 24 screens at one picture a screen, and prints the reader's model. Start one `screen-reader` agent a brief, all at once, on that model, each with the prompt `Brief: <path>` and nothing else. Each returns one line a screen: `same`, `differs`, `fault`, or `could not read`.
 6. **Look.** Read in full every pair a reader flagged, every *frame changed* pair, and every picture a reader could not read. Enlarge a doubtful spot: crop and scale into `.cache/view/`, since the image reader caches by path.
@@ -123,8 +122,8 @@ After the code review and the fixes for its findings, when UI files or frames ch
    - **A partial accept**, when some screens wait on a fix, such as a fix chunk: `npx wf screens --accept --except <screen> ...` leaves those out, and `npx wf screens --accept <screen> ...` takes only those. A long list goes in a file, one name a line, as `@<file>`.
      - Accept a screen only when it was read as step 6 says and has no fault left. Leave out every screen with a reader's flag you have not read, a fault, a wrong state, or a frame difference the designer has not settled; a *frame changed* pair is read in full even when its reader said `same`.
      - Each screen left out goes in the fix chunk or the open questions log, as step 7 says.
-     - The marks move as for a whole accept, and the changed screens left out are kept as left open: still listed to read, and on the deep list until an accept takes them. Accepting one later, from this run or a named run, closes it.
-   - A light run moves the last run and adds its range. A deep run moves both and clears the light runs and any deferral. A run with a screen that did not shoot moves neither.
+     - The screens taken are marked; the changed screens left out keep their marks, so they stay listed to read and due until an accept takes them, from this run or a named run.
+   - Each picture taken is marked at the commit the run was shot at. A screen that did not shoot keeps its mark; one the run could not reach is marked, since it was looked at. A light or deep run also clears any deferral.
    - Accepted hashes stay on this computer, in the main checkout, so on a new computer every screen is new.
 10. **Stage the built pictures.** While the board shows built screens, the accept copies each screen's Default picture to `design.built`. Commit those with the chunk, so the board shows them once the story is Built.
 
