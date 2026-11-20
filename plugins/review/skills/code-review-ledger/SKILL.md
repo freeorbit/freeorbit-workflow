@@ -71,7 +71,7 @@ Rubric: <review.rubric>
 Performance rubric: <review.performanceRubric; performance mode only>
 Threat model: <review.threatModel>
 Hot paths: <review.hotPaths>
-Reads: <review.reads>
+Reads: <review.reads>, and each `<area docs>/data-model.md` that exists, for CS-DATA
 Web: <review.web>
 ```
 

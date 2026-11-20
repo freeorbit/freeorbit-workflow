@@ -75,6 +75,7 @@ Nobody adds a rule here without a finding the reviewer accepted, or an owner dec
   - One used by two or more files in a feature, or more than about 8 definitions crowding the logic, goes in `types.rs` or `types.ts` in that feature's folder.
   - One used across features goes in the crate that owns the idea.
   - Constants are named by purpose, such as `limits.rs`, never `constants`, `enums`, or `interfaces`.
+- **CS-DATA.** The schema and its migrations match the area's `data-model.md`: its tables, keys, constraints, indexes, and what a delete takes with it. A change to either updates the other in the same chunk (added 2026-11-21).
 - **CS-LIST.** Data that grows is found automatically, not listed by hand, and a lookup over it does not scan everything (added 2026-11-02). A list fixed by a spec, such as a test dataset, may stay by hand. Work does not grow faster than the data: no step that repeats over everything so far for each new item (changed 2026-11-02).
 
 ## Performance

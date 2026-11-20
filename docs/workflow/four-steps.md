@@ -26,6 +26,14 @@ Where code lives, how the parts talk, and the tech stack. Open questions from St
 - Step 3 ends by adding the area's chunks to [build-order.md](../log/build-order.md), following [Making or updating an area's order](build-order.md#making-or-updating-an-areas-order).
 - It lists each outside thing the stories need, such as a server, a model, a sign-in, a file picker, or another computer, and the chunk whose stand-in lets a scenario reach those screens.
 
+Each area also designs its data in Step 3, before any chunk builds it, in its own `data-model.md` from the kit's `templates/data-model.md`, beside `architecture.md`.
+
+- **What it holds.** Where the data lives, the entities and how they relate, each table's fields, keys, and constraints, the index each hot path's query needs, which fields are sensitive, how long rows are kept and what a delete takes with it, and how migrations run.
+- **A design, not the SQL.** The area's first build chunk writes the schema and its migrations from it, and the code review checks them against it, by CS-DATA in [code-standards.md](code-standards.md).
+- **If it stores nothing,** the file says so in one line, with why.
+- **Reviewed with the architecture.** The agent drafts it from the stories, the architecture, the threat model, and the hot-paths doc, and the owner reviews it with the rest of the step. A choice of store, or of what is kept and for how long, is asked on an ask page.
+- `npx wf doc:check` fails while an area is past Step 3 and its `data-model.md` is missing or still the template. An area whose Architecture step is dated before 2026-11-21, when the kit added this, or not dated, is warned instead.
+
 The first area to finish Step 3 also drafts the threat model, from the kit's `templates/threat-model.md`, into the file `review.threatModel` names.
 
 - It says what is protected, who could attack it, and each boundary where trust changes.

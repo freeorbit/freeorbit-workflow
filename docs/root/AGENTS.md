@@ -71,6 +71,7 @@ Efficiency that leads to our outcome is how we work, in every chat and every tas
 | Story or flow | the area's `user-stories.md` and `user-flows.md`, in its folder from `areas` in the config |
 | Area work | the area's folder |
 | Architecture | the area's `architecture.md` |
+| Data model: tables, keys, indexes, what is kept and deleted | the area's `data-model.md` |
 | Raw research | a new file under `docs/research/` |
 | An issue we hit, with its cause and fix | `{{logs.troubleshooting}}` |
 | Real wasted effort, and the change it led to | `{{logs.efficiencyLog}}` |

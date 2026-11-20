@@ -75,6 +75,10 @@ A screen is listed to read when its app pictures **or its frame** changed since 
 `npx wf screens scope` gives two lists, and about how long each takes, from the project's `screens.scope` module.
 
 - **Each screen has its own mark**: the commit each of its pictures was last accepted at. A screen is due when a change that reaches it landed after its own mark, so an accepted run moves the screens it took and leaves the rest as they were. Pictures nothing has reached since their marks move with it, when the run was shot with no uncommitted changes, so the marks stay a few commits.
+- **Uncommitted changes need no commit first.** A run shot with them is shot at a snapshot of the working tree, taken before its first picture, and the accept marks it. Committed as they were shot, the changes leave those screens accepted; a change made after the snapshot makes them due, as it should.
+  - The snapshot is a local commit under `refs/wf/screens/`. A plain push sends branches only, so it stays on this computer; a mirror push, or a refspec of `refs/*`, would send it. An untracked file whose name may hold a secret, or one over 5 MB, is left out and named.
+  - An accept drops a snapshot no mark names once it is 14 days old. To drop them all, `git for-each-ref --format='%(refname)' refs/wf/screens/ | xargs -n1 git update-ref -d`; the screens marked there show due again.
+  - The project's `screens.scope` module must count the working tree and untracked files in what changed since a mark, as `git diff --name-only <mark>` plus `git ls-files --others --exclude-standard` does.
 - **Light**: screens a changed file reaches in one place only, such as its own page, its route, or its frame.
 - **Deep**: every screen due, with those a changed file reaches in more than one place, such as a shared component, the shell, the tokens, or the shared frame styles. A light run takes its screens off this list too.
 - The state lives on this computer in the main checkout's `.cache/screens/state.json`, with the accepted pictures. Every worktree reads and writes that one record, so a run accepted in a worktree counts everywhere and outlives it.
