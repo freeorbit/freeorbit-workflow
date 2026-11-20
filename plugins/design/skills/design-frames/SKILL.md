@@ -54,7 +54,7 @@ npx wf design render <frame> <frame>   # named frames
 npx wf design check <frame>            # what runs past the window or is cut off
 ```
 
-Render only the frames you changed, unless a shared file changed. `check` opens each frame at every size in `design.check.sizes` and lists what runs past the window or is cut off; it exits 1 when it finds any. Only the drawing size is kept as a PNG. When a change affects a smaller window, take a screenshot of the app at that size with the project's app-testing skill and read it.
+Render only the frames you changed, unless a shared file changed. `check` opens each frame at every size in `design.check.sizes` and lists what runs past the window or is cut off; it exits 1 when it finds any. Only the drawing size is kept as a PNG: `design.size`'s width, and as tall as the page, so a full-page frame shows whole. A fixed bar sits at the window's bottom, partway down a taller picture. When a change affects a smaller window, take a screenshot of the app at that size with the project's app-testing skill and read it.
 
 Then read the PNG. The image reader caches by path, so copy the PNG to a new name first, such as `.cache/view/<frame>-2.png`, and read the copy. Look for clipped or overflowing text, missing pieces, and a layout that does not match the story. Fix and render again. Two or three passes should be enough.
 
