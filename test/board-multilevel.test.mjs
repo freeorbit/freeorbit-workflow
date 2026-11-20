@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { runBoard } from "../lib/board/index.mjs";
+import { updatesFor } from "./fixtures/board/monday-keeps.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -52,9 +53,10 @@ function multiLevelMonday({ rollup = true, status = true } = {}) {
   };
   const fetch = async (url, init) => {
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|pin_to_top|update_status_column|create_column|create_view_table)\b/)[1];
+    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|pin_to_top|update_status_column|create_column|create_view_table|updates)\b/)[1];
     state.ops.push(op);
     const ok = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
+    if (op === "updates") return ok({ updates: updatesFor(state.items, v.i) });
     if (op === "me") return ok({ me: { id: "7" } });
     if (op === "boards") return ok({ boards: [{ id: "42", name: "Client board", board_kind: "share", hierarchy_type: "multi_level", columns: state.columns, groups: state.groups, views: [{ name: "Build" }, { name: "Client review" }], items_page: { cursor: null, items: state.items.map(shown) } }] });
     if (op === "create_group") {

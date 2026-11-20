@@ -7,7 +7,8 @@ import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { syncGithub } from "../lib/setup/github.mjs";
 import { plan, runBoard } from "../lib/board/index.mjs";
-import { commentHtml, flat } from "../lib/board/wanted.mjs";
+import { commentHtml } from "../lib/board/wanted.mjs";
+import { flat, plainOfHtml } from "../lib/board/items.mjs";
 import { boardProblems } from "../lib/board/settings.mjs";
 import { HEADING } from "../lib/board/voice.mjs";
 import { addressed, briefSummary, checkDrafts, COMMENT_MAX, draftLines, feedback, feedbackBrief, textProblem, UNTRUSTED, feedbackLines, replyBatch, replyFor, replyGroups } from "../lib/board/feedback.mjs";
@@ -170,7 +171,7 @@ test("the pinned comment's new wording edits each old one once, still found by i
   const edit = plan(config(), want, on(old), ME).changes;
   assert.deepEqual(edit.map((change) => `${change.kind} ${change.updateId}`), ["comment p1"]);
   const now = commentHtml(story).replace(/<\/p>|<\/li>/g, "\n").replace(/<[^>]+>/g, "");
-  assert.equal(flat(now), flat(commentHtml(story)));
+  assert.equal(flat(now), flat(plainOfHtml(commentHtml(story))));
   assert.equal(plan(config(), want, on(now), ME).changes.length, 0);
 });
 

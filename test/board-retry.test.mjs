@@ -11,6 +11,7 @@ import { installSteps } from "../lib/setup/github.mjs";
 import { plan, planLines, runBoard } from "../lib/board/index.mjs";
 import { commentHtml, wanted } from "../lib/board/wanted.mjs";
 import { mondayClient, retryNotFound, STATUS_COLORS, withLabels } from "../lib/board/monday.mjs";
+import { updatesFor } from "./fixtures/board/monday-keeps.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -40,9 +41,10 @@ function laggingMonday({ lag = 2, dropStatus = false, items = [], columns = [...
   const shown = (item) => ({ id: item.id, name: item.name, group: state.groups.find((group) => group.id === item.group), column_values: state.columns.map((column) => column.id).filter((id) => !portfolio.includes(id)).map((id) => ({ id, text: item.values[id] ?? "" })), updates: item.updates });
   const fetch = async (url, init) => {
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|edit_update|pin_to_top|update_status_column|create_column|create_view_table|change_column_title)\b/)[1];
+    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|edit_update|pin_to_top|update_status_column|create_column|create_view_table|change_column_title|updates)\b/)[1];
     state.ops.push(op);
     const ok = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
+    if (op === "updates") return ok({ updates: updatesFor(state.items, v.i) });
     const missing = (what) => ({ status: 200, text: async () => JSON.stringify({ errors: [{ message: `${what} not found` }] }) });
     const item = state.items.find((each) => each.id === v?.i);
     if (op === "me") return ok({ me: { id: "7" } });

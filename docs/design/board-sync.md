@@ -47,6 +47,9 @@ The acceptance lines go in the item's first comment, pinned, where a list reads 
 - **Shape.** The bot's line to readers in a quote block starting with 🤖, a bold "Acceptance criteria" heading, the "As a…" sentence, then one bullet per acceptance line, as written.
   - The owner chose the quote block from three styles tried on the test board on 2026-11-11.
   - Sync compares the comment's words and its tags, without their attributes, so a new layout with the same words still reaches the board.
+  - Its words are monday's `text_body`, plain text that holds `<type>` literally, against our HTML with its tags gone and then its entities decoded, so an escaped `&lt;type&gt;` compares equal.
+  - Code in a story goes as its plain words: monday keeps `<strong>`, `<b>`, `<em>`, nested lists, `<pre>`, and the quote block, and drops `<code>`, keeping its words (Atlas NX's board and a probe, 2026-11-20). Sent with `<code>`, the six INF stories with a backtick never matched, and were planned for an edit on every run.
+  - monday ignores an edit that leaves what it keeps unchanged, with no error and no new `edited_at`. So once every change is written, sync reads back each comment it posted or edited, in batches, again while monday's reads catch up, and one monday did not keep as sent is a problem: sync exits 1 naming it and whether its words or its layout differ, instead of saying it synced.
 - **The line to readers.** "I'm Orbit, and I keep this list matched to the project's records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up." The name is `board.bot.name`.
 - **Pinned.** `pin_to_top` keeps it above every client comment.
 - **Kept current.** Sync finds it as the bot's top-level comment with a line that is the heading, "Acceptance criteria" or the older "🤖 Acceptance criteria", and changes it with `edit_update` only when the lines differ, so a story change never posts a new comment.

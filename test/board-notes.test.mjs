@@ -12,6 +12,7 @@ import { answeredReply, deliveredNote, isBot, loggedReply, notedReply, questionN
 import { hasBotReply } from "../lib/board/feedback.mjs";
 import { questionProblems } from "../lib/logs/questions.mjs";
 import { signoffs } from "../lib/logs/signoffs.mjs";
+import { updatesFor } from "./fixtures/board/monday-keeps.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -46,10 +47,11 @@ function monday() {
   const plain = (html) => html.replace(/<\/(p|li)>/g, "\n").replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/\n+$/, "");
   const fetch = async (url, init) => {
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|edit_update|pin_to_top)\b/)[1];
+    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|edit_update|pin_to_top|updates)\b/)[1];
     // Each post a minute after the last, from noon on, after the client's replies the tests add.
     const now = () => new Date(Date.UTC(2026, 10, 11, 12, state.next)).toISOString();
     const ok = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
+    if (op === "updates") return ok({ updates: updatesFor(state.items, v.i) });
     if (op === "me") return ok({ me: { id: "7" } });
     if (op === "boards") return ok({ boards: [{ id: "42", name: "Client board", board_kind: "share", columns: state.columns, groups: state.groups, views: [{ name: "Build" }, { name: "Client review" }], items_page: { cursor: null, items: state.items.map(shown) } }] });
     if (op === "create_group") {

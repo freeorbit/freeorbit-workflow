@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.9.1: a pinned comment with code in it is no longer edited on every sync
+
+A story whose text held a backtick, such as Atlas NX's INF-01, was planned as `comment … edit acceptance` on every `wf board plan` and sync, forever. monday drops `<code>` from a comment and keeps its words, so what sync sent never matched what monday kept, and monday ignored each edit as a no-op.
+
+- **Code goes as its words.** A story's `` `x` `` reaches the pinned comment as plain `x`, which is what the client saw anyway.
+- **Angle brackets compare equal.** `<type>` inside backticks, which monday gives back literally, matches what sync sends escaped. A phase lead with `<` gets the same fix.
+- **What sync writes is checked.** Once every change is written, sync reads back each comment it posted or edited. One monday did not keep as sent fails the sync with a `board` line naming it and whether its words or layout differ, instead of reporting success.
+- Nothing to do: the next sync leaves those comments as they are.
+
 ### v1.9.0: accepted screens stay accepted after the commit, and Step 3 designs the data
 
 - **Screens shot with uncommitted changes.** A chunk end reviews its screens before its commit, so an accept marked the commit before the chunk's work, and the same screens showed due again once it was committed. Now such a run is shot at a snapshot of the working tree, a local commit under `refs/wf/screens/`, and the accept marks it. Commit as usual; nothing to do first.
