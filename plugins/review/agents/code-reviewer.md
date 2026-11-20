@@ -79,7 +79,7 @@ The structure scan files in the scanner output folder measure size, function len
    - State: who owns it, what is reset where, and what a lock is held across (CS-STATE).
    - Tests: a fix, a limit, or an acceptance line with no test, a test that repeats another, and a test written only to carry an acceptance line's or rule's ID that an existing test could cite (CS-TEST).
    - The UI against the design system, and statuses against the state they name (CS-UI, CS-STATUS).
-   - Data: each schema, migration, or model file in scope, and each area data model, against the data rubric's rules and its project part for the database in use (`DATA-`). A table a migration adds that the area's data model does not list is a finding.
+   - Data: each schema, migration, or model file in scope, and each area data model, against the data rubric's rules and its project part for the database in use (`DATA-`). A table a migration adds that the area's data model does not list is a CS-DATA finding, under `MOD-`.
    - Names against the word list, and comments that no longer hold (CS-NAME, CS-CMT).
    - Unused code and dependencies (CS-DEAD), and work that grows faster than the data (CS-LIST).
    - Where types live (CS-TYPES), and function, file, and folder size (CS-FUNC, CS-SIZE, CS-FOLDER).

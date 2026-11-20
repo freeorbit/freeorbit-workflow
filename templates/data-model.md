@@ -33,7 +33,7 @@ erDiagram
   review ||--o{ finding : has
 ```
 
-A part's diagram shows its own tables and the keys between them, ten or fewer; a table of another part is named in a note, not drawn.
+A part's diagram shows its own tables and the keys between them, twelve or fewer; a table of another part is named in a note, not drawn.
 
 ### review
 
@@ -42,8 +42,10 @@ One sentence: what one row is, in the stories' words.
 | Field | Type | Null | Key or constraint | Notes |
 | --- | --- | --- | --- | --- |
 | id | <the standards' key type> | no | primary key | |
+| owner_id | | no | foreign key to person, on delete cascade | Who made it |
 | title | text | no | check length 1 to 200 | |
 | created_at | <the standards' instant type> | no | | |
+| updated_at | <the standards' instant type> | no | | Set on each change |
 
 ### finding
 
@@ -59,9 +61,9 @@ One sentence: what one row is.
 
 The part's tables that hold one row each, such as a setting or a checkpoint, in one table rather than a section each.
 
-| Table | What its one row says | Fields |
+| Table | What its one row says | Fields, each with its type, null, and default |
 | --- | --- | --- |
-| <scan_progress> | <How far the scan got> | <messages, finished> |
+| <scan_progress> | <How far the scan got> | <id integer, primary key, check id = 1<br>• messages integer, not null, default 0<br>• is_finished integer, not null, default 0> |
 
 ## Indexes
 
