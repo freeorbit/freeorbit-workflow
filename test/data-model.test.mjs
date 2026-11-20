@@ -34,3 +34,30 @@ test("an area past Step 3 before v1.9.0, or with no date, is warned, so an upgra
   }
   assert.deepEqual(about(warnings(context("In progress 2026-11-20"))), [], "an area still in Step 3 is not asked yet");
 });
+
+test("a data model reads at a glance: an At a glance section, and diagrams of twelve tables or fewer", async () => {
+  const { modelShape, DIAGRAM_TABLES } = await import("../lib/docs/check.mjs");
+  assert.deepEqual(modelShape("t.md", TEMPLATE), [], "the kit's template is the shape");
+  assert.deepEqual(modelShape("t.md", "# App: data model\n\nThis area stores nothing: it reads the register.\n"), [], "a model that stores nothing is left alone");
+  const big = ["```mermaid", "erDiagram", ...Array.from({ length: DIAGRAM_TABLES + 1 }, (_, n) => `  t${n} ||--o{ t${n + 1} : has`), "```"].join("\n");
+  const flat = `# App: data model\n\n## Entities\n\n${big}\n`;
+  const said = modelShape("docs/app/data-model.md", flat);
+  assert.match(said[0], /docs\/app\/data-model\.md: no "## At a glance" section/);
+  assert.match(said[1], /docs\/app\/data-model\.md:5: a diagram of 14 tables, over 12; draw one small diagram for each part/);
+  assert.deepEqual(modelShape("x", `# X\n\n## At a glance\n\n- **Store.** SQLite.\n\n## Part\n\n${["```mermaid", "erDiagram", "  a ||--o{ b : has", "```"].join("\n")}\n`), []);
+});
+
+test("each database the kit knows has its conventions to copy, under the data rules' limits", async () => {
+  const { readdirSync } = await import("node:fs");
+  const dir = new URL("../templates/data-engines/", import.meta.url);
+  assert.deepEqual(readdirSync(dir).sort(), ["mongodb.md", "mysql.md", "postgres.md", "sqlite.md"]);
+  for (const file of readdirSync(dir)) {
+    const text = readFileSync(new URL(file, dir), "utf8");
+    assert.match(text, /^### \w+/, `${file} starts with its heading, to sit under the project's part`);
+    assert.match(text, /\*\*(Table|Collection) names\.\*\* <Singular or plural: pick one\.>/, `${file} asks the project to pick`);
+    for (const line of text.split("\n")) assert.ok(line.split(/\s+/).length <= 60, `${file}: ${line.slice(0, 40)}`);
+  }
+  const standards = readFileSync(new URL("../docs/workflow/data-standards.md", import.meta.url), "utf8");
+  assert.match(standards, /^<!-- wf:local data -->$/m, "the project's part, which docs sync keeps");
+  for (const id of ["DATA-NAME", "DATA-KEY", "DATA-TYPE", "DATA-NULL", "DATA-FK", "DATA-CHECK", "DATA-MIGRATE"]) assert.match(standards, new RegExp(`\\*\\*${id}\\.\\*\\*`));
+});

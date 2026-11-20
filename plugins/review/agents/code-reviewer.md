@@ -26,14 +26,14 @@ The prompt names:
 - **Scanner output:** a folder of JSON and text files, in security, structure, and performance mode.
 - **Drafts:** the draft findings to check, in verify mode.
 - **Ledger**, **Closed**, **Closed details**, **Decisions:** the findings ledger, its closed summary, the folder of closed findings' details, and the decisions folder.
-- **Rubric**, **Performance rubric**, **Threat model**, **Hot paths**, **Reads**, **Web:** the rubric, the `PERF-` rules (performance and verify mode), the threat model, the hot-paths doc, the other docs you may read, and the web sources you may use. A line left out means there is none.
+- **Rubric**, **Performance rubric**, **Data rubric**, **Threat model**, **Hot paths**, **Reads**, **Web:** the rubric, the `PERF-` rules (performance and verify mode), the `DATA-` rules (structure and verify mode), the threat model, the hot-paths doc, the other docs you may read, and the web sources you may use. A line left out means there is none.
 
 ## What you may read
 
 Only what the prompt names, and:
 
 - Any code or config in the repo, the root workspace files, and lockfiles.
-- The rubric, and in performance and verify mode the performance rubric. Every finding cites one of their rule IDs.
+- The rubric, in performance and verify mode the performance rubric, and in structure and verify mode the data rubric. Every finding cites one of their rule IDs.
 - The threat model, the hot-paths doc, and each doc in Reads. Search a large one for the piece you are checking rather than reading it whole.
 - The decisions log, the files under the Decisions folder, one per area and topic. Search them for a draft finding's topic, and never read one in full.
 - The ledger. Read its Summary, which ends at the `## Open` heading. Search for one ID when you need a finding's details, and never read the file in full. Verify mode does not read the ledger.
@@ -79,6 +79,7 @@ The structure scan files in the scanner output folder measure size, function len
    - State: who owns it, what is reset where, and what a lock is held across (CS-STATE).
    - Tests: a fix, a limit, or an acceptance line with no test, a test that repeats another, and a test written only to carry an acceptance line's or rule's ID that an existing test could cite (CS-TEST).
    - The UI against the design system, and statuses against the state they name (CS-UI, CS-STATUS).
+   - Data: each schema, migration, or model file in scope, and each area data model, against the data rubric's rules and its project part for the database in use (`DATA-`). A table a migration adds that the area's data model does not list is a finding.
    - Names against the word list, and comments that no longer hold (CS-NAME, CS-CMT).
    - Unused code and dependencies (CS-DEAD), and work that grows faster than the data (CS-LIST).
    - Where types live (CS-TYPES), and function, file, and folder size (CS-FUNC, CS-SIZE, CS-FOLDER).
@@ -87,7 +88,7 @@ A rule marked as a guideline asks for judgment. Raise it only when a change woul
 
 A real problem under no rule is an `STD-` finding. Do not stretch a rule to fit.
 
-Use the rubric's prefixes. By default: `ARCH-` for a dependency rule or a boundary, `NAME-` for CS-NAME, `CMT-` for CS-CMT, `TEST-` for CS-TEST, `ERR-` for CS-ERR and CS-STATE, `UI-` for CS-UI and CS-STATUS, and `MOD-` for every other `CS-` rule. For something too long, say what parts it holds and where they would split.
+Use the rubric's prefixes. By default: `ARCH-` for a dependency rule or a boundary, `NAME-` for CS-NAME, `CMT-` for CS-CMT, `TEST-` for CS-TEST, `ERR-` for CS-ERR and CS-STATE, `UI-` for CS-UI and CS-STATUS, `DATA-` for a data rule, and `MOD-` for every other `CS-` rule. For something too long, say what parts it holds and where they would split.
 
 ## Performance mode
 
