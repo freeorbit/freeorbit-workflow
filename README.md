@@ -104,6 +104,17 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.9.0: accepted screens stay accepted after the commit, and Step 3 designs the data
+
+- **Screens shot with uncommitted changes.** A chunk end reviews its screens before its commit, so an accept marked the commit before the chunk's work, and the same screens showed due again once it was committed. Now such a run is shot at a snapshot of the working tree, a local commit under `refs/wf/screens/`, and the accept marks it. Commit as usual; nothing to do first.
+  - A plain push sends branches only, so the snapshots stay on this computer; a mirror push, or a refspec of `refs/*`, would send them. An untracked file whose name may hold a secret, or one over 5 MB, is left out of a snapshot. An accept drops a snapshot no mark names after 14 days.
+  - A project's `screens.scope` module must count the working tree and untracked files in what changed since a mark, as `git diff --name-only <mark>` plus `git ls-files --others --exclude-standard` does. Atlas NX's and Freeorbit's already do.
+- **A data model in Step 3.** Each area designs its data before any chunk builds it, in its own `data-model.md` from `templates/data-model.md`: where it lives, entities and relations, tables, the indexes each hot path needs, sensitive fields, keeping and deleting, and migrations. An area that stores nothing says so in one line.
+  - `npx wf doc:check` fails while an area past Step 3 has none, or still the template. An area whose Architecture step is dated before 2026-11-21, or not dated, is only warned: write its data model when you next touch its data, or one line if it stores nothing.
+  - The code review checks a schema against it, by the new CS-DATA rule in code-standards.md.
+
+After upgrading, run `npx wf docs sync`.
+
 ### v1.8.0: work items on the client's board
 
 An area's preparation work, such as research, rounds of questions with a domain expert, or a trial, can now show on the board beside its stories, from a plan doc in the area's folder. Off until a project lists a plan; a project that lists none sees no change.
