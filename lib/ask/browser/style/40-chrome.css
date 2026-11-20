@@ -87,6 +87,11 @@ dialog.keys td:first-child { white-space: nowrap; width: 1%; }
 .state.answered { color: var(--ok); }
 .state.status { color: var(--info); border-color: var(--info); }
 .item-row.answered { opacity: .72; }
+.item-wrap { position: relative; }
+.item-wrap .archive { position: absolute; right: 10px; bottom: 8px; }
+.item-wrap .item-row { padding-right: 96px; }
+.item-row.archived { opacity: .6; }
+.inbox .undo { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
 .sess { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 20px 0 6px; }
 
 /* Entrances: menus, dialogs, the send panel, notices, and the receipt */

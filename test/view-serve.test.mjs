@@ -15,8 +15,9 @@ import { askState, checkAnswers } from "../lib/ask/answers.mjs";
 import { EXAMPLES } from "../lib/ask/index.mjs";
 import { runView } from "../lib/view/command.mjs";
 import { buildPage } from "../lib/ask/page.mjs";
-import { answersPath, readSpec } from "../lib/ask/store.mjs";
+import { answersPath, archivedAsked, archivePath, readSpec } from "../lib/ask/store.mjs";
 import { serve, servedFile } from "../lib/view/serve.mjs";
+import { clearWaiting, markWaiting } from "../lib/view/waiting.mjs";
 import { readSettings, settingsFile, writeSettings } from "../lib/view/settings.mjs";
 import { asker, ensureHub, hubUp, keptToken, olderVersion, projects, register, stateDir } from "../lib/view/hub.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
@@ -180,6 +181,66 @@ test("the server keeps the ask pages' settings in a file, puts them in each page
   } finally {
     await close();
   }
+});
+
+test("an ask archived in the inbox leaves it, and the asks menu, until it is asked again; only the inbox's token may archive", async () => {
+  const raw = example("decision");
+  const { root, view } = project(raw);
+  const { spec } = buildPage(root, view, raw, KIT_KINDS, {}, {});
+  const key = projectKey(root);
+  const entry = { key, view, name: "demo", kinds: KIT_KINDS };
+  const { port, pageToken, close } = await serve({ resolve: (k) => (k === key ? entry : null), list: () => [entry], check: checkAnswers, stateOf: askState, port: 0, log: () => {} });
+  const base = `http://127.0.0.1:${port}`;
+  const inboxOf = async (query = "") => (await fetch(`${base}/__hub/inbox${query}`)).json();
+  const ids = async (query = "") => (await inboxOf(query)).items.map((i) => i.id);
+  const post = (body, tok, headers = {}) => fetch(`${base}/__hub/archive`, { method: "POST", headers: { "Content-Type": "application/json", "X-WF-Token": tok, ...headers }, body: JSON.stringify(body) });
+  const inboxToken = pageToken("__hub", "inbox");
+  try {
+    const { asked } = (await inboxOf()).items[0];
+    assert.deepEqual(await ids(), [spec.id]);
+    // Refused: a page's own token, another origin, a page not there, a body that is not one, a GET, and text.
+    assert.equal((await post({ key, id: spec.id, asked, archived: true }, pageToken(key, spec.id))).status, 403);
+    assert.equal((await post({ key, id: spec.id, asked, archived: true }, inboxToken, { Origin: "http://evil.test" })).status, 403);
+    assert.equal((await post({ key, id: "no-such-page", asked, archived: true }, inboxToken)).status, 422);
+    assert.equal((await post({ key, id: "../../x", asked, archived: true }, inboxToken)).status, 422);
+    assert.equal((await post({ key, id: spec.id, asked, archived: "yes" }, inboxToken)).status, 422);
+    assert.equal((await fetch(`${base}/__hub/archive`)).status, 405);
+    assert.equal((await post({ key, id: spec.id, asked, archived: true }, inboxToken, { "Content-Type": "text/plain" })).status, 415);
+    // Asked again since it was shown: the newer page is not archived unseen.
+    assert.equal((await post({ key, id: spec.id, asked: "2000-01-01T00:00:00.000Z", archived: true }, inboxToken)).status, 409);
+    assert.deepEqual(await ids(), [spec.id], "nothing archived yet");
+    // Archived: out of the inbox and the asks menu's short list; with all, apart.
+    assert.equal((await post({ key, id: spec.id, asked, archived: true }, inboxToken)).status, 200);
+    const both = await inboxOf("?archived=all");
+    assert.deepEqual([await ids(), await ids("?limit=30"), both.items.length, both.archived.map((i) => i.id)], [[], [], 0, [spec.id]]);
+    // An agent that starts waiting on it brings it back while it waits; one waiting cannot be archived.
+    markWaiting(view, spec.id);
+    assert.deepEqual(await ids(), [spec.id], "an agent waits on it, so it shows");
+    assert.equal((await post({ key, id: spec.id, asked, archived: false }, inboxToken)).status, 200);
+    const refused = await post({ key, id: spec.id, asked, archived: true }, inboxToken);
+    assert.deepEqual([refused.status, (await refused.json()).error], [409, "an agent is waiting on it; answer it, or stop the agent, first"]);
+    clearWaiting(view, spec.id);
+    // Archived, then asked again: the archive covered the page as it was, so it shows again.
+    assert.equal((await post({ key, id: spec.id, asked, archived: true }, inboxToken)).status, 200);
+    assert.deepEqual(await ids(), []);
+    await new Promise((r) => setTimeout(r, 20));
+    buildPage(root, view, { ...raw, title: `${raw.title} again` }, KIT_KINDS, {}, {});
+    assert.deepEqual(await ids(), [spec.id], "asked again, it is back");
+  } finally {
+    await close();
+  }
+});
+
+test("an archive mark that is not one covers nothing", () => {
+  const view = mkdtempSync(join(tmpdir(), "wf-archive-"));
+  mkdirSync(join(view, "ask", "x"), { recursive: true });
+  assert.equal(archivedAsked(view, "x"), null);
+  writeFileSync(archivePath(view, "x"), "not json");
+  assert.equal(archivedAsked(view, "x"), null);
+  writeFileSync(archivePath(view, "x"), JSON.stringify({ asked: 5 }));
+  assert.equal(archivedAsked(view, "x"), null);
+  writeFileSync(archivePath(view, "x"), JSON.stringify({ asked: "2026-11-21T00:00:00.000Z" }));
+  assert.equal(archivedAsked(view, "x"), "2026-11-21T00:00:00.000Z");
 });
 
 test("the registry keeps projects by key, and drops a root that is no longer a project", () => {
