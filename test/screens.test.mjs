@@ -180,7 +180,7 @@ test("each screen is due from its own mark: the project's module is asked once a
   assert.deepEqual([asked.sort(), marks], [["base", "x"], 1], "the base is asked about, but is not a mark");
   // A screen left open before marks is due whatever changed, on the deep list only, until an accept takes it.
   const held = await dueLists(["a", "b", "c"], { ...state, pending: ["a", "c", "gone"] }, ["wide-default"], listsAt, "base");
-  assert.deepEqual([new Set(held.light.keys()), held.deep.get("a")], [new Set(["b"]), ["left open before marks"]]);
+  assert.deepEqual([new Set(held.light.keys()), held.deep.get("a")], [new Set(["b"]), ["left out of an accept"]]);
   assert.ok(!held.deep.has("gone"), "a screen off the list is not due");
   assert.deepEqual(afterAccept({ version: 2, marks: {}, pending: ["a", "c"] }, { a: ["wide-default"] }, "x").pending, ["c"]);
   assert.ok(!("pending" in afterAccept({ version: 2, marks: {}, pending: ["a"] }, { a: ["wide-default"] }, "x")), "none left, none kept");
@@ -483,9 +483,10 @@ test("a partial accept marks the screens it took; those left out stay due and li
   assert.deepEqual(state.marks, { a: { "wide-default": head }, c: { "wide-default": head } }, "b keeps no mark, so it is due from the base");
   assert.equal(state.version, 2);
   assert.deepEqual(read(join(root, ".cache/screens/to-read.json")).map((item) => item.name), ["b"], "b is still listed to read");
-  assert.equal(await say("scope", "--names", "light"), "b", "b stays on the light list; a left the deep one");
-  assert.equal(await say("scope", "--names", "deep"), "b");
-  assert.match(await say("scope"), /Light: 1 screens[\s\S]*Deep: 1 screens, 0 of them only through shared code[\s\S]*1 commit now; the last chunk-end run was at \w{7}/);
+  assert.equal(await say("scope", "--names", "light"), "", "b left out is pending: on the deep list only, whatever changed");
+  assert.equal(await say("scope", "--names", "deep"), "b", "a left the deep list");
+  assert.deepEqual(read(statePath(root)).pending, ["b"]);
+  assert.match(await say("scope"), /Light: 0 screens[\s\S]*Deep: 1 screens, 1 of them only through shared code[\s\S]*1 commit now; the last chunk-end run was at \w{7}[\s\S]*due until accepted: 1 screens/);
 
   // b is fixed and accepted from the same run: nothing is due.
   assert.match(await say("--accept", "b"), /Accepted 1 screens\.[\s\S]*Marked 1 screens/);
@@ -533,11 +534,74 @@ test("an accept marks where the run was shot, takes the unchanged screens left o
   assert.equal(state.marks.c["wide-default"], shotAt, "c was left out but unchanged, so it is taken");
   assert.ok(!state.marks.b, "b changed and was left out, so it keeps no mark");
   assert.equal(state.marks.d["wide-default"], shotAt, "d is not due, so its mark moves with the accept");
-  assert.ok(!("pending" in state), "a pending screen off the list goes");
+  assert.deepEqual(state.pending, ["b"], "b, left out changed, is pending; the pending screen off the list goes");
   assert.deepEqual(state.deferred, { count: 1, at: "1234567" }, "a run outside chunk end leaves a deferral");
   assert.deepEqual(JSON.parse(readFileSync(join(latest, "hashes.json"), "utf8")), { b: { "wide-default": "b1" } }, "only the changed screen left out stays to accept");
   assert.equal(JSON.parse(readFileSync(join(latest, "run.json"), "utf8")).at, shotAt, "and keeps where it was shot");
   assert.notEqual(later, shotAt);
+});
+
+test("an accept settles nothing from a run with uncommitted changes, never moves a mark back, holds a screen that did not shoot, and counts a chunk end once", async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-settle-")));
+  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+  const commit = (m) => git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", m);
+  git("init", "-q", "-b", "main");
+  commit("one");
+  const first = git("rev-parse", "HEAD");
+  commit("two");
+  const second = git("rev-parse", "HEAD");
+  const config = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }], screens: { scope: "scope.mjs" } });
+  mkdirSync(join(root, "docs/app/design"), { recursive: true });
+  const rows = ["a", "b", "c", "d"].map((name) => `| \`${name}\` | X-1 | \`s › go #/\` | it |`).join("\n");
+  writeFileSync(join(root, "docs/app/design/screens.md"), `| Screen | Stories | Reach | Shows |\n| --- | --- | --- | --- |\n${rows}\n`);
+  writeFileSync(join(root, "scope.mjs"), "export const lists = () => ({ light: new Map(), deep: new Map() });\n");
+  const record = recordDir(root);
+  mkdirSync(record, { recursive: true });
+  writeFileSync(join(record, "accepted.json"), JSON.stringify({ b: { "wide-default": "b0" } }));
+  const latest = join(root, ".cache/screens/latest");
+  mkdirSync(latest, { recursive: true });
+  const accept = async (run, hashes, args = []) => {
+    writeFileSync(join(latest, "hashes.json"), JSON.stringify(hashes));
+    writeFileSync(join(latest, "run.json"), JSON.stringify({ shots: ["wide-default"], failed: 0, unreached: [], ...run }));
+    const log = console.log;
+    console.log = () => {};
+    try {
+      await screens(root, config, ["--accept", ...args]);
+    } finally {
+      console.log = log;
+    }
+    return JSON.parse(readFileSync(statePath(root), "utf8"));
+  };
+  // c's mark is past the first commit, so an accept shot there never moves it back; d is marked at the first.
+  writeState({ version: 2, marks: { c: { "wide-default": second }, d: { "wide-default": first } }, last: null, deferred: { count: 0, at: null } }, statePath(root));
+  let state = await accept({ mode: "light", at: first, dirty: true, failedNames: ["a"] }, { b: { "wide-default": "b1" } }, ["--except", "b"]);
+  assert.deepEqual(state.marks, { c: { "wide-default": second }, d: { "wide-default": first } }, "a run with uncommitted changes settles nothing, and b was left out");
+  assert.deepEqual(state.pending, ["a", "b"], "a did not shoot and b was left out: both stay due");
+  assert.equal(state.last, first);
+  // A deferral at the next chunk end, then the leftovers accepted: the chunk end is not counted again.
+  writeState({ ...state, deferred: { count: 1, at: "1234567" } }, statePath(root));
+  state = await accept(JSON.parse(readFileSync(join(latest, "run.json"), "utf8")), { b: { "wide-default": "b1" } }, ["b"]);
+  assert.deepEqual(state.deferred, { count: 1, at: "1234567" });
+  assert.equal(state.last, first);
+  assert.deepEqual(state.pending, ["a"]);
+  // A clean run at the first commit leaves c, whose mark is not on that run's history, where it is.
+  state = await accept({ mode: null, at: first }, {});
+  assert.equal(state.marks.c["wide-default"], second, "never moved back");
+  // A clean run at the second moves d, which nothing reached, forward to it; a, pending, stays unmarked.
+  state = await accept({ mode: null, at: second }, {});
+  assert.equal(state.marks.d["wide-default"], second);
+  assert.ok(!state.marks.a, "a is pending, so not settled");
+  await assert.rejects(accept({ mode: null, at: "HEAD" }, {}), /is not a commit id/);
+});
+
+test("a git that cannot check the record's commits stops the read, so no mark is dropped", () => {
+  const notRepo = mkdtempSync(join(tmpdir(), "wf-not-repo-"));
+  const path = join(notRepo, "state.json");
+  writeFileSync(path, JSON.stringify({ version: 2, marks: { a: { "wide-default": "0123456789abcdef0123456789abcdef01234567" } } }));
+  assert.throws(() => readState(path, "origin/main", notRepo), /git could not check the screen record's commits/);
+  writeFileSync(path, JSON.stringify({ version: 2, marks: {}, pending: "a", deferred: 5, last: "HEAD" }));
+  const odd = readState(path, "origin/main", notRepo);
+  assert.deepEqual([odd.pending, odd.deferred, odd.last], [undefined, { count: 0, at: null }, null], "values that are not what the record holds are dropped");
 });
 
 test("a mark is a commit id the repository has; any other is dropped, and counted", () => {
