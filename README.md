@@ -104,6 +104,23 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.8.0: work items on the client's board
+
+An area's preparation work, such as research, rounds of questions with a domain expert, or a trial, can now show on the board beside its stories, from a plan doc in the area's folder. Off until a project lists a plan; a project that lists none sees no change.
+
+- **A story or a work item, never both.** A story is a promise someone can check by using the product. A work item leaves behind knowledge, a decision, or a tool, and comes from the plan doc. The plan holds only work that is not a story, and ends where the build order takes over.
+- **The plan doc.** `## Phase N. Title` sections, each with a one-sentence lead and a table of steps: `ID`, `Step`, `Who`, `Status`, and optional `Leaves behind` and `Unblocks`. Status starts Done, Now, Next, Later, or `Waiting on <name>`. Start one from `templates/plan.md`; the shape is in writing-docs.md, Plan docs, and `npx wf doc:check` checks it.
+- **Its own IDs.** A step's is `W-<prefix>-<nn>`, kept when it is renumbered; a phase's is `W-<prefix>-P<n>`. `npx wf id` finds both.
+- **On the board.** One group per plan. On a multi-level board each phase is an item with its steps as subitems; on a flat one each phase gets a group. A work item has its own Work ID and Work status columns, so Build and the story sync never touch it. The phase's lead is a pinned comment sync writes, and `Leaves behind` never shows.
+- **Owner.** With `board.workItems.people`, a step waiting on a named person puts them in Owner, so monday tells them, and takes them out when it stops waiting.
+- **Replies.** `wf board feedback` reads a comment on a work item as it reads one on a story, and an open question's Story cell takes a Work ID.
+
+To turn it on, as in the kit's docs/design/board-sync.md, Turn it on:
+
+1. Bring the area's plan doc to the shape, give each step an ID, and list it in `board.workItems.plans`, such as `{ "document-analysis": "docs/areas/document-analysis/playbook.md" }`.
+2. Run `npx wf docs sync`, then `npx wf doc:check` until it passes.
+3. Run `npx --no wf board setup --create`, which adds the Work ID, Work status, Who, Status note, and Unblocks columns, then `npx --no wf board plan`.
+
 ### v1.7.0: frames render as full pages
 
 `wf design render` shot each frame as one window, so a key screen drawn as a full page, such as a 1440×1720 one, lost everything below the window.

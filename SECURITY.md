@@ -10,7 +10,7 @@ Open a private security advisory on this repository (Security, then "Report a vu
 
 - **No dependencies.** The package has none, so installing it adds no third-party code. The scripts use only the Node and Python 3 standard libraries.
 - **The network only where a command says so.** Every other script makes no network call.
-  - `wf board` talks to monday.com's API (`api.monday.com`), with the token named by `board.tokenEnv`. It sends the stories, their acceptance lines, the frames and built screens, the open questions the board shows, and the bot's replies.
+  - `wf board` talks to monday.com's API (`api.monday.com`), with the token named by `board.tokenEnv`. It sends the stories, their acceptance lines, the frames and built screens, the open questions the board shows, and the bot's replies. With `board.workItems.plans` set, it also sends each listed plan doc's phases (title and lead) and steps (text, who does it, status, and the stories each unblocks), never their Leaves behind, and with `board.workItems.people` it assigns those people's monday user ids in Owner.
   - `wf doctor` and `wf signoffs` run `gh`, which talks to GitHub.
   - `wf scan` runs the commands a project lists in its own config, which may reach the network.
   - The ask-pages server listens on `127.0.0.1` only.

@@ -27,7 +27,7 @@ One item per story, grouped the way the story file groups them.
 | Chunk | Text | The chunk rows that list the story, such as `CH-01-fe, CH-01-be` |
 | Story | Long text | The "As a…" sentence only, so it reads on the Kanban card |
 | PR | Link | The pull request of the story's lane finished last, as in [PR links](#pr-links) |
-| Owner | People | Assigned by hand on the board. `wf board setup` makes it, and sync never reads or writes it |
+| Owner | People | Assigned by hand on the board. `wf board setup` makes it, and sync never reads or writes it on a story. On a work item it is sync's, as in [Work items](#work-items) |
 | Client review | Status | The client's and the team's say, as in [Client review](#client-review). `wf board setup` makes it once, and sync never reads or writes it |
 | Frames | File | Every frame picture whose screen-list row names the story, in order, as in [Frames](#frames). Sync owns it, while `board.show.frames` is on |
 | Built screens | File | The built app's picture of each screen-list row naming the story, once its Build is Built, as in [Built screens](#built-screens). Sync owns it, while `board.show.screenshots` is on |
@@ -179,6 +179,84 @@ The bot posts with the owner's token, so it signs as a helper of its own, friend
 - **Found by its marker, not its words.** A bot reply is one by the token's user that starts with 🤖, and the pinned comment is the bot's comment with the heading line. So the wording can change without breaking either.
 - **Testing.** Each command takes an injected `fetch`, as `wf doctor` takes an injected `gh`, so tests run on fixture Markdown and recorded responses, never the network.
 
+## Work items
+
+Weeks of work can come before any story of an area can be built: profiling documents, rounds of questions with a domain expert, a trial, the architecture. Work items show that work to the client, so they see the complexity behind a short list of stories, and a step that waits on them has an item to reply on. Built in v1.8.0; Atlas NX's document-analysis area asked for it (2026-11-20).
+
+- **One kind each.** A piece of work is on the board once, as a story or as a work item.
+  - A **story** is a promise someone can check by using the product. It is unchanged.
+  - A **work item** leaves behind knowledge, a decision, or a tool. It comes from the area's plan doc, never from a stories file.
+- **Off by default.** A work item exists only for an area listed in `board.workItems.plans`. With none listed, nothing here runs and no query changes.
+- **Why not by hand.** A trial on Atlas NX's board, a group with an item per phase and a pinned comment listing its steps, failed twice over.
+  - The status sat in three places, the plan doc, the label, and the comment, kept in step by hand.
+  - Three phases were "build these stories", so that work showed once as a phase and again as stories.
+
+### The plan doc
+
+One Markdown file per area, defined in the workflow's [writing-docs.md](../workflow/writing-docs.md#plan-docs), with a template in `templates/plan.md`. It holds only work that is not a story, and ends where the build order takes over.
+
+- **A phase.** A `## Phase N. Title` heading, a one-sentence lead, and a table with one row per step. Other `##` sections, such as "Where we are", are the team's and never read.
+- **A step row.** `ID`, `Step`, `Who`, and `Status`, with `Leaves behind` and `Unblocks` optional, in any order after `ID`.
+  - `Step` is its number and text, such as `1.7 Get four sets of documents`, its number under the phase's.
+  - `Status` starts with a status word, then, after a comma or colon, anything the client should read, such as `Later: after 1.7`.
+- **The status words.** Done, Now (in hand), Next (can start once someone picks it up), Later (waits on an earlier step), and Waiting, always `Waiting on <name>`, for a step that waits on a person outside the work, such as the client.
+- **Checked.** `wf doc:check` checks each listed plan doc's shape, and `wf board plan` refuses to write while any check fails.
+  - The client reads the lead, the step text, Who, and Status, so none may hold an ID, a link, a backtick, or a file path: no decision or question IDs, no paths, no code names.
+  - A story ID in a step's text fails too: a step that builds a story belongs to the build order, and one it unblocks names it under `Unblocks`. This is the one scripted check of "only work that is not a story"; it raises an alarm only where an ID would leak anyway.
+
+### IDs
+
+A step's ID is its own, `W-<prefix>-<nn>` (the owner's call, 2026-11-20), in the row's first cell, so `wf id` finds where it is defined. A phase's is `W-<prefix>-P<n>`, from its heading's number.
+
+- **Kept when renumbered.** A step renumbered from 1.7 to 1.8 keeps its ID, so its item is renamed in place and the client's replies on it stay. An ID is never reused.
+- **A phase keeps its number.** A new phase goes last.
+- **Moving to another phase needs a new ID** on a multi-level board: monday's API at `2026-10` cannot move a subitem under another parent. `wf board plan` says so, and the old ID retires.
+
+### On the board
+
+- **One group per plan.** Titled by `board.workItems.group`, "<Area> · Behind the scenes", where `<Area>` is the name the area's stories' groups use.
+- **Multi-level board.** Each phase is an item, and its steps are its subitems, made with `create_subitem`. Atlas NX's board is multi-level.
+- **Flat board.** One group per phase, `<group> · Phase N. Title`, with the phase's item first and each step an item beside it.
+- **A phase's item.** Named `Phase 1. Understand the documents`. Its Work status is worked out from its steps: Done when all are, else Waiting, Now, or Next when any step is, else Later.
+- **The lead.** In the phase item's pinned comment, written by sync as the acceptance comment is: the bot's line to readers in a quote block, a bold "About this phase" heading, and the lead. Found by that heading, edited when it differs, pinned again when it is not.
+- **A step's item.** Named by its `Step` cell. Its own columns:
+
+| Column | Type | From |
+| --- | --- | --- |
+| Work ID | Text | The step's ID; how sync finds the item. Never the Story ID column |
+| Work status | Status | The step's status word, as `board.workStatuses` labels it. Build stays for stories |
+| Who | Text | The `Who` cell, as written |
+| Status note | Text | The whole `Status` cell when it says more than its word, such as "Waiting on Glen: asked 2026-11-20" |
+| Unblocks | Text | The `Unblocks` cell's story IDs, such as "ANL-03, ANL-04" |
+| Owner | People | While the step is Waiting on someone in `board.workItems.people`, that person, so monday tells them. Otherwise empty |
+
+- **Not shown.** `Leaves behind` is the team's: it names files and decisions (the owner's call, 2026-11-20).
+- **Owner.** With `board.workItems.people` set, Owner on a work item is sync's: it puts in the waited-on person and takes them out when the step stops waiting, sending `null` to clear. Owner on a story stays the team's, never written.
+- **Unblocks** names live stories only; `wf board plan` refuses one that is not (the owner's call, 2026-11-20).
+- **Setup.** `wf board setup` checks and `--create` makes the Work ID, Work status, Who, Status note, and Unblocks columns while a plan is listed, with Work status's labels and Done marked done, and its rollup off on a multi-level board, as for Build.
+
+### Sync
+
+`wf board plan` and `sync` read each listed plan doc and treat its phases and steps as they treat stories.
+
+- **Found by Work ID.** Across the board's items and, on a multi-level board, the subitems of every item with no Story ID, read 25 parents at a time with `items(ids:)`; a retired step is never a parent. Two items with one Work ID are a problem.
+  - Only a Work ID of a listed area's shape counts, and feedback takes a Story ID or Work ID only in the kit's own shape. A guest can type into either column, and that text would otherwise move an item or reach a `wf question add` line.
+  - A plan line shows board text cut to 60 characters, with control characters replaced, as a story's does.
+- **The story sync cannot reach them.** It finds items by Story ID and skips one without, so its retire rule never moves a work item, and the work sync never touches an item with a Story ID.
+- **Idempotent.** Only what differs is written: the name, each column, the group, the pinned lead.
+- **Nothing written while a problem stands.** A plan doc that fails its checks, an Unblocks that names no live story, or a step moved under another phase stops the whole sync, stories too.
+- **A run cut short** is finished by the next: each phase, step, and lead is found again by its Work ID or its heading.
+  - A phase item left with no Work ID is still found by its steps' IDs, and its ID is set again.
+- **Retired, never deleted.** A phase or step no longer in its plan doc moves to `board.retiredGroup`. A retired phase takes its steps with it.
+  - On a multi-level board a retired step leaves its phase and becomes an item of its own in that group, as monday does with a subitem moved to another group. So a step put back in the doc needs a new ID, as one moved to another phase does.
+- **In plan.** `create  W-ANL-07 1.7 Get four sets of documents  [under W-ANL-P1]`, `update  W-ANL-07  Work status: Now → Waiting`, `comment W-ANL-P1  add phase lead`, `retire  W-ANL-09  → Retired`, then a count of its own: `Work items: 3 to create, 1 to update, 1 lead comment, 0 to retire, 12 unchanged.`
+
+### Replies
+
+- **Feedback.** `wf board feedback` reads a comment on a work item, a phase's or a step's, as it reads one on a story, so the client can answer a blocker where it sits. The entry's story is the Work ID.
+- **Logged against it.** An open question's Story cell takes a Work ID, so `wf question add … W-ANL-07` logs the reply against its step.
+- **Not yet.** A client question naming a work item is not posted there; that waits for a project to ask for it.
+
 ## Config
 
 An optional `board` section; a project without it has no board commands.
@@ -206,6 +284,11 @@ An optional `board` section; a project without it has no board commands.
 | `design.built` | `"docs/design/built"` | Where `wf screens --accept` keeps each screen's built picture, as `<area>/<screen>.png` |
 | `board.show.clientQuestions` | `true` | Open questions the client answers, as updates on their stories |
 | `board.show.analysisSamples` | `false` | Synthetic analysis output, for a product that makes it |
+| `board.workItems.plans` | `{}` | Each area with a plan doc, by its id, and the doc's path, such as `{ "document-analysis": "docs/areas/document-analysis/playbook.md" }`. Empty turns work items off |
+| `board.workItems.group` | `"{area} · Behind the scenes"` | The group title of an area's work items; `{area}` is the area's name as its stories' groups show it |
+| `board.workItems.people` | `{}` | Names a `Waiting on <name>` may give, each with their monday user id, so Owner tells them. Empty, and sync never writes Owner |
+| `board.columns.workId` … `unblocks`, `board.titles.*` | `work_id` "Work ID", `work_status` "Work status", `work_who` "Who", `work_note` "Status note", `unblocks` "Unblocks" | The work item columns |
+| `board.workStatuses` | Done, Now, Next, Later, Waiting | Each status word's label on Work status; `done` is marked done |
 
 - **The client board.** Guests reach only a shareable board (`board_kind` `share`), and making one may need the account's admin.
   - For Atlas NX, the owner asks the restivegroup.monday.com admin for one and invites the client there as a guest; `boardId` points at it.
@@ -251,6 +334,13 @@ For a project on the kit, once its stories are ready for the client.
 5. In GitHub, create the `board` environment, set its deployment branches to `main` only, and add `MONDAY_API_TOKEN` to it as a secret.
 6. Run `npx wf github sync`, and merge the workflow it writes. The merge runs the first sync.
 
+To show an area's work items too, once its stories are on the board:
+
+1. Copy the kit's `templates/plan.md` into the area's folder, or bring its plan doc to that shape, and give each step an ID.
+2. List it in `board.workItems.plans`, and run `npx wf doc:check` until it passes.
+3. To have Owner tell the person a step waits on, add them to `board.workItems.people` with their monday user id.
+4. Run `npx --no wf board setup --create`, then `npx --no wf board plan`, and check what it would write. Items made by hand for the same work are not touched; delete them on the board.
+
 `wf github` writes files only, so step 5 is by hand, or with `gh`:
 
 ```bash
@@ -261,9 +351,9 @@ gh secret set MONDAY_API_TOKEN --env board
 
 ## What never goes on the board
 
-The board shows stories, not the project's internals.
+The board shows stories and work items, not the project's internals.
 
-- **On the board.** The "As a…" sentence and the acceptance lines as written, status, chunk, the pull request link, and the extras `show` turns on.
+- **On the board.** The "As a…" sentence and the acceptance lines as written, status, chunk, the pull request link, and the extras `show` turns on. For a work item, its phase's lead and its step's text, Who, Status, and Unblocks, each checked to hold no ID, link, or path.
 - **Never.** The threat model, review findings, SEC rules, decisions, test-data specs, and anything under `docs/research/`.
 
 ## Risks
@@ -286,6 +376,13 @@ The board shows stories, not the project's internals.
 - **One person's token.** The bot acts as the owner, so every reply and change shows their name, and it stops when they leave. A service account would fix both, at the cost of a seat.
 - **API versions.** monday retires a version about a year after it is current. `board.apiVersion` pins one, and `wf doctor` warns when monday lists it as deprecated.
 - **A guest edits the board.** One way means sync overwrites a guest's change to a synced column on the next run. `wf board plan` lists each such change first, so it is seen, not lost silently.
+- **Work items on a live board.** Tried on Atlas NX's board on 2026-11-20 with dummy items only, `ZZT-01` and `W-ZZT-*`, nothing else touched:
+  - Setup made the five columns, and turned off the rollup monday gave the new Work status.
+  - Create, a second plan with nothing to do, a renumbered step renamed in place, a status and the lead edited, and Owner set and cleared all held.
+  - A subitem moved to the Retired group left its phase and became a top-level item there, so the next plan found nothing to retire. A retired phase kept its step.
+  - monday kept a parent's values when its first subitem was made, and copied none to it.
+  - A comment on a subitem posted, and feedback read it back.
+  - Not tried: assigning a guest in a People column, which the docs list only for people and teams. The test assigned the token's own user.
 
 ## Build order
 
@@ -294,3 +391,4 @@ The board shows stories, not the project's internals.
 3. The CI workflow, through `wf github`, and the PR column from git history. Built in v0.33.0; the workflow is checked by tests only until a project turns it on.
 4. `wf board feedback`, `wf board reply`, and the `board-feedback` skill. Built in v0.34.0; the guest path is checked by tests, since the token's own user posts as a member.
 5. Frames, then screenshots of the built screens. Frames built in v0.37.0, and built screens in v0.38.0.
+6. Work items from a plan doc, in [Work items](#work-items). Built in v1.8.0, and tried on Atlas NX's board with dummy items, as under Risks.
