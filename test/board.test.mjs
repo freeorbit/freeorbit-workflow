@@ -11,8 +11,10 @@ import { statusOf, storiesDone, storyRows } from "../lib/board/status.mjs";
 import { mondayClient } from "../lib/board/monday.mjs";
 import { difference, LONG_TEXT_LIMIT, plan, runBoard } from "../lib/board/index.mjs";
 import { setupProblems } from "../lib/board/setup.mjs";
-import { commentHtml, flat, tags, wanted } from "../lib/board/wanted.mjs";
+import { commentHtml, wanted } from "../lib/board/wanted.mjs";
+import { flat, plainOfHtml, tags } from "../lib/board/items.mjs";
 import { HEADING } from "../lib/board/voice.mjs";
+import { asMondayKeeps, updatesFor } from "./fixtures/board/monday-keeps.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -84,7 +86,8 @@ test("the wanted items carry the name, group, columns, and comment", () => {
   assert.ok(html.startsWith(`<blockquote><p>🤖 I'm Orbit`));
   assert.match(html, /<\/blockquote><p><strong>Acceptance criteria<\/strong><\/p><p>As a Field User/);
   assert.match(html, /<li>Given 5 failed tries.*<ul><li>While that email is slowed down/);
-  assert.match(html, /<code>plain text<\/code>/);
+  assert.match(html, /kept in plain text,/, "code goes as its words: monday drops <code>");
+  assert.ok(!html.includes("<code>"));
   assert.match(html, /&quot;|"Email or password is incorrect"/);
   const drafting = wanted(context({ "docs/log/build-order.md": fixture("build-order.md").replace("| Done 2026-11-01 |", "| In progress 2026-11-01 |") }));
   assert.ok(drafting.every((story) => story.values.status === "Drafting"));
@@ -95,8 +98,8 @@ test("a comment compares equal to monday's plain text of it", () => {
   const asMondayShows = `🤖 I’m Orbit, and I keep this list matched to the project’s records. Edits here get replaced, so for a question or a change, just reply below and the team will pick it up.\n\n${HEADING}\n\n${story.as}\n\n${story.acceptance
     .flatMap((line) => [line.text, ...line.sub])
     .join("\n")}`;
-  assert.equal(flat(asMondayShows), flat(commentHtml(story)));
-  assert.notEqual(flat(asMondayShows.replace("15 minutes", "20 minutes")), flat(commentHtml(story)));
+  assert.equal(flat(asMondayShows), flat(plainOfHtml(commentHtml(story))));
+  assert.notEqual(flat(asMondayShows.replace("15 minutes", "20 minutes")), flat(plainOfHtml(commentHtml(story))));
 });
 
 // ---- a fake monday behind fetch ----
@@ -128,13 +131,13 @@ function fakeMonday({ columns = COLUMNS, views = [{ name: "Build" }, { name: "Cl
     updates: [...item.updates].reverse(),
   });
   const textOf = (value) => (value && typeof value === "object" ? (value.label ?? value.text ?? value.url ?? "") : String(value ?? ""));
-  const plain = (html) => html.replace(/<\/(p|li)>/g, "\n").replace(/<[^>]+>/g, "").replace(/\n+$/, "");
   const fetch = async (url, init) => {
     state.auth.push(init.headers.Authorization);
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/(me|boards|next_items_page|create_group|create_item|change_multiple_column_values|move_item_to_group|create_update|edit_update|pin_to_top|create_column|create_view_table|update_status_column)\b/)[1];
+    const op = query.match(/(me|boards|next_items_page|create_group|create_item|change_multiple_column_values|move_item_to_group|create_update|edit_update|pin_to_top|create_column|create_view_table|update_status_column|updates)\b/)[1];
     state.ops.push(op);
     const reply = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
+    if (op === "updates") return reply({ updates: updatesFor(state.items, v.i) });
     if (op === errorOn) return { status: 200, text: async () => JSON.stringify({ errors: [{ message: `refused, token ${TOKEN}` }] }) };
     if (op === "me") return reply({ me: { id: "7", name: "Owner" } });
     if (op === "boards") return reply({ boards: [{ id: "42", name: "Test board", board_kind: "share", columns: state.columns, groups: state.groups, views: state.views, items_page: { cursor: state.items.length > 2 ? "c1" : null, items: state.items.slice(0, 2).map(shown) } }] });
@@ -164,13 +167,13 @@ function fakeMonday({ columns = COLUMNS, views = [{ name: "Build" }, { name: "Cl
       return reply({ move_item_to_group: { id: item.id } });
     }
     if (op === "create_update") {
-      const update = { id: `u${id()}`, text_body: plain(v.b), creator_id: "7" };
+      const update = { id: `u${id()}`, text_body: asMondayKeeps(v.b).text_body, creator_id: "7" };
       item.updates.push(update);
       return reply({ create_update: { id: update.id } });
     }
     if (op === "edit_update") {
       const update = state.items.flatMap((each) => each.updates).find((each) => each.id === v.u);
-      update.text_body = plain(v.b);
+      update.text_body = asMondayKeeps(v.b).text_body;
       return reply({ edit_update: { id: update.id } });
     }
     if (op === "pin_to_top") return reply({ pin_to_top: { id: v.u } });
@@ -243,7 +246,7 @@ test("sync sends only what changed, edits the comment in place, and retires a re
   const synced = await run(["sync"], monday, texts);
   assert.equal(synced.code, 0, synced.out.join("\n"));
   const ops = monday.state.ops.slice(before).filter((op) => !["boards", "next_items_page", "me"].includes(op));
-  assert.deepEqual(ops, ["change_multiple_column_values", "edit_update", "create_group", "move_item_to_group"]);
+  assert.deepEqual(ops, ["change_multiple_column_values", "edit_update", "create_group", "move_item_to_group", "updates"], "an edited comment is read back once every change is written, to see monday kept it");
   const two = monday.state.items.find((item) => item.values.story_id === "APP-02");
   assert.equal(two.updates.length, 1, "edited, not a second comment");
   assert.match(two.updates[0].text_body, /Signing out ends this sign-in only/);
@@ -357,7 +360,7 @@ test("a pinned comment with the same words in another layout is edited to the ki
   const story = readStories(fixture("user-stories.md"), ["APP"])[0];
   const want = commentHtml(story);
   const bubble = want.replace("<blockquote><p>", '<p><span style="background-color:rgb(229, 244, 255)">').replace("</p></blockquote>", "</span></p>");
-  assert.equal(flat(bubble), flat(want), "the same words");
+  assert.equal(flat(plainOfHtml(bubble)), flat(plainOfHtml(want)), "the same words");
   assert.notEqual(tags(bubble), tags(want));
   assert.equal(tags(want.replaceAll("<li>", '<li style="color:red">')), tags(want), "monday's own attributes do not count");
 });

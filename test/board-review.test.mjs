@@ -8,6 +8,7 @@ import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { runBoard } from "../lib/board/index.mjs";
 import { wanted } from "../lib/board/wanted.mjs";
+import { updatesFor } from "./fixtures/board/monday-keeps.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -69,8 +70,9 @@ function board({ multiLevel = false, review = true, views = ["Build", "Client re
   };
   const fetch = async (url, init) => {
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|pin_to_top|update_status_column|create_column|create_view_table|change_column_title)\b/)[1];
+    const op = query.match(/\b(me|boards|create_group|create_item|change_multiple_column_values|create_update|pin_to_top|update_status_column|create_column|create_view_table|change_column_title|updates)\b/)[1];
     const ok = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
+    if (op === "updates") return ok({ updates: updatesFor(state.items, v.i) });
     if (op === "me") return ok({ me: { id: "7" } });
     if (op === "boards") {
       const ids = JSON.parse(query.match(/column_values\(ids: (\[[^\]]*\])/)[1]);

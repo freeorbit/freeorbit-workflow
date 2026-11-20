@@ -14,6 +14,7 @@ import { leakOf, phaseStatus, readPlan, readPlanDocs, readStatus } from "../lib/
 import { questionProblems } from "../lib/logs/questions.mjs";
 import { findId } from "../lib/idfind.mjs";
 import { kindOf } from "../lib/ids.mjs";
+import { asMondayKeeps, updatesFor } from "./fixtures/board/monday-keeps.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -95,7 +96,6 @@ function fakeMonday({ multiLevel = true, workColumns = true, items = [], failOn 
     asked: [],
   };
   const newId = () => String((state.next += 1));
-  const plain = (html) => html.replace(/<\/(p|li)>/g, "\n").replace(/<[^>]+>/g, "").replace(/\n+$/, "");
   const groupOf = (item) => state.groups.find((group) => group.id === item.group);
   const shown = (item, ids) => ({
     id: item.id,
@@ -117,10 +117,11 @@ function fakeMonday({ multiLevel = true, workColumns = true, items = [], failOn 
   };
   const fetch = async (url, init) => {
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/\b(me|boards|items|create_group|create_item|create_subitem|change_multiple_column_values|move_item_to_group|create_update|edit_update|pin_to_top|create_column|update_status_column|create_view_table)\b/)[1];
+    const op = query.match(/\b(me|boards|items|create_group|create_item|create_subitem|change_multiple_column_values|move_item_to_group|create_update|edit_update|pin_to_top|create_column|update_status_column|create_view_table|updates)\b/)[1];
     state.ops.push(op);
     state.queries.push(query);
     const ok = (data) => ({ status: 200, text: async () => JSON.stringify({ data }) });
+    if (op === "updates") return ok({ updates: updatesFor(state.items, v.i) });
     if (op === failOn?.op && state.ops.filter((each) => each === op).length === failOn.at) return { status: 200, text: async () => JSON.stringify({ errors: [{ message: "monday is busy" }] }) };
     const ids = JSON.parse(query.match(/column_values\(ids: (\[[^\]]*\])\)/)?.[1] ?? "[]");
     if (op === "me") return ok({ me: { id: "7", name: "Owner" } });
@@ -154,13 +155,13 @@ function fakeMonday({ multiLevel = true, workColumns = true, items = [], failOn 
       return ok({ move_item_to_group: { id: item.id } });
     }
     if (op === "create_update") {
-      const update = { id: `u${newId()}`, body: v.b, text_body: plain(v.b), creator_id: "7", pinned_to_top: [] };
+      const update = { id: `u${newId()}`, ...asMondayKeeps(v.b), creator_id: "7", pinned_to_top: [] };
       item.updates.push(update);
       return ok({ create_update: { id: update.id } });
     }
     if (op === "edit_update") {
       const update = state.items.flatMap((each) => each.updates).find((each) => each.id === v.u);
-      Object.assign(update, { body: v.b, text_body: plain(v.b) });
+      Object.assign(update, asMondayKeeps(v.b));
       return ok({ edit_update: { id: update.id } });
     }
     if (op === "pin_to_top") {

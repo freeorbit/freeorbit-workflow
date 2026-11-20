@@ -12,6 +12,7 @@ import { runBoard } from "../lib/board/index.mjs";
 import { fileNames, readPicture, wantedFrames } from "../lib/board/frames.mjs";
 import { boardProblems } from "../lib/board/settings.mjs";
 import { keepBuilt, keepsBuilt } from "../lib/screens/built.mjs";
+import { updatesFor } from "./fixtures/board/monday-keeps.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures/board", name), "utf8");
@@ -72,7 +73,8 @@ function monday() {
       return ok({ add_file_to_column: { id: `f${state.next++}`, name: file.name } });
     }
     const { query, variables: v } = JSON.parse(init.body);
-    const op = query.match(/\b(me|boards|create_group|create_item|create_update|pin_to_top|change_column_value)\b/)[1];
+    const op = query.match(/\b(me|boards|create_group|create_item|create_update|pin_to_top|change_column_value|updates)\b/)[1];
+    if (op === "updates") return ok({ updates: updatesFor(state.items, v.i) });
     if (op === "me") return ok({ me: { id: "7" } });
     if (op === "boards") return ok({ boards: [{ id: "42", name: "Test", board_kind: "share", columns, groups: state.groups, views: [{ name: "Build" }, { name: "Client review" }], items_page: { cursor: null, items: state.items.map(shown) } }] });
     if (op === "create_group") {
