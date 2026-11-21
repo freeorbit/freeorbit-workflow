@@ -109,8 +109,8 @@ Each kit version that changes a project's own files says what to do here. After 
 Freeorbit shot two full deep runs, about 35 minutes, on an app built before a schema change: every screen failed with only systemd's "Consumed … CPU" line, and a run by name then replaced the good run before it was accepted.
 
 - **`app.build`:** a shell command that builds the app, such as `cargo build -p app`, which `wf screens` runs before it shoots. Without it, **`app.sources`**, globs of what the binary is built from, makes a run refuse a binary older than one of them, unless `--stale-app`.
-- **Why a start failed:** a failed start now shows the app's own words, such as a panic's message and place, not systemd's last line. After two starts in a row fail the same way, an app's other screens are not tried.
-- **A review run is kept:** a run by name, `--chunk`, or `--all` refuses while a light or deep run is not yet accepted, since it would replace it as the run to accept; accept it first, or pass `--replace`.
+- **Why a start failed:** a failed start, in `wf app start` and each screen of a run, now names the app's own cause first, such as a panic's message and place, read from enough of its log to get past a backtrace. Once starts on two different scenarios in a row fail the same way, an app's other screens are not tried.
+- **A review run is kept:** a run by name, `--chunk`, `--all`, or `--area` refuses while a light or deep run is not yet accepted, since it would replace it as the run to accept. Accept what was read first, with `--accept --except <screen>` to keep some back, then shoot them; `--replace` drops the run.
 - **Upgrading:** a Tauri project sets `app.build` in `.workflow/config.json`, such as `"build": "cargo build -p <app>"` under `app`, or `app.sources`.
 
 ### v1.11.0: data standards, and data models that read at a glance

@@ -654,30 +654,42 @@ test("a virtual display keeps apart from the person's desktop: no KWin scripts, 
   assert.deepEqual(displayApart(runtime, "app-agent-display-1", () => false).length, 1, "without dbus-run-session, the empty config still keeps scripts out");
 });
 
-test("an app that failed to start says why, in the app's own words, not systemd's", async () => {
+test("an app that failed to start says why, in the app's own words, not systemd's or a backtrace's", async () => {
   const { startProblem } = await import("../lib/screens/shoot.mjs");
+  const { exitCause, sameCause } = await import("../lib/app/cause.mjs");
+  const backtrace = Array.from({ length: 30 }, (_, i) => `  ${i}: core::panicking::f${i}\n             at /rustc/abc/library/core/src/panicking.rs:${i}:5`).join("\n");
   const rows = [
-    ["a Rust panic", "thread 'main' panicked at crates/core/src/db.rs:42:9:\nThe app could not update its saved data\nnote: run with RUST_BACKTRACE=1\napp-1.service: Main process exited, code=dumped\napp-1.service: Consumed 312ms CPU time.", "The app could not update its saved data at crates/core/src/db.rs:42:9:"],
-    ["an error line", "loading\nError: no app binary at /x; build it first\napp-1.service: Failed with result 'exit-code'.", "Error: no app binary at /x; build it first"],
+    ["a Rust panic", "thread 'main' panicked at crates/core/src/db.rs:42:9:\nThe app could not update its saved data\nnote: run with RUST_BACKTRACE=1\napp-1.service: Main process exited, code=dumped\napp-1.service: Consumed 312ms CPU time.", "The app could not update its saved data at crates/core/src/db.rs:42:9"],
+    ["a panic under a 30-frame backtrace", `thread 'main' panicked at src/db.rs:7:1:\nmigration 1 changed\nstack backtrace:\n${backtrace}\nnote: Some details are omitted, run with \`RUST_BACKTRACE=full\` for a verbose backtrace.\napp-1.service: Consumed 1s CPU time.`, "migration 1 changed at src/db.rs:7:1"],
+    ["the newest of two runs in the log", "thread 'main' panicked at src/old.rs:1:1:\nold message\nthread 'main' panicked at src/new.rs:2:2:\nnew message", "new message at src/new.rs:2:2"],
+    ["an error line among WebKit's noise", "loading\nError: no app binary at /x; build it first\nFailed to create GBM buffer of size 800x600: Invalid argument\napp-1.service: Failed with result 'exit-code'.", "Error: no app binary at /x; build it first"],
     ["only systemd's lines", "app-1.service: Consumed 312ms CPU time.", "app-1.service: Consumed 312ms CPU time."],
     ["nothing", "", "no output"],
   ];
-  for (const [what, out, want] of rows) assert.equal(startProblem(out), want, what);
+  for (const [what, out, want] of rows) assert.equal(exitCause(out), want, what);
+  assert.equal(startProblem("Error: the app exited: migration 1 changed at src/db.rs:7:1\n…the last lines…"), "migration 1 changed at src/db.rs:7:1", "the driver's named cause first");
+  assert.equal(sameCause("2026-11-21T10:00:01Z ERROR pid 4412 could not open db"), sameCause("2026-11-21T10:00:09Z ERROR pid 4519 could not open db"), "times and numbers do not make two causes differ");
 });
 
-test("after two starts in a row fail the same way, an app's other screens are not tried", async () => {
+test("after starts on two scenarios in a row fail the same way, an app's other screens are not tried", async () => {
   const { shootList, START_FAILS } = await import("../lib/screens/shoot.mjs");
-  const screens = ["a", "b", "c", "d"].map((name) => ({ name }));
+  const screen = (name, scenario) => ({ name, reach: `\`${scenario} › go #/\`` });
+  const screens = [screen("a", "s1"), screen("b", "s2"), screen("c", "s3"), screen("d", "s4")];
   const tried = [];
-  const broken = (ctx, screen) => (tried.push(screen.name), "could not start: The app could not update its saved data");
+  const broken = (ctx, s) => (tried.push(s.name), `could not start: pid ${tried.length} The app could not update its saved data`);
   const problems = shootList({}, screens, [], "", broken);
   assert.equal(START_FAILS, 2);
-  assert.deepEqual(tried, ["a", "b"]);
-  assert.match(problems.d, /^not tried: the app failed to start 2 times in a row \(The app could not update its saved data\)/);
-  // Failures that differ, or a screen that shoots between them, do not stop the list.
+  assert.deepEqual(tried, ["a", "b"], "the same cause, numbers aside, on two scenarios");
+  assert.match(problems.d, /^not tried: starts on 2 scenarios in a row failed the same way/);
+  // Two screens on one broken scenario do not stop the rest.
+  tried.length = 0;
+  const one = [screen("a", "bad"), screen("b", "bad"), screen("c", "good"), screen("d", "good")];
+  shootList({}, one, [], "", (ctx, s) => (tried.push(s.name), s.name < "c" ? "could not start: bad seed" : null));
+  assert.deepEqual(tried, ["a", "b", "c", "d"]);
+  // Causes that differ, or a screen that shoots between them, do not either.
   tried.length = 0;
   const mixed = { a: "could not start: one", b: "could not start: two", c: null, d: "could not start: two" };
-  shootList({}, screens, [], "", (ctx, screen) => (tried.push(screen.name), mixed[screen.name]));
+  shootList({}, screens, [], "", (ctx, s) => (tried.push(s.name), mixed[s.name]));
   assert.deepEqual(tried, ["a", "b", "c", "d"]);
 });
 
@@ -694,7 +706,8 @@ test("a run by name does not shoot over a light or deep run not yet accepted, un
   writeFileSync(ctx.run, JSON.stringify({ mode: "deep", shots: ["wide-default"] }));
   writeFileSync(join(latest, "hashes.json"), JSON.stringify({ a: {}, b: {} }));
   assert.deepEqual(unacceptedReview(ctx), { mode: "deep", count: 2 });
-  await assert.rejects(screens(root, config, ["a"]), /the last run is a deep run with 2 screens not yet accepted; accept it first \(npx wf screens --accept\), or pass --replace/);
+  await assert.rejects(screens(root, config, ["a"]), /the last run is a deep run with 2 screens not yet accepted; accept what was read first \(npx wf screens --accept, or --accept --except <screen> \.\.\. to keep some back to shoot again\), then shoot; --replace drops it/);
+  await assert.rejects(screens(root, config, ["nope"]), /no screen called nope/, "a wrong name is said before the run is refused or the app built");
   writeFileSync(ctx.run, JSON.stringify({ mode: null }));
   assert.equal(unacceptedReview(ctx), null, "a run by name may be shot over");
   writeFileSync(ctx.run, JSON.stringify({ mode: "light" }));
@@ -715,7 +728,7 @@ test("the app is built with app.build before a run, or an old binary is refused 
   console.log = () => {};
   try {
     assert.equal(appBuild(ctx({ build: "true" })), null, "a build that passes");
-    assert.match(appBuild(ctx({ build: "echo 'error: it broke' >&2; false" })), /app\.build failed, so nothing was shot:\nerror: it broke/);
+    assert.equal(appBuild(ctx({ build: "exit 3" })), "app.build exited with 3, so nothing was shot; its output is above");
   } finally {
     console.log = log;
   }
@@ -723,6 +736,9 @@ test("the app is built with app.build before a run, or an old binary is refused 
   at("crates/core/migrations/0001.sql", new Date("2026-11-21T10:00:00Z"));
   at("crates/core/src/old.rs", new Date("2026-11-19T10:00:00Z"));
   const tracked = () => ["crates/core/migrations/0001.sql", "crates/core/src/old.rs", "README.md"];
+  // Untracked files count too, such as a migration not yet added: git lists them with --others.
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  assert.match(appBuild(ctx({ sources: ["**/migrations/**"] })), /older than 1 of the files it is built from, such as crates\/core\/migrations\/0001\.sql/);
   const sources = ["**/migrations/**", "**/*.rs"];
   assert.match(appBuild(ctx({ sources }), [], tracked), /the app binary target\/debug\/app is older than 1 of the files it is built from, such as crates\/core\/migrations\/0001\.sql; build it/);
   assert.equal(appBuild(ctx({ sources }), ["--stale-app"], tracked), null);
