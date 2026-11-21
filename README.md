@@ -104,6 +104,15 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.11.0: data standards, and data models that read at a glance
+
+Freeorbit and Atlas NX each made their schemas with no shared conventions, such as tables named singular and plural side by side, and dates and flags as unchecked text and numbers.
+
+- **`docs/workflow/data-standards.md`:** the `DATA-` rules for any database: names, keys, types, integrity, lifecycle, and migrations, from the Postgres, SQLite, MySQL, and MongoDB docs and well-known style guides. The structure pass of the code review reads it, through `review.dataRubric`.
+- **A project's own database:** `templates/data-engines/` holds the conventions of Postgres, SQLite, MySQL, and MongoDB. When Step 3 picks a store, its file is copied into the doc's project part, where the project also picks singular or plural table names.
+- **Data models that read at a glance:** `templates/data-model.md` now starts with At a glance, splits the tables into parts with a small diagram each, and keeps one-row tables in one table per part. `doc:check` warns when a model has no At a glance section or a diagram of more than 12 tables.
+- **Upgrading:** run `npx wf docs sync`, then copy the conventions of the project's database into `data-standards.md`'s project part, and pick table names. A project that lists `docs.synced` adds `data-standards` to it; `wf doctor` says when a rubric file is missing. An existing data model is only warned about; reshape it when it is next changed.
+
 ### v1.10.0: archive an ask
 
 - **An ask can be archived from the inbox,** such as one asked for a test or no longer relevant: its Archive button, or A on the current row, with Undo for a moment. It leaves the inbox and the asks menu until it is asked again.

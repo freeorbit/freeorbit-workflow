@@ -31,6 +31,8 @@ Each area also designs its data in Step 3, before any chunk builds it, in its ow
 - **What it holds.** Where the data lives, the entities and how they relate, each table's fields, keys, and constraints, the index each hot path's query needs, which fields are sensitive, how long rows are kept and what a delete takes with it, and how migrations run.
 - **A design, not the SQL.** The area's first build chunk writes the schema and its migrations from it, and the code review checks them against it, by CS-DATA in [code-standards.md](code-standards.md).
 - **If it stores nothing,** the file says so in one line, with why.
+- **Its conventions.** The model follows [data-standards.md](data-standards.md). When the area picks a store the project has not used yet, its conventions are copied from the kit's `templates/data-engines/<engine>.md`, such as `postgres.md` or `sqlite.md`, into that doc's project part, and its table names are set to singular or plural there.
+- **At a glance.** The model starts with At a glance, splits its tables into parts with a small diagram each, and keeps one-row tables in one table per part. `doc:check` warns when it does not.
 - **Reviewed with the architecture.** The agent drafts it from the stories, the architecture, the threat model, and the hot-paths doc, and the owner reviews it with the rest of the step. A choice of store, or of what is kept and for how long, is asked on an ask page.
 - `npx wf doc:check` fails while an area is past Step 3 and its `data-model.md` is missing or still the template. An area whose Architecture step is dated before 2026-11-21, when the kit added this, or not dated, is warned instead.
 
@@ -135,7 +137,7 @@ The `code-review-ledger` skill runs in diff mode.
 
 - The reviewer picks a deep or light run, or defers it to a later run, which then reviews every deferred chunk at once. A light run is logged in the ledger, and the next deep run covers it.
 - It runs the scans and the read-only `code-reviewer` agent, writes its findings to [the ledger](../log/review/findings.md), and asks the reviewer once to accept, defer, or reject each new one.
-- The rubric is [code-standards.md](code-standards.md). The reviewer can also ask for a full review at any time.
+- The rubrics are [code-standards.md](code-standards.md), [data-standards.md](data-standards.md), and [performance-standards.md](performance-standards.md). The reviewer can also ask for a full review at any time.
 
 ### Acceptance lines proven
 

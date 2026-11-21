@@ -69,6 +69,7 @@ Closed details: <logs.ledgerClosedDetails>
 Decisions: <logs.decisions>
 Rubric: <review.rubric>
 Performance rubric: <review.performanceRubric; performance mode only>
+Data rubric: <review.dataRubric; structure mode only>
 Threat model: <review.threatModel>
 Hot paths: <review.hotPaths>
 Reads: <review.reads>, and each `<area docs>/data-model.md` that exists, for CS-DATA
@@ -87,6 +88,7 @@ With it on, run `code-reviewer` once more, on the verify model:
 Mode: verify
 Rubric: <review.rubric>
 Performance rubric: <review.performanceRubric, when a draft is a PERF- finding>
+Data rubric: <review.dataRubric, when a draft is a DATA- finding>
 Drafts:
 <the merged drafts, as the agent wrote them>
 ```

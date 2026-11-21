@@ -29,7 +29,7 @@ The hot-paths doc, from `review.hotPaths` in the config, says which paths are ho
 
 ## Databases
 
-- **PERF-INDEX.** Every column a hot query filters, joins, or sorts on has an index the query can use (added 2026-11-18).
+- **PERF-INDEX.** Every column a hot query filters, joins, or sorts on has an index the query can use, and so does each foreign key's referencing column, which a delete of its parent searches (added 2026-11-18, foreign keys 2026-11-21).
   - Look for a `WHERE`, `JOIN`, or `ORDER BY` column with no index in the schema or the migrations, and a composite index whose leading column the query does not use.
   - An indexed column wrapped in a function or a cast, such as `lower(email)`, needs an index on that expression. A `LIKE` that starts with `%`, and an `OR` across different columns, cannot use a plain index.
 - **PERF-HOLD.** A transaction or a lock is held only as long as its writes need (added 2026-11-18).
