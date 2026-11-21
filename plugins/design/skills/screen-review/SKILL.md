@@ -95,7 +95,7 @@ npx wf screens <screen>
 
 After the code review and the fixes for its findings, when UI files or frames changed. Never start it while the code review runs, because a fix can change a screen. The gate, `npx wf screens --gate <chunk>`, has passed before the code review, as the project's four-steps doc orders it.
 
-1. **Rebuild the app**, so the pictures are of the fixed code.
+1. **Rebuild the app**, so the pictures are of the fixed code. With `app.build` set, `wf screens` builds it itself before it shoots; with `app.sources`, it refuses a binary older than what it is built from.
 2. **Scope.** Run `npx wf screens scope`. Both lists empty: stop here, unless a backend change altered words on a screen; then run those screens by name.
 3. **Ask the designer** on the choice page: `npx wf choose screens | npx wf ask page -`, then the `ask-page` skill's steps.
    - The page shows both lists' counts and times, how many only shared code reaches, and whether the code review covers HEAD. Each run, light, deep, or defer, shows its command; where the apps show, the areas, and the pictures the project sets are options.
@@ -104,7 +104,7 @@ After the code review and the fixes for its findings, when UI files or frames ch
    - Defer runs `npx wf screens --defer` and shoots nothing. Both lists keep growing until a run.
    - With no browser pane, ask in the chat with the same runs and options.
 4. **Run** the command the page returns, `Command:` at the head of its answers, such as `npx wf screens --light`. Do not ask which pictures: both take Default. Only when the designer asks for other pictures, name every viewport to take, such as `--wide --narrow`, and add `--stress` for the stress look.
-   - `--chunk N`, `--all`, and names check just those screens; accepting them moves their marks.
+   - `--chunk N`, `--all`, and names check just those screens; accepting them moves their marks. They refuse while a light or deep run is not yet accepted, since they would replace it as the run to accept; accept it first, or pass `--replace`.
    - `--area <id>` narrows any run to that area's screens, such as `--deep --area uplink`; several are joined by commas, and `scope --area <id>` shows that part of each list. Use it when the designer asks for one area. Its accept marks that area's screens; elsewhere, only pictures nothing has reached since their marks move with it.
    - `--light` and `--deep` refuse until the code review ledger has reviewed or deferred at HEAD. `--force` is for a run the designer asks for outside chunk end.
 5. **Triage.** Run `npx wf screens --brief`. It writes the listed screens into briefs of up to 24 pictures each, so 24 screens at one picture a screen, and prints the reader's model. Start one `screen-reader` agent a brief, all at once, on that model, each with the prompt `Brief: <path>` and nothing else. Each returns one line a screen: `same`, `differs`, `fault`, or `could not read`.

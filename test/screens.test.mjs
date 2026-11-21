@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -652,4 +652,84 @@ test("a virtual display keeps apart from the person's desktop: no KWin scripts, 
   assert.deepEqual(args, [`--setenv=XDG_CONFIG_HOME=${join(runtime, "app-agent-display-1-config")}`, "dbus-run-session", "--"]);
   assert.deepEqual(readdirSync(join(runtime, "app-agent-display-1-config")), [], "an empty config each start, so no script runs");
   assert.deepEqual(displayApart(runtime, "app-agent-display-1", () => false).length, 1, "without dbus-run-session, the empty config still keeps scripts out");
+});
+
+test("an app that failed to start says why, in the app's own words, not systemd's", async () => {
+  const { startProblem } = await import("../lib/screens/shoot.mjs");
+  const rows = [
+    ["a Rust panic", "thread 'main' panicked at crates/core/src/db.rs:42:9:\nThe app could not update its saved data\nnote: run with RUST_BACKTRACE=1\napp-1.service: Main process exited, code=dumped\napp-1.service: Consumed 312ms CPU time.", "The app could not update its saved data at crates/core/src/db.rs:42:9:"],
+    ["an error line", "loading\nError: no app binary at /x; build it first\napp-1.service: Failed with result 'exit-code'.", "Error: no app binary at /x; build it first"],
+    ["only systemd's lines", "app-1.service: Consumed 312ms CPU time.", "app-1.service: Consumed 312ms CPU time."],
+    ["nothing", "", "no output"],
+  ];
+  for (const [what, out, want] of rows) assert.equal(startProblem(out), want, what);
+});
+
+test("after two starts in a row fail the same way, an app's other screens are not tried", async () => {
+  const { shootList, START_FAILS } = await import("../lib/screens/shoot.mjs");
+  const screens = ["a", "b", "c", "d"].map((name) => ({ name }));
+  const tried = [];
+  const broken = (ctx, screen) => (tried.push(screen.name), "could not start: The app could not update its saved data");
+  const problems = shootList({}, screens, [], "", broken);
+  assert.equal(START_FAILS, 2);
+  assert.deepEqual(tried, ["a", "b"]);
+  assert.match(problems.d, /^not tried: the app failed to start 2 times in a row \(The app could not update its saved data\)/);
+  // Failures that differ, or a screen that shoots between them, do not stop the list.
+  tried.length = 0;
+  const mixed = { a: "could not start: one", b: "could not start: two", c: null, d: "could not start: two" };
+  shootList({}, screens, [], "", (ctx, screen) => (tried.push(screen.name), mixed[screen.name]));
+  assert.deepEqual(tried, ["a", "b", "c", "d"]);
+});
+
+test("a run by name does not shoot over a light or deep run not yet accepted, unless --replace", async () => {
+  const { unacceptedReview } = await import("../lib/screens/run.mjs");
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-replace-")));
+  execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+  const config = merge(DEFAULTS, { areas: [{ id: "app", prefix: "APP", docs: "docs/app" }] });
+  mkdirSync(join(root, "docs/app/design"), { recursive: true });
+  writeFileSync(join(root, "docs/app/design/screens.md"), "| Screen | Stories | Reach | Shows |\n| --- | --- | --- | --- |\n| `a` | X-1 | `s › go #/` | it |\n");
+  const latest = join(root, ".cache/screens/latest");
+  mkdirSync(latest, { recursive: true });
+  const ctx = { run: join(latest, "run.json"), latest };
+  writeFileSync(ctx.run, JSON.stringify({ mode: "deep", shots: ["wide-default"] }));
+  writeFileSync(join(latest, "hashes.json"), JSON.stringify({ a: {}, b: {} }));
+  assert.deepEqual(unacceptedReview(ctx), { mode: "deep", count: 2 });
+  await assert.rejects(screens(root, config, ["a"]), /the last run is a deep run with 2 screens not yet accepted; accept it first \(npx wf screens --accept\), or pass --replace/);
+  writeFileSync(ctx.run, JSON.stringify({ mode: null }));
+  assert.equal(unacceptedReview(ctx), null, "a run by name may be shot over");
+  writeFileSync(ctx.run, JSON.stringify({ mode: "light" }));
+  writeFileSync(join(latest, "hashes.json"), "{}");
+  assert.equal(unacceptedReview(ctx), null, "a review run fully accepted may be shot over");
+});
+
+test("the app is built with app.build before a run, or an old binary is refused by app.sources", async () => {
+  const { appBuild } = await import("../lib/screens/run.mjs");
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "wf-appbuild-")));
+  const at = (file, when) => {
+    mkdirSync(join(root, file, ".."), { recursive: true });
+    writeFileSync(join(root, file), "x");
+    utimesSync(join(root, file), when, when);
+  };
+  const ctx = (app) => ({ root, config: merge(DEFAULTS, { app: { binary: "target/debug/app", ...app } }) });
+  const log = console.log;
+  console.log = () => {};
+  try {
+    assert.equal(appBuild(ctx({ build: "true" })), null, "a build that passes");
+    assert.match(appBuild(ctx({ build: "echo 'error: it broke' >&2; false" })), /app\.build failed, so nothing was shot:\nerror: it broke/);
+  } finally {
+    console.log = log;
+  }
+  at("target/debug/app", new Date("2026-11-20T10:00:00Z"));
+  at("crates/core/migrations/0001.sql", new Date("2026-11-21T10:00:00Z"));
+  at("crates/core/src/old.rs", new Date("2026-11-19T10:00:00Z"));
+  const tracked = () => ["crates/core/migrations/0001.sql", "crates/core/src/old.rs", "README.md"];
+  const sources = ["**/migrations/**", "**/*.rs"];
+  assert.match(appBuild(ctx({ sources }), [], tracked), /the app binary target\/debug\/app is older than 1 of the files it is built from, such as crates\/core\/migrations\/0001\.sql; build it/);
+  assert.equal(appBuild(ctx({ sources }), ["--stale-app"], tracked), null);
+  assert.equal(appBuild(ctx({}), [], tracked), null, "with neither set, nothing is checked");
+  assert.equal(appBuild(ctx({ sources, kind: "web" }), [], tracked), null, "a web app has no binary");
+  at("target/debug/app", new Date("2026-11-22T10:00:00Z"));
+  assert.equal(appBuild(ctx({ sources }), [], tracked), null, "built since");
+  rmSync(join(root, "target/debug/app"));
+  assert.match(appBuild(ctx({ sources }), [], tracked), /no app binary at target\/debug\/app; build it first, or set app\.build/);
 });
