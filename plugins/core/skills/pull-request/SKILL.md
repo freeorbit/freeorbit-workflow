@@ -21,6 +21,8 @@ Propose the pull request once. This proposal is the only ask.
 
 Run `git status`, the branch tracking, `git log <base>..HEAD`, and `git diff <base>...HEAD`. Judge from the commits on the branch, not from the task description.
 
+Then run `npx wf id --clashes`. It lists each ID this branch adds, such as a decision, a finding, or a question, that main or another open branch adds too. Renumber each to the next one free on every branch, commit, and run it again before proposing; `wf done` runs it as well.
+
 ## One pull request
 
 Open one pull request for the branch, ready for review. If the branch has more than one topic, the body lists each. Do not split unless asked.

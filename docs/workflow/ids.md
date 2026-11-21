@@ -13,6 +13,10 @@ npx wf id gmail-move-file-saved --all
 
 `wf id` says what kind of ID it is, where it is defined, and every line that cites it, grouped as spec, docs, logs, tests, and code. It matches the whole ID only: `R-GM-1` is never found inside `R-GM-12`. Use it before searching by hand. Without `--all` it lists the first 15 citations.
 
+`npx wf id --clashes` lists each ID this branch adds that main, or another open branch, adds too, by a different line. A branch takes the next free number in its own checkout, so branches made side by side can take the same one.
+
+Run it before a pull request, and renumber each clash to the next one free on every branch. `wf done` runs it too, and fails on a clash.
+
 ## The kinds
 
 A kind with an area in it carries the area's prefix from `areas` in `.workflow/config.json`, such as `GM`. The letter before it says the kind.

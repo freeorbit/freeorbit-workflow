@@ -13,6 +13,7 @@
 //   wf docs sync       write the kit's workflow docs into the project, with its local parts
 //   wf testdata <route|stale|covered|index|journeys|e2e-files|refresh-close> <area> ...   the project's test-data steps
 //   wf id <ID> [--all]                 where an ID is defined, and every place that cites it
+//   wf id --clashes [--no-fetch]       the IDs this branch adds that main or an open branch adds too
 //   wf testdata trace [area] [--all]   spec rows no code names, and tests that name no row or story
 //   wf testdata trace --chunk <id> [--all]   a chunk's lines and rules: proven, walk, later, disputed, or proven by nothing
 //   wf testdata rename-ids [area] [--write] [--all]   qualify old IDs with their area: R-12 to R-GM-12
@@ -173,9 +174,16 @@ const commands = {
 
   /** `wf id <ID> [--all]`: where an ID is defined, and every place that cites it. */
   async id(args) {
+    if (args.includes("--clashes")) {
+      const { idClashes, clashLines } = await import("../lib/idclash.mjs");
+      const root = projectRoot();
+      const clashes = idClashes(root, loadConfig(root), { fetch: !args.includes("--no-fetch"), log: console.log });
+      for (const line of clashLines(clashes)) console.log(line);
+      return clashes.length ? 1 : 0;
+    }
     const target = args.find((a) => !a.startsWith("--"));
     if (!target) {
-      console.log("Usage: wf id <ID> [--all]   such as R-GM-119, C-GM-41, GM-07, D-GM-101, Q-113, or a fixture's name; the patterns are in docs/workflow/ids.md");
+      console.log("Usage: wf id <ID> [--all]   such as R-GM-119, C-GM-41, GM-07, D-GM-101, Q-113, or a fixture's name; the patterns are in docs/workflow/ids.md\n       wf id --clashes [--no-fetch]   the IDs this branch adds that main or an open branch adds too");
       return 2;
     }
     const { findId, idLines } = await import("../lib/idfind.mjs");

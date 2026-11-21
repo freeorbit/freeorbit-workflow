@@ -62,7 +62,7 @@ test("a fixture budget follows the risk: a high story's cap, two for each high l
 
 test("a designer's return is held to its caps: five questions, two proposed lines a story, and no check rows", () => {
   const q = (n) => `| G-GM-${String(n).padStart(2, "0")} | gap | Time | Question ${n}? | GM-07 |`;
-  const text = ["# Test data delta", "", "## Questions", "| ID | Kind | Category | Question | Stories |", "| --- | --- | --- | --- | --- |", ...[1, 2, 3, 4, 5, 6, 7].map(q), "",
+  const text = ["# Test data delta", "", "Need: both", "", "## Questions", "| ID | Kind | Category | Question | Stories |", "| --- | --- | --- | --- | --- |", ...[1, 2, 3, 4, 5, 6, 7].map(q), "",
     "## Proposed acceptance", "| Story | Proposed line | Why |", "| --- | --- | --- |", "| GM-07 | One | x |", "| GM-07 | Two | x |", "| GM-07 | Three | x |", "| DR-01 | Other area | x |", "",
     "| ID | Check | Stories |", "| --- | --- | --- |", "| C-GM-99 | A check | GM-07 |"].join("\n");
   const found = checkDelta(text, config(), "GM");
@@ -181,4 +181,20 @@ test("a proof row may name a rule: the line is proven once a test cites that rul
   assert.ok(testdataProblems(context(config(), spec(""))).some((p) => /GM-07.3 By "R-GM-99" is not walk, walked <chunk>, a later chunk's id, or a rule the spec defines/.test(p)));
   assert.deepEqual(["38h2", "38h3", "CH-12", "37d", "38h2-fe", "abc", "38-"].map((id) => CHUNK_ID.test(id)), [true, true, true, true, true, false, false]);
   assert.deepEqual(laneOf("38h2-fe"), { base: "38h2", lane: "fe" });
+});
+
+test("a return saved empty or cut short is refused, never read as nothing to do", () => {
+  const rows = [
+    ["empty", "", /the file is empty: the designer's return was not saved/],
+    ["only blank lines", "\n  \n", /the file is empty/],
+    ["a delta with no Need line", "# Test data delta\n\n## Why\nGM-07 changed.\n", /a delta with no `Need: none \| spec \| rules \| both` line/],
+    ["a Need line that is not one", "# Test data delta\n\nNeed: maybe\n\n## Why\nx\n", /a delta with no `Need: none/],
+    ["Need: spec, cut off after it", "# Test data delta\n\nNeed: spec\n", /Need: spec with no section after it: the return was cut off/],
+  ];
+  for (const [what, text, want] of rows) {
+    const found = checkDelta(text, config(), "GM");
+    assert.equal(found.problems.length, 1, what);
+    assert.match(found.problems[0], want, what);
+  }
+  for (const ok of ["Need: none", "# Test data delta\n\nNeed: both\n\n## Why\nGM-07 changed.\n", "# Story check\n\n## Questions\n", "No questions."]) assert.deepEqual(checkDelta(ok, config(), "GM").problems, [], ok);
 });
