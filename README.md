@@ -104,6 +104,13 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.13.0: IDs checked across open branches, and a lost designer return refused
+
+From Freeorbit's efficiency check: branches made side by side took the same next free IDs twice, and one renumbering touched about 30 files; and a designer's return saved empty passed `wf testdata delta` as "within its caps".
+
+- **`npx wf id --clashes`** lists each ID this branch adds, such as a decision, a finding, a question, a chunk, or a rule, that main or another open branch adds too for something else, naming the branch. It reads committed, uncommitted, and new files, fetches first, and leaves out a branch this one is built on and work already merged, even with a status changed since. `wf done` runs it for every track and fails on a clash, and the `pull-request` skill runs it before it proposes.
+- **`wf testdata delta`** fails a file left empty, a delta with no `Need: none | spec | rules | both` line, and one cut off after its `Need:` line, so a return not saved whole is never applied as nothing to do.
+
 ### v1.12.0: a screen run on an old build stops before it shoots
 
 Freeorbit shot two full deep runs, about 35 minutes, on an app built before a schema change: every screen failed with only systemd's "Consumed … CPU" line, and a run by name then replaced the good run before it was accepted.

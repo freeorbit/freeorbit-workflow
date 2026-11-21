@@ -96,7 +96,7 @@ test("the area track asks its questions and checks the docs when done", () => {
   assert.equal(ready.code, 0);
   assert.equal(ready.out.filter((line) => line.startsWith("ASK ")).length, 2);
   run(merge(DEFAULTS, {}), "done", ["area"], stub);
-  assert.deepEqual(stub.ran, ["npx wf doc:check"]);
+  assert.deepEqual(stub.ran, ["npx wf doc:check", "npx wf id --clashes"]);
 });
 
 test("changed files are the branch's commits and untracked files, and null with no base", () => {
@@ -212,4 +212,15 @@ test("a chunk-end trace that could not run fails, in warn mode too, and says why
   const result = step[1]();
   assert.equal(result.status, "FAIL");
   assert.match(result.note, /could not run: No row for 37d/);
+});
+
+test("wf done checks the IDs the branch adds: a pass says its notes, a clash names the ID and branch, an error says it could not check", () => {
+  const config = merge(DEFAULTS, {});
+  const gate = (stdout, status, stderr = "") => {
+    const stub = { ...io(), wf: (args) => (args[0] === "id" ? { status, stdout, stderr } : { status: 0 }) };
+    return run(config, "done", ["quick"], stub).out.find((line) => line.includes("no ID this branch adds"));
+  };
+  assert.equal(gate("Could not fetch origin, so this checked the branches as last fetched.\nNo ID this branch adds is taken on main or on an open branch.\n", 0), "OK   no ID this branch adds is taken on main or an open branch: Could not fetch origin, so this checked the branches as last fetched.");
+  assert.equal(gate("D-GM-156: also new on origin/uplink/37s\n1 ID clashes: renumber them here to the next ones free on every branch, then run this again.\n", 1), "FAIL no ID this branch adds is taken on main or an open branch: D-GM-156: also new on origin/uplink/37s; renumber them to the next ones free on every branch");
+  assert.match(gate("", 1, "Error: git grep failed: fatal: bad object\n"), /^FAIL .*: `wf id --clashes` could not check: Error: git grep failed: fatal: bad object$/);
 });
