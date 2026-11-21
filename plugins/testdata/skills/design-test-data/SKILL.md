@@ -38,7 +38,7 @@ The designer's volume is counted by the tool, never left to its judgement. On ev
 
 1. **Before.** Run `npx wf testdata budget <area> <ids>` and paste its `Budget:` block into the prompt, as it prints it. It holds counts, limits, and the next free IDs, not rules, so the designer stays blind.
 2. **After.** Save what the designer returned to `.cache/testdata/<area>-return.md` and run `npx wf testdata delta <area> <that file>`.
-   - It fails a file left empty, and a delta with no `Need:` line or cut off after it, since a return not saved whole is under every cap.
+   - It refuses, as not checked, a file left empty, and a delta with no `Need:` line or without the sections its `Need:` names, since a return not saved whole is under every cap. Save the whole return again, or run the designer again if it is lost.
    - It fails when the return holds more than `testdata.limits.questions` questions, more than `testdata.limits.propose` proposed acceptance lines for a story, or any check row.
    - Apply what is within the caps and leave the rest out. Name what was held back in one line to the owner.
    - Do not run the designer again to make it fit: a second run costs more than the rows it would save.

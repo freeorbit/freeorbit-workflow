@@ -108,7 +108,7 @@ Each kit version that changes a project's own files says what to do here. After 
 
 From Freeorbit's efficiency check: branches made side by side took the same next free IDs twice, and one renumbering touched about 30 files; and a designer's return saved empty passed `wf testdata delta` as "within its caps".
 
-- **`npx wf id --clashes`** lists each ID this branch adds, such as a decision, a finding, a question, a chunk, or a rule, that main or another open branch adds too, by a different line, naming the branch. It fetches first, and leaves out a branch this one is built on and work already merged by the same row. `wf done` runs it for the quick and chunk tracks and fails on a clash, and the `pull-request` skill runs it before it proposes.
+- **`npx wf id --clashes`** lists each ID this branch adds, such as a decision, a finding, a question, a chunk, or a rule, that main or another open branch adds too for something else, naming the branch. It reads committed, uncommitted, and new files, fetches first, and leaves out a branch this one is built on and work already merged, even with a status changed since. `wf done` runs it for every track and fails on a clash, and the `pull-request` skill runs it before it proposes.
 - **`wf testdata delta`** fails a file left empty, a delta with no `Need: none | spec | rules | both` line, and one cut off after its `Need:` line, so a return not saved whole is never applied as nothing to do.
 
 ### v1.12.0: a screen run on an old build stops before it shoots

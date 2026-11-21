@@ -177,9 +177,9 @@ const commands = {
     if (args.includes("--clashes")) {
       const { idClashes, clashLines } = await import("../lib/idclash.mjs");
       const root = projectRoot();
-      const clashes = idClashes(root, loadConfig(root), { fetch: !args.includes("--no-fetch"), log: console.log });
-      for (const line of clashLines(clashes)) console.log(line);
-      return clashes.length ? 1 : 0;
+      const found = idClashes(root, loadConfig(root), { fetch: !args.includes("--no-fetch") });
+      for (const line of clashLines(found)) console.log(line);
+      return found.clashes.length ? 1 : 0;
     }
     const target = args.find((a) => !a.startsWith("--"));
     if (!target) {

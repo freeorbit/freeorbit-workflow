@@ -62,7 +62,7 @@ test("a fixture budget follows the risk: a high story's cap, two for each high l
 
 test("a designer's return is held to its caps: five questions, two proposed lines a story, and no check rows", () => {
   const q = (n) => `| G-GM-${String(n).padStart(2, "0")} | gap | Time | Question ${n}? | GM-07 |`;
-  const text = ["# Test data delta", "", "Need: both", "", "## Questions", "| ID | Kind | Category | Question | Stories |", "| --- | --- | --- | --- | --- |", ...[1, 2, 3, 4, 5, 6, 7].map(q), "",
+  const text = ["# Test data delta", "", "Need: both", "", "## Spec edits", "| File | Edit | Stories |", "", "## Proposed rules", "| ID | Category | Type | Rule | Stories | Accepted |", "", "## Questions", "| ID | Kind | Category | Question | Stories |", "| --- | --- | --- | --- | --- |", ...[1, 2, 3, 4, 5, 6, 7].map(q), "",
     "## Proposed acceptance", "| Story | Proposed line | Why |", "| --- | --- | --- |", "| GM-07 | One | x |", "| GM-07 | Two | x |", "| GM-07 | Three | x |", "| DR-01 | Other area | x |", "",
     "| ID | Check | Stories |", "| --- | --- | --- |", "| C-GM-99 | A check | GM-07 |"].join("\n");
   const found = checkDelta(text, config(), "GM");
@@ -183,18 +183,20 @@ test("a proof row may name a rule: the line is proven once a test cites that rul
   assert.deepEqual(laneOf("38h2-fe"), { base: "38h2", lane: "fe" });
 });
 
-test("a return saved empty or cut short is refused, never read as nothing to do", () => {
+test("a return saved empty or cut short is refused as not checked, never read as nothing to do", () => {
   const rows = [
     ["empty", "", /the file is empty: the designer's return was not saved/],
     ["only blank lines", "\n  \n", /the file is empty/],
     ["a delta with no Need line", "# Test data delta\n\n## Why\nGM-07 changed.\n", /a delta with no `Need: none \| spec \| rules \| both` line/],
     ["a Need line that is not one", "# Test data delta\n\nNeed: maybe\n\n## Why\nx\n", /a delta with no `Need: none/],
-    ["Need: spec, cut off after it", "# Test data delta\n\nNeed: spec\n", /Need: spec with no section after it: the return was cut off/],
+    ["Need: spec, cut off after it", "# Test data delta\n\nNeed: spec\n", /Need: spec with no "## Spec edits" section: the return was cut off/],
+    ["Need: both, cut off after Why", "# Test data delta\n\nNeed: both\n\n## Why\nGM-07 changed.\n\n## Spec edits\n| File | Edit | Stories |\n", /Need: both with no "## Proposed rules" section/],
   ];
   for (const [what, text, want] of rows) {
     const found = checkDelta(text, config(), "GM");
-    assert.equal(found.problems.length, 1, what);
+    assert.deepEqual([found.problems.length, found.unchecked], [1, true], what);
     assert.match(found.problems[0], want, what);
   }
-  for (const ok of ["Need: none", "# Test data delta\n\nNeed: both\n\n## Why\nGM-07 changed.\n", "# Story check\n\n## Questions\n", "No questions."]) assert.deepEqual(checkDelta(ok, config(), "GM").problems, [], ok);
+  const fine = ["Need: none", "**Need:** none", "# Test data delta\n\nNeed: spec (GM-07 only)\n\n## Why\nGM-07 changed.\n\n## Spec edits\n| File | Edit | Stories |\n", "# Story check\n\n## Questions\n", "No questions."];
+  for (const ok of fine) assert.deepEqual(checkDelta(ok, config(), "GM").problems, [], ok);
 });
