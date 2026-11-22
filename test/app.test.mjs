@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, realpathSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -266,4 +266,36 @@ test("a shot, a page, or a screenshot is a .png in the run's state folder or a .
   for (const out of ["/home/u/.bashrc", "/home/u/a.png", join(root, "src/a.png"), join(state, "state.json"), join(state, "data/app.db"), join(state, "../x.png"), ".cache/e2e/../a.png", join(state, "link.png"), ".cache/e2e/up/a.png", ""]) {
     assert.throws(() => shotPath(s, out), /\.png|link|state folder/, out);
   }
+});
+
+test("acquireLock: a holder taken over does not release the next one's lock", async () => {
+  const lock = join(mkdtempSync(join(tmpdir(), "wf-lock-")), "data.lock");
+  const first = await acquireLock(lock);
+  const old = new Date(Date.now() - 300_000);
+  for (const name of readdirSync(lock)) utimesSync(join(lock, name), old, old);
+  utimesSync(lock, old, old);
+  const second = await acquireLock(lock);
+  first();
+  assert.ok(existsSync(lock), "the next holder still has it");
+  second();
+  assert.ok(!existsSync(lock), "and lets go of it");
+});
+
+test("the app's lock folders are the user's own: a link in a parent's place is refused", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "wf-lock-"));
+  const elsewhere = join(dir, "elsewhere");
+  mkdirSync(elsewhere);
+  symlinkSync(elsewhere, join(dir, "base"));
+  await assert.rejects(async () => starter({ s: { seenData: join(dir, "base", "data") } }).lockSeenData(), /base is a link or a file/);
+  const s = { instance: 1, debugPort: 9, units: { app: "wf-test-app" }, state: join(dir, "state"), profile: join(dir, "state", "chromium"), locks: join(dir, "base"), app: { web: { servers: [] } } };
+  await assert.rejects(starter({ s, hooks: {}, stopUnit: () => {}, runUnit: () => assert.fail("nothing starts") }).startWeb([]), /base is a link or a file/);
+  assert.deepEqual(readdirSync(elsewhere), [], "nothing written there");
+});
+
+test("acquireLock: a lock dated ahead of the clock is waited for, as before", async () => {
+  const lock = join(mkdtempSync(join(tmpdir(), "wf-lock-")), "data.lock");
+  mkdirSync(lock);
+  const later = new Date(Date.now() + 600_000);
+  utimesSync(lock, later, later);
+  await assert.rejects(acquireLock(lock, { waitMs: 0 }), /held by another start/);
 });

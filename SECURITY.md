@@ -18,7 +18,7 @@ Open a private security advisory on this repository (Security, then "Report a vu
   - the kit's own state folder, `~/.local/state/freeorbit-workflow` (the ask-pages server's registry, token, and log). The one server serves every project registered there.
   - Claude Desktop's theme, read only, so ask pages match it: its install and its config folder.
   - Claude Code's plugin folder, `~/.claude` or `CLAUDE_CONFIG_DIR`, read only, for `wf doctor`.
-  - `wf app`'s run folder, `/tmp/<app.name>-agent`, made for this user alone (0700) and refused when another account owns it. `wf disk` removes it.
+  - `wf app`'s run folder, `/tmp/<app.name>-agent`, made for this user alone (0700) and refused when another account owns it. `wf disk` removes it. The folder of its starts' locks, `/tmp/<app.name>-agent-locks`, is made and refused the same way before a lock is taken, and stays.
   - `wf try`'s throwaway folders, under `~/.cache/<app.name>-try` or `app.try.home`.
   - A link in the project that leads out of it is not read.
 - **Secrets stay out of agents' reads.** `SECRET_GLOBS` in the core plugin's guard names the files that may hold one: `.env`, `.env.*`, keys, certificates, keystores, SSH keys, `.npmrc`, `.netrc`, `.git-credentials`, `.pgpass`, and `credentials.json`.

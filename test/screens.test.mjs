@@ -1052,7 +1052,7 @@ test("what is inside the lock does not age it or change whose it is", () => {
   assert.ok(!existsSync(lock), "let go");
 });
 
-test("a lock dated ahead of the clock by over a minute is taken over; a file in its place ends the wait with the message", () => {
+test("a lock dated ahead of the clock by over a minute is taken over; a fresh file in its place ends the wait with the message", () => {
   const ahead = mkdtempSync(join(tmpdir(), "wf-lock-"));
   mkdirSync(join(ahead, "record.lock"));
   const later = new Date(Date.now() + 600_000);
