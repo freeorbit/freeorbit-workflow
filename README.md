@@ -104,6 +104,18 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.16.0: the app starts' lock holds one at a time
+
+The locks parallel app starts share had the race v1.15.0 fixed in the screen record's: the shared servers' and the shared data path's, which hooks take with `lockSeenData()`.
+
+- **Waiters on a stale lock take it over one at a time.** Before, two could both take it and start or build at once.
+- **A release frees only its own lock**, however often it is called. Before, a holder that was taken over removed the next one's.
+- **The waits and ages are as they were**: a lock over two minutes old is taken over, also from a holder still working, so a scenario that builds for longer, or a server that takes the request and never answers, can still overlap with the next.
+- **What is in a lock's place is handled more carefully.** A lock folder that holds other files is no longer deleted; the message names it, to remove by hand. A link goes by its own age and is removed as itself, also one that points nowhere.
+- **The folders the locks are in are refused** when they are a link or another account's, as the run's folder is: `/tmp/<app>-agent-locks` and `/tmp/<app>-agent`.
+- **The screen record's lock shares the same code.** A stray file in its place is now cleared once a minute old.
+- **Upgrade every worktree**: one on an older kit still removes whatever lock is there.
+
 ### v1.15.0: a left-out screen stays due across branches, and the record's lock holds
 
 Two bugs in the screen review's shared record, found by v1.14.0's security review, and one in its snapshots, found by CI.
