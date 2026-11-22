@@ -272,7 +272,11 @@ test("acquireLock: a holder taken over does not release the next one's lock", as
   const lock = join(mkdtempSync(join(tmpdir(), "wf-lock-")), "data.lock");
   const first = await acquireLock(lock);
   const old = new Date(Date.now() - 300_000);
-  for (const name of readdirSync(lock)) utimesSync(join(lock, name), old, old);
+  // Left as a holder that died has it: its pid, this test's, is gone.
+  for (const name of readdirSync(lock)) {
+    writeFileSync(join(lock, name), "");
+    utimesSync(join(lock, name), old, old);
+  }
   utimesSync(lock, old, old);
   const second = await acquireLock(lock);
   first();

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -32,6 +32,19 @@ function run({ free = 2, gain = 0, busy = false, ignored = () => true, dryRun = 
   const code = diskCheck(root, config, { dryRun, minimum: 10, log: (line) => lines.push(line), io });
   return { code, lines, removed };
 }
+
+test("the app's folder stays while a start builds its data there", () => {
+  const name = `wf-disk-test-${process.pid}`;
+  const state = `/tmp/${name}-agent`;
+  mkdirSync(join(state, "data.lock"), { recursive: true, mode: 0o700 });
+  try {
+    const { removed, lines } = run({ app: { name } });
+    assert.ok(!removed.some((path) => path.includes(`${name}-agent`)), "left while its lock is fresh");
+    assert.ok(lines.some((line) => line.includes("a start is building its data there")));
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
 
 test("enough space does nothing", () => {
   const { code, removed, lines } = run({ free: 50 });

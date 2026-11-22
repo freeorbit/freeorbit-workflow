@@ -104,6 +104,17 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.17.0: a live holder keeps its lock
+
+A lock the app starts share was taken over after two minutes whatever its holder was doing, so two scenario builds could share one data path, and a server that took a request and never answered held a start for minutes.
+
+- **A holder still working keeps its lock**, however long that takes: a thread of its own refreshes the lock every 5 seconds, also while a hook's synchronous build runs, and a lock that cannot be refreshed is not given. A killed holder's lock is still taken over once two minutes old, also when a build it started runs on, so stop that build too. One whose process is there but quiet, as just after the computer slept, gets 15 seconds first.
+- **Waits are for each holder, and not for time asleep**: up to 30 minutes for `lockSeenData()` and two and a half for a shared server, where they were 2 and 1 in all. A wait over 10 seconds says so, though `wf screens` shows that only when the start fails. A holder that hangs keeps the lock: the message names its pid, to stop.
+- **A server has a time to answer.** One that listens and is slow is waited for, about 90 seconds in all, and never stopped or started beside; one not there has 30 seconds to come up, as before. A first compile over 90 seconds now fails the start.
+- **A debug port that takes a connection and does not answer** is refused, as one that answers is.
+- **`wf disk` leaves `/tmp/<app>-agent`** while a start builds its data there.
+- **An older kit in another worktree** sees a beating lock as held, but its own lock does not beat, so it is still taken over after two minutes. Upgrade every worktree.
+
 ### v1.16.0: the app starts' lock holds one at a time
 
 The locks parallel app starts share had the race v1.15.0 fixed in the screen record's: the shared servers' and the shared data path's, which hooks take with `lockSeenData()`.
