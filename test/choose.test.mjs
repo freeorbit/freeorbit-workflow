@@ -78,6 +78,18 @@ test("the ledger's state, and the run each choice point recommends", () => {
   // The deep list holds every screen due; the rest of it beyond the light list is what only shared code reaches.
   const screens = [[{ light: 0, deep: 0 }, "defer"], [{ light: 3, deep: 9 }, "deep"], [{ light: 0, deep: 9 }, "deep"], [{ light: 5, deep: 9 }, "light"], [{ light: 3, deep: 9, deepOnly: 1 }, "light"]];
   for (const [state, run] of screens) assert.equal(screensAdvice(state).run, run);
+  const never = [
+    [{ light: 0, deep: 22, waiting: 22 }, "deep", /only a deep run takes the 22 screens never accepted/],
+    [{ light: 3, deep: 25, waiting: 22 }, "deep", /leaves 22 screens, at least as many as it takes, with 22 screens never accepted/],
+    [{ light: 9, deep: 11, waiting: 2 }, "light", /leaves 2 screens never accepted.* for a deep run/],
+  ];
+  for (const [state, run, says] of never) {
+    const advice = screensAdvice(state);
+    assert.equal(advice.run, run);
+    assert.match(advice.why, says);
+    assert.doesNotMatch(advice.why, /shared code/, "never accepted is not blamed on shared code");
+  }
+  assert.match(screensAdvice({ light: 0, deep: 344, waiting: 22 }).why, /22 screens never accepted or with a lost mark, and the 322 screens shared code reached/);
 });
 
 test("wf choose review writes a launch spec from the project that builds as it is", async () => {

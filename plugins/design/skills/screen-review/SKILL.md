@@ -75,6 +75,10 @@ A screen is listed to read when its app pictures **or its frame** changed since 
 `npx wf screens scope` gives two lists, and about how long each takes, from the project's `screens.scope` module.
 
 - **Each screen has its own mark**: the commit each of its pictures was last accepted at. A screen is due when a change that reaches it landed after its own mark, so an accepted run moves the screens it took and leaves the rest as they were. Pictures nothing has reached since their marks move with it, when the run was shot with no uncommitted changes, so the marks stay a few commits.
+- **A screen never accepted stays due**, on the deep list, until an accept takes it: through a deferral, a merge, and other runs' accepts. So does one whose mark was lost, such as to a deleted worktree's commit. `scope` names both, the first 30 of each, and counts lost Narrow and Stress marks, which are due when a run takes those pictures. A light run takes one only while a change reaches it in one place.
+  - The record is this computer's, so on a new computer or a fresh clone every screen is on the deep list until one deep run is accepted.
+  - An accept and a defer keep each mark's commit by a local ref under `refs/wf/marks/`, so git's cleanup after a squash merge loses no mark. A plain push does not send them.
+  - A screen nothing reaches has no picture to accept: the first accepted run that held it marks it as looked at.
 - **Uncommitted changes need no commit first.** A run shot with them is shot at a snapshot of the working tree, taken before its first picture, and the accept marks it. Committed as they were shot, the changes leave those screens accepted; a change made after the snapshot makes them due, as it should.
   - The snapshot is a local commit under `refs/wf/screens/`. A plain push sends branches only, so it stays on this computer; a mirror push, or a refspec of `refs/*`, would send it. An untracked file whose name may hold a secret, or one over 5 MB, is left out and named.
   - An accept drops a snapshot no mark names once it is 14 days old. To drop them all, `git for-each-ref --format='%(refname)' refs/wf/screens/ | xargs -n1 git update-ref -d`; the screens marked there show due again.
@@ -98,8 +102,8 @@ After the code review and the fixes for its findings, when UI files or frames ch
 1. **Rebuild the app**, so the pictures are of the fixed code. With `app.build` set, `wf screens` builds it itself before it shoots; with `app.sources`, it refuses a binary older than what it is built from.
 2. **Scope.** Run `npx wf screens scope`. Both lists empty: stop here, unless a backend change altered words on a screen; then run those screens by name.
 3. **Ask the designer** on the choice page: `npx wf choose screens | npx wf ask page -`, then the `ask-page` skill's steps.
-   - The page shows both lists' counts and times, how many only shared code reaches, and whether the code review covers HEAD. Each run, light, deep, or defer, shows its command; where the apps show, the areas, and the pictures the project sets are options.
-   - It recommends light; deep when the light list is empty and the deep one is not, or when shared code alone reaches as many screens as the light list.
+   - The page shows both lists' counts and times, how many only shared code reaches, how many were never accepted or lost their mark, and whether the code review covers HEAD. Each run, light, deep, or defer, shows its command; where the apps show, the areas, and the pictures the project sets are options.
+   - It recommends light; deep when the light list is empty and the deep one is not, or when a light run would leave at least as many screens as it takes, through shared code or as never accepted.
    - Before a deep run, check how much of the usage limit is left; the times are estimates.
    - Defer runs `npx wf screens --defer` and shoots nothing. Both lists keep growing until a run.
    - With no browser pane, ask in the chat with the same runs and options.
