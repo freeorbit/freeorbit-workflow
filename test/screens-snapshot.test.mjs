@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -109,5 +109,22 @@ test("a snapshot whose changes are committed is on the history, so its pictures 
   git("checkout", "-q", "main");
   const side = git("rev-parse", "other");
   assert.deepEqual([...onHistory(root, [side], git("rev-parse", "HEAD"))], [], "a commit on another branch is not");
+  done();
+});
+
+test("an edit of the same size in the second the index was written is in the snapshot", () => {
+  const { root, git, done } = repo();
+  // git tells such an edit by the index's own time, so this holds only while the copy of the index keeps it.
+  // ctime cannot be set, so it is left out of what git compares here.
+  git("config", "core.trustctime", "false");
+  const then = Math.floor(Date.now() / 1000) - 10;
+  utimesSync(join(root, "app.js"), then, then);
+  git("update-index", "--refresh");
+  writeFileSync(join(root, "app.js"), "two\n");
+  utimesSync(join(root, "app.js"), then, then);
+  utimesSync(join(root, ".git", "index"), then, then);
+  const shot = shotCommit(root, join(root, "out"));
+  assert.equal(shot.snapshot, true);
+  assert.equal(git("show", `${shot.at}:app.js`), "two");
   done();
 });
