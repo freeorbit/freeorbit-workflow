@@ -104,6 +104,17 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.14.0: a screen never accepted stays due
+
+Freeorbit's chunk 39c deferred its screen review with 344 screens due; after the squash merge 322 were, since a screen with no mark counted from `origin/main`, which then held it. The next accept of any run would also have marked the 22 as if they were accepted.
+
+- **A screen never accepted stays on the deep list** until an accept takes it, and so does one whose mark was lost, such as to a deleted worktree's commit. `wf screens scope` names them, and the choice page counts them.
+- **An accept never settles a screen no accept took.** A screen an older kit marked that way has no accepted picture, so it is due again. A lost mark an older kit already moved forward cannot be told from a good one; `npx wf screens --all` reads those.
+- **A mark's commit is kept** by a local ref under `refs/wf/marks/` from the next accept or defer, so a squash-merged branch's marks are not lost when git cleans up. A plain push does not send them.
+- **Upgrade every worktree before its next accept or defer.** They share one record, and an older kit drops a lost mark.
+- **A screen's name** with a slash, a backslash, or a control character is refused, since it becomes a picture's path and is printed.
+- **Expect the deep count to jump once**, by the screens that were lost this way. On a new computer or a fresh clone, which has no marks, it is every screen until one deep run is accepted.
+
 ### v1.13.0: IDs checked across open branches, and a lost designer return refused
 
 From Freeorbit's efficiency check: branches made side by side took the same next free IDs twice, and one renumbering touched about 30 files; and a designer's return saved empty passed `wf testdata delta` as "within its caps".
