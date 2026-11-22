@@ -85,6 +85,7 @@ A screen is listed to read when its app pictures **or its frame** changed since 
   - The project's `screens.scope` module must count the working tree and untracked files in what changed since a mark, as `git diff --name-only <mark>` plus `git ls-files --others --exclude-standard` does.
 - **Light**: screens a changed file reaches in one place only, such as its own page, its route, or its frame.
 - **Deep**: every screen due, with those a changed file reaches in more than one place, such as a shared component, the shell, the tokens, or the shared frame styles. A light run takes its screens off this list too.
+- An accept and a defer lock the record. A second one waits, and says so after two seconds; it takes over only a lock over a minute old, left by a run that died, and otherwise gives up after 70 seconds having written nothing, to be run again.
 - The state lives on this computer in the main checkout's `.cache/screens/state.json`, with the accepted pictures. Every worktree reads and writes that one record, so a run accepted in a worktree counts everywhere and outlives it.
 
 ## While building
@@ -129,6 +130,7 @@ After the code review and the fixes for its findings, when UI files or frames ch
    - It accepts only the last run's screens, and only the pictures taken in it.
    - **A partial accept**, when some screens wait on a fix, such as a fix chunk: `npx wf screens --accept --except <screen> ...` leaves those out, and `npx wf screens --accept <screen> ...` takes only those. A long list goes in a file, one name a line, as `@<file>`.
      - Accept a screen only when it was read as step 6 says and has no fault left. Leave out every screen with a reader's flag you have not read, a fault, a wrong state, or a frame difference the designer has not settled; a *frame changed* pair is read in full even when its reader said `same`.
+     - A screen left out stays so until an accept takes its Default. An accept on a branch that does not list it or cannot reach it, one that leaves it out again, and one of only its Narrow or Stress pictures do not clear it; it shows as held only where it can be shot. An accept that takes its Default clears it on any branch, so on a branch without the fault name it in `--except`.
      - Each screen left out goes in the fix chunk or the open questions log, as step 7 says.
      - The screens taken are marked; the changed screens left out keep their marks, so they stay listed to read and due until an accept takes them, from this run or a named run.
    - Each picture taken is marked at the commit the run was shot at. A screen that did not shoot keeps its mark and stays due until accepted; one the run could not reach is marked, since it was looked at. A light or deep run also clears any deferral.

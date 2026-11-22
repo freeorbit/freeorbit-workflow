@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync, spawnSync } from "node:child_process";
+import { promisify } from "node:util";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -15,7 +16,8 @@ import { screensSpec } from "../lib/choose/screens.mjs";
 import { acceptNames, areasOf, briefs, inAreas, migrate, screens, takenBy, whereRuns, why } from "../lib/screens/run.mjs";
 import { displayApart, jobsFor, lookStep, sessionSteps, showFor, shotsFor, shotsProblem, splitScreens, stepWord } from "../lib/screens/shoot.mjs";
 import { words } from "../lib/app/page.mjs";
-import { afterAccept, afterDefer, fromV1, markOf, readState, recordDir, statePath, withRecordLock, writeState } from "../lib/screens/state.mjs";
+import { afterAccept, afterDefer, fromV1, markOf, readState, recordDir, statePath, writeState } from "../lib/screens/state.mjs";
+import { withRecordLock } from "../lib/screens/lock.mjs";
 import { retiredRuns } from "../lib/config/config.mjs";
 import { reviewCovers } from "../lib/review.mjs";
 
@@ -536,7 +538,7 @@ test("an accept marks where the run was shot, takes the unchanged screens left o
   assert.equal(state.marks.c["wide-default"], shotAt, "c was left out but unchanged, so it is taken");
   assert.ok(!state.marks.b, "b changed and was left out, so it keeps no mark");
   assert.equal(state.marks.d["wide-default"], shotAt, "d is not due, so its mark moves with the accept");
-  assert.deepEqual(state.pending, ["b"], "b, left out changed, is pending; the pending screen off the list goes");
+  assert.deepEqual(state.pending, ["b", "gone"], "b, left out changed, is pending; one this checkout does not list stays, as another worktree may");
   assert.deepEqual(state.deferred, { count: 1, at: "1234567" }, "a run outside chunk end leaves a deferral");
   assert.deepEqual(JSON.parse(readFileSync(join(latest, "hashes.json"), "utf8")), { b: { "wide-default": "b1" } }, "only the changed screen left out stays to accept");
   assert.equal(JSON.parse(readFileSync(join(latest, "run.json"), "utf8")).at, shotAt, "and keeps where it was shot");
@@ -944,4 +946,194 @@ test("a screen name that is a path or holds a control character is refused, and 
   const started = Date.now();
   parseReach(`none, 1${"a".repeat(5000)}`);
   assert.ok(Date.now() - started < 500, `took ${Date.now() - started} ms`);
+});
+
+test("an accept on a branch without a pending screen leaves it pending for the branch that has it", async () => {
+  const { root, git, file, say, accept } = markedRepo();
+  const marks = JSON.parse(readFileSync(statePath(root), "utf8"));
+  writeState({ ...marks, pending: ["b"] }, statePath(root));
+  assert.equal(await say("scope", "--names", "deep"), "b");
+  git("switch", "-qc", "without-b");
+  writeFileSync(file, readFileSync(file, "utf8").split("\n").filter((line) => !line.includes("`b`")).join("\n"));
+  git("commit", "-qam", "no b here");
+  assert.equal(await say("scope", "--names", "deep"), "", "not due where it is not listed");
+  await accept({ a: { "wide-default": "a2" } });
+  assert.deepEqual(JSON.parse(readFileSync(statePath(root), "utf8")).pending, ["b"]);
+  git("switch", "-q", "main");
+  assert.equal(await say("scope", "--names", "deep"), "b", "still due: no accept took it");
+});
+
+test("a record from before marks keeps a screen left open that this branch does not list", () => {
+  assert.deepEqual(fromV1({ last: "1111111", deep: "0000000", open: { b: "2222222" } }, new Map(), ["a"]).pending, ["b"]);
+});
+
+test("a lock under a minute old is never taken over: the wait runs out, and says so", () => {
+  const dir = mkdtempSync(join(tmpdir(), "wf-lock-"));
+  mkdirSync(join(dir, "record.lock"));
+  let ran = false;
+  assert.throws(() => withRecordLock(dir, () => (ran = true), { wait: 300 }), /record\.lock.*Nothing was written/s);
+  assert.ok(!ran, "nothing changed under another's lock");
+  assert.ok(existsSync(join(dir, "record.lock")), "the holder still has it");
+});
+
+test("a lock over a minute old that cannot be removed ends the wait with the message, not a loop", { timeout: 10_000 }, () => {
+  const dir = mkdtempSync(join(tmpdir(), "wf-lock-"));
+  mkdirSync(join(dir, "record.lock", "inside"), { recursive: true });
+  const old = new Date(Date.now() - 120_000);
+  utimesSync(join(dir, "record.lock"), old, old);
+  const state = new URL("../lib/screens/lock.mjs", import.meta.url).href;
+  const res = spawnSync(process.execPath, ["--input-type=module", "-e", `import { withRecordLock } from ${JSON.stringify(state)}; withRecordLock(process.argv[1], () => {}, { wait: 300 });`, dir], { encoding: "utf8", timeout: 5000 });
+  assert.match(res.stderr, /Nothing was written/);
+});
+
+test("a holder whose lock was taken over does not remove the new holder's", () => {
+  const dir = mkdtempSync(join(tmpdir(), "wf-lock-"));
+  const lock = join(dir, "record.lock");
+  withRecordLock(dir, () => {
+    rmSync(lock, { recursive: true });
+    mkdirSync(lock);
+  });
+  assert.ok(existsSync(lock), "the new holder's lock stays");
+});
+
+test("waiters that find one stale lock hold it one at a time", { timeout: 60_000 }, async () => {
+  const state = new URL("../lib/screens/lock.mjs", import.meta.url).href;
+  const code = `
+    import { appendFileSync } from "node:fs";
+    import { withRecordLock } from ${JSON.stringify(state)};
+    const [dir, go] = process.argv.slice(1);
+    const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+    while (Date.now() < Number(go));
+    withRecordLock(dir, () => {
+      appendFileSync(dir + "/order", "in\\n");
+      pause(25);
+      appendFileSync(dir + "/order", "out\\n");
+    });`;
+  for (let round = 0; round < 6; round++) {
+    const dir = mkdtempSync(join(tmpdir(), "wf-lock-"));
+    mkdirSync(join(dir, "record.lock"));
+    const old = new Date(Date.now() - 120_000);
+    // An older kit's empty lock, and a dead holder's with its token, in turn.
+    const token = join(dir, "record.lock", "held-0123456789abcdef");
+    if (round % 2) writeFileSync(token, "");
+    if (round % 2) utimesSync(token, old, old);
+    utimesSync(join(dir, "record.lock"), old, old);
+    const go = String(Date.now() + 350);
+    await Promise.all(Array.from({ length: 8 }, () => promisify(execFile)(process.execPath, ["--input-type=module", "-e", code, dir, go])));
+    assert.equal(readFileSync(join(dir, "order"), "utf8"), "in\nout\n".repeat(8), `two held it at once, round ${round}`);
+  }
+});
+
+test("a holder taken over writes nothing: its check throws", () => {
+  const dir = mkdtempSync(join(tmpdir(), "wf-lock-"));
+  let wrote = false;
+  assert.throws(
+    () =>
+      withRecordLock(dir, (check) => {
+        const token = join(dir, "record.lock", readdirSync(join(dir, "record.lock"))[0]);
+        utimesSync(token, new Date(Date.now() - 120_000), new Date(Date.now() - 120_000));
+        withRecordLock(dir, () => {}, { wait: 1000 });
+        check();
+        wrote = true;
+      }),
+    /taken over while this worked.*Nothing was written/,
+  );
+  assert.ok(!wrote);
+});
+
+test("what is inside the lock does not age it or change whose it is", () => {
+  const dir = mkdtempSync(join(tmpdir(), "wf-lock-"));
+  const lock = join(dir, "record.lock");
+  withRecordLock(dir, (check) => {
+    writeFileSync(join(lock, "stray"), "");
+    rmSync(join(lock, "stray"));
+    check();
+  });
+  assert.ok(!existsSync(lock), "let go");
+});
+
+test("a lock dated ahead of the clock by over a minute is taken over; a file in its place ends the wait with the message", () => {
+  const ahead = mkdtempSync(join(tmpdir(), "wf-lock-"));
+  mkdirSync(join(ahead, "record.lock"));
+  const later = new Date(Date.now() + 600_000);
+  utimesSync(join(ahead, "record.lock"), later, later);
+  assert.equal(withRecordLock(ahead, () => "held", { wait: 1000 }), "held");
+  const file = mkdtempSync(join(tmpdir(), "wf-lock-"));
+  writeFileSync(join(file, "record.lock"), "");
+  assert.throws(() => withRecordLock(file, () => {}, { wait: 200 }), /Nothing was written/);
+});
+
+test("a pending screen is cleared only by an accept that takes its Default: not one that could not reach it, left it out, or took its Narrow", async () => {
+  const unreachedHere = markedRepo();
+  const kept = () => JSON.parse(readFileSync(statePath(unreachedHere.root), "utf8"));
+  writeState({ ...kept(), pending: ["b"] }, statePath(unreachedHere.root));
+  writeFileSync(unreachedHere.file, readFileSync(unreachedHere.file, "utf8").replace(/^\| `b`.*$/m, "| `b` | X-1 | none, CH-40: later | it |"));
+  assert.equal(await unreachedHere.say("scope", "--names", "deep"), "", "held only where it can be shot");
+  assert.deepEqual(afterAccept({ version: 2, marks: {}, pending: ["b"] }, { b: ["wide-default"] }, "x", false, { unreached: ["b"] }).pending, ["b"]);
+  assert.deepEqual(afterAccept({ version: 2, marks: {}, pending: ["b"] }, { b: ["narrow-default"] }, "x").pending, ["b"]);
+
+  const { root, say, git } = markedRepo();
+  writeState({ ...JSON.parse(readFileSync(statePath(root), "utf8")), pending: ["b"] }, statePath(root));
+  const latest = join(root, ".cache/screens/latest");
+  mkdirSync(latest, { recursive: true });
+  writeFileSync(join(latest, "hashes.json"), JSON.stringify({ a: { "wide-default": "a2" }, b: { "wide-default": "b1" } }));
+  writeFileSync(join(latest, "run.json"), JSON.stringify({ mode: null, shots: ["wide-default"], at: git("rev-parse", "HEAD"), failed: 0, unreached: [] }));
+  assert.match(await say("--accept", "--except", "b"), /Accepted 1 screens[\s\S]*1 unchanged screens left out/);
+  assert.deepEqual(JSON.parse(readFileSync(statePath(root), "utf8")).pending, ["b"], "unchanged, and left out by name");
+  await say("--accept", "b");
+  assert.ok(!JSON.parse(readFileSync(statePath(root), "utf8")).pending, "taken by name");
+});
+
+/** A scope module that writes as another worktree would, while the accept works. */
+const meanwhile = (body) => `import { readFileSync, writeFileSync } from "node:fs";
+export const lists = ({ root }) => {
+  const at = (file) => root + "/.cache/screens/" + file;
+  const edit = (file, change) => {
+    const value = JSON.parse(readFileSync(at(file), "utf8"));
+    change(value);
+    writeFileSync(at(file), JSON.stringify(value));
+  };
+  ${body}
+  return { light: new Map(), deep: new Map() };
+};
+`;
+
+/** Shoot a, changed, and b, unchanged, in a repository whose screen c is there only to be settled. */
+function raced(body) {
+  const repo = markedRepo(meanwhile(body));
+  writeFileSync(repo.file, `${readFileSync(repo.file, "utf8")}| \`c\` | X-1 | \`s › go #/\` | it |\n`);
+  writeFileSync(join(repo.record, "accepted.json"), JSON.stringify({ a: { "wide-default": "a1" }, b: { "wide-default": "b1" }, c: { "wide-default": "c1" } }));
+  const state = JSON.parse(readFileSync(statePath(repo.root), "utf8"));
+  writeState({ ...state, marks: { ...state.marks, c: { "wide-default": repo.head } } }, statePath(repo.root));
+  return repo;
+}
+
+test("an unchanged screen another worktree accepted or held while an accept worked is left as that made it", async () => {
+  const taken = raced('edit("accepted.json", (all) => { all.b = { "wide-default": "b2" }; });');
+  await taken.accept({ a: { "wide-default": "a2" }, b: { "wide-default": "b1" } });
+  assert.equal(JSON.parse(readFileSync(join(taken.record, "accepted.json"), "utf8")).b["wide-default"], "b2", "not put back");
+  const held = raced('edit("state.json", (state) => { state.pending = ["b"]; });');
+  await held.accept({ a: { "wide-default": "a2" }, b: { "wide-default": "b1" } });
+  assert.deepEqual(JSON.parse(readFileSync(statePath(held.root), "utf8")).pending, ["b"], "still held");
+});
+
+test("a run shot while an accept waited is not deleted by it, and nothing is written", async () => {
+  const { record, root, accept } = raced('writeFileSync(at("latest/run.json"), JSON.stringify({ mode: "deep" }));');
+  await assert.rejects(accept({ a: { "wide-default": "a2" } }), /another run was shot/);
+  assert.equal(JSON.parse(readFileSync(join(record, "accepted.json"), "utf8")).a["wide-default"], "a1");
+  assert.ok(existsSync(join(root, ".cache/screens/latest/hashes.json")));
+});
+
+test("a deferral made while an accept converts a record from before marks is kept", async () => {
+  const repo = raced('edit("state.json", (state) => { state.deferred = { count: 1, at: "1234567" }; state.open = { b: "1234567" }; });');
+  writeState({ last: repo.head, deep: repo.head, lightRuns: [], open: {}, deferred: { count: 0, at: null } }, statePath(repo.root));
+  await repo.accept({ a: { "wide-default": "a2" } });
+  const state = JSON.parse(readFileSync(statePath(repo.root), "utf8"));
+  assert.deepEqual([state.deferred.count, state.pending], [1, ["b"]]);
+});
+
+test("a record git cannot check leaves the accepted pictures as they were", async () => {
+  const repo = raced('writeFileSync(at("state.json"), "{");');
+  await assert.rejects(repo.accept({ a: { "wide-default": "a2" } }));
+  assert.equal(JSON.parse(readFileSync(join(repo.record, "accepted.json"), "utf8")).a["wide-default"], "a1");
 });

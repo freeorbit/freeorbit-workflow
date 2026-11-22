@@ -104,6 +104,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.15.0: a left-out screen stays due across branches, and the record's lock holds
+
+Two bugs in the screen review's shared record, found by v1.14.0's security review.
+
+- **A screen left out of an accept stays due** until an accept takes its Default. It is no longer cleared by a branch that does not list it or cannot reach it, by an accept that leaves it out again, or by one of only its Narrow or Stress pictures. An accept that takes its Default still clears it, on any branch. A deleted screen's name stays in the record and is due nowhere.
+- **An accept keeps what landed while it worked**: another worktree's accept or held screen, a deferral, or a newer run, which it refuses to delete.
+- **The record's lock is taken over only once a minute old**, by one waiter at a time. Before, any waiter took it after about 10 seconds, so two worktrees could write at once and lose an accept.
+- **A wait can be longer.** After a `wf screens --accept` or `--defer` was killed while writing, the next one waits up to a minute, and says so. If it gives up, after 70 seconds, it has written nothing: run it again.
+- **Upgrade every worktree**: one on an older kit still drops another branch's left-out screens, and takes an empty lock after about 10 seconds. It cannot take this kit's lock, so behind one left by a killed run it keeps retrying until a run on this kit takes that over, or the folder is removed.
+
 ### v1.14.0: a screen never accepted stays due
 
 Freeorbit's chunk 39c deferred its screen review with 344 screens due; after the squash merge 322 were, since a screen with no mark counted from `origin/main`, which then held it. The next accept of any run would also have marked the 22 as if they were accepted.
