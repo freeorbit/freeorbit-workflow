@@ -8,7 +8,8 @@
 // test proves nothing.
 
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { after, before, test } from "node:test";
@@ -40,7 +41,8 @@ before(async () => {
 after(async () => {
   await browser?.close();
   for (const s of servers) await s.close();
-  rmSync(scratch, { recursive: true, force: true });
+  // Chromium's helpers can still be writing as they exit; rmSync's retries leave the folder behind, rm's wait it out.
+  await rm(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
 });
 
 /** Build `raw` in a project of its own, with a stand-in for each picture it names, serve it, and open it in a window of this size. */

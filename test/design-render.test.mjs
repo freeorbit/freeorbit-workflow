@@ -3,7 +3,8 @@
 // alone. Chromium is found as the design tools find it; without one the tests
 // fail, as the kit's design checks would.
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, test } from "node:test";
@@ -30,7 +31,8 @@ before(async () => {
 });
 after(async () => {
   await browser?.close();
-  rmSync(root, { recursive: true, force: true });
+  // Chromium's helpers can still be writing as they exit; rmSync's retries leave the folder behind, rm's wait it out.
+  await rm(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
 });
 
 /** A frame under the frames folder, as <area>/<section>/<name>.html. */
