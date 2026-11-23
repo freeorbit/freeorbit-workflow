@@ -78,7 +78,7 @@ Any host that runs a container with HTTPS ingress and a persistent volume, such 
    | `WF_TEAM_ORIGIN` | The address people open, such as `https://asks.example.com` |
    | `WF_TEAM_ADMIN_TOKEN` | A random secret of 32 characters or more, from the host's secret store (`openssl rand -base64 36`) |
    | `WF_TEAM_DATA` | `/data`, where the volume is mounted |
-   | Probes | `GET /__team/health` |
+   | Probes | `GET /__team/health`, which answers at any Host, so a probe that reaches the replica by its own address needs no header |
    | `X-Forwarded-For` | Set by the host's proxy, as Azure Container Apps' ingress does; the server takes its last address as the caller's, to limit invite tries |
 3. **The volume** at `/data`, which outlasts a restart and a new revision, with the host's snapshots.
 4. **The first people.** The admin puts the admin secret in their own `tokenEnv` for a moment, and invites themself and the team:

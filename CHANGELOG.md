@@ -4,6 +4,13 @@ What each kit version changed, newest first, and what a project does to upgrade 
 
 To upgrade, pin the version's tag in the project, as [Install in a project](README.md#install-in-a-project) shows.
 
+## v1.20.1: the team server's health probe answers at any Host
+
+The team server answered only its public address as Host, its health probe too, so a host's probe, which reaches the replica by its own address, got 403 and the server never became ready. Atlas NX worked around it with a Host header on each probe (2026-11-24).
+
+- **`GET /__team/health` (or `HEAD`) answers at any Host**, and says only `{ "ok": true }`. Every other request still keeps to `WF_TEAM_ORIGIN`.
+- **A probe needs no Host header** now; one set as a workaround can stay or go.
+
 ## v1.20.0: a team server for ask pages
 
 A team working apart saw a teammate's open questions only once their PR merged, and answered in another PR; the client was sent the page by email. A team server shares the ask pages: the team and the client answer them in one place, from anywhere. It is optional: a project without it works alone, as before. The design, and the steps to deploy it, are in `docs/design/team-server.md`.
