@@ -6,7 +6,7 @@ A page can show more than questions: give `sections`, each a `title` and its `bl
 
 | Block | Fields | Export |
 | --- | --- | --- |
-| `text` | `text`: headings (`#`), paragraphs, `-` and `1.` lists, `**bold**`, `*italic*`, `` `code` ``, and fenced code, which may name its language and first line (```` ```ts:42 ````); no links or HTML | Markdown |
+| `text` | `text`: Markdown, which the page parses as it draws: headings (`#` to `######`), paragraphs, lists (nested, holding paragraphs and code), `>` quotes, `---` rules, tables with a delimiter row, `**bold**`, `*italic*`, `~~struck~~`, `` `code` ``, links to `https:` or `mailto:` addresses, and fenced code (```` ``` ```` or `~~~`, which may name its language and first line, ```` ```ts:42 ````); no HTML | Markdown |
 | `code` | `file`, a path in the project, with `lines` `[first, last]`, read when the page is built; or `code` inline with `lang` and `start`. `mark` lists lines to set apart, or `[first, last]` pairs. At most 400 lines; never `.git`, an env file, a key, or a link out of the project | Markdown, the file |
 | `stats` | `items` of `label`, `value` (24 characters), `tone` (ok, warn, bad, info), `note`, and `trend`, up to 60 numbers drawn as a sparkline | Markdown, CSV |
 | `table` | `columns` and `rows`, or `source`: `open-questions`, `decisions` (with `filter`, a file id), or `ledger`; sortable, and filterable over 8 rows | CSV, Markdown |

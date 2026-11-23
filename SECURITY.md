@@ -14,6 +14,7 @@ Open a private security advisory on this repository (Security, then "Report a vu
   - `wf doctor` and `wf signoffs` run `gh`, which talks to GitHub.
   - `wf scan` runs the commands a project lists in its own config, which may reach the network.
   - The ask-pages server listens on `127.0.0.1` only.
+  - An ask page loads nothing from the web: a picture in its Markdown shows as its words. A link in it goes only to an `https:` or `mailto:` address, opens only when the person clicks it, in a new tab that is told nothing of the page, and shows where it goes; a link whose words are an address shows the one it goes to beside them.
 - **The project, and a few named places outside it.** Scripts read and write the git work tree they run in, and:
   - the kit's own state folder, `~/.local/state/freeorbit-workflow` (the ask-pages server's registry, token, and log). The one server serves every project registered there.
   - Claude Desktop's theme, read only, so ask pages match it: its install and its config folder.
