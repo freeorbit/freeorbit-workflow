@@ -246,3 +246,70 @@ test("an unreachable team server says what to check, and wait stops on a page pu
     delete process.env.WF_TEAM_DOWN_TEST;
   }
 });
+
+test("a page can stay on this machine, with --local or the spec's local, though the config names a team server", async () => {
+  const port = await freePort();
+  const origin = `http://127.0.0.1:${port}`;
+  const s = await teamServe({ dir: mkdtempSync(join(tmpdir(), "wf-team-local-")), origin, port, host: "127.0.0.1", adminToken: ADMIN, secureCookie: false, log: () => {} });
+  const root = mkdtempSync(join(tmpdir(), "wf-team-local-proj-"));
+  mkdirSync(join(root, ".workflow"));
+  // Open prints the address, so the test opens no browser.
+  writeFileSync(join(root, ".workflow/config.json"), JSON.stringify({ teamServer: { url: origin, project: "atlas", tokenEnv: "WF_TEAM_LOCAL_TEST" }, ask: { open: "print" } }));
+  writeFileSync(join(root, "package.json"), "{}");
+  spawnSync("git", ["init", "-q"], { cwd: root });
+  const cwd = process.cwd();
+  process.chdir(root);
+  try {
+    const out = [];
+    const log = (line) => out.push(line);
+    // No token is needed for a page that stays here.
+    delete process.env.WF_TEAM_LOCAL_TEST;
+    writeFileSync(join(root, "p.json"), JSON.stringify(page("here", { live: true })));
+    // --local before the spec reads as well as after it.
+    assert.equal(await runAsk(["page", "--local", "p.json"], log), 0);
+    const said = out.join("\n");
+    assert.match(said, /Open: http:\/\/127\.0\.0\.1:\d+\/.*\/ask\/here\/index\.html/);
+    assert.doesNotMatch(said, /Team:/);
+    assert.equal(JSON.parse(readFileSync(join(root, ".cache/view/ask/here/spec.json"), "utf8")).local, true, "the page remembers it stays here");
+    const hash = JSON.parse(readFileSync(join(root, ".cache/view/ask/here/spec.json"), "utf8")).hash;
+    // Every later command reads that from the page: wait, live, reply, more, and open stay here too, with no token asked for.
+    out.length = 0;
+    assert.equal(await runAsk(["wait", "here", "--timeout", "0.5"], log), 3);
+    assert.equal(await runAsk(["live", "here", "--step", "Flow 1"], log), 0);
+    assert.doesNotMatch(out.at(-1), /team server/);
+    assert.equal(await runAsk(["reply", "here", "q1", "Why?"], log), 0);
+    assert.match(out.at(-1), /replied under q1 \(1 reply\)/);
+    assert.equal(await runAsk(["more", "here", "q1", "--text", "Because."], log), 0);
+    assert.doesNotMatch(out.at(-1), /team server/);
+    assert.equal(await runAsk(["open", "here"], log), 0);
+    assert.doesNotMatch(out.join("\n"), new RegExp(origin));
+    // The spec's own local does the same, for a page that is always this machine's, such as one to export.
+    out.length = 0;
+    writeFileSync(join(root, "q.json"), JSON.stringify(page("always-here", { local: true })));
+    assert.equal(await runAsk(["page", "q.json"], log), 0);
+    assert.doesNotMatch(out.join("\n"), /Team:/);
+    assert.equal(await runAsk(["export", "always-here"], log), 0);
+    // Nothing reached the server.
+    process.env.WF_TEAM_LOCAL_TEST = ADMIN;
+    assert.equal((await call(port, "/__team/api/atlas/here", { headers: { Host: `127.0.0.1:${port}`, Authorization: `Bearer ${ADMIN}` } })).status, 404);
+    // Without --local, the next build of the same page goes to the team server again, as the same page: its hash, and the reply, stay.
+    out.length = 0;
+    assert.equal(await runAsk(["page", "p.json"], log), 0);
+    assert.match(out.join("\n"), /Team: /);
+    const team = JSON.parse(readFileSync(join(root, ".cache/view/ask/here/spec.json"), "utf8"));
+    assert.deepEqual([team.local, team.hash], [undefined, hash], "where a page lives is not part of the page");
+    assert.ok(existsSync(join(root, ".cache/view/ask/here/replies.json")), "the reply stays with the same page");
+    // Back to --local: the copy on the team server stays, and the build says so.
+    out.length = 0;
+    assert.equal(await runAsk(["page", "p.json", "--local"], log), 0);
+    assert.match(out.join("\n"), /here: built here only\. Its copy on the team server stays/);
+    // A local that is not true is the spec's problem, said before any token is asked for.
+    delete process.env.WF_TEAM_LOCAL_TEST;
+    writeFileSync(join(root, "bad.json"), JSON.stringify(page("bad", { local: "yes" })));
+    await assert.rejects(runAsk(["page", "bad.json"], log), /local is true, for a page kept on this machine/);
+  } finally {
+    process.chdir(cwd);
+    delete process.env.WF_TEAM_LOCAL_TEST;
+    await s.close();
+  }
+});

@@ -28,6 +28,7 @@ Ask pages, shared by a team working apart and by its client: one server everyone
   | `wf ask wait` | Watches the answers file | Polls the server, and keeps a copy under `.cache/view/answers`, so everything after it is unchanged |
   | `wf ask more`, `reply`, `live` | Write files the page polls | Post to the server |
   | `wf ask record` (Later, for a role) | Adds an open questions row | Also publishes it as a question for that role, with its Q-ID (see Open questions) |
+- **One page can stay here.** `wf ask page <spec> --local`, or the spec's `"local": true`, keeps that page on this machine as if no team server were named, and the page remembers it for the commands after. Where a page lives is not part of it, so the same page built either way keeps its answers and replies; a copy published before stays on the team server, which the build says. Turning `teamServer` off is never needed for one page.
 - **The agent's side does not change.** `answers`, `record`, `history`, and `export` read the local copy.
 
 ## Who signs in
