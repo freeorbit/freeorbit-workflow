@@ -124,6 +124,12 @@ test("the team server: nothing without signing in, an invite link signs a browse
     assert.equal((await s.call("/__team/join")).status, 200, "the invite link's page is open to all");
     assert.equal((await s.call("/__team/health")).status, 200, "and the host's probe");
     assert.equal((await s.call("/__team/me", { host: "evil.test" })).status, 403, "only its own address");
+    // The host's probe reaches the replica by its own address, so the health route answers any Host, and says nothing more.
+    const probe = await s.call("/__team/health", { host: "10.0.0.7:8080", from: null });
+    assert.deepEqual([probe.status, await probe.json()], [200, { ok: true }]);
+    assert.equal((await s.call("/__team/join", { host: "10.0.0.7:8080", from: null })).status, 403, "only the probe");
+    assert.equal((await s.call("/__team/health", { method: "HEAD", host: "10.0.0.7:8080", from: null })).status, 200);
+    assert.equal((await s.call("/__team/health", { method: "POST", host: "10.0.0.7:8080", from: null, body: {} })).status, 403, "and only to look");
     const sam = await s.enroll({ name: "sam", role: "designer", projects: ["atlas"] });
     assert.match(sam.setCookie, /HttpOnly; SameSite=Lax/);
     assert.equal(sam.got.name, "sam");
