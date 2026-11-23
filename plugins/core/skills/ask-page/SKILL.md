@@ -96,6 +96,7 @@ Every template, question type, and block is made for one kind of question. Pick 
 - **[Answer types](reference/answer-types.md).** Scale, grid, buckets, edits, and form questions; follow-ups with `showIf`, owners, and boxes on pictures.
 - **[A project's own templates](reference/project-templates.md).** A template kept as data in `.workflow/ask-templates/`, checked like the kit's.
 - **[Many sessions](reference/many-sessions.md).** One server for every project and session, the inbox, ids, and stopping the server.
+- **[A team server](reference/team.md).** When the config names `teamServer`: pages published for a team working apart and its client, `for`, answers by person, and questions left for later answered before the merge.
 - **[Live pages](reference/live.md).** A status page you update while a step runs, a reply under a question, history, what changed, step-by-step pages, and the waiting count and notifications.
 
 ## Answers
