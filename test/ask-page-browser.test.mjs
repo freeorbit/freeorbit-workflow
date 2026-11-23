@@ -626,6 +626,42 @@ test("details written at build fold under the question, a code block shows its l
   const { readAsks, addMore, PAGE } = await import("../lib/ask/more.mjs");
   await until(`document.querySelector(".page-more .more-thread .ask")`, "the ask about the page");
   assert.equal(readAsks(view, spec.id)[PAGE][0].text, "Why now?");
+  // A reply as v1.18.0 kept it, with the nodes it parsed then: the page draws its source.
   addMore(view, spec, PAGE, { blocks: [{ type: "text", title: "", note: "", id: "", source: "The release is close.", nodes: [{ k: "p", spans: [{ t: "text", s: "The release is close." }] }] }] });
   await until(`/The release is close/.test(document.querySelector(".page-more .more-reply")?.textContent ?? "")`, "the reply about the page", 8000);
+});
+
+test("the agent's Markdown is drawn whole: a table, a link, a quote, a nested list, and code inside a list item", async () => {
+  const { view, spec } = await openPage(choices(1), { before: agentWaits });
+  const { addMore, moreBlocks } = await import("../lib/ask/more.mjs");
+  const source = [
+    "Two ways, with ask_more_test left as it is:",
+    "",
+    "| Way | Cost |",
+    "| --- | ---: |",
+    "| `a|b` | 3 |",
+    "",
+    "> Read [the docs](https://example.com/docs) first, not [https://github.com/a](https://other.example/x).",
+    "",
+    "1. Change this:",
+    "   ```js",
+    "   const a = 1;",
+    "   ```",
+    "2. Then:",
+    "   - one",
+    "   - two",
+  ].join("\n");
+  addMore(view, spec, "q1", moreBlocks({ md: source }, {}));
+  await until(`document.querySelector("#q-q1 .more-reply table")`, "the reply's table", 8000);
+  const reply = "#q-q1 .more-reply";
+  assert.deepEqual(await js(`[...document.querySelectorAll("${reply} table td")].map((e) => e.textContent)`), ["a|b", "3"]);
+  assert.equal(await js(`getComputedStyle(document.querySelectorAll("${reply} table td")[1]).textAlign`), "right");
+  assert.equal(await js(`document.querySelector("${reply} blockquote a").href`), "https://example.com/docs");
+  assert.equal(await js(`document.querySelector("${reply} blockquote a").rel`), "noopener noreferrer");
+  assert.equal(await js(`document.querySelector("${reply} blockquote a").title`), "https://example.com/docs", "a link says where it goes");
+  assert.equal(await js(`document.querySelectorAll("${reply} blockquote a")[1].textContent`), "https://github.com/a (other.example)", "words that read as another address show the real one")
+  assert.equal(await js(`document.querySelector("${reply} ol > li .code-view .lc").textContent`), "const a = 1;");
+  assert.equal(await js(`document.querySelectorAll("${reply} ol > li > ul > li").length`), 2);
+  assert.match(await js(`document.querySelector("${reply} p").textContent`), /ask_more_test left/);
+  assert.equal(await js(`document.querySelector("${reply} p em")`), null);
 });

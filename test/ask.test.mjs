@@ -632,13 +632,10 @@ test("a submitted time is the browser's only when it is a time, and never breaks
   assert.doesNotMatch(answersMarkdown(spec, { submitted: "2026-11\n# x", answers: {} }).split("\n")[0], /\n/);
 });
 
-test("blocks: text is parsed into nodes, never HTML", async () => {
-  const { parseText } = await import("../lib/ask/blocks.mjs");
-  const nodes = parseText("## What changed\nSome **bold**, *slant*, and `code` <script>x</script>.\n\n- one\n- two\n\n1. first\n\n```\nraw <b>\n```");
-  assert.deepEqual(nodes.map((n) => n.k), ["h", "p", "ul", "ol", "pre"]);
-  assert.deepEqual(nodes[1].spans.map((s) => s.t), ["text", "b", "text", "i", "text", "code", "text"]);
-  assert.equal(nodes[1].spans.at(-1).s, " <script>x</script>.", "markup stays text, which the page draws as text");
-  assert.equal(nodes[4].text, "raw <b>");
+test("blocks: text is kept as Markdown, which the page parses", () => {
+  const { spec } = normalize({ id: "a", title: "t", questions: [{ id: "q", text: "x" }], blocks: [{ type: "text", text: "## Hi" }] });
+  assert.equal(spec.sections[0].blocks[0].source, "## Hi");
+  assert.equal(spec.sections[0].blocks[0].nodes, undefined, "the page parses it (test/ask-markdown.test.mjs), so a better parser shows pages built before");
 });
 
 test("blocks: a diff works out what was removed and added, by line or word", async () => {

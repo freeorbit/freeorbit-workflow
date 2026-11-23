@@ -40,7 +40,7 @@ Phase 1 built the first four, phase 2 the richer answers below, and phase 3 the 
 
 | Block | Holds | Export | Phase |
 | --- | --- | --- | --- |
-| `text` | Headings, paragraphs, lists, bold, italic, and code; fenced code may name its language and first line; no links or HTML | Markdown | 1 |
+| `text` | Markdown, kept as written and parsed by the page as it draws (`lib/ask/browser/markdown.js`, which the kit also loads to check it): headings, lists, quotes, rules, tables, emphasis, code, and web and mail links; never HTML; parsed by the page since v1.19.0 | Markdown | 1 |
 | `code` | Lines of a project file, read at build (`codeFile` in `lib/ask/sources.mjs`), or code inline; numbered, with lines marked | Markdown, the file | 5 |
 | `stats` | Tiles: a label, a value, a tone (ok, warn, bad, info), and a note | Markdown, CSV | 1 |
 | `table` | Columns and rows, sortable and filterable | CSV, Markdown | 1 |

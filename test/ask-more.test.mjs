@@ -11,7 +11,6 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { answersMarkdown, askState, checkAnswers, recordAnswers } from "../lib/ask/answers.mjs";
-import { parseText } from "../lib/ask/blocks.mjs";
 import { fieldsOf } from "../lib/ask/fields.mjs";
 import { runAsk } from "../lib/ask/index.mjs";
 import { addAsk, addMore, markTold, MORE_LIMITS, moreBlocks, moreOf, PAGE, pendingAsks, readAsks, readMore, untoldAsks, withMore } from "../lib/ask/more.mjs";
@@ -125,7 +124,7 @@ test("the agent's reply answers the asks before it: blocks, Markdown with code, 
   assert.deepEqual(pendingAsks(view, spec).map((a) => a.question), ["q1", "q2"]);
   const { blocks, problems } = moreBlocks({ md: "Here:\n\n```js:41\nconst x = 1;\n```" }, {});
   assert.deepEqual(problems, []);
-  assert.equal(blocks[0].nodes[1].lang, "js");
+  assert.deepEqual(Object.keys(blocks[0]).sort(), ["id", "note", "source", "title", "type"], "text goes as Markdown; the page parses it");
   const back = addMore(view, spec, "q1", { blocks });
   assert.equal(back.to, 1);
   assert.deepEqual(pendingAsks(view, spec).map((a) => a.question), ["q2"], "q1's ask is answered");
@@ -154,7 +153,7 @@ test("a reply after the page was sent asks again, as a reply under a question do
   assert.equal(askState(view, spec.id, spec).state, "answered");
   addAsk(view, spec, { question: "q2", text: "Why b?" });
   assert.equal(askState(view, spec.id, spec).state, "answered", "the person asking is not the agent asking");
-  addMore(view, spec, "q2", { blocks: [{ type: "text", title: "", note: "", id: "", source: "Because.", nodes: parseText("Because.") }] });
+  addMore(view, spec, "q2", { blocks: [{ type: "text", title: "", note: "", id: "", source: "Because." }] });
   assert.equal(askState(view, spec.id, spec).state, "waiting");
 });
 
@@ -214,7 +213,7 @@ test("a reply answers the asks wait told; one that came after waits for its own"
   addAsk(view, spec, { question: "q1", text: "First" });
   markTold(view, spec, untoldAsks(view, spec));
   addAsk(view, spec, { question: "q1", text: "Second, while the agent wrote" });
-  assert.equal(addMore(view, spec, "q1", { blocks: [{ type: "text", title: "", note: "", id: "", source: "One.", nodes: parseText("One.") }] }).to, 1);
+  assert.equal(addMore(view, spec, "q1", { blocks: [{ type: "text", title: "", note: "", id: "", source: "One." }] }).to, 1);
   assert.deepEqual(untoldAsks(view, spec).map((a) => a.text), ["Second, while the agent wrote"]);
   assert.deepEqual(moreOf(view, spec.id).told, { q1: 1 }, "the page reads which asks the agent has");
 });
@@ -226,7 +225,7 @@ test("added options are counted per question, also on the spec that holds them",
   assert.throws(() => addMore(view, withMore(view, spec), "q1", { options: opts(20, 2) }), /at most 10 added options/);
   addMore(view, withMore(view, spec), "q1", { options: opts(30, 1) });
   // A reply that adds an option is kept past the replies limit, so the option stays pickable.
-  for (let i = 0; i < MORE_LIMITS.replies + 2; i++) addMore(view, spec, "q1", { blocks: [{ type: "text", title: "", note: "", id: "", source: `R${i}`, nodes: parseText(`R${i}`) }] });
+  for (let i = 0; i < MORE_LIMITS.replies + 2; i++) addMore(view, spec, "q1", { blocks: [{ type: "text", title: "", note: "", id: "", source: `R${i}` }] });
   assert.equal(withMore(view, spec).questions[0].options.length, 2 + MORE_LIMITS.options);
 });
 
@@ -283,6 +282,14 @@ test("wf ask wait wakes the agent on an ask, once; wf ask more answers it; answe
     assert.equal(await runAsk(["more", "more-test", "--page", "--text", "Because", "the", "release", "is", "close."], log), 0);
     assert.match(out.at(-1), /more on the page, answering “Why now\?”/);
     assert.equal(await runAsk(["more", "more-test", "q1"], log), 2, "a reply shows something");
+    // Markdown that came through the shell as one line is refused, with how to pass it.
+    out.length = 0;
+    assert.equal(await runAsk(["more", "more-test", "q1", "--text", "Like this:\\n\\n```js\\nconst a = 1;\\n```"], log), 1);
+    assert.match(out.join("\n"), /holds \\n as two characters.*--md -/s);
+    assert.equal(await runAsk(["more", "more-test", "q1", "--md", "reply.md", "--text", "One line:\\n\\n- b"], log), 1, "each source is read on its own");
+    writeFileSync(join(root, "open.md"), "```js\nconst a = 1;");
+    assert.equal(await runAsk(["more", "more-test", "q1", "--md", "open.md"], log), 0);
+    assert.match(out.join("\n"), /Markdown: a code fence is left open/);
     // A live page's update takes a code block of the project's file too.
     writeFileSync(join(root, "live.json"), JSON.stringify(page({ id: "more-live", live: true })));
     assert.equal(await runAsk(["page", "live.json"], log), 0);
@@ -347,10 +354,6 @@ test("a code block shows lines of a project file, its lines marked, read inside 
   assert.match(fieldsOf("code").join("\n"), /file, lines, mark, code, lang, start/);
 });
 
-test("fenced code in text says its language and its first line", () => {
-  assert.deepEqual(parseText("```ts:120\nlet a;\n```")[0], { k: "pre", text: "let a;", lang: "ts", start: 120 });
-  assert.deepEqual(parseText("```\nplain\n```")[0], { k: "pre", text: "plain", lang: "", start: null });
-});
 
 test("the review-findings example builds, with details and code on each finding", () => {
   const raw = JSON.parse(readFileSync(new URL("../plugins/core/skills/ask-page/blocks/review-findings.json", import.meta.url), "utf8"));
