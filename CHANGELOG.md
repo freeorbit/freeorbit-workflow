@@ -4,6 +4,16 @@ What each kit version changed, newest first, and what a project does to upgrade 
 
 To upgrade, pin the version's tag in the project, as [Install in a project](README.md#install-in-a-project) shows.
 
+## v1.20.0: a team server for ask pages
+
+A team working apart saw a teammate's open questions only once their PR merged, and answered in another PR; the client was sent the page by email. A team server shares the ask pages: the team and the client answer them in one place, from anywhere. It is optional: a project without it works alone, as before. The design, and the steps to deploy it, are in `docs/design/team-server.md`.
+
+- **`wf team serve`** is the ask-pages server behind a sign-in, run on a host as a container (`templates/team-server/Dockerfile`), with its state on a volume. People sign in by a link that works once: `wf team invite <name> --role <role>`, or `--client` for a client's link that ends after 30 days. `wf team revoke` takes access away. `SECURITY.md` says what it promises.
+- **`teamServer` in `.workflow/config.json`** turns it on for a project: `url`, `project`, and `tokenEnv` (`WF_TEAM_TOKEN`), the variable that holds your token from your link. Then `wf ask page` publishes there, in place of the local server, `wait` waits on it and keeps a copy of the answers here, and `more`, `reply`, `live`, and `open` use it.
+- **A page's `for`** names who it is for: roles, `client`, or people. A client sees only the pages for them. Several people's answers to one page are kept each as their own, with who gave them.
+- **Questions left for later** go to the server too, from `wf ask record`, for their role to answer before the branch merges. `wf question pull` notes the answers under their rows, `wf question publish <Q-ID>` sends one that could not be, and `wf question inbox` lists what waits on you.
+- **To use it:** deploy the server (the design's Deploying steps), invite the team, then set `teamServer` in the project's config. Nothing changes until then.
+
 ## v1.19.0: the page draws Markdown whole
 
 The agent's replies on an ask page, and a `text` block, showed much of their Markdown as written: a word like `ask_more_test` came out in italics, and tables, links, quotes, `####` headings, nested lists, and code under a list item did not show as such.

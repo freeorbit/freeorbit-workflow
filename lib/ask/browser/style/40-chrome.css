@@ -76,6 +76,7 @@ dialog.keys td:first-child { white-space: nowrap; width: 1%; }
 .item-row { display: block; text-decoration: none; color: inherit; background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--r-card); padding: 12px 14px; margin: 8px 0; transition: border-color 120ms var(--ease); }
 .item-row:hover, .item-row.cur { border-color: var(--accent); }
 .item-row.blocked { border-left: 3px solid var(--accent); }
+.item-row.for-you .title::before { content: "●"; color: var(--accent); margin-right: 6px; font-size: .8em; }
 .item-row:focus-visible { outline-offset: 2px; }
 .item-row .row1 { display: flex; gap: 10px; align-items: baseline; }
 .item-row .title { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

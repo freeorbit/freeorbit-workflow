@@ -13,7 +13,8 @@ Open a private security advisory on this repository (Security, then "Report a vu
   - `wf board` talks to monday.com's API (`api.monday.com`), with the token named by `board.tokenEnv`. It sends the stories, their acceptance lines, the frames and built screens, the open questions the board shows, and the bot's replies. With `board.workItems.plans` set, it also sends each listed plan doc's phases (title and lead) and steps (text, who does it, status, and the stories each unblocks), never their Leaves behind, and with `board.workItems.people` it assigns those people's monday user ids in Owner.
   - `wf doctor` and `wf signoffs` run `gh`, which talks to GitHub.
   - `wf scan` runs the commands a project lists in its own config, which may reach the network.
-  - The ask-pages server listens on `127.0.0.1` only.
+  - The ask-pages server, `wf view serve`, listens on `127.0.0.1` only.
+  - A project that names a team server (`teamServer.url`) sends it each ask page it builds, with its pictures, the agent's replies and live status, and its open questions left for a role, over HTTPS with the person's own token. Without one, nothing leaves the machine.
   - An ask page loads nothing from the web: a picture in its Markdown shows as its words. A link in it goes only to an `https:` or `mailto:` address, opens only when the person clicks it, in a new tab that is told nothing of the page, and shows where it goes; a link whose words are an address shows the one it goes to beside them.
 - **The project, and a few named places outside it.** Scripts read and write the git work tree they run in, and:
   - the kit's own state folder, `~/.local/state/freeorbit-workflow` (the ask-pages server's registry, token, and log). The one server serves every project registered there.
@@ -27,6 +28,21 @@ Open a private security advisory on this repository (Security, then "Report a vu
   - The guard denies them to the kit's blind agents on Read, Grep, and Glob, and refuses a blind agent's Grep over a folder that holds one unless a glob or a type leaves it out.
   - The deny rules do not cover a shell: a main session that runs `cat .env` reads it. A token in `.env`, as `wf board` allows for local runs, is as safe as the session's shell; the environment, or CI's secrets, keep it from the session's files.
 - **Where an agent's limits hold.** The blind agents' limits on what they read, search, and run are enforced by the guard, a Claude Code hook. OpenCode runs no such hook: there an agent's prompt and its tool list, with the secret deny rules, are its only limits.
+
+## The team server
+
+`wf team serve` is the one part of the kit made to be reached from other machines: by a team working apart, and by its client (docs/design/team-server.md). Where it runs, it promises:
+
+- **HTTPS only**, by its host's ingress or a TLS proxy. It answers only its own address, `WF_TEAM_ORIGIN`, as Host, and its own Origin for a browser's writes.
+- **Every request is signed in**, but its health probe and the invite link's page. A person signs in once, with a link that works once, lasts a week, and is used only when they press Join, so a mail scanner that opens it does not use it up. Their browser keeps an `HttpOnly`, `Secure`, `SameSite=Lax` cookie named `__Host-wf_team`, which no other site on a parent domain can set, and their kit a token, the same secret, shown once. The name `admin-token` is the admin secret's own, and no invite gives it. A client's lasts 30 days, or the days the link gives. The server keeps only each secret's and code's SHA-256.
+- **Each person sees only their projects.** A client sees only the pages for the client, and has no kit token; a page they may not see is not there for them. This is checked on each request, for each page and each of its files. A client answers; only the team archives an ask.
+- **A page holds only the kit's script.** The server draws each page itself from the spec a member's kit sends, for the person who opens it, so no member can put script on a page another opens. The spec is checked as the kit makes one: its hash is twelve hex digits, so it names no file; its questions, pictures, and blocks are of the kinds the page draws; and a project's comment kinds are words and colours. What the agent writes is drawn as text.
+- **Writes are limited**: a page's pictures to 24 MB, one page published at a time, a person's changes, from their kit or their browser, to 120 a minute, and tries of invite codes to 10 a minute from one address, the last one the host's proxy adds to `X-Forwarded-For`.
+- **A log** of each join, invite, revoke, publish, answer, archive, and the agent's posts, a file a month, `team/log-<yyyy-mm>.jsonl` on its volume.
+- **The kit follows no redirect** from the team server, so a page or a token never goes to another host.
+- **An admin** invites and revokes, with the first admin's secret, `WF_TEAM_ADMIN_TOKEN`, from the host's secret store.
+
+What it does not do: it sends no email, and loads nothing from the web. Its state is files on a volume; backups are the host's.
 
 ## Known risks, accepted
 

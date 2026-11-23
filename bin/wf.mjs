@@ -34,7 +34,7 @@
 //   wf board <setup [--create] | plan | sync | feedback [--json | --brief] | drafts <file> | reply <id> <Q-ID ...|--noted|--answered <Q-ID>>>   the client's monday.com board
 //   wf signoffs [--bypass "<reason>"]   the questions this branch still waits on, or an admin's bypass of them
 //   wf decision add <file> "<decision>" "<why>" | supersede <ID> [<ID> ...] <by ID>   the decisions log
-//   wf question add <chunk | none> "<question>" <needs> "<from>" [story IDs ...] [--revisit "<when>"] | resolve <Q-ID> "<decision>"   the open questions log
+//   wf question add <chunk | none> "<question>" <needs> "<from>" [story IDs ...] [--revisit "<when>"] | resolve <Q-ID> "<decision>"   the open questions log; with a team server, inbox | pull | publish <Q-ID>
 //   wf release <next | check | set | verify> ...   the project's release commands
 //   wf ready <quick | chunk | area> [chunk]   what a track needs before work starts
 //   wf done <quick | chunk | area> [chunk]    what a track needs before its pull request
@@ -43,6 +43,7 @@
 //   wf hooks <install | pre-commit | pre-push>   the git hooks that hold branches.md
 //   wf init <answers.json>   set up a new project from the workflow-init skill's answers
 //   wf doctor         whether the project's set-up is whole
+//   wf team <serve | invite | revoke | members>   the team server, and an admin's invites on it
 //   wf screens <--light | --deep | names | scope | --brief | --accept | ...>   the screen check
 
 import { readFileSync } from "node:fs";
@@ -205,6 +206,10 @@ const commands = {
     const { runView } = await import("../lib/view/command.mjs");
     return runView(args);
   },
+  async team(args) {
+    const { runTeam } = await import("../lib/team/command.mjs");
+    return runTeam(args);
+  },
 
   async app(args) {
     const { runApp } = await import("../lib/app/driver.mjs");
@@ -263,6 +268,10 @@ const commands = {
   },
 
   async question(args) {
+    if (args[0] === "inbox" || args[0] === "pull" || args[0] === "publish") {
+      const { runTeamQuestion } = await import("../lib/team/questions.mjs");
+      return runTeamQuestion(args);
+    }
     const { localToday } = await import("../lib/docs/check.mjs");
     const { runQuestion } = await import("../lib/logs/questions.mjs");
     const root = projectRoot();

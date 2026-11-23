@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { merge } from "../lib/config/config.mjs";
 import { DEFAULTS } from "../lib/config/defaults.mjs";
 import { emptyOpen, emptyResolved } from "../lib/logs/questions.mjs";
-import { addQuestion, blockingRows, storyList, insertRow, looseBullets, nextId, questionCounts, questionProblems, questionRows, resolveQuestion, revisitTriggers, untiedRows } from "../lib/logs/questions.mjs";
+import { addQuestion, noteAnswer, blockingRows, storyList, insertRow, looseBullets, nextId, questionCounts, questionProblems, questionRows, resolveQuestion, revisitTriggers, untiedRows } from "../lib/logs/questions.mjs";
 import { status } from "../lib/docs/facts.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -238,4 +238,19 @@ test("a question's note goes under its revisit trigger, which runs to the end of
   const text = readFileSync(join(root, OPEN), "utf8");
   assert.match(text, new RegExp(`- \\*\\*${id}\\.\\*\\* Revisit when: the next ask about x\\n  - Note: Sam has a draft\\n`));
   assert.deepEqual(check({ [OPEN]: text }), [], "and the log still checks");
+});
+
+test("an answer from a team server is noted under its question: under its detail bullet, or as one", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-questions-"));
+  mkdirSync(join(root, "docs/log"), { recursive: true });
+  writeFileSync(join(root, OPEN), emptyOpen({ decisions: "decisions", resolved: "questions-resolved.md" }));
+  const withDetail = addQuestion(root, config(), { chunk: "none", question: "Tabs?", needs: "designer", from: "owner", date: "2026-11-23", revisit: "the frames are done" });
+  const bare = addQuestion(root, config(), { chunk: "CH-01", question: "Icons?", needs: "designer", from: "owner", date: "2026-11-23" });
+  noteAnswer(root, config(), withDetail, "Answer (ana, on the team server, 2026-11-23): Tabs.");
+  noteAnswer(root, config(), bare, "Answer (ana, on the team server, 2026-11-23): None.");
+  const text = readFileSync(join(root, OPEN), "utf8");
+  assert.match(text, /- \*\*Q-001\.\*\* Revisit when: the frames are done\n {2}- Answer \(ana, on the team server, 2026-11-23\): Tabs\./);
+  assert.match(text, /- \*\*Q-002\.\*\* Answer \(ana, on the team server, 2026-11-23\): None\./);
+  assert.equal(questionRows(text).length, 2, "the rows stay open");
+  assert.throws(() => noteAnswer(root, config(), "Q-009", "x"), /Q-009 is not in/);
 });

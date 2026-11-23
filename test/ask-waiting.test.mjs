@@ -94,3 +94,12 @@ test("an inbox line is read again only when its page's files change", () => {
   assert.equal(inbox(list, state)[0].title, "Pick two");
   assert.equal(reads, 2);
 });
+
+test("a team server's mark holds while the agent's poll renews it, and goes stale without", async () => {
+  const { SEEN_MS } = await import("../lib/view/waiting.mjs");
+  const dir = view();
+  const now = Date.parse("2026-11-23T10:00:00Z");
+  writeFileSync(join(dir, "ask", "pick", "waiting.json"), JSON.stringify({ since: "2026-11-23T09:00:00Z", seen: new Date(now).toISOString() }));
+  assert.equal(waitingSince(dir, "pick", () => false, now + SEEN_MS - 1), "2026-11-23T09:00:00Z", "no process to ask: the renewal says");
+  assert.equal(waitingSince(dir, "pick", () => false, now + SEEN_MS + 1), null);
+});
