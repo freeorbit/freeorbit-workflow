@@ -1,0 +1,26 @@
+/* --- asking the agent for more, and a note that is the answer ---------------- */
+.tick.noted { background: var(--sunk); color: var(--accent); border: 1.5px solid var(--accent-line); line-height: 15px; }
+.badge.added { color: var(--info); background: transparent; border-color: var(--info); margin-left: 6px; }
+.more-pre { margin-top: 10px; border: 1px solid var(--line-2); border-radius: var(--r-ctl); padding: 6px 12px; background: var(--panel); }
+.more-pre > summary { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-2); padding: 2px 0; }
+.more-pre[open] > summary { margin-bottom: 8px; }
+.more-pre.open { border: 0; padding: 0; background: none; }
+.more-body, .more-reply { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.more-thread { list-style: none; margin: 10px 0 0; padding: 0 0 0 12px; border-left: 2px solid var(--accent-line); display: flex; flex-direction: column; gap: 10px; }
+.more-thread > li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; font-size: 13.5px; line-height: 20px; min-width: 0; }
+.more-who { display: flex; gap: 8px; align-items: baseline; }
+.more-who .who { font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 0 8px; white-space: nowrap; }
+.more-who .who.you { color: var(--text-2); background: var(--sunk); }
+.more-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.more-state { font-style: italic; }
+.more-box { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--r-ctl); padding: 10px 12px; }
+.more-box .acts { display: flex; gap: 8px; align-items: center; }
+.more-kind { align-self: flex-start; }
+.more-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-btn { font: inherit; font-size: 12.5px; line-height: 24px; color: var(--text-2); background: var(--sunk); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 10px; cursor: pointer; }
+.chip-btn:hover { color: var(--text); border-color: var(--accent-line); }
+.chip-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.page-more { background: var(--panel); border: 1px solid var(--line-2); border-left: 3px solid var(--accent); border-radius: 12px; padding: 14px 18px; margin: 0 0 18px; }
+.page-more-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.page-more-head h2 { font-size: 15px; margin: 0; }
+@media print { .more-box, .more-btn, .page-more-btn { display: none; } }

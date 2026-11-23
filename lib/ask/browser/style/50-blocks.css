@@ -55,3 +55,15 @@ ins.d-add { background: color-mix(in srgb, var(--ok) 24%, transparent); color: v
 .pic-cell { margin: 0; display: grid; gap: 4px; }
 .pic-open { padding: 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); cursor: zoom-in; overflow: hidden; }
 .pic-open img { display: block; width: 100%; height: auto; }
+/* Code: a code block, and fenced code in text, with its lines numbered and marked. */
+.code-view { border: 1px solid var(--line-2); border-radius: var(--r-ctl); overflow: hidden; background: var(--sunk); min-width: 0; }
+.code-head { display: flex; align-items: center; gap: 8px; padding: 2px 6px 2px 12px; font-size: 12px; color: var(--text-2); border-bottom: 1px solid var(--line-2); }
+.code-file { font: 12px/1.4 var(--mono); overflow-wrap: anywhere; }
+.code-lang { font-weight: 600; text-transform: lowercase; }
+.code-view pre, .prose .code-view pre { margin: 0; padding: 8px 0; background: none; border-radius: 0; overflow: auto; max-height: 520px; }
+.code-view code { display: block; font: 12.5px/1.5 var(--mono); background: none; padding: 0; min-width: max-content; }
+.code-line { display: flex; padding: 0 12px 0 0; }
+.code-line .ln { flex: none; width: 4.5ch; padding-right: 1.5ch; text-align: right; color: var(--muted); user-select: none; }
+.code-line:not(:has(.ln)) { padding-left: 12px; }
+.code-line .lc { white-space: pre; }
+.code-line.mark { background: var(--warn-soft); box-shadow: inset 3px 0 0 var(--warn); }

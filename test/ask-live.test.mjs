@@ -173,7 +173,7 @@ test("the server serves a page's status, replies, and rounds, and keeps each sen
   try {
     const base = `http://127.0.0.1:${port}`;
     const live = () => fetch(`${base}/__ask/${key}/live/${spec.id}`).then((r) => r.json());
-    assert.deepEqual(await live(), { live: null, replies: {} });
+    assert.deepEqual(await live(), { live: null, replies: {}, more: { asks: {}, replies: {}, told: {} } });
     const { live: status } = updateLive(null, { step: "Going" });
     writeFileSync(join(askDir(view, spec.id), "live.json"), JSON.stringify(status));
     addReply(view, spec, "q1", "Hm?");
