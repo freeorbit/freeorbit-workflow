@@ -104,6 +104,16 @@ A project adds its own checks and status lines with `extensions` in its config: 
 
 Each kit version that changes a project's own files says what to do here. After any upgrade, run `npx wf docs sync` and `npx wf doctor`.
 
+### v1.18.0: a note can be the answer, and the person can ask for more
+
+Two changes to ask pages. Nothing in a project's files changes; agents follow the `ask-page` skill's new step.
+
+- **A note alone answers a question.** A question with a note and nothing picked is counted as answered, so Send no longer asks what it goes as, and the receipt shows the note as the answer. The agent reads `the note is the answer; no option was picked`, and the answers JSON lists such questions in `inNote`. A note opens no follow-up, and `wf ask record` writes no decision for it. A grid, a sort, edits, or a form with something placed stays open, as before.
+- **Ask for more.** Each question has Ask for more (key A), and the header Explain this page: the person picks a suggestion or writes what would help, or proposes an option, and goes on answering. `wf ask wait` wakes the agent once for each ask; the agent answers in place with `npx wf ask more <id> <question | --page>` and `--md` (Markdown, code in fences), `--blocks`, or `--option`, then waits again. An option it adds can be picked, and is checked as the spec's own. `off: ["more"]` turns asking off; details written at build still show.
+- **Details at build.** A question, a template's item, and the spec take `more`: blocks the page folds under the question as Details, or shows under Explain this page.
+- **A `code` block** shows lines of a project file (`file`, `lines`, `mark`), read when the page is built, or code inline. It never reads `.git`, env files, keys, or a link out of the project. A text block's fenced code may name its language and first line, ```` ```ts:42 ````, and code shows with line numbers and Copy.
+- **The shared server takes the asks**, so it must be this kit's: `wf ask page` replaces one an older kit started, as on any upgrade. An older server left running answers Ask for more with an error, which the page shows.
+
 ### v1.17.0: a live holder keeps its lock
 
 A lock the app starts share was taken over after two minutes whatever its holder was doing, so two scenario builds could share one data path, and a server that took a request and never answered held a start for minutes.

@@ -303,7 +303,8 @@ test("answers keep to what the page asks", () => {
   const { spec: rank } = normalize(example("rank"));
   assert.match(checkAnswers(rank, { id: rank.id, hash: rank.hash, answers: { order: { order: ["search"] } } }, KIT_KINDS).problems.join(), /every item once/);
   assert.equal(answered({ decide: "later" }), true);
-  assert.equal(answered({ note: "only a note" }), false);
+  assert.equal(answered({ note: "only a note" }), true, "a note alone is the answer");
+  assert.equal(answered({ note: "  " }), false);
 });
 
 test("the answers read as Markdown, and the page's copied text reads back", () => {
@@ -469,7 +470,7 @@ test("a question's own controls, the bulk actions, and the send panel make the s
   assert.deepEqual({ ...r }, { order: ["search", "labels", "offline"] }, "taking a ranking's order clears Later");
   const { spec: text } = normalize({ id: "a", title: "t", questions: [{ id: "q", text: "x" }] });
   assert.equal(S.takeRecommendation(text.questions[0], {}), false);
-  assert.equal(S.answered({ note: "only" }), false);
+  assert.equal(S.answered({ note: "only" }), true, "a note alone is the answer");
   assert.equal(S.answered({ decide: "later" }), true);
   const A = { a: { choice: "", pins: [] }, b: { note: "n", text: "" } };
   assert.deepEqual(JSON.parse(JSON.stringify(S.prune(A))), { b: { note: "n" } });
@@ -662,7 +663,7 @@ test("blocks: sections are checked, the questions go in one place, and a part is
   const placed = run({ blocks: [{ type: "text", text: "hi" }] });
   assert.equal(placed.spec.sections.at(-1).blocks[0].type, "questions", "with no questions block, they come after");
   const bad = (more) => run(more).problems.join("\n");
-  assert.match(bad({ blocks: [{ type: "html", html: "<b>" }] }), /type is one of text, stats, table, diff, chart, diagram, timeline, board, pictures, questions, part/);
+  assert.match(bad({ blocks: [{ type: "html", html: "<b>" }] }), /type is one of text, code, stats, table, diff, chart, diagram, timeline, board, pictures, questions, part/);
   assert.match(bad({ blocks: [{ type: "questions" }, { type: "questions" }] }), /one questions block at most/);
   assert.match(bad({ blocks: [{ type: "table", source: "/etc/passwd" }] }), /no source \/etc\/passwd/);
   assert.match(bad({ blocks: [{ type: "part", name: "missing" }] }), /no part missing/);

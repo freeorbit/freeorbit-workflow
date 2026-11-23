@@ -106,7 +106,7 @@ Change the ledger only with `npx wf ledger`; it keeps every row in step and refu
 
 ## 5. Ask the reviewer
 
-Ask once, in batches up to the question tool's limit or all on one `triage` ask page with these options as its `verdicts` (the `ask-page` skill), one question per new or changed finding: its ID, severity, title, and evidence in a line. Options are Accept, Defer, and Reject, plus Accept risk for a `SEC-` or `DEP-` finding, and Accept cost for a `PERF-` finding: the cost stays, and the hot-paths doc lists it under Known costs. Recommend one and say why.
+Ask once, in batches up to the question tool's limit or all on one `triage` ask page with these options as its `verdicts` (the `ask-page` skill), one question per new or changed finding: its ID, severity, title, and evidence in a line. Options are Accept, Defer, and Reject, plus Accept risk for a `SEC-` or `DEP-` finding, and Accept cost for a `PERF-` finding: the cost stays, and the hot-paths doc lists it under Known costs. Recommend one and say why. On the ask page, give each finding its code in `more`, a `code` block of the file's lines with the finding's lines in `mark`, so Details shows it; when the reviewer asks for more, answer with `npx wf ask more`.
 
 In the same batch, read the `Revisit` lines of `npx wf doc:facts status` against this run's findings. Where a trigger now holds, such as a kind of finding it names coming up again, ask that question's role whether it moves under the chunk.
 

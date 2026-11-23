@@ -40,7 +40,8 @@ Phase 1 built the first four, phase 2 the richer answers below, and phase 3 the 
 
 | Block | Holds | Export | Phase |
 | --- | --- | --- | --- |
-| `text` | Headings, paragraphs, lists, bold, italic, and code; no links or HTML | Markdown | 1 |
+| `text` | Headings, paragraphs, lists, bold, italic, and code; fenced code may name its language and first line; no links or HTML | Markdown | 1 |
+| `code` | Lines of a project file, read at build (`codeFile` in `lib/ask/sources.mjs`), or code inline; numbered, with lines marked | Markdown, the file | 5 |
 | `stats` | Tiles: a label, a value, a tone (ok, warn, bad, info), and a note | Markdown, CSV | 1 |
 | `table` | Columns and rows, sortable and filterable | CSV, Markdown | 1 |
 | `diff` | Before and after text, by line or word, side by side or inline | Markdown, a unified diff | 1 |
@@ -105,7 +106,7 @@ Phase 3 draws charts, diagrams, timelines, and boards on the page, as SVG built 
 
 ## Live pages
 
-Phase 4 lets a page say more between builds. Each is a file the CLI writes and the page reads through the server (`lib/ask/live.mjs`), and each turns off.
+Phase 4 lets a page say more between builds. Each is a file the CLI writes and the page reads through the server (`lib/ask/live.mjs`), and each turns off. Phase 5 adds asking for more (`lib/ask/more.mjs`), whose asks the server writes.
 
 | What | Written by | Kept in | Off |
 | --- | --- | --- | --- |
@@ -115,10 +116,15 @@ Phase 4 lets a page say more between builds. Each is a file the CLI writes and t
 | What changed since the page was last asked | `wf ask page` | the spec's `changes` | `changes` |
 | Steps: one section at a time | the spec's `steps` | — | — |
 | The waiting count in the tab, and a notification | the page | the browser | `tabcount`, `notify` |
+| The person's asks for more on a question or the page, and options they propose | the server, from the page | `ask/<id>/asks.json` | `more` |
+| The agent's more: blocks and added options, and which asks `wf ask wait` told | `wf ask more`, `wf ask wait` | `ask/<id>/more.json` | `more` |
+| Details written at build, under a question or the page | the spec's `more` | the spec | — |
 
-- **Asking again.** A reply asks again, as building does: answers count only when sent after the latest of the two. A changed page drops the replies, which were about the page before.
+- **Asking again.** A reply, or more from the agent, asks again, as building does: answers count only when sent after the latest of the build, the last reply, and the last more. A changed page drops the replies, the asks, and the more, which were about the page before.
+- **Asking for more.** `wf ask wait` wakes the agent once for each ask, and marks it told. A reply answers the asks told; one that came after waits for its own. An option the agent adds keeps the page's hash, so the answers to it stay; the server checks an answer against the spec with them (`withMore`).
+- **A note alone** answers a question (`inNote` in `lib/ask/browser/state.js`), unless a grid, a sort, edits, or a form has something placed.
 - **The status template.** A page with no questions is a status page: nothing to answer, no footer, and Status in the inbox.
-- **Polling.** A live page reads its status every 2.5 s, any other page its replies every 6 s, and the inbox every 5 s, as it did.
+- **Polling.** A live page reads its status every 2.5 s, any other page its replies and more every 6 s, and the inbox every 5 s, as it did. While an ask waits, an agent waits on the page, and the page is in view, it reads every 1.5 s.
 - **Notifications.** The person turns them on. An ask that starts waiting is told once across every tab, and the asks already waiting when they turn it on are not news. A page tells its own replies, and a live page finishing, only while the person is not looking at it.
 - **Export.** `wf ask export` adds the rounds as Markdown and the status as JSON; the live card copies its status as Markdown and saves its log.
 

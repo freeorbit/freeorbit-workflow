@@ -1,0 +1,35 @@
+{
+  "id": "chunk-12-review",
+  "title": "Chunk 12: review findings",
+  "template": "triage",
+  "intro": "Two new findings from the chunk's review. Give each a verdict; Ask for more shows the code, why it matters, or the fix.",
+  "verdicts": [
+    { "id": "accept", "label": "Accept", "why": "Fix it in this chunk.", "kind": "ok" },
+    { "id": "defer", "label": "Defer", "why": "Fix it later, with a reason in the note.", "kind": "drift" },
+    { "id": "reject", "label": "Reject", "why": "Not a problem; say why in the note.", "kind": "bug" }
+  ],
+  "more": [
+    { "type": "text", "text": "The findings come from the chunk's blind review. Each one's **Details** shows the code it points at; anything else, ask." }
+  ],
+  "items": [
+    {
+      "id": "SEC-4",
+      "text": "The account id goes into the query unescaped.",
+      "context": "src/accounts/query.ts, lines 41 to 44.",
+      "noPick": "The verdict is yours.",
+      "more": [
+        { "type": "code", "title": "src/accounts/query.ts", "code": "export function find(db, id) {\n  const sql = `SELECT * FROM accounts WHERE id = '${id}'`;\n  return db.all(sql);\n}", "lang": "ts", "start": 41, "mark": [42] },
+        { "type": "text", "text": "A fix binds the id:\n\n```ts:42\nreturn db.all(\"SELECT * FROM accounts WHERE id = ?\", [id]);\n```" }
+      ]
+    },
+    {
+      "id": "PERF-2",
+      "text": "The inbox reloads every thread on each new message.",
+      "context": "src/inbox/sync.ts; about 40 ms a message with 500 threads.",
+      "noPick": "The verdict is yours.",
+      "more": [
+        { "type": "diff", "title": "A fix: reload the one thread", "before": "threads = await loadAll();", "after": "threads.set(msg.thread, await loadThread(msg.thread));", "by": "line", "labels": ["now", "with the fix"] }
+      ]
+    }
+  ]
+}

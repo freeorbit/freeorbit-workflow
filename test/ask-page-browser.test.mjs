@@ -27,6 +27,7 @@ import { answersPath } from "../lib/ask/store.mjs";
 import { serve } from "../lib/view/serve.mjs";
 import { projectKey } from "../lib/view/view.mjs";
 import { markWaiting } from "../lib/view/waiting.mjs";
+import { addAsk, moreOf, withMore } from "../lib/ask/more.mjs";
 
 process.env.WF_ASK_NO_SERVER = "1";
 process.env.WF_STATE_DIR ??= mkdtempSync(join(tmpdir(), "wf-page-state-"));
@@ -66,7 +67,7 @@ async function openPage(raw, { before: prepare, width = 1280, height = 900, conf
   const key = projectKey(root);
   prepare?.({ view, spec });
   const project = { key, view, name: "demo", kinds: KIT_KINDS };
-  const server = await serve({ resolve: (k) => (k === key ? project : null), list: () => [project], check: checkAnswers, stateOf: askState, port: 0, log: () => {}, ...(settings ? { settings } : {}) });
+  const server = await serve({ resolve: (k) => (k === key ? project : null), list: () => [project], check: checkAnswers, stateOf: askState, moreOf, askMore: addAsk, specOf: withMore, port: 0, log: () => {}, ...(settings ? { settings } : {}) });
   servers.push(server);
   await browser.open(`http://127.0.0.1:${server.port}/${key}/ask/${spec.id}/`, width, height);
   await until("document.querySelector('footer.commit') !== null", "the page to build");
@@ -543,4 +544,88 @@ test("a page sends the server only the settings that changed, and nothing when i
   assert.deepEqual(Object.keys(writes[0]), ["wf-ask:look"], "only the look, so another tab's inbox filters stay");
   assert.equal(writes[0]["wf-ask:look"].density, "compact");
   assert.deepEqual(kept["wf-ask:inbox"], { project: "a" });
+});
+
+// --- a note that is the answer, and asking the agent for more -------------------------
+
+const agentWaits = ({ view, spec }) => markWaiting(view, spec.id);
+/** Type `text` into the field matching `selector`, as a person does. */
+const type = (selector, text) => js(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) throw new Error("no field ${selector.replace(/"/g, "'")}"); el.value = ${JSON.stringify(text)}; el.dispatchEvent(new Event("input", { bubbles: true })); return null; })()`);
+
+test("a note alone answers its question: it is counted, sent with no panel, and the receipt says the note is the answer", async () => {
+  const { sent } = await openPage(choices(2));
+  await press("2");
+  await click("#q-q2 .meta button", "Note");
+  await type("#q-q2 .note textarea", "Neither: keep the old layout.");
+  await until(`document.querySelector("header .pill").textContent === "2 of 2"`, "the note to count");
+  await press("Enter", { ctrl: true });
+  await until(`!document.querySelector(".receipt").hidden`, "the receipt, with no panel first");
+  assert.equal(await js(`document.querySelector(".sendpanel")`), null);
+  assert.equal(await js(`document.querySelector(".receipt h2").textContent`), "Sent to the agent");
+  assert.match(await js(`document.querySelector(".receipt").textContent`), /In the note: “Neither: keep the old layout\.”/);
+  const record = sent();
+  assert.deepEqual(record.answers.q2, { note: "Neither: keep the old layout." });
+  assert.deepEqual(record.inNote, ["q2"]);
+});
+
+test("Ask for more asks the agent in place; its reply shows under the question, code and all, with the draft kept", async () => {
+  // An agent waits on the page, so the page reads the reply soon after it is written.
+  const { view, spec } = await openPage(choices(2), { before: agentWaits });
+  await press("2");
+  await until(`!document.querySelector(".waitpill").hidden`, "the page to know an agent waits");
+  await click("#q-q2 .more-btn", "Ask for more");
+  await click("#q-q2 .more-box .chip-btn", "Show an example");
+  await click("#q-q2 .more-box .btn.primary", "Ask");
+  await until(`document.querySelector("#q-q2 .more-thread .ask")`, "the ask under the question");
+  assert.match(await js(`document.querySelector("#q-q2 .more-thread").textContent`), /Show an example.*Waiting for the agent/s);
+  const { readAsks, addMore, moreBlocks } = await import("../lib/ask/more.mjs");
+  assert.equal(readAsks(view, spec.id).q2[0].text, "Show an example");
+  addMore(view, spec, "q2", moreBlocks({ md: "Like this:\n\n```js:41\nconst a = 1;\nconst b = 2;\n```" }, {}));
+  await until(`document.querySelector("#q-q2 .more-reply .code-view")`, "the agent's reply", 8000);
+  assert.equal(await js(`document.querySelector("#q-q2 .code-view .code-lang").textContent`), "js");
+  assert.deepEqual(await js(`[...document.querySelectorAll("#q-q2 .code-view .ln")].map((e) => e.textContent)`), ["41", "42"]);
+  assert.equal(await js(`/Waiting for the agent/.test(document.querySelector("#q-q2 .more-thread").textContent)`), false, "answered");
+  assert.deepEqual(await chosen("q1"), ["b"], "the answers given stay");
+});
+
+test("a proposed option comes back as one to pick, and is sent", async () => {
+  const { view, spec, sent } = await openPage(choices(1), { before: agentWaits });
+  await until(`!document.querySelector(".waitpill").hidden`, "the page to know an agent waits");
+  await click("#q-q1 .more-btn", "Ask for more");
+  await click("#q-q1 .more-box .more-kind button", "Propose an option");
+  await type("#q-q1 .more-box textarea", "Both, behind a setting");
+  await click("#q-q1 .more-box .btn.primary", "Ask");
+  const { readAsks, addMore } = await import("../lib/ask/more.mjs");
+  await until(`document.querySelector("#q-q1 .more-thread .ask")`, "the ask");
+  assert.equal(readAsks(view, spec.id).q1[0].kind, "option");
+  addMore(view, spec, "q1", { options: [{ id: "both", label: "Both", why: "Behind a setting." }] });
+  await until(`document.querySelector('#q-q1 [data-id="both"]')`, "the added option", 8000);
+  assert.match(await js(`document.querySelector('#q-q1 [data-id="both"]').textContent`), /Added/);
+  await click(`#q-q1 [data-id="both"]`);
+  await press("Enter", { ctrl: true });
+  await until(`!document.querySelector(".receipt").hidden`, "the receipt");
+  assert.deepEqual(sent().answers, { q1: { choice: "both" } });
+});
+
+test("details written at build fold under the question, a code block shows its lines, and Explain this page asks about the page", async () => {
+  const raw = { ...choices(1), more: [{ type: "text", text: "Why this page." }], blocks: [{ type: "code", title: "The loop", code: "for (;;) {\n  tick();\n}", lang: "js", start: 7, mark: [8] }, { type: "questions" }] };
+  raw.questions[0].more = [{ type: "text", text: "The long story." }];
+  const { view, spec } = await openPage(raw, { before: agentWaits });
+  await until(`!document.querySelector(".waitpill").hidden`, "the page to know an agent waits");
+  assert.equal(await js(`document.querySelector("#q-q1 details.more-pre > summary").textContent`), "Details");
+  assert.equal(await js(`document.querySelector("#q-q1 details.more-pre").open`), false);
+  await click("#q-q1 details.more-pre > summary");
+  assert.match(await js(`document.querySelector("#q-q1 details.more-pre").textContent`), /The long story\./);
+  assert.deepEqual(await js(`[...document.querySelectorAll(".block-code .ln")].map((e) => e.textContent)`), ["7", "8", "9"]);
+  assert.deepEqual(await js(`[...document.querySelectorAll(".block-code .code-line")].map((e) => e.classList.contains("mark"))`), [false, true, false]);
+  assert.ok(await js(`[...document.querySelectorAll(".block-code .code-head button")].some((b) => b.textContent === "Copy")`));
+  await click("header .page-more-btn", "Explain this page");
+  assert.match(await js(`document.querySelector(".page-more").textContent`), /Why this page\./, "the page's own details show first");
+  await type(".page-more .more-box textarea", "Why now?");
+  await click(".page-more .more-box .btn.primary", "Ask");
+  const { readAsks, addMore, PAGE } = await import("../lib/ask/more.mjs");
+  await until(`document.querySelector(".page-more .more-thread .ask")`, "the ask about the page");
+  assert.equal(readAsks(view, spec.id)[PAGE][0].text, "Why now?");
+  addMore(view, spec, PAGE, { blocks: [{ type: "text", title: "", note: "", id: "", source: "The release is close.", nodes: [{ k: "p", spans: [{ t: "text", s: "The release is close." }] }] }] });
+  await until(`/The release is close/.test(document.querySelector(".page-more .more-reply")?.textContent ?? "")`, "the reply about the page", 8000);
 });

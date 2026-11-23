@@ -10,6 +10,14 @@ Live pages, replies, history, changes, steps, and saying a page is waiting, for 
   ```
   `--log` adds lines (the last 200 are kept), `--clear` starts again. A status page has no questions, so it needs no `wait`; it shows as Status in the inbox.
 - **A reply under a question.** When an answer needs a word back, `npx wf ask reply <id> <question> <text>` puts your reply under that question. The page asks again: it waits for a send, the question stays open, and `wf ask wait` prints the person's reply with your own.
+- **More, when the person asks.** A person who wants more on a question presses Ask for more, or Explain this page for the page, and the page stays open with their answers. `wf ask wait` wakes you once for each ask, listing them, as `More asked on the page <id>, while the person answers:`. Answer in place, then wait again:
+  ```bash
+  npx wf ask more <id> <question> --md reply.md            # Markdown: code in fences, ```ts:42 numbers from line 42
+  npx wf ask more <id> <question> --blocks more.json       # blocks: a code block of a file's lines, a diff, a table
+  npx wf ask more <id> <question> --option '{"id":"both","label":"Both","why":"Behind a setting."}'   # the option they proposed
+  npx wf ask more <id> --page --text "Why the page asks now."
+  ```
+  `--md`, `--text`, `--blocks`, and `--option` combine. A reply answers the asks `wait` told you of on that question; one that came after wakes `wait` again. An added option can be picked and is checked like the spec's own. A reply after the page was sent asks again, as `wf ask reply` does; one before changes nothing the person gave. `wf ask answers` lists asks not answered yet. `off: ["more"]` turns asking off; details written at build still show.
 - **History.** Every send keeps a round. `npx wf ask history` lists every ask with rounds; `npx wf ask history <id>` prints its rounds as Markdown, newest first. The page's ⋯ menu shows Earlier answers, and `wf ask export` adds `<id>.history.md`.
 - **What changed.** Building a page again with other questions marks them New or Changed, and lists what was removed, so the person sees what changed since they were last asked.
 - **Step by step.** `"steps": true` with `sections` shows one section at a time, each a step, with Back and Next and a stepper that ticks a step when its questions are answered. Place each step's questions with a `questions` block and its `group`. The example is the skill's `blocks/steps.json`.
