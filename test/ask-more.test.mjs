@@ -327,7 +327,9 @@ test("a code block shows lines of a project file, its lines marked, read inside 
   assert.match(fails({ type: "code", file: "lib/x.mjs", code: "x" }), /a file or code, not both/);
   assert.match(fails({ type: "code" }), /a code block shows a file's lines, or code/);
   assert.match(fails({ type: "code", code: "x", mark: [[3, 1]] }), /mark is lines, or first and last lines/);
-  symlinkSync("/etc/hostname", join(root, "out.txt"));
+  const outside = join(mkdtempSync(join(tmpdir(), "wf-ask-more-outside-")), "out.txt");
+  writeFileSync(outside, "not the project's");
+  symlinkSync(outside, join(root, "out.txt"));
   assert.match(fails({ type: "code", file: "out.txt" }), /leads out of the project/);
   // Every name the guard's one list holds, and a link inside the project that leads to one, are refused.
   for (const name of [".git-credentials", "id_rsa.old", "id_ed25519-backup", "server.pem", ".npmrc", "credentials.json", "secrets/prod.yaml", ".GIT/config"]) assert.match(fails({ type: "code", file: name }), /may hold secrets/, name);
