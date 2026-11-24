@@ -4,6 +4,15 @@ What each kit version changed, newest first, and what a project does to upgrade 
 
 To upgrade, pin the version's tag in the project, as [Install in a project](README.md#install-in-a-project) shows.
 
+## v1.21.0: one page can stay off the team server
+
+With `teamServer` set, every page was published, so a page meant only for this machine, such as one built to export for the client, meant setting the config aside while building it (Atlas NX, 2026-11-24).
+
+- **`wf ask page <spec> --local`** builds and serves the page on this machine alone, as with no team server, and needs no token. The spec's `"local": true` does the same each time the page is built.
+- **The page remembers it**: `wait`, `more`, `reply`, `live`, `open`, and `record` stay on this machine for it, and `record` says how to send its open questions with `wf question publish`. Built again without `--local` or `local`, it goes to the team server as the same page: where a page lives is not part of its hash, so its answers and replies stay. A copy already on the team server stays there, and the build says so.
+- **The team token is read from `.env` too**, as the board's is: the environment first, then a `.env` at the project's root that git ignores and does not track. Before, only the environment was read, so a token in `.env` was not found.
+- Nothing to change in a project.
+
 ## v1.20.1: the team server's health probe answers at any Host
 
 The team server answered only its public address as Host, its health probe too, so a host's probe, which reaches the replica by its own address, got 403 and the server never became ready. Atlas NX worked around it with a Host header on each probe (2026-11-24).
