@@ -677,14 +677,22 @@ test("the team server: an invite link sets a password, and any browser then sign
   const { link } = await (await fetch(`${origin}/__team/invite`, { method: "POST", headers: { Authorization: `Bearer ${admin}`, "Content-Type": "application/json" }, body: JSON.stringify({ name: "ana", role: "designer", projects: ["atlas"] }) })).json();
   await browser.command("Network.clearBrowserCookies");
   await browser.open(link, 900, 700);
-  await js(`document.getElementById("pw").value = "correct horse battery"; document.getElementById("pw2").value = "correct horse battery"; document.querySelector("button").click(), null`);
+  // Show password lets the person see what each field holds, such as a character a dead key changed.
+  assert.deepEqual(await js(`[...document.querySelectorAll("input[data-pw]")].map((i) => i.type)`), ["password", "password"]);
+  await js(`document.getElementById("show").click(), null`);
+  assert.deepEqual(await js(`[...document.querySelectorAll("input[data-pw]")].map((i) => i.type)`), ["text", "text"]);
+  await js(`document.getElementById("show").click(), null`);
+  assert.deepEqual(await js(`[...document.querySelectorAll("input[data-pw]")].map((i) => i.type)`), ["password", "password"]);
+  await js(`document.getElementById("pw").value = "correct horse battery"; document.getElementById("pw2").value = "correct horse battery"; document.querySelector("form button").click(), null`);
   await until(`/You are in, ana/.test(document.querySelector("h1").textContent)`, "the join to go through");
   assert.ok((await js(`document.getElementById("kit").textContent`)).length >= 40, "the kit's token, shown once");
   // Another browser: no cookie, so the inbox asks to sign in, and the name and password open it.
   await browser.command("Network.clearBrowserCookies");
   await browser.open(`${origin}/`, 900, 700);
   assert.equal(await js(`document.querySelector("h1").textContent`), "Sign in");
-  await js(`document.getElementById("n").value = "ana"; document.getElementById("pw").value = "correct horse battery"; document.querySelector("button").click(), null`);
+  await js(`document.getElementById("show").click(), null`);
+  assert.equal(await js(`document.getElementById("pw").type`), "text", "the sign-in page shows its password too");
+  await js(`document.getElementById("n").value = "ana"; document.getElementById("pw").value = "correct horse battery"; document.querySelector("form button").click(), null`);
   await until(`document.querySelector("h1")?.textContent !== "Sign in" && document.readyState === "complete"`, "the inbox after signing in", 8000);
   assert.notEqual(await js(`document.title`), "Sign in");
   await browser.command("Network.clearBrowserCookies");
