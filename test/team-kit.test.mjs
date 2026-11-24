@@ -313,3 +313,17 @@ test("a page can stay on this machine, with --local or the spec's local, though 
     await s.close();
   }
 });
+
+test("the team token is read from a .env git ignores, as the board's is, and never from one git could commit", () => {
+  const root = mkdtempSync(join(tmpdir(), "wf-team-env-"));
+  spawnSync("git", ["init", "-q"], { cwd: root });
+  const config = { teamServer: { url: "https://asks.example.com", project: "atlas", tokenEnv: "WF_TEAM_TOKEN" } };
+  writeFileSync(join(root, ".env"), `WF_TEAM_TOKEN=${"e".repeat(40)}\n`);
+  assert.throws(() => teamFor(config, {}, root), /\.env is not in \.gitignore, so WF_TEAM_TOKEN is not read from it/);
+  writeFileSync(join(root, ".gitignore"), ".env\n");
+  assert.equal(teamFor(config, {}, root).token, "e".repeat(40));
+  assert.equal(teamFor(config, { WF_TEAM_TOKEN: "f".repeat(40) }, root).token, "f".repeat(40), "the environment comes first");
+  spawnSync("git", ["add", "-f", ".env"], { cwd: root });
+  assert.throws(() => teamFor(config, {}, root), /\.env is tracked by git/);
+  assert.throws(() => teamFor(config, {}, mkdtempSync(join(tmpdir(), "wf-team-noenv-"))), /WF_TEAM_TOKEN is not set: put the token .* in a gitignored \.env/);
+});

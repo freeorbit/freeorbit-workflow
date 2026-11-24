@@ -10,6 +10,7 @@ With `teamServer` set, every page was published, so a page meant only for this m
 
 - **`wf ask page <spec> --local`** builds and serves the page on this machine alone, as with no team server, and needs no token. The spec's `"local": true` does the same each time the page is built.
 - **The page remembers it**: `wait`, `more`, `reply`, `live`, `open`, and `record` stay on this machine for it, and `record` says how to send its open questions with `wf question publish`. Built again without `--local` or `local`, it goes to the team server as the same page: where a page lives is not part of its hash, so its answers and replies stay. A copy already on the team server stays there, and the build says so.
+- **The team token is read from `.env` too**, as the board's is: the environment first, then a `.env` at the project's root that git ignores and does not track. Before, only the environment was read, so a token in `.env` was not found.
 - Nothing to change in a project.
 
 ## v1.20.1: the team server's health probe answers at any Host

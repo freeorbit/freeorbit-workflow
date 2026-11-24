@@ -2,7 +2,7 @@
 
 Ask pages shared by a team working apart, and its client, for the `ask-page` skill. The design, and the steps to deploy one, are the kit's `docs/design/team-server.md`.
 
-- **Turned on by the config.** With `teamServer.url` and `teamServer.project` in `.workflow/config.json`, and your token in the variable `teamServer.tokenEnv` names (`WF_TEAM_TOKEN`, in a gitignored `.env`), every step of the skill works as it does alone, and:
+- **Turned on by the config.** With `teamServer.url` and `teamServer.project` in `.workflow/config.json`, and your token in the variable `teamServer.tokenEnv` names (`WF_TEAM_TOKEN`, in the environment or a `.env` at the project's root that git ignores and does not track), every step of the skill works as it does alone, and:
   - `wf ask page` publishes the page there, instead of to the local server, and prints `Team: <address>`; `wf ask open` opens it.
   - `wf ask wait` waits on the server, marks the page as waited on there, and keeps a copy of the answers here, so `answers`, `record`, and `history` read them as ever.
   - `wf ask more`, `reply`, and `live` post to the server.

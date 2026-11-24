@@ -26,7 +26,7 @@ Open a private security advisory on this repository (Security, then "Report a vu
 - **Secrets stay out of agents' reads.** `SECRET_GLOBS` in the core plugin's guard names the files that may hold one: `.env`, `.env.*`, keys, certificates, keystores, SSH keys, `.npmrc`, `.netrc`, `.git-credentials`, `.pgpass`, and `credentials.json`.
   - `wf ai:sync` writes them as Read deny rules for every Claude Code session and OpenCode agent.
   - The guard denies them to the kit's blind agents on Read, Grep, and Glob, and refuses a blind agent's Grep over a folder that holds one unless a glob or a type leaves it out.
-  - The deny rules do not cover a shell: a main session that runs `cat .env` reads it. A token in `.env`, as `wf board` allows for local runs, is as safe as the session's shell; the environment, or CI's secrets, keep it from the session's files.
+  - The deny rules do not cover a shell: a main session that runs `cat .env` reads it. A token in `.env`, as `wf board` and the team server allow for local runs, is as safe as the session's shell; the environment, or CI's secrets, keep it from the session's files.
 - **Where an agent's limits hold.** The blind agents' limits on what they read, search, and run are enforced by the guard, a Claude Code hook. OpenCode runs no such hook: there an agent's prompt and its tool list, with the secret deny rules, are its only limits.
 
 ## The team server
