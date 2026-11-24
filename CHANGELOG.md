@@ -4,6 +4,13 @@ What each kit version changed, newest first, and what a project does to upgrade 
 
 To upgrade, pin the version's tag in the project, as [Install in a project](README.md#install-in-a-project) shows.
 
+## v1.22.1: Show password on the team server's pages
+
+A password typed on the join page reached the field two characters short, likely through a keyboard's dead key (on many Linux layouts, `^` then `9` makes one character, `⁹`), and nothing on the page showed it (2026-11-24).
+
+- **Show password**, on the join page, the sign-in page, and the account page's new-token form, shows every password field as text, so a person sees what it holds before pressing Join or Sign in.
+- Nothing to change in a project.
+
 ## v1.22.0: team sign-in by password, from any browser
 
 The team server's invite link signed in the one browser it was opened in, so a person could not open an ask page from another browser, or this one after its cookie was cleared, without a new link.
