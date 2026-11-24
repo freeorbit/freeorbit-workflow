@@ -665,3 +665,27 @@ test("the agent's Markdown is drawn whole: a table, a link, a quote, a nested li
   assert.match(await js(`document.querySelector("${reply} p").textContent`), /ask_more_test left/);
   assert.equal(await js(`document.querySelector("${reply} p em")`), null);
 });
+
+test("the team server: an invite link sets a password, and any browser then signs in with it", async () => {
+  const { createServer } = await import("node:http");
+  const { teamServe } = await import("../lib/team/server.mjs");
+  const port = await new Promise((done) => { const t = createServer(); t.listen(0, "127.0.0.1", () => { const p = t.address().port; t.close(() => done(p)); }); });
+  const origin = `http://127.0.0.1:${port}`;
+  const admin = "g".repeat(40);
+  const s = await teamServe({ dir: mkdtempSync(join(scratch, "team-")), origin, port, host: "127.0.0.1", adminToken: admin, secureCookie: false, log: () => {} });
+  servers.push(s);
+  const { link } = await (await fetch(`${origin}/__team/invite`, { method: "POST", headers: { Authorization: `Bearer ${admin}`, "Content-Type": "application/json" }, body: JSON.stringify({ name: "ana", role: "designer", projects: ["atlas"] }) })).json();
+  await browser.command("Network.clearBrowserCookies");
+  await browser.open(link, 900, 700);
+  await js(`document.getElementById("pw").value = "correct horse battery"; document.getElementById("pw2").value = "correct horse battery"; document.querySelector("button").click(), null`);
+  await until(`/You are in, ana/.test(document.querySelector("h1").textContent)`, "the join to go through");
+  assert.ok((await js(`document.getElementById("kit").textContent`)).length >= 40, "the kit's token, shown once");
+  // Another browser: no cookie, so the inbox asks to sign in, and the name and password open it.
+  await browser.command("Network.clearBrowserCookies");
+  await browser.open(`${origin}/`, 900, 700);
+  assert.equal(await js(`document.querySelector("h1").textContent`), "Sign in");
+  await js(`document.getElementById("n").value = "ana"; document.getElementById("pw").value = "correct horse battery"; document.querySelector("button").click(), null`);
+  await until(`document.querySelector("h1")?.textContent !== "Sign in" && document.readyState === "complete"`, "the inbox after signing in", 8000);
+  assert.notEqual(await js(`document.title`), "Sign in");
+  await browser.command("Network.clearBrowserCookies");
+});

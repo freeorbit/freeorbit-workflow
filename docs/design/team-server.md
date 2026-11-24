@@ -33,8 +33,8 @@ Ask pages, shared by a team working apart and by its client: one server everyone
 
 ## Who signs in
 
-- **Members, by invite link.** An admin's `wf team invite <name> --role designer` prints a link that works once, within a week. Opening it gives that browser a cookie, and shows the person, once, the same secret as their kit's token for `tokenEnv`. `wf team revoke <name>` ends both. Only each secret's hash is kept. No outside service.
-- **The client, by a client link.** `wf team invite <name> --client` gives a link that opens only the pages for the client, and only to answer them. It expires after 30 days, or the days the invite gives, and `wf team invite` again renews it. It replaces the emailed page.
+- **Members, by invite link, then a password.** An admin's `wf team invite <name> --role designer` prints a link that works once, within a week. On it the person chooses a password, and the page shows, once, their kit's token for `tokenEnv`. From then on they sign in from any browser with their name and password, each browser a session of its own; `/__team/account` signs a browser out or makes a new kit token. A forgotten password is a new invite link. `wf team revoke <name>` ends every session and the token. No outside service.
+- **The client, by a client link.** `wf team invite <name> --client` gives a link on which the client chooses a password too, and that opens only the pages for the client, and only to answer them. Their access ends after 30 days, or the days the invite gives, and `wf team invite` again renews it. It replaces the emailed page.
 - **What each sees.** A page names who it is for with `for` (roles, `client`, or names), and a question its `role`. Members see every page of their projects; the client sees only the pages for the client. A person's inbox marks the asks that wait on their role, or on them by name, "for you", and `wf question inbox` lists them.
 - **Who answered.** An answer keeps who sent it. On a page several people answer (a `batch` by role), the server keeps each person's latest answer to each question, not the last whole send.
 

@@ -49,7 +49,7 @@ test("with a team server: page publishes, wait wakes on an ask and on answers, a
   const headers = (extra) => ({ Host: `127.0.0.1:${port}`, Origin: origin, ...extra });
   const enroll = async (what) => {
     const { link } = (await call(port, "/__team/invite", { method: "POST", headers: headers({ Authorization: `Bearer ${ADMIN}` }), body: what })).json();
-    const res = await call(port, "/__team/join", { method: "POST", headers: headers(), body: { code: link.split("#")[1] } });
+    const res = await call(port, "/__team/join", { method: "POST", headers: headers(), body: { code: link.split("#")[1], password: "correct horse battery" } });
     return { cookie: res.headers["set-cookie"][0].split(";")[0], token: res.json().token };
   };
   const sam = await enroll({ name: "sam", role: "developer", projects: ["atlas"] });
@@ -157,7 +157,7 @@ test("a question left for later goes to the team server; its role answers it the
   const headers = (extra) => ({ Host: `127.0.0.1:${port}`, Origin: origin, ...extra });
   const enroll = async (what) => {
     const { link } = (await call(port, "/__team/invite", { method: "POST", headers: headers({ Authorization: `Bearer ${ADMIN}` }), body: what })).json();
-    const res = await call(port, "/__team/join", { method: "POST", headers: headers(), body: { code: link.split("#")[1] } });
+    const res = await call(port, "/__team/join", { method: "POST", headers: headers(), body: { code: link.split("#")[1], password: "correct horse battery" } });
     return { cookie: res.headers["set-cookie"][0].split(";")[0], token: res.json().token };
   };
   const dev = await enroll({ name: "dev", role: "developer", projects: ["atlas"] });

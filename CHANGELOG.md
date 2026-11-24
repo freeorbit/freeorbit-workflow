@@ -4,6 +4,17 @@ What each kit version changed, newest first, and what a project does to upgrade 
 
 To upgrade, pin the version's tag in the project, as [Install in a project](README.md#install-in-a-project) shows.
 
+## v1.22.0: team sign-in by password, from any browser
+
+The team server's invite link signed in the one browser it was opened in, so a person could not open an ask page from another browser, or this one after its cookie was cleared, without a new link.
+
+- **The invite link sets a password.** The person chooses one, at least 12 characters, and presses Join. A member is shown their kit's token, once.
+- **Sign in from any browser** with your name and password. A page asked for while signed out shows the sign-in in its place, and goes on to the page. Each browser has a session of its own, for 30 days, at most 10 a person.
+- **The account page**, `/__team/account`, signs this browser out, or every browser of yours, or makes a new kit token with your password, which stops the one before and signs your other browsers out.
+- **A forgotten password** is a new invite link for the same name, which signs every browser of theirs out.
+- **Kept safely**: passwords as scrypt with a salt of their own, sessions as SHA-256; sign-in tries are limited for each address and each name, failed ones are logged, and a sign-in in flight when a new password is set does not outlast it. `SECURITY.md` says so.
+- **To upgrade:** send each person invited on v1.20 or v1.21 a new invite link to set a password. Their kit token keeps working until they use it; the link then shows a new one, which replaces it. Their browser's old cookie no longer signs in, and the server clears it.
+
 ## v1.21.0: one page can stay off the team server
 
 With `teamServer` set, every page was published, so a page meant only for this machine, such as one built to export for the client, meant setting the config aside while building it (Atlas NX, 2026-11-24).

@@ -18,38 +18,59 @@ const ADMIN = "a".repeat(40);
 const opt = (id) => ({ id, label: id.toUpperCase(), why: `${id}, as it says.` });
 const page = (id, extra = {}) => ({ id, title: id, questions: [{ id: "q1", text: "Pick?", type: "one", options: [opt("a"), opt("b")], recommended: "a", why: "w" }, { id: "q2", text: "And?", type: "one", options: [opt("a"), opt("b")], recommended: "a", why: "w", role: "designer" }], ...extra });
 
-test("an invite works once, signs in who it names, and its secret is never kept", () => {
+const PASSWORD = "correct horse battery";
+
+test("an invite works once, sets who it names a password, and no secret or password is kept", async () => {
   const dir = mkdtempSync(join(tmpdir(), "wf-team-store-"));
   let now = Date.parse("2026-11-23T00:00:00Z");
   const team = openTeam(dir, { adminToken: ADMIN, now: () => now });
   assert.equal(team.who(ADMIN).admin, true, "the host's admin token signs in the first admin");
   const code = team.invite({ name: "sam", role: "designer", projects: ["atlas"] }, "admin");
-  const { member, secret } = team.redeem(code);
+  const { member, token: secret, session } = await team.redeem(code, PASSWORD);
   assert.deepEqual([member.name, member.role, member.client], ["sam", "designer", false]);
-  assert.throws(() => team.redeem(code), /used, or is out of date/);
-  assert.equal(team.who(secret).name, "sam");
+  await assert.rejects(team.redeem(code, PASSWORD), /used, or is out of date/);
+  assert.equal(team.who(secret).name, "sam", "the kit's token");
+  assert.equal(team.session(session).name, "sam", "the browser's session");
+  assert.equal(team.who(session), null, "a session is no kit token");
   assert.equal(team.who("x".repeat(40)), null);
-  for (const name of ["members.json", "invites.json"]) {
+  for (const name of ["members.json", "invites.json", "sessions.json"]) {
     const text = readFileSync(join(dir, "team", name), "utf8");
-    assert.ok(!text.includes(secret) && !text.includes(code), `${name} keeps hashes only`);
+    assert.ok(![secret, code, session, PASSWORD].some((x) => text.includes(x)), `${name} keeps hashes only`);
   }
+  // Any browser signs in with the name and the password, each its own session.
+  const other = await team.login("sam", PASSWORD);
+  assert.equal(team.session(other).name, "sam");
+  assert.equal(team.session(session).name, "sam", "the first browser stays signed in");
+  await assert.rejects(team.login("sam", "wrong password!!"), /name or password is not right/);
+  await assert.rejects(team.login("nobody", PASSWORD), /name or password is not right/, "the same words, so a name is not told");
+  team.logout(other);
+  assert.equal(team.session(other), null, "signed out of that browser only");
+  assert.equal(team.session(session).name, "sam");
+  // A new kit token replaces the old one.
+  const next = team.newToken("sam");
+  assert.equal(team.who(secret), null);
+  assert.equal(team.who(next).name, "sam");
+  await assert.rejects(team.redeem(team.invite({ name: "short", projects: ["atlas"] }, "admin"), "short"), /at least 12 characters/);
   // A client's link opens only its projects, and ends.
-  const client = team.redeem(team.invite({ name: "glen", client: true, projects: ["atlas"], days: 2 }, "admin"));
+  const client = await team.redeem(team.invite({ name: "glen", client: true, projects: ["atlas"], days: 2 }, "admin"), PASSWORD);
   assert.equal(client.member.role, "client");
+  assert.equal(client.token, undefined, "a client has no kit token");
   now += 3 * 86_400_000;
-  assert.equal(team.who(client.secret), null, "out of date");
-  assert.throws(() => team.redeem(team.invite({ name: "late", projects: ["atlas"] }, "admin") + "x"), /used, or is out of date/);
+  assert.equal(team.session(client.session), null, "out of date");
+  await assert.rejects(team.login("glen", PASSWORD), /name or password is not right/);
+  await assert.rejects(team.redeem(team.invite({ name: "late", projects: ["atlas"] }, "admin") + "x", PASSWORD), /used, or is out of date/);
   const old = team.invite({ name: "slow", projects: ["atlas"] }, "admin");
   now += 8 * 86_400_000;
-  assert.throws(() => team.redeem(old), /out of date/, "an invite lasts a week");
+  await assert.rejects(team.redeem(old, PASSWORD), /out of date/, "an invite lasts a week");
   team.revoke("sam", "admin");
-  assert.equal(team.who(secret), null, "revoked");
+  assert.equal(team.who(next), null, "revoked");
+  assert.equal(team.session(session), null, "and every browser of theirs");
   assert.throws(() => team.invite({ name: "glen", client: true, projects: ["*"] }, "admin"), /client's link names its projects/);
   assert.throws(() => team.invite({ name: "x y", projects: ["a"] }, "admin"), /a name is/);
   assert.throws(() => team.invite({ name: "admin", projects: ["a"] }, "admin"), /admin token's own name/);
   const logs = readdirSync(join(dir, "team")).filter((f) => f.startsWith("log-"));
   const lines = logs.flatMap((f) => readFileSync(join(dir, "team", f), "utf8").trim().split("\n")).map((l) => JSON.parse(l).what);
-  assert.deepEqual(lines.filter((w) => w !== "invite"), ["join", "join", "revoke"]);
+  assert.deepEqual(lines.filter((w) => !["invite", "sign-in", "sign-in refused", "sign-out", "sign-out everywhere", "token"].includes(w)), ["join", "join", "revoke"]);
 });
 
 test("a client sees only the pages for the client; the team sees every page of its projects", () => {
@@ -102,7 +123,7 @@ async function server(dir = mkdtempSync(join(tmpdir(), "wf-team-"))) {
   /** Invite someone as the admin, and use the link: their cookie and their kit's token. */
   const enroll = async (what) => {
     const { link } = await (await call("/__team/invite", { method: "POST", token: ADMIN, body: what })).json();
-    const res = await call("/__team/join", { method: "POST", body: { code: link.split("#")[1] } });
+    const res = await call("/__team/join", { method: "POST", body: { code: link.split("#")[1], password: PASSWORD } });
     const got = await res.json();
     return { cookie: res.headers.get("set-cookie").split(";")[0], token: got.token, got, setCookie: res.headers.get("set-cookie") };
   };
@@ -165,8 +186,8 @@ test("a client sees and answers only the pages for them; answers keep who gave t
     const team = (await (await s.call("/__hub/inbox", { cookie: sam.cookie })).json()).items;
     assert.deepEqual(team.map((i) => [i.id, i.forYou]).sort(), [["for-glen", true], ["team-only", true]], "a question for the designer is for sam");
     assert.equal((await s.call("/atlas/ask/team-only/", { cookie: glen.cookie })).status, 404, "not there for the client");
-    // A client's own secret, used as the kit's token, opens none of the kit's routes.
-    assert.equal((await s.call("/__team/api/atlas/for-glen", { token: decodeURIComponent(glen.cookie.split("=")[1]) })).status, 404);
+    // A client's browser session, used as the kit's token, opens none of the kit's routes.
+    assert.equal((await s.call("/__team/api/atlas/for-glen", { token: decodeURIComponent(glen.cookie.split("=")[1]) })).status, 401);
     // Answers, each from a page with its token, as each person.
     const tokenOf = async (cookie, id) => (await (await s.call(`/atlas/ask/${id}/`, { cookie })).text()).match(/name="wf-token" content="([^"]+)"/)[1];
     const state = await (await s.call("/__team/api/atlas/for-glen", { token: sam.token })).json();
@@ -209,7 +230,7 @@ test("the agent's wait and replies go through the kit's routes; invite codes are
     assert.equal(got.more.replies.q1[0].blocks[0].source, "More.");
     assert.equal((await s.call("/__team/api/other/live-one", { token: sam.token })).status, 404, "not their project");
     let last;
-    for (let i = 0; i < 12; i++) last = await s.call("/__team/join", { method: "POST", body: { code: `wrong-${i}` } });
+    for (let i = 0; i < 12; i++) last = await s.call("/__team/join", { method: "POST", body: { code: `wrong-${i}`, password: PASSWORD } });
     assert.equal(last.status, 429);
   } finally {
     await s.close();
@@ -239,7 +260,7 @@ test("what a member's kit sends is checked: a hash that names a file, a broken s
     const item = (await (await s.call("/__hub/inbox", { cookie: glen.cookie })).json()).items[0];
     assert.equal((await s.call("/__hub/archive", { method: "POST", cookie: glen.cookie, headers: { "X-WF-Token": inboxToken }, body: { key: "atlas", id: "good", archived: true, asked: item.asked } })).status, 403);
     // The join page waits for a press, so a link scanner that opens it does not use it up.
-    assert.match(await (await s.call("/__team/join")).text(), /Press Join/);
+    assert.match(await (await s.call("/__team/join")).text(), /Choose a password[\s\S]*<button>Join<\/button>/);
   } finally {
     await s.close();
   }
@@ -270,4 +291,72 @@ test("a person's page shows their own answers only, so their next send keeps wha
   } finally {
     await s.close();
   }
+});
+
+test("a person signs in from any browser with their name and password, and out of one", async () => {
+  const s = await server();
+  try {
+    const sam = await s.enroll({ name: "sam", role: "designer", projects: ["atlas"] });
+    await s.publish(sam.token, page("pick"));
+    // Another browser: no cookie, so the page offers to sign in.
+    const signIn = await s.call("/atlas/ask/pick/");
+    assert.equal(signIn.status, 401);
+    assert.match(await signIn.text(), /name=password type=password/, "the page signs in, in place");
+    assert.equal((await s.call("/__team/login", { method: "POST", body: { name: "sam", password: "not the one!!" } })).status, 403);
+    const res = await s.call("/__team/login", { method: "POST", body: { name: "sam", password: PASSWORD } });
+    assert.equal(res.status, 200);
+    const other = res.headers.get("set-cookie").split(";")[0];
+    assert.notEqual(other, sam.cookie, "a session of its own");
+    assert.equal((await s.call("/atlas/ask/pick/", { cookie: other })).status, 200);
+    assert.equal((await s.call("/__team/login", { method: "POST", from: "https://evil.test", body: { name: "sam", password: PASSWORD } })).status, 403, "only from its own pages");
+    // Signing out ends that browser's session alone, and a dead cookie is cleared.
+    const third = (await s.call("/__team/login", { method: "POST", body: { name: "sam", password: PASSWORD } })).headers.get("set-cookie").split(";")[0];
+    assert.equal((await s.call("/__team/logout", { method: "POST", cookie: third, body: {} })).status, 200);
+    const dead = await s.call("/atlas/ask/pick/", { cookie: third });
+    assert.equal(dead.status, 401);
+    assert.match(dead.headers.get("set-cookie") ?? "", /Max-Age=0/);
+    assert.equal((await s.call("/atlas/ask/pick/", { cookie: sam.cookie })).status, 200);
+    // A new kit token needs the password again; the old token stops, and every other browser is signed out.
+    assert.equal((await s.call("/__team/token", { method: "POST", cookie: other, body: { password: "not the one!!" } })).status, 403);
+    const made = await s.call("/__team/token", { method: "POST", cookie: other, body: { password: PASSWORD } });
+    const { token } = await made.json();
+    const again = made.headers.get("set-cookie").split(";")[0];
+    assert.equal((await s.call("/__team/api/atlas/pick", { token: sam.token })).status, 401);
+    assert.equal((await s.call("/__team/api/atlas/pick", { token })).status, 200);
+    assert.equal((await s.call("/atlas/ask/pick/", { cookie: sam.cookie })).status, 401, "the other browsers are out");
+    assert.equal((await s.call("/__team/account", { cookie: again })).status, 200, "this one signed in again");
+    // Signing out of every browser.
+    assert.equal((await s.call("/__team/logout", { method: "POST", cookie: again, body: { all: true } })).status, 200);
+    assert.equal((await s.call("/atlas/ask/pick/", { cookie: again })).status, 401);
+    let last;
+    for (let i = 0; i < 12; i++) last = await s.call("/__team/login", { method: "POST", body: { name: "sam", password: `wrong ${i} password` } });
+    assert.equal(last.status, 429, "tries are limited");
+    const refused = readdirSync(join(s.dir, "team")).filter((f) => f.startsWith("log-")).flatMap((f) => readFileSync(join(s.dir, "team", f), "utf8").trim().split("\n")).map((l) => JSON.parse(l)).filter((l) => l.what === "sign-in refused");
+    assert.ok(refused.length >= 5 && refused.every((l) => l.name === "sam" && !JSON.stringify(l).includes("wrong")), "failed tries are logged, never the password");
+  } finally {
+    await s.close();
+  }
+});
+
+test("a sign-in in flight when a new password is set does not survive it, and the limiter keeps a key in its minute", async () => {
+  const { limiter } = await import("../lib/team/server.mjs");
+  const dir = mkdtempSync(join(tmpdir(), "wf-team-race-"));
+  const team = openTeam(dir, { adminToken: ADMIN });
+  await team.redeem(team.invite({ name: "sam", projects: ["atlas"] }, "admin"), "the old password!");
+  const reset = team.invite({ name: "sam", projects: ["atlas"] }, "admin");
+  // Whichever finishes its scrypt first, the old password's sign-in does not outlast the new one.
+  for (let i = 0; i < 2; i++) {
+    const before = i === 0 ? team.login("sam", i ? "the new password!" : "the old password!") : null;
+    const old = i === 1 ? team.login("sam", "the new password!") : before;
+    await team.redeem(i === 0 ? reset : team.invite({ name: "sam", projects: ["atlas"] }, "admin"), i === 0 ? "the new password!" : "another password!");
+    const session = await old.catch(() => null);
+    assert.equal(session && team.session(session), null, "no session from the password before");
+  }
+  await assert.rejects(team.login("sam", "the old password!"), /name or password is not right/);
+  let now = 0;
+  const allow = limiter(() => now);
+  for (let i = 0; i < 3; i++) allow("n:sam", 3);
+  assert.equal(allow("n:sam", 3), false);
+  for (let i = 0; i < 6000; i++) allow(`k${i}`, 3);
+  assert.equal(allow("n:sam", 3), false, "a flood of other keys does not reset one in its minute");
 });
