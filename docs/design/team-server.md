@@ -55,6 +55,20 @@ Several people answer one page at once (decided 2026-11-25): one shared answer p
 - **Kept to size.** An event says only what changed. The files are written a second after a change, a second's changes at once, and at a stop. A page no one has open leaves memory once more than 100 are kept. The limits are SECURITY.md's.
 - **Not in this version**: votes, and email when a person is assigned or named.
 
+## Where an ask came from
+
+A teammate opening a page sees whose work raised it, and what work (decided 2026-11-25).
+
+- **Asked by** is the member whose kit published the page, which the server stamps from their token into `ask/<id>/origin.json`; a spec cannot name it. Published again by another member, it is theirs, with no pull request until their kit says one; so is the same person's page from another branch. The page's header and each inbox line say it, and the inbox filters by it, Me among them.
+- **The work**, from the asker's kit (`asker()` in `lib/view/hub.mjs`): the repository's web address from its origin remote, without credentials, the branch, and the commit the page was built at. The header links each. The server takes a repository only as an https address of plain parts, and a commit only as hex.
+- **The pull request** for the branch, read with `gh pr view` by the kit, never the server, which loads nothing from the web: sent at the publish, again when `wf ask wait` starts, and for each of the person's own open asks when they run `wf question inbox` (`POST /__team/api/<p>/<id>/origin`, `{ pr, prState }`). Only the kit of whoever asked it may say it. Its state is kept with when the kit looked. Merged or closed, the page says the work is merged or closed, as their kit last saw it, and the inbox line is struck through. A fork's pull request of the same branch name is not counted.
+- **A client** sees who asked a page, not the team's repository, branch, commit, pull request, or whose agent waits; nor does a page sent with `wf ask export`. A page on this machine alone keeps its "Asked from" line.
+- **Whose agent waits**: the waiting pill and the inbox say "gimyong's agent waiting · 25 min", and on the team server the agents that have waited longest come first.
+- **Grouped**: the inbox groups by who asked, by branch, by session, or not at all. A page names its branch's other open asks, so they are answered as one batch.
+- **The asker's card**, from their name: their role, their other open asks, and Message them, which starts a line to them under the current question.
+- **Told when sent**: whoever asked a page is told when someone else sends it, on the page and, with notifications on, from the inbox.
+- **Not in this version**: the board item. The kit maps a chunk to its monday item only by reading the board, which a page build does not do.
+
 ## Open questions, before the merge
 
 The round trip this was asked for (from the start of the design):

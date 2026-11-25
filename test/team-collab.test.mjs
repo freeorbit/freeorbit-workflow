@@ -247,7 +247,7 @@ test("a person holds at most five streams on a page, and a client's page names o
     await open[4].next("hello");
     await new Promise((r) => setTimeout(r, 200));
     assert.equal(open[5].out.status, 503);
-    // A client sees themself and whom a question is assigned to, not the whole team.
+    // A client sees themself, who asked the page, and whom a question is assigned to, not the whole team.
     const { link } = (await call(s.port, "/__team/invite", { method: "POST", headers: { Authorization: `Bearer ${ADMIN}` }, body: { name: "cleo", client: true, projects: ["atlas"] } })).json();
     const joined = await call(s.port, "/__team/join", { method: "POST", body: { code: link.split("#")[1], password: PASSWORD } });
     const cleo = joined.headers["set-cookie"][0].split(";")[0];
@@ -256,7 +256,7 @@ test("a person holds at most five streams on a page, and a client's page names o
     assert.equal((await call(s.port, "/__team/api/atlas/forc", { method: "PUT", headers: { Authorization: `Bearer ${ken.token}` }, body: { spec: forClient, pictures: {} } })).status, 200);
     const page = (await call(s.port, "/atlas/ask/forc/", { headers: { Cookie: cleo } })).text;
     const data = JSON.parse(page.match(/<script type="application\/json" id="ask-data">([\s\S]*?)<\/script>/)[1]);
-    assert.deepEqual(data.collab.people.map((p) => p.name), ["cleo"]);
+    assert.deepEqual(data.collab.people.map((p) => p.name).sort(), ["cleo", "ken"], "themself, and who asked it");
   } finally {
     for (const o of open) o.close();
     await s.close();
