@@ -4,6 +4,14 @@ What each kit version changed, newest first, and what a project does to upgrade 
 
 To upgrade, pin the version's tag in the project, as [Install in a project](README.md#install-in-a-project) shows.
 
+## v1.24.1: a shared ask-pages server whose kit was removed is started again
+
+The shared ask-pages server on port 8765 kept running after the worktree it was started from was removed, with its `node_modules`. It still answered as the same kit version, so every later `wf ask page` reused it, and every page and the inbox failed with ENOENT on the kit's `lib/ask/browser/style` until `wf view stop` and `wf view serve` (Freeorbit, from an Atlas NX worktree, 2026-11-25).
+
+- **The server says its kit's folder** in its `/__hub` record. A start that finds one whose folder is gone stops it with the kept token, as it does one from an older kit, and starts one on its own kit, with the same token, so pages already open can still send.
+- **A server from v1.24.0 or before**, at the same version, is judged by its front page, which reads the kit's styles: when that fails, it is started again the same way.
+- Nothing to change in a project.
+
 ## v1.24.0: where an ask came from
 
 On a team server, a page said its repository, branch, and an agent session's id, but not whose work raised it, so a teammate could not tell gimyong's ask from andox's (2026-11-25).

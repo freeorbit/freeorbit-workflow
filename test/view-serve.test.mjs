@@ -19,7 +19,7 @@ import { answersPath, archivedAsked, archivePath, readSpec } from "../lib/ask/st
 import { serve, servedFile } from "../lib/view/serve.mjs";
 import { clearWaiting, markWaiting } from "../lib/view/waiting.mjs";
 import { readSettings, settingsFile, writeSettings } from "../lib/view/settings.mjs";
-import { asker, ensureHub, hubUp, keptToken, olderVersion, projects, register, stateDir } from "../lib/view/hub.mjs";
+import { asker, ensureHub, hubBroken, hubUp, keptToken, olderVersion, projects, register, stateDir } from "../lib/view/hub.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
 import { projectKey, SERVER, withViewServer } from "../lib/view/view.mjs";
 
@@ -324,6 +324,33 @@ test("a server older than the kit is started again on the kit, with the token it
     await fetch(`http://127.0.0.1:${port}/__hub/stop`, { method: "POST", headers: { "X-WF-Token": hub.token } }).catch(() => null);
     await old.close().catch(() => null);
     for (let i = 0; i < 20 && (await hubUp(port)); i++) await new Promise((done) => setTimeout(done, 100));
+  }
+});
+
+test("a server at the kit's version whose own kit is gone is started again on the kit, with its token", async () => {
+  const kit = JSON.parse(readFileSync(join(here, "../package.json"), "utf8")).version;
+  const gone = join(tmpdir(), "wf-removed-worktree", "node_modules", "freeorbit-workflow");
+  assert.equal(await hubBroken({ kit: join(here, "..") }), false, "this kit's folder is whole");
+  assert.equal(await hubBroken({ kit: gone }), true);
+  // As a hub from a worktree since removed answers: /__hub at this version, every page failing; and one from before /__hub named its kit.
+  const failing = [[/^\/$/, (req, res) => { res.writeHead(500); res.end(); }]];
+  for (const [what, opts] of [["names its kit", { kit: gone }], ["names none, and its front page fails", { extra: failing }]]) {
+    const port = 20000 + Math.floor(Math.random() * 20000);
+    const env = { ...process.env, WF_ASK_NO_SERVER: "", WF_STATE_DIR: mkdtempSync(join(tmpdir(), "wf-ask-gone-")) };
+    const broken = await serve({ resolve: () => null, list: () => [], check: checkAnswers, stateOf: askState, port, log: () => {}, version: kit, onStop: () => broken.close(), ...opts });
+    writeFileSync(join(stateDir(env), "view-hub.json"), JSON.stringify({ pid: process.pid, port, token: broken.token, version: kit }));
+    try {
+      const now = await ensureHub({ port, env });
+      assert.notEqual(now.pid, process.pid, `a hub that ${what} is replaced`);
+      assert.equal(now.kit, join(here, "..") + "/", "the new one names this kit");
+      assert.equal(JSON.parse(readFileSync(join(stateDir(env), "view-hub.json"), "utf8")).token, broken.token, "with the token before, so an open page can still send");
+      assert.equal((await ensureHub({ port, env })).pid, now.pid, "and it is not started again");
+    } finally {
+      const hub = JSON.parse(readFileSync(join(stateDir(env), "view-hub.json"), "utf8"));
+      await fetch(`http://127.0.0.1:${port}/__hub/stop`, { method: "POST", headers: { "X-WF-Token": hub.token } }).catch(() => null);
+      await broken.close().catch(() => null);
+      for (let i = 0; i < 20 && (await hubUp(port)); i++) await new Promise((done) => setTimeout(done, 100));
+    }
   }
 });
 
