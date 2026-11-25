@@ -143,3 +143,62 @@ test("two people on one page see each other's answers, places, threads, and send
   assert.deepEqual(sent.answers.answers.q1, { choice: "b" });
   assert.equal(sent.answers.sent.by, "ken");
 });
+
+test("each page and the inbox say who asked it and the work it came from, and tell the asker when someone else sends it", async () => {
+  const gimToken = await enroll(kenB, "gimyong", "developer");
+  const andoxToken = await enroll(anaB, "andox", "designer");
+  const root = mkdtempSync(join(scratch, "proj-"));
+  const asker = { project: "atlas-nx", branch: "feat/login", worktree: "", session: "s1", commit: "1a2b3c4", repo: "https://github.com/acme/atlas-nx" };
+  const publish = async (token, page, origin, from = asker) => {
+    const { spec } = buildPage(root, join(root, ".cache/view"), page, KIT_KINDS, {}, { asker: from });
+    assert.equal((await api(`/__team/api/atlas/${spec.id}`, { method: "PUT", token, body: { spec, pictures: {}, ...(origin ? { origin } : {}) } })).status, 200);
+    return spec;
+  };
+  await publish(gimToken, { ...raw, id: "login", title: "Login layout" }, { pr: "41", prState: "open" });
+  await publish(gimToken, { ...raw, id: "login-copy", title: "Login copy" });
+  await publish(andoxToken, { ...raw, id: "icons", title: "Icons" }, undefined, { ...asker, branch: "feat/icons" });
+  await api("/__team/api/atlas/login/waiting", { method: "POST", token: gimToken, body: { on: true, since: new Date(Date.now() - 25 * 60_000).toISOString() } });
+  const url = `${origin}/atlas/ask/login/`;
+  await Promise.all([kenB.open(url, 1280, 900), anaB.open(url, 1280, 900)]);
+
+  // Andox sees who asked it, linked to the work: the branch, the pull request, and the commit.
+  await until(anaB, `document.querySelector(".who .asker-btn")?.textContent === "gimyong"`, "who asked it");
+  const links = await js(anaB, `[...document.querySelectorAll(".who a")].map((a) => [a.textContent, a.getAttribute("href")])`);
+  assert.deepEqual(links.slice(0, 3), [["feat/login", "https://github.com/acme/atlas-nx/tree/feat/login"], ["PR #41 open", "https://github.com/acme/atlas-nx/pull/41"], ["1a2b3c4", "https://github.com/acme/atlas-nx/commit/1a2b3c4"]]);
+  assert.equal(await js(kenB, `document.querySelector(".who .asker-btn").textContent`), "you");
+  assert.match(await js(anaB, `document.querySelector(".who").textContent`), /^Asked by gimyong · atlas-nx · feat\/login · PR #41 open · 1a2b3c4 · All asks$/);
+  // Whose agent waits, and the other open ask from the same branch.
+  await until(anaB, `/gimyong's agent waiting · 25 min/.test(document.querySelector(".waitpill")?.textContent ?? "")`, "whose agent waits");
+  await until(anaB, `/^1 more open ask from feat\\/login: Login copy$/.test(document.querySelector(".branch-asks:not([hidden])")?.textContent ?? "")`, "the other ask from this branch");
+  // The asker's card: their other open asks, and a line to them.
+  await click(anaB, ".who .asker-btn");
+  await until(anaB, `[...document.querySelectorAll(".pop")].some((p) => /gimyong · developer/.test(p.textContent))`, "the asker's card");
+  assert.match(await js(anaB, `[...document.querySelectorAll(".pop")].find((p) => /gimyong · developer/.test(p.textContent)).textContent`), /gimyong's other open asks[\s\S]*Login copy/);
+  await click(anaB, ".pop button", "Message gimyong");
+  await until(anaB, `document.activeElement?.value === "@gimyong "`, "a line to gimyong started");
+
+  // The work merged: the page says so.
+  await api("/__team/api/atlas/login/origin", { method: "POST", token: gimToken, body: { pr: "41", prState: "merged" } });
+  await anaB.open(url, 1280, 900);
+  await until(anaB, `!document.querySelector(".notice.stale")?.hidden`, "the merged work said");
+  assert.match(await js(anaB, `document.querySelector(".notice.stale").textContent`), /The work this came from is merged: PR #41, as gimyong's kit saw it/);
+
+  // Andox sends it; Gimyong, who asked, is told.
+  await click(anaB, "#q-q1 .opt", "B");
+  await click(anaB, "#q-q2 .opt", "A");
+  await click(anaB, "footer button", "Send");
+  await until(kenB, `/andox sent your ask/.test(document.querySelector(".toast")?.textContent ?? "")`, "gimyong told", 8000);
+
+  // The inbox: who asked each, grouped by who asked, and only mine.
+  await anaB.open(`${origin}/`, 1280, 900);
+  await until(anaB, `document.querySelectorAll(".item-row").length >= 3`, "the inbox");
+  const heads = await js(anaB, `[...document.querySelectorAll(".sess")].map((e) => e.textContent)`);
+  assert.ok(heads.includes("Asked by gimyong") && heads.includes("Asked by andox"), JSON.stringify(heads));
+  // Open asks come before answered ones, whoever asked them.
+  const order = await js(anaB, `[...document.querySelectorAll(".item-row .title")].map((e) => e.textContent).filter((t) => ["Login layout", "Login copy", "Icons"].includes(t))`);
+  assert.equal(order.at(-1), "Login layout", JSON.stringify(order));
+  assert.match(await js(anaB, `[...document.querySelectorAll(".item-row")].find((a) => /Login layout/.test(a.textContent)).textContent`), /Asked by gimyong · feat\/login · PR #41 merged/);
+  assert.ok(await js(anaB, `[...document.querySelectorAll(".item-row")].find((a) => /Login layout/.test(a.textContent)).classList.contains("stale")`));
+  await js(anaB, `(() => { const s = document.querySelector('select[aria-label="Asked by"]'); s.value = "__me"; s.dispatchEvent(new Event("change")); return null; })()`);
+  await until(anaB, `[...document.querySelectorAll(".item-row")].every((a) => /Asked by you/.test(a.textContent))`, "only andox's own asks");
+});

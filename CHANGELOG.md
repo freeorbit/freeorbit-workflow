@@ -4,6 +4,19 @@ What each kit version changed, newest first, and what a project does to upgrade 
 
 To upgrade, pin the version's tag in the project, as [Install in a project](README.md#install-in-a-project) shows.
 
+## v1.24.0: where an ask came from
+
+On a team server, a page said its repository, branch, and an agent session's id, but not whose work raised it, so a teammate could not tell gimyong's ask from andox's (2026-11-25).
+
+- **Asked by**, on each page and inbox line: the member whose kit published it, stamped by the server from their token. The inbox filters by it, Me among them, and groups by who asked, by branch, or by session.
+- **The work it came from**, linked from the page's header: the branch, the commit it was built at, and the branch's pull request with its state, which the kit reads with `gh` when it publishes, when `wf ask wait` starts, and on `npx wf question inbox`. When the pull request merges or closes, the page says so and the inbox line is struck through.
+- **Whose agent waits**: "gimyong's agent waiting · 25 min", and on the team server the agents that have waited longest come first.
+- **Other open asks from the same branch** are named on the page, to answer as one batch.
+- **The asker's card**, from their name: their role, their other open asks, and Message them, which starts a line to them under the question.
+- **The asker is told** when someone else sends their ask, on the page and, with notifications on, from the inbox.
+- **A client** sees who asked a page, not the team's repository, branch, commit, pull request, or whose agent waits; a page from `wf ask export` leaves them out too. A page on this machine alone keeps its "Asked from" line.
+- Nothing to change in a project. Pages built before this say who asked once they are published again; `gh`, signed in, gives the pull request, and without it a page has none.
+
 ## v1.23.0: working together on a team server's ask page
 
 Two people answering one page on the team server each saw only their own answers, and neither saw the other's until they reloaded (2026-11-25).
