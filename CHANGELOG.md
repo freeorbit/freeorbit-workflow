@@ -4,6 +4,17 @@ What each kit version changed, newest first, and what a project does to upgrade 
 
 To upgrade, pin the version's tag in the project, as [Install in a project](README.md#install-in-a-project) shows.
 
+## v1.23.0: working together on a team server's ask page
+
+Two people answering one page on the team server each saw only their own answers, and neither saw the other's until they reloaded (2026-11-25).
+
+- **One shared answer per question**, saved for everyone as it is made and shown on every open page at once; the last one wins, and the question says who gave it and when. Reloading keeps it: the answers are the server's, not the browser's. Saving never wakes the agent's wait; **any member's Send** does, and says who sent it, in `wf ask answers` (`sent by`, and who gave each answer) and in the inbox.
+- **Who is on the page**: a round per person in the header, with where they are and whether they type; their initials on that question. Click one to follow them.
+- **Changed under you**: when someone changes an answer you are writing, your words stay and the question says so, with Use theirs and Keep mine.
+- **Under each question**: Assign to a person (the team's; their inbox marks it, and whoever assigned it is told when someone else answers it), Discuss, with `@name` to tell that person, and Link, a link to the question.
+- **Mark my part done**, with who is done and who is still to go, and **What happened** in the ⋯ menu.
+- Off a team server, nothing changes. Nothing to change in a project; a page answered on v1.22 or before starts from the answers last sent.
+
 ## v1.22.1: Show password on the team server's pages
 
 A password typed on the join page reached the field two characters short, likely through a keyboard's dead key (on many Linux layouts, `^` then `9` makes one character, `⁹`), and nothing on the page showed it (2026-11-24).

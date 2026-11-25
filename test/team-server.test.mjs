@@ -11,7 +11,7 @@ import { test } from "node:test";
 
 import { buildPage } from "../lib/ask/page.mjs";
 import { KIT_KINDS } from "../lib/design/annotate.mjs";
-import { mergeAnswers, teamServe } from "../lib/team/server.mjs";
+import { teamServe } from "../lib/team/server.mjs";
 import { maySee, openTeam, waitsOn } from "../lib/team/store.mjs";
 
 const ADMIN = "a".repeat(40);
@@ -85,15 +85,6 @@ test("a client sees only the pages for the client; the team sees every page of i
   assert.equal(waitsOn(client, spec), true);
 });
 
-test("answers from several people keep each one's latest, and who gave it", () => {
-  const first = mergeAnswers(null, { hash: "h", answers: { q1: { choice: "a" } } }, "sam");
-  assert.deepEqual(first.by, { q1: "sam" });
-  const both = mergeAnswers(first, { hash: "h", answers: { q2: { choice: "b" } } }, "ana");
-  assert.deepEqual([both.answers, both.by], [{ q1: { choice: "a" }, q2: { choice: "b" } }, { q1: "sam", q2: "ana" }]);
-  const back = mergeAnswers(both, { hash: "h", answers: {} }, "sam");
-  assert.deepEqual(back.by, { q2: "ana" }, "a person takes back their own answer only");
-  assert.deepEqual(mergeAnswers(both, { hash: "new", answers: {} }, "sam").answers, {}, "another page starts again");
-});
 
 /** A request with the Host given, as a browser reaching the server's public address sends it; fetch will not set Host. */
 function request(port, path, { method, headers, body }) {
@@ -238,7 +229,7 @@ test("the agent's wait and replies go through the kit's routes; invite codes are
 });
 
 test("what a member's kit sends is checked: a hash that names a file, a broken spec, odd kinds, and a client's archive are refused", async () => {
-  const { limiter, ownAnswers, cookieName } = await import("../lib/team/server.mjs");
+  const { limiter, cookieName } = await import("../lib/team/server.mjs");
   const s = await server();
   try {
     const sam = await s.enroll({ name: "sam", role: "designer", projects: ["atlas"] });
@@ -269,29 +260,9 @@ test("what a member's kit sends is checked: a hash that names a file, a broken s
   assert.deepEqual(Array.from({ length: 4 }, () => allow("a", 3)), [true, true, true, false]);
   now += 61_000;
   assert.equal(allow("a", 3), true, "a new minute");
-  assert.deepEqual(ownAnswers({ answers: { q1: { choice: "a" }, q2: { choice: "b" } }, by: { q1: "sam", q2: "ana" } }, "sam").answers, { q1: { choice: "a" } });
   assert.equal(cookieName(true), "__Host-wf_team", "on HTTPS, no other site on a parent domain can set it");
 });
 
-test("a person's page shows their own answers only, so their next send keeps what they gave", async () => {
-  const s = await server();
-  try {
-    const sam = await s.enroll({ name: "sam", role: "designer", projects: ["atlas"] });
-    const ana = await s.enroll({ name: "ana", role: "owner", projects: ["atlas"] });
-    await s.publish(sam.token, page("shared"));
-    const tokenOf = async (cookie) => (await (await s.call("/atlas/ask/shared/", { cookie })).text()).match(/name="wf-token" content="([^"]+)"/)[1];
-    const hash = (await (await s.call("/__team/api/atlas/shared", { token: sam.token })).json()).hash;
-    const send = async (cookie, answers) => s.call("/__ask/atlas/answers/shared", { method: "POST", cookie, headers: { "X-WF-Token": await tokenOf(cookie) }, body: { id: "shared", hash, answers } });
-    await send(sam.cookie, { q1: { choice: "b" } });
-    await send(ana.cookie, { q2: { choice: "a" } });
-    const anaPage = await (await s.call("/atlas/ask/shared/", { cookie: ana.cookie })).text();
-    assert.match(anaPage, /"previous":\{[^}]*"answers":\{"q2":\{"choice":"a"\}\}/, "ana's page holds ana's answer, not sam's");
-    const kept = (await (await s.call("/__team/api/atlas/shared", { token: sam.token })).json()).answers;
-    assert.deepEqual(kept.by, { q1: "sam", q2: "ana" });
-  } finally {
-    await s.close();
-  }
-});
 
 test("a person signs in from any browser with their name and password, and out of one", async () => {
   const s = await server();

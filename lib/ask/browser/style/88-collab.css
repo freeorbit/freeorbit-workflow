@@ -1,0 +1,29 @@
+/* --- working together, on a team server ------------------------------------------ */
+.avatars { display: inline-flex; align-items: center; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--panel); margin-left: -6px; background: var(--c); color: #fff; font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-grid; place-items: center; padding: 0; }
+.avatar:first-child { margin-left: 0; }
+.avatar.following { outline: 2px solid var(--c); outline-offset: 2px; }
+.avatar.me { outline: 2px solid var(--accent-line); outline-offset: -1px; }
+.avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.here-chips { display: inline-flex; gap: 3px; margin-left: auto; }
+.here { position: relative; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #fff; font-size: 10px; font-weight: 600; display: inline-grid; place-items: center; }
+.here .typing { position: absolute; right: -6px; bottom: -4px; font-size: 12px; line-height: 12px; background: var(--panel); color: var(--text-2); border-radius: 6px; padding: 0 2px; animation: wf-typing 1s steps(2) infinite; }
+@keyframes wf-typing { 50% { opacity: 0.35; } }
+.q.others-here { box-shadow: inset 3px 0 0 var(--here); }
+.who-chip, .for-chip { font-size: 11.5px; color: var(--text-2); background: var(--sunk); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 8px; line-height: 20px; white-space: nowrap; }
+.for-chip { color: var(--info); border-color: var(--info); background: var(--info-soft); }
+.assign-pick { height: 26px; font-size: 12.5px; }
+.collab-conflict { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; border: 1px solid var(--warn); background: var(--warn-soft); border-radius: var(--r-ctl); font-size: 13px; }
+.talk { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--r-ctl); padding: 10px 12px; }
+.talk .acts { display: flex; gap: 8px; align-items: center; }
+.talk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 20px; }
+.talk-list:empty { display: none; }
+.talk-list li { white-space: pre-wrap; overflow-wrap: anywhere; }
+.talk-list .who { font-size: 11px; font-weight: 600; color: #fff; background: var(--c); border-radius: 999px; padding: 0 8px; }
+.mention { color: var(--accent); font-weight: 600; }
+.ready { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.ready-btn[aria-pressed="true"] { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
+.ready-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 32ch; }
+.activity .rounds li { font-size: 13.5px; line-height: 22px; }
+@media (max-width: 640px) { .ready-line { display: none; } .here-chips { margin-left: 0; } }
+@media print { .avatars, .talk-btn, .assign-pick, .ready, .collab-conflict { display: none; } }

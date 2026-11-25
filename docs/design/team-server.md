@@ -38,6 +38,23 @@ Ask pages, shared by a team working apart and by its client: one server everyone
 - **What each sees.** A page names who it is for with `for` (roles, `client`, or names), and a question its `role`. Members see every page of their projects; the client sees only the pages for the client. A person's inbox marks the asks that wait on their role, or on them by name, "for you", and `wf question inbox` lists them.
 - **Who answered.** An answer keeps who sent it. On a page several people answer (a `batch` by role), the server keeps each person's latest answer to each question, not the last whole send.
 
+## Working together
+
+Several people answer one page at once (decided 2026-11-25): one shared answer per question, and any member's Send wakes the agent.
+
+- **Saved as it is made.** Each pick or note is saved for everyone, a moment after the last change, as `POST /__ask/<key>/answer/<id>` with one question's answer, and checked with the rest as a whole page's answers are. The last save wins, and says who. The shared answers are `ask/<id>/working.json`, `{ answers, by, at }`; a save never wakes the agent's wait.
+- **Send** turns the shared answers into the answers file, which wakes the wait, and says who sent it (`sent.by`, and "sent by" in `wf ask answers`). Each answer carries who gave it, as `by`. A send from an older page, or `wf ask import`, carries a whole page's answers: each that differs is saved as the sender's first.
+- **Live.** Each open page holds one event stream, `GET /__ask/<key>/events/<id>` (Server-Sent Events), which says the page's state at once, then each change; a save names its connection, which is not told it back. The server is one process, so the streams are kept in memory.
+- **Who is on the page**: a round per person in the header, with where they are and whether they type, and their initials on that question. Clicking one follows them; a second click stops.
+- **Changed under you.** An answer someone else changes while you are writing that question's words, or before your own change is saved, is not laid over yours: the question says so, with Use theirs and Keep mine.
+- **Under each question**: who answered it and when, Assign to (the team's, to a person who sees the page; the inbox marks it for them, and the person who assigned it is told when someone else answers), Discuss (lines anyone on the page adds; `@name` tells that person), and Link (a link to the question).
+- **The ready check**: Mark my part done, with who is done and who is still to go.
+- **What happened**, in the ⋯ menu: the page's last 200 answers, lines, assigns, dones, and sends, with who and when.
+- **Kept with the page**, in `ask/<id>/collab.json`: threads, assigns, dones, who sent it, and what happened. Both files go when the page is published again with other questions, and the open pages are told to reload.
+- **Anyone on the page may change or clear any answer**, a client too: one shared answer means the last change wins, whoever makes it. What happened says who did it, and each answer says who gave it.
+- **Kept to size.** An event says only what changed. The files are written a second after a change, a second's changes at once, and at a stop. A page no one has open leaves memory once more than 100 are kept. The limits are SECURITY.md's.
+- **Not in this version**: votes, and email when a person is assigned or named.
+
 ## Open questions, before the merge
 
 The round trip this was asked for (from the start of the design):
@@ -107,7 +124,7 @@ Today's promise, "the ask-pages server listens on `127.0.0.1` only", stays for `
 The first version carries everything (decided 2026-11-23), built in this order on one branch, each step tested before the next:
 
 1. `wf team serve`: sign-in, invites, projects, and the hub's routes behind them; state on disk; `SECURITY.md`.
-2. The kit's side: `teamServer` in the config, then `page`, `wait`, `more`, `reply`, and `live` over HTTPS; answers kept per person.
+2. The kit's side: `teamServer` in the config, then `page`, `wait`, `more`, `reply`, and `live` over HTTPS; one shared answer per question (Working together, v1.23).
 3. Client links, and the inbox by role.
 4. Open questions published by `record`, `wf question inbox`, and `wf question pull`.
 5. The `Dockerfile`, and a deploy guide: the container, the volume, the secret, and the build step a project adds to its own infrastructure code.
