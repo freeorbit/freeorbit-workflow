@@ -140,5 +140,4 @@ When the runbook names a step after the tag, such as "deploy the tag with deploy
 
 ## After
 
-- Add a line to the release area's history in the build order when the version is the first of its kind, such as the first stable release.
 - An issue that took real debugging goes in the troubleshooting log.

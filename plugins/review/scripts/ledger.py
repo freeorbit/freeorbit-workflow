@@ -8,12 +8,16 @@
     ledger.py defer --at SHORT_HEAD   count one more deferral, at that commit
     ledger.py summary                 count each group
     ledger.py check                   list rows and details that disagree
+    ledger.py prune                   drop the verified and superseded findings
 
 Run from the repo root. A status decides the group, and a finding moves with
 it. A closed finding's row lives in the closed file, and its details in the
 closed folder, one file per week it closed (2026-W46.md), or per month with
 `--period month` (2026-11.md), so the ledger holds only what is left to do and
-no file grows for good. `--ledger`, `--closed`, and `--details` name other
+no file grows for good. A finding set to verified or superseded is dropped,
+row and details, and the closed summary's Highest IDs line keeps its number,
+so no ID is used again; `prune` does the same for a ledger that kept them.
+`--ledger`, `--closed`, and `--details` name other
 places, as the config does. `add` takes a list of objects with prefix,
 title, severity, confidence, rule, where, evidence, why, and suggestion, and
 optionally note. The date is the --date option, or today.
@@ -34,6 +38,15 @@ DETAILS = "docs/log/review/closed"
 OPEN = {"proposed", "accepted", "deferred"}
 FIXED = {"fixed"}
 CLOSED_STATES = {"verified", "rejected", "accepted-risk", "accepted-cost", "superseded"}
+# Closed, and not kept: git history has them.
+DROPPED = {"verified", "superseded"}
+# A finding's ID, such as SEC-012 or E2E-051: a prefix may hold a digit after its first letter.
+ID = r"[A-Z][A-Z0-9]*-\d+"
+# The line, however its list is written: up to a period that ends a sentence, or the line's end.
+HIGHEST = re.compile(r"Highest IDs used, so none is used again:([^\n]*?)(?:\.(?=\s|$)|$)", re.M)
+NOT_KEPT = "Verified and superseded findings are not kept here; git history has them."
+# A summary row: its ID, link, severity, and status.
+SUMMARY_ROW = re.compile(rf"^\| \[({ID})\]\(([^)]*)\) \| \w+ \| ([\w-]+) \|", re.M)
 HEAD = "| ID | Severity | Status | Title | Where |\n| --- | --- | --- | --- | --- |\n"
 ROWS = ["Status", "Severity", "Confidence", "Rule", "Note", "Found", "Closed", "Evidence", "Why it matters", "Suggestion", "Decision"]
 
@@ -164,7 +177,11 @@ def add_row(text, group, row, level="###"):
 
 def drop_row(text, group, row, level="###"):
     """Take a summary row out, and say "None." if its table is left empty."""
-    text = text.replace(row, "", 1)
+    return none_if_empty(text.replace(row, "", 1), group, level)
+
+
+def none_if_empty(text, group, level="###"):
+    """Say "None." under a group whose summary table has no rows left."""
     start, end = section(text, level, group)
     if HEAD in text[start:end] and "| [" not in text[start:end]:
         text = f"{text[:start]}\nNone.\n\n{text[end:]}"
@@ -190,8 +207,33 @@ def fill_group(text, group):
 
 def next_number(prefix, *texts):
     """The next free number for a prefix."""
-    used = [int(n) for text in texts for n in re.findall(rf"\b{prefix}-(\d{{3}})\b", text)]
+    # Not inside another ID, such as D-UI-145 for the prefix UI.
+    used = [int(n) for text in texts for n in re.findall(rf"(?<![\w-]){re.escape(prefix)}-(\d{{3,}})\b", text)]
     return max(used, default=0) + 1
+
+
+def remember(summary, findings, *texts):
+    """
+    The closed summary with its Highest IDs line raised to cover the dropped
+    findings and every finding the texts still hold, so no ID is used again.
+    """
+    match = HIGHEST.search(summary)
+    highest = {}
+    kept = [finding for text in (summary, *texts) for finding in re.findall(rf"^(?:\| \[|### )({ID})\b", text, re.M)]
+    for finding in (re.findall(ID, match.group(1)) if match else []) + list(findings) + kept:
+        prefix, number = finding.rsplit("-", 1)
+        highest[prefix] = max(highest.get(prefix, 0), int(number))
+    if not highest:
+        return summary
+    line = f"Highest IDs used, so none is used again: {', '.join(f'{prefix}-{highest[prefix]:03d}' for prefix in sorted(highest))}."
+    if match:
+        return summary[: match.start()] + line + summary[match.end() :]
+    if NOT_KEPT in summary:
+        return summary.replace(NOT_KEPT, f"{NOT_KEPT} {line}", 1)
+    head = re.search(r"^## Summary$", summary, re.M)
+    if not head:
+        sys.exit("The closed summary has no ## Summary heading.")
+    return f"{summary[: head.start()]}{NOT_KEPT} {line}\n\n{summary[head.start() :]}"
 
 
 def add(args, ledger, closed):
@@ -260,8 +302,11 @@ def set_finding(args, ledger, closed):
 
     def relink(link):
         """The row with its link pointed at where the details now are."""
-        return re.sub(r"^(\| \[[A-Z]+-\d+\]\()[^)]*\)", lambda m: f"{m.group(1)}{link})", new_row, count=1)
+        return re.sub(rf"^(\| \[{ID}\]\()[^)]*\)", lambda m: f"{m.group(1)}{link})", new_row, count=1)
 
+    if status in DROPPED:
+        closed.summary = remember(closed.summary, [finding], ledger, *closed.files.values())
+        return ledger, closed
     if target == "Closed":
         # A finding is filed under the period it closed in, and stays in its file while it stays closed.
         if not field(block, "Closed"):
@@ -306,6 +351,41 @@ def state(args, ledger):
     return ledger
 
 
+def prune(ledger, closed):
+    """
+    Drop every verified and superseded finding, row and details, and keep their
+    IDs in the Highest IDs line. Details go only with their row, or when they
+    have none, so a row and details that disagree are reported, not cut in half.
+    """
+    gone, kept, lines = set(), set(), []
+    for line in closed.summary.splitlines(keepends=True):
+        row = SUMMARY_ROW.match(line)
+        if row and row.group(3) in DROPPED:
+            gone.add(row.group(1))
+            continue
+        if not row and re.match(rf"^\| \[{ID}\]", line):
+            print(f"Kept a row it could not read: {line.strip()}", file=sys.stderr)
+        kept.update(re.findall(rf"^\| \[({ID})\]", line))
+        lines.append(line)
+    closed.summary = none_if_empty("".join(lines), "Summary", "##")
+    for name, text in closed.files.items():
+        # Each piece starts at a heading; a finding's block runs to the next one.
+        pieces = re.split(r"(?=^#{2,3} )", text, flags=re.M)
+        out = []
+        for piece in pieces:
+            head = re.match(rf"^### ({ID})\n", piece)
+            if head and (head.group(1) in gone or (field(piece, "Status") in DROPPED and head.group(1) not in kept)):
+                gone.add(head.group(1))
+                continue
+            if head and field(piece, "Status") in DROPPED:
+                print(f"Kept {head.group(1)}: its details say {field(piece, 'Status')}, its row does not.", file=sys.stderr)
+            out.append(piece)
+        closed.files[name] = fill_group("".join(out), "Details")
+    closed.summary = remember(closed.summary, gone, ledger, *closed.files.values())
+    print(f"Dropped {len(gone)} verified and superseded findings.")
+    return ledger, closed
+
+
 def summary_of(ledger, closed):
     """Each group's summary rows, and where its details live."""
     head = re.search(r"^## Open$", ledger, re.M).start()
@@ -323,7 +403,7 @@ def problems(ledger, closed):
     found = []
     groups = summary_of(ledger, closed)
     for name, (rows, home) in groups.items():
-        for finding, link, status in re.findall(r"^\| \[([A-Z]+-\d+)\]\(([^)]*)\) \| \w+ \| ([\w-]+) \|", rows, re.M):
+        for finding, link, status in SUMMARY_ROW.findall(rows):
             if group_of(status) != name:
                 found.append(f"{finding}: status {status} under {name}")
             at = block_at(home, finding)
@@ -339,14 +419,14 @@ def problems(ledger, closed):
             if link != want:
                 found.append(f"{finding}: link points at the wrong place")
     summaries = ledger[: re.search(r"^## Open$", ledger, re.M).start()] + closed.summary
-    found += [f"{finding}: details in the summary" for finding in re.findall(r"^### ([A-Z]+-\d+)$", summaries, re.M)]
-    ids = re.findall(r"^\| \[([A-Z]+-\d+)\]", "".join(rows for rows, _ in groups.values()), re.M)
+    found += [f"{finding}: details in the summary" for finding in re.findall(rf"^### ({ID})$", summaries, re.M)]
+    ids = re.findall(rf"^\| \[({ID})\]", "".join(rows for rows, _ in groups.values()), re.M)
     found += [f"{finding}: two rows" for finding in sorted({i for i in ids if ids.count(i) > 1})]
-    details = re.findall(r"^### ([A-Z]+-\d+)$", groups["Open"][1] + groups["Closed"][1], re.M)
+    details = re.findall(rf"^### ({ID})$", groups["Open"][1] + groups["Closed"][1], re.M)
     found += [f"{finding}: details twice" for finding in sorted({i for i in details if details.count(i) > 1})]
     found += [f"{finding}: details with no row" for finding in sorted(set(details) - set(ids))]
     for name, text in closed.files.items():
-        for finding in re.findall(r"^### ([A-Z]+-\d+)$", text, re.M):
+        for finding in re.findall(rf"^### ({ID})$", text, re.M):
             at = block_at(text, finding)
             stamp = period_of(field(text[at[0] : at[1]], "Closed"), period_kind(name))
             if stamp and stamp != name:
@@ -388,6 +468,7 @@ def main():
     commands.add_parser("defer").add_argument("--at", required=True)
     commands.add_parser("summary")
     commands.add_parser("check")
+    commands.add_parser("prune")
     args = parser.parse_args()
     ledger_path, closed_path, details_path = Path(args.ledger), Path(args.closed), Path(args.details)
     ledger, closed = ledger_path.read_text(), read_closed(closed_path, details_path, args.period)
@@ -403,6 +484,8 @@ def main():
         ledger, closed = add(args, ledger, closed)
     elif args.command == "set":
         ledger, closed = set_finding(args, ledger, closed)
+    elif args.command == "prune":
+        ledger, closed = prune(ledger, closed)
     elif args.command == "defer":
         ledger = defer(args, ledger)
     else:

@@ -36,7 +36,7 @@ def split_closed(text):
         sys.exit("The closed file holds no Details section; it may already be migrated.")
     details = text[head.end() :]
     blocks = []
-    for finding in re.findall(r"^### ([A-Z]+-\d+)$", details, re.M):
+    for finding in re.findall(r"^### ([A-Z][A-Z0-9]*-\d+)$", details, re.M):
         start, end = block_at(details, finding)
         blocks.append((finding, details[start:end].rstrip("\n") + "\n\n"))
     return text[: head.start()].rstrip("\n") + "\n", blocks

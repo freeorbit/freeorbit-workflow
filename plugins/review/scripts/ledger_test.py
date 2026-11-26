@@ -69,7 +69,7 @@ Intro.
 
 | ID | Severity | Status | Title | Where |
 | --- | --- | --- | --- | --- |
-| [SEC-001](closed/2026-01.md#sec-001) | High | verified | Old | `b.rs:2` |
+| [SEC-001](closed/2026-01.md#sec-001) | High | rejected | Old | `b.rs:2` |
 """
 
 JANUARY = """# Closed review findings, 2026-01
@@ -84,7 +84,7 @@ Intro.
 
 | Field | Value |
 | --- | --- |
-| Status | verified |
+| Status | rejected |
 | Severity | High |
 | Confidence | High |
 | Rule | SEC-NET |
@@ -141,9 +141,9 @@ class Ledger(unittest.TestCase):
         self.assert_in_step()
 
     def test_closing_files_the_details_under_the_week_it_closed(self):
-        self.assertEqual(self.run_tool("--date", "2026-02-05", "set", "MOD-001", "--status", "verified").returncode, 0)
+        self.assertEqual(self.run_tool("--date", "2026-02-05", "set", "MOD-001", "--status", "rejected").returncode, 0)
         self.assertNotIn("MOD-001", self.ledger.read_text())
-        self.assertIn("[MOD-001](closed/2026-W06.md#mod-001) | Low | verified", self.closed.read_text())
+        self.assertIn("[MOD-001](closed/2026-W06.md#mod-001) | Low | rejected", self.closed.read_text())
         week = (self.details / "2026-W06.md").read_text()
         self.assertIn("### MOD-001", week)
         self.assertIn("| Closed | 2026-02-05 |", week)
@@ -153,13 +153,13 @@ class Ledger(unittest.TestCase):
         self.assert_in_step()
 
     def test_a_project_may_file_by_month(self):
-        self.run_tool("--period", "month", "--date", "2026-02-05", "set", "MOD-001", "--status", "verified")
+        self.run_tool("--period", "month", "--date", "2026-02-05", "set", "MOD-001", "--status", "rejected")
         self.assertIn("### MOD-001", (self.details / "2026-02.md").read_text())
         self.assertIn("[MOD-001](closed/2026-02.md#mod-001)", self.closed.read_text())
         self.assert_in_step()
 
     def test_a_week_starts_the_year_it_falls_in(self):
-        self.run_tool("--date", "2027-01-01", "set", "MOD-001", "--status", "verified")
+        self.run_tool("--date", "2027-01-01", "set", "MOD-001", "--status", "rejected")
         self.assertTrue((self.details / "2026-W53.md").exists(), "1 January 2027 is in ISO week 53 of 2026")
 
     def test_a_closed_file_still_holding_details_asks_for_the_migration(self):
@@ -195,9 +195,9 @@ class Ledger(unittest.TestCase):
         self.assert_in_step()
 
     def test_a_closed_finding_can_change_its_closed_status(self):
-        self.run_tool("--date", "2026-04-04", "set", "SEC-001", "--status", "superseded")
-        self.assertIn("[SEC-001](closed/2026-01.md#sec-001) | High | superseded", self.closed.read_text())
-        self.assertIn("| Status | superseded |", self.january.read_text(), "it stays under the month it first closed")
+        self.run_tool("--date", "2026-04-04", "set", "SEC-001", "--status", "accepted-risk")
+        self.assertIn("[SEC-001](closed/2026-01.md#sec-001) | High | accepted-risk", self.closed.read_text())
+        self.assertIn("| Status | accepted-risk |", self.january.read_text(), "it stays under the month it first closed")
         self.assert_in_step()
 
     def test_summary_counts_closed_rows_in_the_closed_file(self):
@@ -260,6 +260,99 @@ class Ledger(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("MOD-001", result.stdout)
 
+    def test_a_verified_finding_is_dropped_and_its_id_kept(self):
+        self.assertEqual(self.run_tool("--date", "2026-02-05", "set", "MOD-001", "--status", "verified").returncode, 0)
+        self.assertNotIn("MOD-001", self.ledger.read_text())
+        closed = self.closed.read_text()
+        self.assertNotIn("[MOD-001]", closed)
+        self.assertIn("Highest IDs used, so none is used again: MOD-001, SEC-001.", closed, "every ID used, kept or not")
+        self.assertLess(closed.index("Highest IDs"), closed.index("## Summary"))
+        self.assertFalse((self.details / "2026-W06.md").exists(), "nothing is filed")
+        self.assert_in_step()
+        item = dict(prefix="MOD", title="Next", severity="Low", confidence="High", rule="CS-MOD",
+                    where="`a.rs:2`", evidence="E.", why="W.", suggestion="S.")
+        path = Path(self.folder.name, "new.json")
+        path.write_text(json.dumps([item]))
+        self.assertEqual(self.run_tool("add", str(path)).stdout.strip(), "MOD-002", "a dropped ID is not used again")
+
+    def test_a_closed_finding_superseded_leaves_the_closed_files(self):
+        self.run_tool("set", "SEC-001", "--status", "superseded")
+        closed = self.closed.read_text()
+        self.assertNotIn("[SEC-001]", closed)
+        self.assertIn("## Summary\n\nNone.", closed)
+        self.assertIn("Highest IDs used, so none is used again: MOD-001, SEC-001.", closed)
+        self.assertIn("## Details\n\nNone.", self.january.read_text())
+        self.assert_in_step()
+
+    def test_the_highest_ids_line_only_goes_up(self):
+        self.closed.write_text(CLOSED.replace("Intro.\n", "Intro.\n\nVerified and superseded findings are not kept here; git history has them. Highest IDs used, so none is used again: E2E-051, SEC-009.\n"))
+        self.run_tool("set", "MOD-001", "--status", "verified")
+        self.assertIn("Highest IDs used, so none is used again: E2E-051, MOD-001, SEC-009.", self.closed.read_text())
+        self.assertEqual(self.closed.read_text().count("Highest IDs"), 1)
+
+    def test_prune_drops_verified_and_superseded_findings(self):
+        rows = (
+            "| [E2E-012](closed/2026-01.md#e2e-012) | Low | verified | Seen | `e2e/a.ts:1` |\n"
+            "| [SEC-001](closed/2026-01.md#sec-001) | High | rejected | Old | `b.rs:2` |\n"
+            "| [SEC-002](closed/2026-01.md#sec-002) | High | superseded | Older | `b.rs:3` |\n"
+        )
+        self.closed.write_text(CLOSED.replace("| [SEC-001](closed/2026-01.md#sec-001) | High | rejected | Old | `b.rs:2` |\n", rows))
+        block = JANUARY[JANUARY.index("### SEC-001"):]
+        orphan = block.replace("SEC-001", "STD-004").replace("| rejected |", "| verified |")
+        self.january.write_text(JANUARY + "\n" + block.replace("SEC-001", "SEC-002").replace("| rejected |", "| superseded |")
+                                + "\n" + block.replace("SEC-001", "E2E-012").replace("| rejected |", "| verified |").replace("| High |", "| Low |", 1) + "\n" + orphan)
+        self.assertEqual(self.run_tool("check").stdout.strip(), "STD-004: details with no row")
+        result = self.run_tool("prune")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Dropped 3", result.stdout)
+        closed, january = self.closed.read_text(), self.january.read_text()
+        self.assertIn("[SEC-001]", closed)
+        self.assertIn("### SEC-001", january)
+        for gone in ["E2E-012", "SEC-002", "STD-004"]:
+            self.assertNotIn(f"[{gone}]", closed)
+            self.assertNotIn(f"### {gone}", january)
+        self.assertIn("Highest IDs used, so none is used again: E2E-012, MOD-001, SEC-002, STD-004.", closed)
+        self.assert_in_step()
+        self.assertIn("Dropped 0", self.run_tool("prune").stdout)
+
+    def test_prune_keeps_a_row_it_cannot_read(self):
+        odd = "| [SEC-003](closed/2026-01.md#sec-003) | Very high | verified | Odd | `b.rs:4` |\n"
+        self.closed.write_text(CLOSED + odd)
+        result = self.run_tool("prune")
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertIn("Kept a row it could not read: | [SEC-003]", result.stderr)
+        self.assertIn(odd, self.closed.read_text())
+
+    def test_prune_keeps_details_whose_row_disagrees(self):
+        self.january.write_text(JANUARY.replace("| Status | rejected |", "| Status | verified |"))
+        result = self.run_tool("prune")
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertIn("Kept SEC-001: its details say verified, its row does not.", result.stderr)
+        self.assertIn("### SEC-001", self.january.read_text())
+        self.assertIn("[SEC-001]", self.closed.read_text())
+
+    def test_a_highest_ids_line_written_by_hand_is_updated_in_place(self):
+        for intro in ["Highest IDs used, so none is used again: MOD-000, ..., SEC-009, ....",
+                      "Verified and superseded findings are not kept here; git history has them."]:
+            self.closed.write_text(CLOSED.replace("Intro.\n", f"Intro.\n\n{intro}\n"))
+            self.ledger.write_text(LEDGER)
+            self.run_tool("set", "MOD-001", "--status", "verified")
+            text = self.closed.read_text()
+            self.assertEqual(text.count("Highest IDs"), 1, intro)
+            self.assertEqual(text.count("not kept here"), 1 if "not kept" in intro else 0, intro)
+            self.assertIn("so none is used again: MOD-001, SEC-", text)
+
+    def test_next_number_skips_the_prefix_inside_another_id(self):
+        self.ledger.write_text(LEDGER.replace("| Evidence | It is there. |", "| Evidence | See D-MOD-1450. |"))
+        item = dict(prefix="MOD", title="Next", severity="Low", confidence="High", rule="CS-MOD",
+                    where="`a.rs:2`", evidence="E.", why="W.", suggestion="S.")
+        path = Path(self.folder.name, "new.json")
+        path.write_text(json.dumps([item]))
+        self.assertEqual(self.run_tool("add", str(path)).stdout.strip(), "MOD-002")
+
+    def test_check_sees_a_prefix_with_a_digit(self):
+        self.closed.write_text(CLOSED + "| [E2E-005](closed/2026-01.md#e2e-005) | Low | rejected | Run | `e2e/a.ts:1` |\n")
+        self.assertIn("E2E-005: no details", self.run_tool("check").stdout)
 
 
 OLD_CLOSED = """# Closed review findings

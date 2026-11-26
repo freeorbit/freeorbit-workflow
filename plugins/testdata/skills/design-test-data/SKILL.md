@@ -132,7 +132,7 @@ Send it back, or fix the line, when any of these is true in a file it touched:
 - `npx wf doc:check` warns for a file it wrote: past about a page, too small to stand alone, a flow area past its size, a category on no list, or an input class listed twice.
 - `npx wf testdata budget <area> <ids> --check` lists a row this run added. Fix the rows by hand as the budget section says; do not send the designer back for it.
 
-Then ask for the review of its rules: `npx wf testdata review <area> [--chunk <this>] | npx wf ask page -` for the owner's, `--team` for the craft rules, accepted in bulk; solo, one page. A first draft gets its own review; a refresh goes with the chunk-start questions. After a send, `npx wf testdata drop <area> --from <ask id> --write` applies each Drop. Update the area's row in the build order's Areas table, and add a line to its History.
+Then ask for the review of its rules: `npx wf testdata review <area> [--chunk <this>] | npx wf ask page -` for the owner's, `--team` for the craft rules, accepted in bulk; solo, one page. A first draft gets its own review; a refresh goes with the chunk-start questions. After a send, `npx wf testdata drop <area> --from <ask id> --write` applies each Drop. Replace the area's cell in the build order's Areas table with one line: what is in progress and what is next.
 
 ## 5. Build and use it
 

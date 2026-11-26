@@ -37,7 +37,7 @@ Only what the prompt names, and:
 - The threat model, the hot-paths doc, and each doc in Reads. Search a large one for the piece you are checking rather than reading it whole.
 - The decisions log, the files under the Decisions folder, one per area and topic. Search them for a draft finding's topic, and never read one in full.
 - The ledger. Read its Summary, which ends at the `## Open` heading. Search for one ID when you need a finding's details, and never read the file in full. Verify mode does not read the ledger.
-- The closed summary: one row per closed finding, each linking to its details in a file of the closed details folder. Search the summary for a file path or a few title words, then search the linked file for that one ID. Never read either in full.
+- The closed summary: one row per finding closed as rejected, accepted-risk, or accepted-cost, each linking to its details in a file of the closed details folder. Verified and superseded findings are not kept. Search the summary for a file path or a few title words, then search the linked file for that one ID. Never read either in full.
 - The diff file, the scope list, and the scanner output folder the prompt names, including any files copied into that folder for review.
 - On the web, only the sources Web names.
 

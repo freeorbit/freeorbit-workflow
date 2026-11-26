@@ -59,7 +59,7 @@ Efficiency that leads to our outcome is how we work, in every chat and every tas
   - Any other doc: read it whole when you need how it fits together (a review, a design change, a debug that crosses sections), or you would search it three or more times. Above about 50 KB, read by section.
   - For where the work stands, run `npx wf doc:facts`.
 - **Docs.** One topic per file. [writing-docs.md]({{docs.workflow}}/writing-docs.md) has the formats. After adding a doc, add its row to `{{docs.index}}`.
-- **Status.** When a step starts or finishes, update the area's row in the Areas table in `build-order.md`, and add a line to the History in its file in `docs/log/build-order/`.
+- **Status.** When a step starts or finishes, replace the area's cell in the Areas table in `build-order.md` with one line: what is in progress and what is next.
 - **Agent configuration.** Claude Code and OpenCode share the instructions, skills, and agent prompts in this repo. Follow [ai-tools.md]({{docs.workflow}}/ai-tools.md) when changing them or switching tools mid-task.
 
 ## Where a note goes
