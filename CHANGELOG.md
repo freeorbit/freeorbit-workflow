@@ -4,6 +4,22 @@ What each kit version changed, newest first, and what a project does to upgrade 
 
 To upgrade, pin the version's tag in the project, as [Install in a project](README.md#install-in-a-project) shows.
 
+## v1.25.0: the logs keep only what is read back
+
+Freeorbit's logs held a great deal nobody read again: each area's History, Map, and Why this order, a chunks-done Detail that retold the build, and 854 verified and superseded review findings. The owner chose to cut them, and the rules that write them, in the kit (2026-11-26).
+
+- **An area's build-order file holds only its chunk notes**, `### <chunk>` under `## Chunk notes`. History, Map, and Why this order are gone from `AGENTS.md`, `build-order.md`, `wf init`'s starter file, the docs index row, and the chunk panel, which no longer shows the area log's lines. The release skill no longer adds a history line, and the test-data skill replaces the Build cell instead.
+- **An Areas Build cell is one line**: its step word and date, then what is in progress and what is next. It is replaced, not added to.
+- **At chunk end**, a row moved to chunks-done gets a Detail of only its date and pull request, such as `Built 2026-11-26, #297`, and its chunk note shrinks to one line.
+- **The review ledger drops a finding set to verified or superseded**, row and details; git history has it. The closed file's intro keeps `Highest IDs used, so none is used again: ARCH-014, ..., E2E-051, ...`, so `add` never gives an ID twice. **`npx wf ledger prune`** does the same for a ledger that kept them.
+- **A finding prefix with a digit**, such as `E2E-`, is seen by `wf ledger check` and `set`. Before, `check` passed over every E2E row, so it may now report one with no details.
+- **To upgrade**, after `npx wf docs sync`, have the project's agent trim its own repo, as Freeorbit did in its PR 297:
+  - Delete the History, Map, and Why this order sections from each file in `docs/log/build-order/`, keeping the Chunk notes; shrink a done chunk's note to one line.
+  - Run `npx wf ledger prune`, take verified and superseded out of the closed file's Statuses line, and fix any row `npx wf ledger check` reports, such as an `E2E-` row with no details. `prune` keeps a row it cannot read, and details whose row says another status, and names each.
+  - Shorten each chunks-done Detail to the date built and its pull request.
+  - Shorten each Areas Build cell to one line: what is in progress and what is next.
+  - Freeorbit has done all four and needs only the kit bump, though `check` now reports its `E2E-002` row, which has no details. Atlas NX does all four.
+
 ## v1.24.1: a shared ask-pages server whose kit was removed is started again
 
 The shared ask-pages server on port 8765 kept running after the worktree it was started from was removed, with its `node_modules`. It still answered as the same kit version, so every later `wf ask page` reused it, and every page and the inbox failed with ENOENT on the kit's `lib/ask/browser/style` until `wf view stop` and `wf view serve` (Freeorbit, from an Atlas NX worktree, 2026-11-25).

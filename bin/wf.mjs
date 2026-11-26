@@ -332,7 +332,7 @@ const commands = {
       return 1;
     }
     const templates = Object.fromEntries(["threat-model", "hot-paths"].map((name) => [name, readFileSync(join(KIT_ROOT, "templates", `${name}.md`), "utf8")]));
-    for (const [path, what] of writeStarter(root, answers, { today: localToday(), templates })) console.log(`${path}: ${what}`);
+    for (const [path, what] of writeStarter(root, answers, { templates })) console.log(`${path}: ${what}`);
     const config = loadConfig(root);
     for (const path of syncDocs(root, config)) console.log(`${path}: written`);
     const { problems } = await reconcile(root, { write: true, tools: config.ai.tools });

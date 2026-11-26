@@ -101,7 +101,7 @@ Change the ledger only with `npx wf ledger`; it keeps every row in step and refu
 
 - New findings: write them to `.cache/review-scan/findings.json`, a list with the fields [ledger-format.md](ledger-format.md) names, then `npx wf ledger add .cache/review-scan/findings.json`. It gives each the next ID, `proposed`, and Found.
 - "Changed": `set <ID>` with `--severity` when it changed, and the new evidence in a dated `--note`.
-- "Now fixed": a `fixed` finding becomes `verified`. A `proposed` or `accepted` one that is gone becomes `fixed`, with the evidence in its Note, and is shown to the reviewer.
+- "Now fixed": a `fixed` finding becomes `verified`, which drops it from the ledger and keeps its ID in the closed file's Highest IDs line. A `proposed` or `accepted` one that is gone becomes `fixed`, with the evidence in its Note, and is shown to the reviewer.
 - A `fixed` finding still there goes back to `accepted`, with a dated Note.
 
 ## 5. Ask the reviewer
@@ -110,7 +110,7 @@ Ask once, in batches up to the question tool's limit or all on one `triage` ask 
 
 In the same batch, read the `Revisit` lines of `npx wf doc:facts status` against this run's findings. Where a trigger now holds, such as a kind of finding it names coming up again, ask that question's role whether it moves under the chunk.
 
-Write each answer as its Status and a Decision of `<note>, <date>`. An accepted `STD-` finding adds its rule to the rubric, with the date, and becomes `verified`. Accepted findings are work: fix the small ones in this chunk with the reviewer's yes, and propose a larger one as a session of its own.
+Write each answer as its Status and a Decision of `<note>, <date>`. An accepted `STD-` finding adds its rule to the rubric, with the date, and becomes `verified`. A finding another one replaces becomes `superseded`, and is dropped the same way. Accepted findings are work: fix the small ones in this chunk with the reviewer's yes, and propose a larger one as a session of its own.
 
 ## 6. Close
 

@@ -112,7 +112,7 @@ test("the index's kit tables are written from the synced docs and the logs that 
   assert.match(text, /\| Journey \| One user's path\. \|/);
   assert.match(text, /\| \[workflow\/four-steps\.md\]\(workflow\/four-steps\.md\) \| The four steps/);
   assert.ok(!text.includes("asking.md"));
-  assert.match(text, /\| \[log\/build-order\/app\.md\]\(log\/build-order\/app\.md\) \| The app area's build order/);
+  assert.match(text, /\| \[log\/build-order\/app\.md\]\(log\/build-order\/app\.md\) \| The app area's chunk notes: what a chunk row holds that its row has no room for\./);
   assert.match(text, /`D-APP-`/);
   assert.match(text, /`D-WF-`/);
   assert.ok(!text.includes("troubleshooting"));

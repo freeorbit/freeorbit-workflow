@@ -171,7 +171,8 @@ With the design plugin's screen review, a chunk that changed UI files or frames 
 
 Move the chunk's row in [build-order.md](../log/build-order.md#chunks): to Waiting if something about the chunk is left to check, or to [chunks-done.md](../log/chunks-done.md) if not.
 
-- A row moved to the done list gets its "For the client" sentence: what the client can now do, in plain words, with no ids, such as "You can sign in with your work email and password." The client's board posts it when the chunk's stories are built.
+- A row moved to the done list gets a Detail of only the date it was built and its pull request, such as `Built 2026-11-26, #297`. Its note in the area's file shrinks to one line.
+- It also gets its "For the client" sentence: what the client can now do, in plain words, with no ids, such as "You can sign in with your work email and password." The client's board posts it when the chunk's stories are built.
 - When the owner checks what is left by hand, ask on a `signoff` page, one check for each `walk` line the trace lists, by its ID, so each is done or objected to with a note.
   - A low-risk line with a `walk` row is on it too. The low-risk lines with no test and no row get one line of text with their count, and no check each.
 

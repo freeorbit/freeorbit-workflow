@@ -9,7 +9,7 @@ import { answersMarkdown } from "../lib/ask/answers.mjs";
 import { RULES as S } from "../lib/ask/rules.mjs";
 import { normalize } from "../lib/ask/spec.mjs";
 import { pictures } from "../lib/ask/advice.mjs";
-import { chunkAdvice, chunkDetails, chunkSpec, historyOf, startable } from "../lib/choose/chunk.mjs";
+import { chunkAdvice, chunkDetails, chunkSpec, startable } from "../lib/choose/chunk.mjs";
 import { e2eSpec } from "../lib/choose/e2e.mjs";
 import { choose } from "../lib/choose/index.mjs";
 import { releaseAdvice, releaseSpec, unreleasedNotes } from "../lib/choose/release.mjs";
@@ -142,15 +142,6 @@ test("chunk advice: carry on, else the first with nothing open, else the first, 
     assert.equal(advice.run, run);
     assert.match(advice.why, why);
   }
-});
-
-test("a chunk's history is the log lines naming it, once each, clipped", () => {
-  const log = "# Log\n\n- 2026-11-01: chunk 36 added for the looks.\n- 2026-11-02: 36b split off.\n- 2026-11-03: 136 done.\n- 2026-11-04: " + "x ".repeat(200) + "36\n";
-  const other = "- 2026-11-01: chunk 36 added for the looks.\n";
-  const lines = historyOf([log, other], "36");
-  assert.deepEqual(lines.map((l) => l.date), ["2026-11-01", "2026-11-04"], "36b and 136 are other chunks; a line in two logs shows once");
-  assert.equal(lines[1].text.length, 280);
-  assert.ok(lines[1].text.endsWith("…"));
 });
 
 test("a release recommends the open line's next pre-release, else a patch line, and knows when notes are written", () => {
